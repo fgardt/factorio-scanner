@@ -90,10 +90,12 @@ impl Data {
     }
 }
 
-impl TryFrom<String> for Data {
+// TODO: properly propagate/bubble errors up for better handling
+
+impl TryFrom<&str> for Data {
     type Error = &'static str;
 
-    fn try_from(bp_string: String) -> Result<Self, Self::Error> {
+    fn try_from(bp_string: &str) -> Result<Self, Self::Error> {
         if bp_string.len() < 2 {
             return Err("Blueprint string must be at least 2 characters long.");
         }
@@ -109,23 +111,26 @@ impl TryFrom<String> for Data {
             None => return Err("Error parsing blueprint string."),
         }
 
-        let compressed = match general_purpose::STANDARD.decode(chars.as_str()) {
-            Ok(compressed) => compressed,
-            Err(_) => return Err("Error decoding blueprint string."),
+        let Ok(compressed) = general_purpose::STANDARD.decode(chars.as_str()) else {
+            return Err("Error decoding blueprint string.");
         };
 
         let mut deflate = ZlibDecoder::new(compressed.as_slice());
         let mut uncompressed = String::new();
 
-        match deflate.read_to_string(&mut uncompressed) {
-            Ok(_) => (),
-            Err(_) => return Err("Error decompressing blueprint string."),
-        };
-
-        match serde_json::from_str(&uncompressed) {
-            Ok(data) => Ok(data),
-            Err(_) => Err("Error deserializing blueprint."),
+        if deflate.read_to_string(&mut uncompressed).is_err() {
+            return Err("Error decompressing blueprint string.");
         }
+
+        serde_json::from_str(&uncompressed).map_or(Err("Error deserializing blueprint."), Ok)
+    }
+}
+
+impl TryFrom<String> for Data {
+    type Error = &'static str;
+
+    fn try_from(bp_string: String) -> Result<Self, Self::Error> {
+        Self::try_from(bp_string.as_str())
     }
 }
 
