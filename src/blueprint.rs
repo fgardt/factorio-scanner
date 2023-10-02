@@ -530,12 +530,8 @@ pub struct Color {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ControlBehavior {
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub enable_disable: bool,
-
     pub logistic_condition: Option<Condition>,
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub connect_to_logistic_network: bool,
+    pub connect_to_logistic_network: Option<bool>,
 
     // rail/chain signals
     pub circuit_close_signal: Option<bool>,
@@ -546,54 +542,50 @@ pub struct ControlBehavior {
     pub blue_output_signal: Option<SignalID>,
 
     pub circuit_condition: Option<Condition>,
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub circuit_enable_disable: bool,
+    pub circuit_enable_disable: Option<bool>,
 
     // train stops
-    #[serde(default = "default_true", skip_serializing_if = "Clone::clone")]
-    pub send_to_train: bool,
+    pub send_to_train: Option<bool>,
+    pub read_from_train: Option<bool>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub read_from_train: bool,
-
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub read_stopped_train: bool,
+    pub read_stopped_train: Option<bool>,
     pub train_stopped_signal: Option<SignalID>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub set_trains_limit: bool,
+    pub set_trains_limit: Option<bool>,
     pub trains_limit_signal: Option<SignalID>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub read_trains_count: bool,
+    pub read_trains_count: Option<bool>,
     pub trains_count_signal: Option<SignalID>,
 
     // roboports
-    #[serde(default = "default_true", skip_serializing_if = "Clone::clone")]
-    pub read_logistics: bool,
-
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub read_robot_stats: bool,
+    pub read_logistics: Option<bool>,
+    pub read_robot_stats: Option<bool>,
     pub available_logistic_output_signal: Option<SignalID>,
     pub total_logistic_output_signal: Option<SignalID>,
     pub available_construction_output_signal: Option<SignalID>,
     pub total_construction_output_signal: Option<SignalID>,
 
+    // walls
+    pub circuit_open_gate: Option<bool>,
+    pub circuit_read_sensor: Option<bool>,
+    pub output_signal: Option<SignalID>,
+
     // belts
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub circuit_read_hand_contents: bool,
+    pub circuit_read_hand_contents: Option<bool>,
     pub circuit_contents_read_mode: Option<u8>,
 
     // inserters
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub circuit_set_stack_size: bool,
+    pub circuit_set_stack_size: Option<bool>,
     pub stack_control_input_signal: Option<SignalID>,
     pub circuit_mode_of_operation: Option<u8>,
     pub circuit_hand_read_mode: Option<u8>,
 
+    // miners
+    pub circuit_read_resources: Option<bool>,
+    pub circuit_resource_read_mode: Option<u8>,
+
     // combinators
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub is_on: bool,
+    pub is_on: Option<bool>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub filters: Vec<ConstantCombinatorFilter>,
     pub arithmetic_conditions: Option<ArithmeticData>,
@@ -603,8 +595,7 @@ pub struct ControlBehavior {
     pub circuit_parameters: Option<SpeakerCircuitParameters>,
 
     // lamps
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub use_colors: bool,
+    pub use_colors: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
