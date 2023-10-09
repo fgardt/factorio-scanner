@@ -11,6 +11,8 @@ pub type IconMipMapType = u8;
 #[derive(Debug, Deserialize, Serialize)]
 pub struct IconData {
     pub icon: FileName,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub icon_size: SpriteSizeType,
 
     #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
@@ -22,7 +24,11 @@ pub struct IconData {
     // TODO: Defaults to `32/icon_size` for items and recipes, `256/icon_size` for technologies.
     pub scale: Option<f64>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u8")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub icon_mipmaps: IconMipMapType,
 }
 
@@ -32,13 +38,21 @@ pub struct IconData {
 pub enum Icon {
     Array {
         icons: Vec<IconData>,
+
+        #[serde(deserialize_with = "helper::truncating_opt_deserializer")]
         icon_size: Option<SpriteSizeType>,
     },
     Single {
         icon: FileName,
+
+        #[serde(deserialize_with = "helper::truncating_deserializer")]
         icon_size: SpriteSizeType,
 
-        #[serde(default, skip_serializing_if = "helper::is_0_u8")]
+        #[serde(
+            default,
+            skip_serializing_if = "helper::is_0_u8",
+            deserialize_with = "helper::truncating_deserializer"
+        )]
         icon_mipmaps: IconMipMapType,
     },
 }

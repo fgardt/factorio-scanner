@@ -26,9 +26,15 @@ pub struct GateData {
 
     pub opening_speed: f64, // docs say single precision, so f32. ¯\_(ツ)_/¯
     pub activation_distance: f64,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub timeout_to_close: u32,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub fadeout_interval: u32,
 
     pub opened_collision_mask: Option<CollisionMask>,

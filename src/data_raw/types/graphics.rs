@@ -135,13 +135,18 @@ pub enum RenderLayer {
 #[serde(untagged)]
 pub enum SpriteSizeParam {
     Size {
+        #[serde(deserialize_with = "helper::truncating_deserializer")]
         size: SpriteSizeType,
     },
     Size2 {
+        // TODO: truncating deserializer (in case someone is very funny and has floats here....)
         size: (SpriteSizeType, SpriteSizeType),
     },
     Explicit {
+        #[serde(deserialize_with = "helper::truncating_deserializer")]
         width: SpriteSizeType,
+
+        #[serde(deserialize_with = "helper::truncating_deserializer")]
         height: SpriteSizeType,
     },
 }
@@ -162,11 +167,12 @@ pub struct SpriteParams {
     pub size: SpriteSizeParam,
 
     // TODO: turn position, x, y into some enum?
+    // TODO: truncating deserializer
     #[serde(default)]
     pub position: Option<(SpriteSizeType, SpriteSizeType)>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "helper::truncating_deserializer")]
     pub x: SpriteSizeType,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "helper::truncating_deserializer")]
     pub y: SpriteSizeType,
 
     #[serde(default)]
@@ -184,7 +190,11 @@ pub struct SpriteParams {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub draw_as_light: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u8")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub mipmap_count: u8,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -253,16 +263,25 @@ pub enum MultiFileGraphics<Single, Multi> {
 }
 
 /// [`Types/Sprite`](https://lua-api.factorio.com/latest/types/Sprite.html)
-pub type Sprite = SimpleGraphics<SpriteParams>;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Sprite {
+    #[serde(flatten)]
+    pub data: SimpleGraphics<SpriteParams>,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RotatedSpriteParams {
     #[serde(flatten)]
     pub sprite_params: SpriteParams,
 
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     direction_count: u16,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u64")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u64",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     lines_per_file: u64,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -277,7 +296,11 @@ pub struct RotatedSpriteParams {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     counterclockwise: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     line_length: u32,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -289,8 +312,10 @@ pub struct RotatedSpriteParamsMultiFile {
     #[serde(flatten)]
     pub sprite_params: SpriteParams,
 
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     direction_count: u16,
 
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     lines_per_file: u64,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -305,7 +330,11 @@ pub struct RotatedSpriteParamsMultiFile {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     counterclockwise: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     line_length: u32,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -322,7 +351,11 @@ pub struct Sprite4WaySheet {
     #[serde(flatten)]
     pub sprite_params: SpriteParams,
 
-    #[serde(default = "helper::u32_4", skip_serializing_if = "helper::is_0_u32")]
+    #[serde(
+        default = "helper::u32_4",
+        skip_serializing_if = "helper::is_0_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub frames: u32,
 
     pub hr_version: Option<Box<Self>>,
@@ -335,7 +368,11 @@ pub struct Sprite8WaySheet {
     #[serde(flatten)]
     pub sprite_params: SpriteParams,
 
-    #[serde(default = "helper::u32_8", skip_serializing_if = "helper::is_0_u32")]
+    #[serde(
+        default = "helper::u32_8",
+        skip_serializing_if = "helper::is_0_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub frames: u32,
 
     pub hr_version: Option<Box<Self>>,
@@ -387,10 +424,18 @@ pub struct SpriteSheetParams {
     #[serde(flatten)]
     pub sprite_params: SpriteParams,
 
-    #[serde(default = "helper::u32_1", skip_serializing_if = "helper::is_1_u32")]
+    #[serde(
+        default = "helper::u32_1",
+        skip_serializing_if = "helper::is_1_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub variation_count: u32,
 
-    #[serde(default = "helper::u32_1", skip_serializing_if = "helper::is_1_u32")]
+    #[serde(
+        default = "helper::u32_1",
+        skip_serializing_if = "helper::is_1_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub repeat_count: u32,
 
     // TODO: support the default based on variation_count
@@ -436,19 +481,33 @@ pub struct TileGraphics<T> {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TileSpriteParams {
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub count: u32,
+
     pub picture: FileName,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub scale: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_i16")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_i16",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub x: SpriteSizeType,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_i16")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_i16",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub y: SpriteSizeType,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub line_length: u32,
 }
 
@@ -460,6 +519,7 @@ pub struct TileSpriteProbabilityParams {
     #[serde(flatten)]
     pub tile_sprite_params: TileSpriteParams,
 
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub size: u32,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
@@ -488,6 +548,7 @@ pub type TileTransitionSprite = TileGraphics<TileTransitionSpriteParams>;
 // =====[ Animations ]===== //
 // ======================== //
 
+// TODO: truncating deserializer for arrays....
 /// [`Types/AnimationFrameSequence`](https://lua-api.factorio.com/latest/types/AnimationFrameSequence.html)
 pub type AnimationFrameSequence = Vec<u16>;
 
@@ -503,14 +564,29 @@ pub enum AnimationRunMode {
 /// [`Types/Stripe`](https://lua-api.factorio.com/latest/types/Stripe.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Stripe {
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub width_in_frames: u32,
+
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "helper::truncating_opt_deserializer"
+    )]
     pub height_in_frames: Option<u32>, // TODO: is only optional when used in RotatedAnimation
     pub filename: FileName,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub x: u32,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub y: u32,
 }
 
@@ -524,10 +600,18 @@ pub struct AnimationParameters {
     #[serde(default)]
     pub run_mode: AnimationRunMode,
 
-    #[serde(default = "helper::u32_1", skip_serializing_if = "helper::is_1_u32")]
+    #[serde(
+        default = "helper::u32_1",
+        skip_serializing_if = "helper::is_1_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub frame_count: u32,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub line_length: u32,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
@@ -539,7 +623,11 @@ pub struct AnimationParameters {
     )]
     pub max_advance: f64,
 
-    #[serde(default = "helper::u8_1", skip_serializing_if = "helper::is_1_u8")]
+    #[serde(
+        default = "helper::u8_1",
+        skip_serializing_if = "helper::is_1_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub repeat_count: u8,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -591,6 +679,12 @@ pub enum Animation4Way {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AnimationElement {
     pub render_layer: Option<RenderLayer>,
+
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "helper::truncating_opt_deserializer"
+    )]
     pub secondary_draw_order: Option<i8>,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -612,6 +706,8 @@ pub struct AnimationElement {
 pub struct AnimationSheetParameters {
     #[serde(flatten)]
     pub animation_params: AnimationParameters,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub variation_count: u32,
 }
 
@@ -640,12 +736,28 @@ pub struct ShiftAnimationWaypoints {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RotatedAnimationParameters {
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub direction_count: u32,
 
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "helper::truncating_opt_deserializer"
+    )]
     pub lines_per_file: Option<u32>,
+
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "helper::truncating_opt_deserializer"
+    )]
     pub slice: Option<u32>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub still_frame: u32,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]

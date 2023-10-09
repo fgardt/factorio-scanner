@@ -12,8 +12,14 @@ pub type ArtilleryTurretPrototype = EntityWithOwnerPrototype<ArtilleryTurretData
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ArtilleryTurretData {
     pub gun: ItemID,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub inventory_size: ItemStackIndex,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub ammo_stack_limit: ItemCountType,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub automated_ammo_count: ItemCountType,
     pub turret_rotation_speed: f64,
     pub manual_range_modifier: f64,
@@ -24,7 +30,11 @@ pub struct ArtilleryTurretData {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub disable_automatic_firing: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u8")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub base_picture_secondary_draw_order: u8,
 
     pub base_picture_render_layer: Option<RenderLayer>,
@@ -33,10 +43,18 @@ pub struct ArtilleryTurretData {
     pub cannon_base_pictures: Option<RotatedSprite>,
     pub cannon_barrel_pictures: Option<RotatedSprite>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u16",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub turn_after_shooting_cooldown: u16,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u16",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub cannon_parking_frame_count: u16,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]

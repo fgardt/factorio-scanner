@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use super::EntityWithOwnerPrototype;
-use crate::data_raw::types::*;
+use crate::data_raw::{helper, types::*};
 
 /// [`Prototypes/BoilerPrototype`](https://lua-api.factorio.com/latest/prototypes/BoilerPrototype.html)
 pub type BoilerPrototype = EntityWithOwnerPrototype<BoilerData>;
@@ -14,6 +14,8 @@ pub struct BoilerData {
     pub fluid_box: FluidBox,
     pub output_fluid_box: FluidBox,
     pub energy_consumption: Energy,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub burning_cooldown: u32,
     pub target_temperature: f64,
     pub structure: BoilerStructure,

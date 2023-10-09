@@ -28,9 +28,14 @@ pub struct BaseEnergySource<T> {
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BurnerEnergySourceData {
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub fuel_inventory_size: ItemStackIndex,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u16",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub burnt_inventory_size: ItemStackIndex,
 
     // #[serde(default, skip_serializing_if = "Vec::is_empty"))]

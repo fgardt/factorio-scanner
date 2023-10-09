@@ -19,7 +19,8 @@ pub struct LandMineData {
 
     #[serde(
         default = "helper::u32_120",
-        skip_serializing_if = "helper::is_120_u32"
+        skip_serializing_if = "helper::is_120_u32",
+        deserialize_with = "helper::truncating_deserializer"
     )]
     pub timeout: u32,
 
