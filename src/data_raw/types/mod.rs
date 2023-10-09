@@ -1,33 +1,38 @@
-#![allow(clippy::struct_excessive_bools)]
+#![allow(clippy::struct_excessive_bools, clippy::module_name_repetitions)]
+
+use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
 
-pub mod graphics;
+mod energy;
+mod graphics;
+mod icon;
 
-#[allow(clippy::wildcard_imports)]
+pub use energy::*;
 pub use graphics::*;
+pub use icon::*;
+
+use super::helper;
 
 // TODO: support the array specification
 
 ///[`Types/Color`](https://lua-api.factorio.com/latest/types/Color.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Color {
-    #[serde(default, skip_serializing_if = "helper::is_zero_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
     r: f64,
-    #[serde(default, skip_serializing_if = "helper::is_zero_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
     g: f64,
-    #[serde(default, skip_serializing_if = "helper::is_zero_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
     b: f64,
-    #[serde(
-        default = "helper::one_f64",
-        skip_serializing_if = "helper::is_one_f64"
-    )]
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     a: f64,
 }
 
 impl Color {
-    const fn white() -> Self {
+    pub const fn white() -> Self {
         Self {
             r: 1.0,
             g: 1.0,
@@ -35,7 +40,7 @@ impl Color {
             a: 1.0,
         }
     }
-    fn is_white(color: &Self) -> bool {
+    pub fn is_white(color: &Self) -> bool {
         color.r == 1.0 && color.g == 1.0 && color.b == 1.0 && color.a == 1.0
     }
 }
@@ -51,17 +56,68 @@ impl Default for Color {
     }
 }
 
+/// [`Types/DefaultRecipeTint`](https://lua-api.factorio.com/latest/types/DefaultRecipeTint.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DefaultRecipeTint {
+    #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
+    pub primary: Color,
+
+    #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
+    pub secondary: Color,
+
+    #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
+    pub tertiary: Color,
+
+    #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
+    pub quaternary: Color,
+}
+
+/// [`Types/StatusColors`](https://lua-api.factorio.com/latest/types/StatusColors.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct StatusColors {
+    #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
+    pub idle: Color,
+    pub no_minable_resources: Option<Color>,
+    pub full_output: Option<Color>,
+    pub insufficient_input: Option<Color>,
+    pub disabled: Option<Color>,
+    pub no_power: Option<Color>,
+
+    #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
+    pub working: Color,
+    pub low_power: Option<Color>,
+}
+
 /// [`Types/Vector`](https://lua-api.factorio.com/latest/types/Vector.html)
 pub type Vector = (f64, f64);
 
+/// [`Types/Vector3D`](https://lua-api.factorio.com/latest/types/Vector3D.html)
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Vector3D {
+    Struct { x: f64, y: f64, z: f64 },
+    Tuple(f64, f64, f64),
+}
+
+/// [`Types/WirePosition`](https://lua-api.factorio.com/latest/types/WirePosition.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WirePosition {
+    pub copper: Option<Vector>,
+    pub green: Option<Vector>,
+    pub red: Option<Vector>,
+}
+
+/// [`Types/WireConnectionPoint`](https://lua-api.factorio.com/latest/types/WireConnectionPoint.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WireConnectionPoint {
+    pub wire: WirePosition,
+    pub shadow: WirePosition,
+}
+
 /// [`Types/FileName`](https://lua-api.factorio.com/latest/types/FileName.html)
 pub type FileName = String;
-
-/// [`Types/Order`](https://lua-api.factorio.com/latest/types/Order.html)
-pub type Order = String;
-
-///[`Types/RealOrientation`](https://lua-api.factorio.com/latest/types/RealOrientation.html)
-pub type RealOrientation = f64;
 
 /// [`Types/LocalisedString`](https://lua-api.factorio.com/latest/types/LocalisedString.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -72,21 +128,326 @@ pub enum LocalisedString {
     Array(Vec<LocalisedString>),
 }
 
+/// [`Types/Order`](https://lua-api.factorio.com/latest/types/Order.html)
+pub type Order = String;
+
+/// [`Types/RealOrientation`](https://lua-api.factorio.com/latest/types/RealOrientation.html)
+pub type RealOrientation = f64;
+
+/// [`Types/FuelCategoryID`](https://lua-api.factorio.com/latest/types/FuelCategoryID.html)
+pub type FuelCategoryID = String;
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum FuelCategory {
+    Single {
+        // TODO: handle default value of: `chemical`
+        fuel_category: FuelCategoryID,
+    },
+    Multi {
+        fuel_categories: Vec<FuelCategoryID>,
+    },
+}
+
+/// [`Types/VirtualSignalID`](https://lua-api.factorio.com/latest/types/VirtualSignalID.html)
+pub type VirtualSignalID = String;
+
+/// [`Types/FluidID`](https://lua-api.factorio.com/latest/types/FluidID.html)
+pub type FluidID = String;
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PipeConnectionType {
+    #[default]
+    InputOutput,
+    Input,
+    Output,
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum PipeConnectionDefinition {
+    Multi {
+        positions: Vec<Vector>,
+
+        #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+        max_underground_distance: u32,
+    },
+    Single {
+        position: Vector,
+
+        #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+        max_underground_distance: u32,
+
+        #[serde(default, rename = "type")]
+        type_: PipeConnectionType,
+    },
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum FluidBoxProductionType {
+    #[default]
+    None,
+    #[serde(rename = "None")]
+    None2,
+    Input,
+    InputOutput,
+    Output,
+}
+
+/// [`Types/FluidBox.secondary_draw_orders`](https://lua-api.factorio.com/latest/types/FluidBox.html#secondary_draw_orders)
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum FluidBoxSecondaryDrawOrders {
+    Global {
+        #[serde(default = "helper::i8_1", skip_serializing_if = "helper::is_1_i8")]
+        secondary_draw_order: i8,
+    },
+    Cardinal {
+        #[serde(default = "helper::i8_1", skip_serializing_if = "helper::is_1_i8")]
+        north: i8,
+
+        #[serde(default = "helper::i8_1", skip_serializing_if = "helper::is_1_i8")]
+        east: i8,
+
+        #[serde(default = "helper::i8_1", skip_serializing_if = "helper::is_1_i8")]
+        south: i8,
+
+        #[serde(default = "helper::i8_1", skip_serializing_if = "helper::is_1_i8")]
+        west: i8,
+    },
+}
+
+/// [`Types/FluidBox`](https://lua-api.factorio.com/latest/types/FluidBox.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FluidBox {
+    pub pipe_connections: EmptyArrayFix<PipeConnectionDefinition>,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub base_area: f64,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    pub base_level: f64,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub height: f64,
+
+    pub filter: Option<FluidID>,
+    pub render_layer: Option<RenderLayer>,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub hide_connection_info: bool,
+
+    pub pipe_covers: Option<Sprite4Way>,
+    pub pipe_picture: Option<Sprite4Way>,
+
+    pub minimum_temperature: Option<f64>,
+    pub maximum_temperature: Option<f64>,
+
+    // TODO: skip serializing if default
+    #[serde(default)]
+    pub production_type: FluidBoxProductionType,
+
+    #[serde(flatten)]
+    pub secondary_draw_order: Option<FluidBoxSecondaryDrawOrders>,
+}
+
+/// [`Types/RecipeID`](https://lua-api.factorio.com/latest/types/RecipeID.html)
+pub type RecipeID = String;
+
+/// [`Types/RecipeCategoryID`](https://lua-api.factorio.com/latest/types/RecipeCategoryID.html)
+pub type RecipeCategoryID = String;
+
+/// [`Types/AmmoCategoryID`](https://lua-api.factorio.com/latest/types/AmmoCategoryID.html)
+pub type AmmoCategoryID = String;
+
+/// [`Types/EquipmentGridID`](https://lua-api.factorio.com/latest/types/EquipmentGridID.html)
+pub type EquipmentGridID = String;
+
+/// [`Types/ResourceCategoryID`](https://lua-api.factorio.com/latest/types/ResourceCategoryID.html)
+pub type ResourceCategoryID = String;
+
+/// [`Types/ItemID`](https://lua-api.factorio.com/latest/types/ItemID.html)
+pub type ItemID = String;
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
+pub enum SignalIDConnector {
+    Virtual { name: VirtualSignalID },
+    Item { name: ItemID },
+    Fluid { name: FluidID },
+}
+
+/// [`Types/ItemStackIndex`](https://lua-api.factorio.com/latest/types/ItemStackIndex.html)
+pub type ItemStackIndex = u16;
+
+/// [`Types/ItemCountType`](https://lua-api.factorio.com/latest/types/ItemCountType.html)
+pub type ItemCountType = u32;
+
+/// [`Types/ItemSubGroupID`](https://lua-api.factorio.com/latest/types/ItemSubGroupID.html)
+pub type ItemSubGroupID = String;
+
+/// [`Types/ItemToPlace`](https://lua-api.factorio.com/latest/types/ItemToPlace.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ItemToPlace {
+    pub item: ItemID,
+    pub count: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum PlaceableBy {
+    Single(ItemToPlace),
+    Multiple(Vec<ItemToPlace>),
+}
+
+/// [`Types/ModuleSpecification`](https://lua-api.factorio.com/latest/types/ModuleSpecification.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ModuleSpecification {
+    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    pub module_slots: ItemStackIndex,
+
+    pub module_info_max_icons_per_row: Option<u8>,
+    pub module_info_max_icon_rows: Option<u8>,
+    pub module_info_icon_shift: Option<Vector>,
+    pub module_info_separation_multiplier: Option<f32>,
+    pub module_info_multi_row_initial_height_modifier: Option<f32>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum EffectType {
+    Speed,
+    Productivity,
+    Consumption,
+    Pollution,
+}
+
+/// [`Types/EffectTypeLimitation`](https://lua-api.factorio.com/latest/types/EffectTypeLimitation.html)
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum EffectTypeLimitation {
+    Single(EffectType),
+    Multiple(EmptyArrayFix<EffectType>),
+}
+
+/// [`Types/CollisionMask`](https://lua-api.factorio.com/latest/types/CollisionMask.html)
+pub type CollisionMask = EmptyArrayFix<String>;
+
+/// [`Types/EntityID`](https://lua-api.factorio.com/latest/types/EntityID.html)
+pub type EntityID = String;
+
+/// Union used in [`Types/EntityPrototypeFlags`](https://lua-api.factorio.com/latest/types/EntityPrototypeFlags.html)
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum EntityPrototypeFlag {
+    NotRotatable,
+    PlaceableNeutral,
+    PlaceablePlayer,
+    PlaceableEnemy,
+    PlaceableOffGrid,
+    PlayerCreation,
+    #[serde(rename = "building-direction-8-way")]
+    BuildingDirection8Way,
+    FilterDirections,
+    FastReplaceableNoBuildWhileMoving,
+    BreathsAir,
+    NotRepairable,
+    NotOnMap,
+    NotDeconstructable,
+    NotBlueprintable,
+    Hidden,
+    HideAltInfo,
+    FastReplaceNoCrossTypeWhileMoving,
+    NoGapFillWhileBuilding,
+    NotFlammable,
+    NoAutomatedItemRemoval,
+    NoAutomatedItemInsertion,
+    NoCopyPaste,
+    NotSelectableInGame,
+    NotUpgradable,
+    NotInKillStatistics,
+    NotInMadeIn,
+}
+
+/// <https://forums.factorio.com/viewtopic.php?t=109077>
+#[allow(clippy::zero_sized_map_values)]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum EmptyArrayFix<T> {
+    Flags(Vec<T>),
+    Empty(HashMap<(), ()>),
+}
+
+/// [`Types/EntityPrototypeFlags`](https://lua-api.factorio.com/latest/types/EntityPrototypeFlags.html)
+// pub type EntityPrototypeFlags = Vec<EntityPrototypeFlag>;
+
+/// [`Types/EntityPrototypeFlags`](https://lua-api.factorio.com/latest/types/EntityPrototypeFlags.html)
+pub type EntityPrototypeFlags = EmptyArrayFix<EntityPrototypeFlag>;
+
+/// [`Types/MapPosition`](https://lua-api.factorio.com/latest/types/MapPosition.html)
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum MapPosition {
+    XY { x: f64, y: f64 },
+    Tuple(f64, f64),
+}
+
+/// [`Types/BoundingBox`](https://lua-api.factorio.com/latest/types/BoundingBox.html)
+pub type BoundingBox = (MapPosition, MapPosition);
+
+/// [`Types/Direction`](https://lua-api.factorio.com/latest/types/Direction.html)
+#[derive(Debug, Serialize_repr, Deserialize_repr)]
+#[repr(u8)]
+pub enum Direction {
+    North = 0,
+    NorthEast = 1,
+    East = 2,
+    SouthEast = 3,
+    South = 4,
+    SouthWest = 5,
+    West = 6,
+    NorthWest = 7,
+}
+
+/// [`Types/DamageTypeID`](https://lua-api.factorio.com/latest/types/DamageTypeID.html)
+pub type DamageTypeID = String;
+
+/// Single element of [`Types/Resistances`](https://lua-api.factorio.com/latest/types/Resistances.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Resistance {
+    #[serde(rename = "type")]
+    pub type_: DamageTypeID,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    pub decrease: f64,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    pub percent: f64,
+}
+
+/// [`Types/Resistances`](https://lua-api.factorio.com/latest/types/Resistances.html)
+pub type Resistances = EmptyArrayFix<Resistance>;
+
 /// [`Types/RadiusVisualisationSpecification`](https://lua-api.factorio.com/latest/types/RadiusVisualisationSpecification.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RadiusVisualisationSpecification {
     pub sprite: Option<Sprite>,
 
-    #[serde(default, skip_serializing_if = "helper::is_zero_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
     pub distance: f64,
 
     pub offset: Option<Vector>,
 
-    #[serde(default = "helper::true_bool", skip_serializing_if = "Clone::clone")]
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub draw_in_cursor: bool,
 
-    #[serde(default = "helper::true_bool", skip_serializing_if = "Clone::clone")]
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub draw_on_selection: bool,
 }
 
@@ -101,20 +462,20 @@ pub enum LightDefinitionType {
 /// [`Types/LightDefinition`](https://lua-api.factorio.com/latest/types/LightDefinition.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct LightDefinition {
+pub struct LightDefinitionData {
     // TODO: skip serializing if is default
     #[serde(default, rename = "type")]
     pub type_: LightDefinitionType,
 
     pub picture: Option<Sprite>,
 
-    #[serde(default, skip_serializing_if = "helper::is_zero_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
     pub rotation_shift: RealOrientation,
 
     pub intensity: f64,
     pub size: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_zero_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
     pub source_orientation_offset: RealOrientation,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -123,8 +484,16 @@ pub struct LightDefinition {
     pub shift: Option<Vector>,
     pub color: Option<Color>,
 
-    #[serde(default, skip_serializing_if = "helper::is_zero_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
     pub minimum_darkness: f64,
+}
+
+/// [`Types/LightDefinition`](https://lua-api.factorio.com/latest/types/LightDefinition.html)
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum LightDefinition {
+    Struct(LightDefinitionData),
+    Array(Vec<LightDefinitionData>),
 }
 
 /// [`Types/CircuitConnectorSprites`](https://lua-api.factorio.com/latest/types/CircuitConnectorSprites.html)
@@ -174,6 +543,120 @@ pub struct BeamAnimationSet {
     pub body: Option<AnimationVariations>,
 }
 
+/// [`Types/ModuleTint`](https://lua-api.factorio.com/latest/types/ModuleTint.html)
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ModuleTint {
+    #[default]
+    None,
+    Primary,
+    Secondary,
+    Tertiary,
+    Quaternary,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ModuleTintMode {
+    #[default]
+    SingleModule,
+    Mix,
+}
+
+/// [`Types/BeaconModuleVisualization`](https://lua-api.factorio.com/latest/types/BeaconModuleVisualization.html)
+#[skip_serializing_none]
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub struct BeaconModuleVisualization {
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub has_empty_slot: bool,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub draw_as_light: bool,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub draw_as_sprite: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_i8")]
+    pub secondary_draw_order: i8,
+
+    // TODO: skip serializing if is default
+    #[serde(default)]
+    pub apply_module_tint: ModuleTint,
+
+    pub render_layer: Option<RenderLayer>,
+    pub pictures: Option<SpriteVariations>,
+}
+
+/// [`Types/BeaconModuleVisualizations`](https://lua-api.factorio.com/latest/types/BeaconModuleVisualizations.html)
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub struct BeaconModuleVisualizations {
+    pub art_style: String,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub use_for_empty_slots: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_i32")]
+    pub tier_offset: i32,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub slots: Vec<Vec<BeaconModuleVisualization>>,
+}
+
+/// [`Types/BeaconGraphicsSet`](https://lua-api.factorio.com/latest/types/BeaconGraphicsSet.html)
+#[skip_serializing_none]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct BeaconGraphicsSet {
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub draw_animation_when_idle: bool,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub draw_light_when_idle: bool,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub random_animation_offset: bool,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub module_icons_suppressed: bool,
+
+    pub base_layer: Option<RenderLayer>,
+    pub animation_layer: Option<RenderLayer>,
+    pub top_layer: Option<RenderLayer>,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub animation_progress: f64,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    pub min_animation_progress: f64,
+
+    #[serde(
+        default = "helper::f64_1000",
+        skip_serializing_if = "helper::is_1000_f64"
+    )]
+    pub max_animation_progress: f64,
+
+    // TODO: skip serializing if is default
+    #[serde(default)]
+    pub apply_module_tint: ModuleTint,
+
+    // TODO: skip serializing if is default
+    #[serde(default)]
+    pub apply_module_tint_to_light: ModuleTint,
+
+    pub no_modules_tint: Option<Color>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub animation_list: Vec<AnimationElement>,
+
+    pub light: Option<LightDefinition>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub module_visualisations: Vec<BeaconModuleVisualizations>,
+
+    /// TODO: skip serializing if is default
+    #[serde(default)]
+    pub module_tint_mode: ModuleTintMode,
+}
+
 /// [`Types/PumpConnectorGraphicsAnimation`](https://lua-api.factorio.com/latest/types/PumpConnectorGraphicsAnimation.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
@@ -216,7 +699,7 @@ pub struct CharacterArmorAnimation {
 pub struct TransportBeltAnimationSet {
     pub animation_set: RotatedAnimation,
 
-    #[serde(default = "helper::one_u8", skip_serializing_if = "helper::is_one_u8")]
+    #[serde(default = "helper::u8_1", skip_serializing_if = "helper::is_1_u8")]
     pub east_index: u8,
     #[serde(default = "helper::u8_2", skip_serializing_if = "helper::is_2_u8")]
     pub west_index: u8,
@@ -272,228 +755,401 @@ pub struct TransportBeltAnimationSetWithCorners {
     pub animation_set: TransportBeltAnimationSet,
 }
 
-mod helper {
-    pub const fn true_bool() -> bool {
-        true
+/// [`Types/TransportBeltConnectorFrame`](https://lua-api.factorio.com/latest/types/TransportBeltConnectorFrame.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TransportBeltConnectorFrame {
+    pub frame_main: AnimationVariations,
+    pub frame_shadow: AnimationVariations,
+    pub frame_main_scanner: Animation,
+    pub frame_main_scanner_movement_speed: f64, // docs specify single precision float
+    pub frame_main_scanner_horizontal_start_shift: Vector,
+    pub frame_main_scanner_horizontal_end_shift: Vector,
+    pub frame_main_scanner_horizontal_y_scale: f64, // docs specify single precision float
+    pub frame_main_scanner_horizontal_rotation: RealOrientation,
+    pub frame_main_scanner_vertical_start_shift: Vector,
+    pub frame_main_scanner_vertical_end_shift: Vector,
+    pub frame_main_scanner_vertical_rotation: RealOrientation,
+    pub frame_main_scanner_cross_horizontal_start_shift: Vector,
+    pub frame_main_scanner_cross_horizontal_end_shift: Vector,
+    pub frame_main_scanner_cross_horizontal_y_scale: f64, // docs specify single precision float
+    pub frame_main_scanner_cross_horizontal_rotation: RealOrientation,
+    pub frame_main_scanner_cross_vertical_start_shift: Vector,
+    pub frame_main_scanner_cross_vertical_end_shift: Vector,
+    pub frame_main_scanner_cross_vertical_y_scale: f64, // docs specify single precision float
+    pub frame_main_scanner_cross_vertical_rotation: RealOrientation,
+    pub frame_main_scanner_nw_ne: Animation,
+    pub frame_main_scanner_sw_se: Animation,
+    pub frame_back_patch: Option<SpriteVariations>,
+    pub frame_front_patch: Option<SpriteVariations>,
+}
+
+/// [`Types/WorkingVisualisation`](https://lua-api.factorio.com/latest/types/WorkingVisualisation.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WorkingVisualisation {
+    // TODO: get the default for this
+    pub render_layer: Option<RenderLayer>,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub fadeout: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub synced_fadeout: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub constant_speed: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub always_draw: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub animated_shift: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub align_to_waypoint: bool,
+
+    pub secondary_draw_order: Option<i8>,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub draw_as_sprite: bool,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub draw_as_light: bool,
+    pub light: Option<LightDefinition>,
+    pub effect: Option<WorkingVisualisationEffect>,
+    pub apply_recipe_tint: Option<WorkingVisualisationRecipeTint>,
+    pub apply_tint: Option<WorkingVisualisationTint>,
+
+    #[serde(flatten)]
+    pub animation: Option<WorkingVisualisationAnimation>,
+
+    pub north_position: Option<Vector>,
+    pub west_position: Option<Vector>,
+    pub south_position: Option<Vector>,
+    pub east_position: Option<Vector>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum WorkingVisualisationEffect {
+    None,
+    Flicker,
+    UraniumGlow,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum WorkingVisualisationRecipeTint {
+    None,
+    Primary,
+    Secondary,
+    Tertiary,
+    Quaternary,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum WorkingVisualisationTint {
+    None,
+    Status,
+    ResourceColor,
+    InputFluidBaseColor,
+    InputFluidFlowColor,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum WorkingVisualisationAnimation {
+    Single {
+        animation: Animation,
+    },
+    Cardinal {
+        north_animation: Animation,
+        east_animation: Animation,
+        south_animation: Animation,
+        west_animation: Animation,
+    },
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum GuiMode {
+    All,
+    None,
+    Admins,
+}
+
+impl GuiMode {
+    pub const fn all() -> Self {
+        Self::All
     }
 
-    pub const fn half_f64() -> f64 {
-        0.5
+    pub const fn none() -> Self {
+        Self::None
     }
 
-    pub const fn one_f64() -> f64 {
-        1.0
+    pub const fn admins() -> Self {
+        Self::Admins
     }
 
-    pub const fn one_u8() -> u8 {
-        1
+    pub const fn is_all(value: &Self) -> bool {
+        matches!(value, Self::All)
     }
 
-    pub const fn u8_2() -> u8 {
-        2
+    pub const fn is_none(value: &Self) -> bool {
+        matches!(value, Self::None)
     }
 
-    pub const fn u8_3() -> u8 {
-        3
+    pub const fn is_admins(value: &Self) -> bool {
+        matches!(value, Self::Admins)
+    }
+}
+
+/// [`Types/HeatConnection`](https://lua-api.factorio.com/latest/types/HeatConnection.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HeatConnection {
+    pub position: MapPosition,
+    pub direction: Direction,
+}
+
+/// [`Types/HeatBuffer`](https://lua-api.factorio.com/latest/types/HeatBuffer.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HeatBuffer {
+    pub max_temperature: f64,
+    pub specific_heat: Energy,
+    pub max_transfer: Energy,
+
+    #[serde(default = "helper::f64_15", skip_serializing_if = "helper::is_15_f64")]
+    pub default_temperature: f64,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub min_temperature_gradient: f64,
+
+    #[serde(default = "helper::f64_15", skip_serializing_if = "helper::is_15_f64")]
+    pub min_working_temperature: f64,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub minimum_glow_temperature: f64,
+
+    pub pipe_covers: Option<Sprite4Way>,
+    pub heat_pipe_covers: Option<Sprite4Way>,
+    pub heat_picture: Option<Sprite4Way>,
+    pub heat_glow: Option<Sprite4Way>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub connections: Vec<HeatConnection>,
+}
+
+/// [`Types/ConnectableEntityGraphics`](https://lua-api.factorio.com/latest/types/ConnectableEntityGraphics.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ConnectableEntityGraphics {
+    pub single: SpriteVariations,
+    pub straight_vertical: SpriteVariations,
+    pub straight_horizontal: SpriteVariations,
+
+    pub corner_left_up: SpriteVariations,
+    pub corner_right_up: SpriteVariations,
+    pub corner_left_down: SpriteVariations,
+    pub corner_right_down: SpriteVariations,
+
+    pub t_up: SpriteVariations,
+    pub t_down: SpriteVariations,
+    pub t_left: SpriteVariations,
+    pub t_right: SpriteVariations,
+
+    pub ending_up: SpriteVariations,
+    pub ending_down: SpriteVariations,
+    pub ending_left: SpriteVariations,
+    pub ending_right: SpriteVariations,
+}
+
+/// [`Types/ForceCondition`](https://lua-api.factorio.com/latest/types/ForceCondition.html)
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ForceCondition {
+    All,
+    Ally,
+    Same,
+    Enemy,
+    Friend,
+    NotSame,
+    NotFriend,
+}
+
+impl ForceCondition {
+    pub const fn all() -> Self {
+        Self::All
     }
 
-    pub const fn u8_4() -> u8 {
-        4
+    pub const fn ally() -> Self {
+        Self::Ally
     }
 
-    pub const fn u8_5() -> u8 {
-        5
+    pub const fn same() -> Self {
+        Self::Same
     }
 
-    pub const fn u8_6() -> u8 {
-        6
+    pub const fn enemy() -> Self {
+        Self::Enemy
     }
 
-    pub const fn u8_7() -> u8 {
-        7
+    pub const fn friend() -> Self {
+        Self::Friend
     }
 
-    pub const fn u8_8() -> u8 {
-        8
+    pub const fn not_same() -> Self {
+        Self::NotSame
     }
 
-    pub const fn u8_9() -> u8 {
-        9
+    pub const fn not_friend() -> Self {
+        Self::NotFriend
     }
 
-    pub const fn u8_10() -> u8 {
-        10
+    pub const fn is_all(value: &Self) -> bool {
+        matches!(value, Self::All)
     }
 
-    pub const fn u8_11() -> u8 {
-        11
+    pub const fn is_ally(value: &Self) -> bool {
+        matches!(value, Self::Ally)
     }
 
-    pub const fn u8_12() -> u8 {
-        12
+    pub const fn is_same(value: &Self) -> bool {
+        matches!(value, Self::Same)
     }
 
-    pub const fn u8_13() -> u8 {
-        13
+    pub const fn is_enemy(value: &Self) -> bool {
+        matches!(value, Self::Enemy)
     }
 
-    pub const fn u8_14() -> u8 {
-        14
+    pub const fn is_friend(value: &Self) -> bool {
+        matches!(value, Self::Friend)
     }
 
-    pub const fn u8_15() -> u8 {
-        15
+    pub const fn is_not_same(value: &Self) -> bool {
+        matches!(value, Self::NotSame)
     }
 
-    pub const fn u8_16() -> u8 {
-        16
+    pub const fn is_not_friend(value: &Self) -> bool {
+        matches!(value, Self::NotFriend)
     }
+}
 
-    pub const fn u8_17() -> u8 {
-        17
-    }
+/// [`Types/MiningDrillGraphicsSet`](https://lua-api.factorio.com/latest/types/MiningDrillGraphicsSet.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MiningDrillGraphicsSet {
+    pub animation: Option<Animation4Way>,
+    pub idle_animation: Option<Animation4Way>,
 
-    pub const fn u8_18() -> u8 {
-        18
-    }
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub always_draw_idle_animation: bool,
 
-    pub const fn u8_19() -> u8 {
-        19
-    }
+    pub default_recipe_tint: Option<Color>,
 
-    pub const fn u8_20() -> u8 {
-        20
-    }
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub working_visualisations: Vec<WorkingVisualisation>,
 
-    pub const fn one_u32() -> u32 {
-        1
-    }
+    pub shift_animation_waypoints: Option<ShiftAnimationWaypoints>,
 
-    pub const fn four_u32() -> u32 {
-        4
-    }
+    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    pub shift_animation_waypoint_stop_duration: f64,
 
-    pub const fn eight_u32() -> u32 {
-        8
-    }
+    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    pub shift_animation_transition_duration: u16,
 
-    pub const fn max_f64() -> f64 {
-        f64::MAX
-    }
+    pub status_colors: Option<StatusColors>,
 
-    pub fn is_zero_f64(value: &f64) -> bool {
-        *value == 0.0
-    }
+    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    pub drilling_vertical_movement_duration: u16,
 
-    pub fn is_half_f64(value: &f64) -> bool {
-        *value == 0.5
-    }
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub animation_progress: f64, // specified as single precision in docs
 
-    pub fn is_one_f64(value: &f64) -> bool {
-        *value == 1.0
-    }
+    #[serde(
+        default = "helper::f64_1000",
+        skip_serializing_if = "helper::is_1000_f64"
+    )]
+    pub max_animation_progress: f64, // specified as single precision in docs
 
-    pub fn is_max_f64(value: &f64) -> bool {
-        *value == f64::MAX
-    }
+    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    pub min_animation_progress: f64, // specified as single precision in docs
 
-    pub const fn is_zero_i16(value: &i16) -> bool {
-        *value == 0
-    }
+    pub circuit_connector_layer: CircuitConnectorLayer,
+    pub circuit_connector_secondary_draw_order: CircuitConnectorSecondaryDrawOrder,
+}
 
-    pub const fn is_zero_u8(value: &u8) -> bool {
-        *value == 0
-    }
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum CircuitConnectorLayer {
+    Single(Option<RenderLayer>),
+    Directional {
+        // TODO: defaults
+        north: Option<RenderLayer>,
+        east: Option<RenderLayer>,
+        south: Option<RenderLayer>,
+        west: Option<RenderLayer>,
+    },
+}
 
-    pub const fn is_one_u8(value: &u8) -> bool {
-        *value == 1
-    }
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum CircuitConnectorSecondaryDrawOrder {
+    Single(#[serde(default = "helper::i8_100", skip_serializing_if = "helper::is_100_i8")] i8),
+    Directional {
+        #[serde(default = "helper::i8_100", skip_serializing_if = "helper::is_100_i8")]
+        north: i8,
 
-    pub const fn is_2_u8(value: &u8) -> bool {
-        *value == 2
-    }
+        #[serde(default = "helper::i8_100", skip_serializing_if = "helper::is_100_i8")]
+        east: i8,
 
-    pub const fn is_3_u8(value: &u8) -> bool {
-        *value == 3
-    }
+        #[serde(default = "helper::i8_100", skip_serializing_if = "helper::is_100_i8")]
+        south: i8,
 
-    pub const fn is_4_u8(value: &u8) -> bool {
-        *value == 4
-    }
+        #[serde(default = "helper::i8_100", skip_serializing_if = "helper::is_100_i8")]
+        west: i8,
+    },
+}
 
-    pub const fn is_5_u8(value: &u8) -> bool {
-        *value == 5
-    }
+/// [`Types/RailPictureSet`](https://lua-api.factorio.com/latest/types/RailPictureSet.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RailPictureSet {
+    pub straight_rail_horizontal: RailPieceLayers,
+    pub straight_rail_vertical: RailPieceLayers,
+    pub straight_rail_diagonal_left_top: RailPieceLayers,
+    pub straight_rail_diagonal_right_top: RailPieceLayers,
+    pub straight_rail_diagonal_right_bottom: RailPieceLayers,
+    pub straight_rail_diagonal_left_bottom: RailPieceLayers,
+    pub curved_rail_vertical_left_top: RailPieceLayers,
+    pub curved_rail_vertical_right_top: RailPieceLayers,
+    pub curved_rail_vertical_right_bottom: RailPieceLayers,
+    pub curved_rail_vertical_left_bottom: RailPieceLayers,
+    pub curved_rail_horizontal_left_top: RailPieceLayers,
+    pub curved_rail_horizontal_right_top: RailPieceLayers,
+    pub curved_rail_horizontal_right_bottom: RailPieceLayers,
+    pub curved_rail_horizontal_left_bottom: RailPieceLayers,
+    pub rail_endings: Sprite8Way,
+}
 
-    pub const fn is_6_u8(value: &u8) -> bool {
-        *value == 6
-    }
+/// [`Types/RailPieceLayers`](https://lua-api.factorio.com/latest/types/RailPieceLayers.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RailPieceLayers {
+    pub metals: SpriteVariations,
+    pub backplates: SpriteVariations,
+    pub ties: SpriteVariations,
+    pub stone_path: SpriteVariations,
 
-    pub const fn is_7_u8(value: &u8) -> bool {
-        *value == 7
-    }
+    pub stone_path_background: Option<SpriteVariations>,
+    pub segment_visualisation_middle: Option<SpriteVariations>,
+    pub segment_visualisation_ending_front: Option<SpriteVariations>,
+    pub segment_visualisation_ending_back: Option<SpriteVariations>,
+    pub segment_visualisation_continuing_front: Option<SpriteVariations>,
+    pub segment_visualisation_continuing_back: Option<SpriteVariations>,
+}
 
-    pub const fn is_8_u8(value: &u8) -> bool {
-        *value == 8
-    }
-
-    pub const fn is_9_u8(value: &u8) -> bool {
-        *value == 9
-    }
-
-    pub const fn is_10_u8(value: &u8) -> bool {
-        *value == 10
-    }
-
-    pub const fn is_11_u8(value: &u8) -> bool {
-        *value == 11
-    }
-
-    pub const fn is_12_u8(value: &u8) -> bool {
-        *value == 12
-    }
-
-    pub const fn is_13_u8(value: &u8) -> bool {
-        *value == 13
-    }
-
-    pub const fn is_14_u8(value: &u8) -> bool {
-        *value == 14
-    }
-
-    pub const fn is_15_u8(value: &u8) -> bool {
-        *value == 15
-    }
-
-    pub const fn is_16_u8(value: &u8) -> bool {
-        *value == 16
-    }
-
-    pub const fn is_17_u8(value: &u8) -> bool {
-        *value == 17
-    }
-
-    pub const fn is_18_u8(value: &u8) -> bool {
-        *value == 18
-    }
-
-    pub const fn is_19_u8(value: &u8) -> bool {
-        *value == 19
-    }
-
-    pub const fn is_20_u8(value: &u8) -> bool {
-        *value == 20
-    }
-
-    pub const fn is_zero_u32(value: &u32) -> bool {
-        *value == 0
-    }
-
-    pub const fn is_one_u32(value: &u32) -> bool {
-        *value == 1
-    }
-
-    pub const fn is_zero_u64(value: &u64) -> bool {
-        *value == 0
-    }
+/// [`Types/TrainStopLight`](https://lua-api.factorio.com/latest/types/TrainStopLight.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TrainStopLight {
+    pub picture: Sprite4Way,
+    pub red_picture: Sprite4Way,
+    pub light: LightDefinition,
 }
