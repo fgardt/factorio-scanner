@@ -1,15 +1,20 @@
+#![allow(clippy::struct_excessive_bools, clippy::module_name_repetitions)]
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
+use super::helper;
 #[allow(clippy::wildcard_imports)]
-use super::types::*;
+use super::types::{Animation, BoxSpecification, LocalisedString, Order, Sprite};
+
+mod entity;
+pub use entity::*;
 
 /// [`Prototypes/PrototypeBase`](https://lua-api.factorio.com/latest/PrototypeBase.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Base {
+pub struct BasePrototype<T> {
     /// type can effectively be ignored, as it should be enforced by the struct/enum types itself
     #[serde(rename = "type")]
     pub type_: String,
@@ -21,6 +26,9 @@ pub struct Base {
 
     pub localised_name: Option<LocalisedString>,
     pub localised_description: Option<LocalisedString>,
+
+    #[serde(flatten)]
+    pub child: T,
 }
 
 /// [`Prototypes/UtilitySprites/CursorBoxSpecification`](https://lua-api.factorio.com/latest/prototypes/UtilitySprites.html#cursor_box)
@@ -39,10 +47,7 @@ pub struct CursorBoxSpecification {
 /// [`Prototypes/UtilitySprites`](https://lua-api.factorio.com/latest/prototypes/UtilitySprites.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct UtilitySprites {
-    #[serde(flatten)]
-    pub base: Base,
-
+pub struct UtilitySpritesData {
     pub cursor_box: CursorBoxSpecification,
     pub clouds: Animation,
     pub arrow_button: Animation,
@@ -591,10 +596,104 @@ pub struct UtilitySprites {
     */
 }
 
+pub type UtilitySprites = BasePrototype<UtilitySpritesData>;
+
 pub type PrototypeMap<T> = HashMap<String, T>;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct DataRaw {
+    pub accumulator: PrototypeMap<AccumulatorPrototype>,
+    pub artillery_turret: PrototypeMap<ArtilleryTurretPrototype>,
+    pub beacon: PrototypeMap<BeaconPrototype>,
+    pub boiler: PrototypeMap<BoilerPrototype>,
+    pub burner_generator: PrototypeMap<BurnerGeneratorPrototype>,
+
+    pub arithmetic_combinator: PrototypeMap<ArithmeticCombinatorPrototype>,
+    pub decider_combinator: PrototypeMap<DeciderCombinatorPrototype>,
+    pub constant_combinator: PrototypeMap<ConstantCombinatorPrototype>,
+    pub programmable_speaker: PrototypeMap<ProgrammableSpeakerPrototype>,
+
+    pub container: PrototypeMap<ContainerPrototype>,
+    pub logistic_container: PrototypeMap<LogisticContainerPrototype>,
+    pub infinity_container: PrototypeMap<InfinityContainerPrototype>,
+    pub linked_container: PrototypeMap<LinkedContainerPrototype>,
+
+    pub assembling_machine: PrototypeMap<AssemblingMachinePrototype>,
+    pub rocket_silo: PrototypeMap<RocketSiloPrototype>,
+    pub furnace: PrototypeMap<FurnacePrototype>,
+
+    pub electric_energy_interface: PrototypeMap<ElectricEnergyInterfacePrototype>,
+    pub electric_pole: PrototypeMap<ElectricPolePrototype>,
+    pub power_switch: PrototypeMap<PowerSwitchPrototype>,
+
+    pub combat_robot: PrototypeMap<CombatRobotPrototype>,
+    pub construction_robot: PrototypeMap<ConstructionRobotPrototype>,
+    pub logistic_robot: PrototypeMap<LogisticRobotPrototype>,
+    pub roboport: PrototypeMap<RoboportPrototype>,
+
+    pub gate: PrototypeMap<GatePrototype>,
+    pub wall: PrototypeMap<WallPrototype>,
+
+    pub generator: PrototypeMap<GeneratorPrototype>,
+
+    pub reactor: PrototypeMap<ReactorPrototype>,
+    pub heat_interface: PrototypeMap<HeatInterfacePrototype>,
+    pub heat_pipe: PrototypeMap<HeatPipePrototype>,
+
+    pub inserter: PrototypeMap<InserterPrototype>,
+
+    pub lab: PrototypeMap<LabPrototype>,
+
+    pub lamp: PrototypeMap<LampPrototype>,
+
+    pub land_mine: PrototypeMap<LandMinePrototype>,
+
+    pub mining_drill: PrototypeMap<MiningDrillPrototype>,
+    pub offshore_pump: PrototypeMap<OffshorePumpPrototype>,
+
+    pub pipe: PrototypeMap<PipePrototype>,
+    pub infinity_pipe: PrototypeMap<InfinityPipePrototype>,
+    pub pipe_to_ground: PrototypeMap<PipeToGroundPrototype>,
+    pub pump: PrototypeMap<PumpPrototype>,
+
+    pub simple_entity_with_owner: PrototypeMap<SimpleEntityWithOwnerPrototype>,
+    pub simple_entity_with_force: PrototypeMap<SimpleEntityWithForcePrototype>,
+
+    pub solar_panel: PrototypeMap<SolarPanelPrototype>,
+
+    pub storage_tank: PrototypeMap<StorageTankPrototype>,
+
+    pub linked_belt: PrototypeMap<LinkedBeltPrototype>,
+    pub loader_1x1: PrototypeMap<Loader1x1Prototype>,
+    pub loader: PrototypeMap<Loader1x2Prototype>,
+    pub splitter: PrototypeMap<SplitterPrototype>,
+    pub transport_belt: PrototypeMap<TransportBeltPrototype>,
+    pub underground_belt: PrototypeMap<UndergroundBeltPrototype>,
+
+    pub radar: PrototypeMap<RadarPrototype>,
+    pub turret: PrototypeMap<TurretPrototype>,
+    pub ammo_turret: PrototypeMap<AmmoTurretPrototype>,
+    pub electric_turret: PrototypeMap<ElectricTurretPrototype>,
+    pub fluid_turret: PrototypeMap<FluidTurretPrototype>,
+
+    pub car: PrototypeMap<CarPrototype>,
+
+    pub curved_rail: PrototypeMap<CurvedRailPrototype>,
+    pub straight_rail: PrototypeMap<StraightRailPrototype>,
+    pub rail_signal: PrototypeMap<RailSignalPrototype>,
+    pub rail_chain_signal: PrototypeMap<RailChainSignalPrototype>,
+    pub train_stop: PrototypeMap<TrainStopPrototype>,
+    pub locomotive: PrototypeMap<LocomotivePrototype>,
+    pub cargo_wagon: PrototypeMap<CargoWagonPrototype>,
+    pub fluid_wagon: PrototypeMap<FluidWagonPrototype>,
+    pub artillery_wagon: PrototypeMap<ArtilleryWagonPrototype>,
+
     pub utility_sprites: PrototypeMap<UtilitySprites>,
+    // not implemented
+    // pub character: PrototypeMap<CharacterPrototype>,
+    // pub unit_spawner: PrototypeMap<EnemySpawnerPrototype>,
+    // pub player_port: PrototypeMap<PlayerPortPrototype>,
+    // pub unit: PrototypeMap<UnitPrototype>,
+    // pub spider_vehicle: PrototypeMap<SpiderVehiclePrototype>,
 }

@@ -172,10 +172,7 @@ pub struct SpriteParams {
     #[serde(default)]
     pub shift: Vector,
 
-    #[serde(
-        default = "helper::one_f64",
-        skip_serializing_if = "helper::is_one_f64"
-    )]
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub scale: f64,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -187,7 +184,7 @@ pub struct SpriteParams {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub draw_as_light: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_zero_u8")]
+    #[serde(default, skip_serializing_if = "helper::is_0_u8")]
     pub mipmap_count: u8,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -203,7 +200,7 @@ pub struct SpriteParams {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub load_in_minimal_mode: bool,
 
-    #[serde(default = "helper::true_bool", skip_serializing_if = "Clone::clone")]
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub premul_alpha: bool,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -211,7 +208,6 @@ pub struct SpriteParams {
 }
 
 #[skip_serializing_none]
-#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum SimpleGraphics<T> {
@@ -222,15 +218,14 @@ pub enum SimpleGraphics<T> {
         data: T,
 
         #[serde(skip_serializing_if = "Option::is_none")]
-        hr_version: Option<Box<SimpleGraphics<T>>>,
+        hr_version: Option<Box<Self>>,
     },
     Layered {
-        layers: Vec<SimpleGraphics<T>>,
+        layers: Vec<Self>,
     },
 }
 
 #[skip_serializing_none]
-#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum MultiFileGraphics<Single, Multi> {
@@ -241,7 +236,7 @@ pub enum MultiFileGraphics<Single, Multi> {
         data: Single,
 
         #[serde(skip_serializing_if = "Option::is_none")]
-        hr_version: Option<Box<MultiFileGraphics<Single, Multi>>>,
+        hr_version: Option<Box<Self>>,
     },
     MultiFile {
         filenames: Vec<FileName>,
@@ -250,10 +245,10 @@ pub enum MultiFileGraphics<Single, Multi> {
         data: Multi,
 
         #[serde(skip_serializing_if = "Option::is_none")]
-        hr_version: Option<Box<MultiFileGraphics<Single, Multi>>>,
+        hr_version: Option<Box<Self>>,
     },
     Layered {
-        layers: Vec<MultiFileGraphics<Single, Multi>>,
+        layers: Vec<Self>,
     },
 }
 
@@ -267,7 +262,7 @@ pub struct RotatedSpriteParams {
 
     direction_count: u16,
 
-    #[serde(default, skip_serializing_if = "helper::is_zero_u64")]
+    #[serde(default, skip_serializing_if = "helper::is_0_u64")]
     lines_per_file: u64,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -276,13 +271,13 @@ pub struct RotatedSpriteParams {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     back_equals_front: bool,
 
-    #[serde(default = "helper::true_bool", skip_serializing_if = "Clone::clone")]
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     apply_projection: bool,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     counterclockwise: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_zero_u32")]
+    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
     line_length: u32,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -304,13 +299,13 @@ pub struct RotatedSpriteParamsMultiFile {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     back_equals_front: bool,
 
-    #[serde(default = "helper::true_bool", skip_serializing_if = "Clone::clone")]
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     apply_projection: bool,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     counterclockwise: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_zero_u32")]
+    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
     line_length: u32,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -324,38 +319,35 @@ pub type RotatedSprite = MultiFileGraphics<RotatedSpriteParams, RotatedSpritePar
 /// variant for `Sprite4Way`
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Sprite4WaySheet {
+    #[serde(flatten)]
     pub sprite_params: SpriteParams,
 
-    #[serde(
-        default = "helper::four_u32",
-        skip_serializing_if = "helper::is_zero_u32"
-    )]
+    #[serde(default = "helper::u32_4", skip_serializing_if = "helper::is_0_u32")]
     pub frames: u32,
 
-    pub hr_version: Option<Box<Sprite4WaySheet>>,
+    pub hr_version: Option<Box<Self>>,
 }
 
 /// [`Types/SpriteNWaySheet`](https://lua-api.factorio.com/latest/types/SpriteNWaySheet.html)
 /// variant for `Sprite8Way`
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Sprite8WaySheet {
+    #[serde(flatten)]
     pub sprite_params: SpriteParams,
 
-    #[serde(
-        default = "helper::eight_u32",
-        skip_serializing_if = "helper::is_zero_u32"
-    )]
+    #[serde(default = "helper::u32_8", skip_serializing_if = "helper::is_0_u32")]
     pub frames: u32,
 
-    pub hr_version: Option<Box<Sprite4WaySheet>>,
+    pub hr_version: Option<Box<Self>>,
 }
 
 /// [`Types/Sprite4Way`](https://lua-api.factorio.com/latest/types/Sprite4Way.html)
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum Sprite4Way {
     Sprite(Sprite),
     Sheets {
-        sheets: Sprite4WaySheet,
+        sheets: Vec<Sprite4WaySheet>,
     },
     Sheet {
         sheet: Sprite4WaySheet,
@@ -370,9 +362,10 @@ pub enum Sprite4Way {
 
 /// [`Types/Sprite8Way`](https://lua-api.factorio.com/latest/types/Sprite8Way.html)
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum Sprite8Way {
     Sheets {
-        sheets: Sprite8WaySheet,
+        sheets: Vec<Sprite8WaySheet>,
     },
     Sheet {
         sheet: Sprite8WaySheet,
@@ -394,16 +387,10 @@ pub struct SpriteSheetParams {
     #[serde(flatten)]
     pub sprite_params: SpriteParams,
 
-    #[serde(
-        default = "helper::one_u32",
-        skip_serializing_if = "helper::is_one_u32"
-    )]
+    #[serde(default = "helper::u32_1", skip_serializing_if = "helper::is_1_u32")]
     pub variation_count: u32,
 
-    #[serde(
-        default = "helper::one_u32",
-        skip_serializing_if = "helper::is_one_u32"
-    )]
+    #[serde(default = "helper::u32_1", skip_serializing_if = "helper::is_1_u32")]
     pub repeat_count: u32,
 
     // TODO: support the default based on variation_count
@@ -416,10 +403,24 @@ pub type SpriteSheet = SimpleGraphics<SpriteSheetParams>;
 
 /// [`Types/SpriteVariations`](https://lua-api.factorio.com/latest/types/SpriteVariations.html)
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum SpriteVariations {
     Struct { sheet: SpriteSheet },
     SpriteSheet(SpriteSheet),
     Array(Vec<Sprite>),
+}
+
+/// [`Types/WaterReflectionDefinition`](https://lua-api.factorio.com/latest/types/WaterReflectionDefinition.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WaterReflectionDefinition {
+    pub pictures: Option<SpriteVariations>,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub orientation_to_variation: bool,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub rotate: bool,
 }
 
 // ======================= //
@@ -430,7 +431,7 @@ pub enum SpriteVariations {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TileGraphics<T> {
     pub data: T,
-    pub hr_version: Option<Box<TileGraphics<T>>>,
+    pub hr_version: Option<Box<Self>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -438,19 +439,16 @@ pub struct TileSpriteParams {
     pub count: u32,
     pub picture: FileName,
 
-    #[serde(
-        default = "helper::one_f64",
-        skip_serializing_if = "helper::is_one_f64"
-    )]
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub scale: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_zero_i16")]
+    #[serde(default, skip_serializing_if = "helper::is_0_i16")]
     pub x: SpriteSizeType,
 
-    #[serde(default, skip_serializing_if = "helper::is_zero_i16")]
+    #[serde(default, skip_serializing_if = "helper::is_0_i16")]
     pub y: SpriteSizeType,
 
-    #[serde(default, skip_serializing_if = "helper::is_zero_u32")]
+    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
     pub line_length: u32,
 }
 
@@ -464,10 +462,7 @@ pub struct TileSpriteProbabilityParams {
 
     pub size: u32,
 
-    #[serde(
-        default = "helper::one_f64",
-        skip_serializing_if = "helper::is_one_f64"
-    )]
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub probability: f64,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -512,10 +507,10 @@ pub struct Stripe {
     pub height_in_frames: Option<u32>, // TODO: is only optional when used in RotatedAnimation
     pub filename: FileName,
 
-    #[serde(default, skip_serializing_if = "helper::is_zero_u32")]
+    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
     pub x: u32,
 
-    #[serde(default, skip_serializing_if = "helper::is_zero_u32")]
+    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
     pub y: u32,
 }
 
@@ -529,28 +524,22 @@ pub struct AnimationParameters {
     #[serde(default)]
     pub run_mode: AnimationRunMode,
 
-    #[serde(
-        default = "helper::one_u32",
-        skip_serializing_if = "helper::is_one_u32"
-    )]
+    #[serde(default = "helper::u32_1", skip_serializing_if = "helper::is_1_u32")]
     pub frame_count: u32,
 
-    #[serde(default, skip_serializing_if = "helper::is_zero_u32")]
+    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
     pub line_length: u32,
 
-    #[serde(
-        default = "helper::one_f64",
-        skip_serializing_if = "helper::is_one_f64"
-    )]
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub animation_speed: f64,
 
     #[serde(
-        default = "helper::max_f64",
+        default = "helper::f64_max",
         skip_serializing_if = "helper::is_max_f64"
     )]
     pub max_advance: f64,
 
-    #[serde(default = "helper::one_u8", skip_serializing_if = "helper::is_one_u8")]
+    #[serde(default = "helper::u8_1", skip_serializing_if = "helper::is_1_u8")]
     pub repeat_count: u8,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -559,12 +548,11 @@ pub struct AnimationParameters {
 
 /// [`Types/Animation`](https://lua-api.factorio.com/latest/types/Animation.html)
 #[skip_serializing_none]
-#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Animation {
     Layered {
-        layers: Vec<Animation>,
+        layers: Vec<Self>,
     },
     Striped {
         stripes: Vec<Stripe>,
@@ -572,7 +560,7 @@ pub enum Animation {
         #[serde(flatten)]
         data: AnimationParameters,
 
-        hr_version: Option<Box<Animation>>,
+        hr_version: Option<Box<Self>>,
     },
     Simple {
         filename: FileName,
@@ -580,7 +568,7 @@ pub enum Animation {
         #[serde(flatten)]
         data: AnimationParameters,
 
-        hr_version: Option<Box<Animation>>,
+        hr_version: Option<Box<Self>>,
     },
 }
 
@@ -605,7 +593,7 @@ pub struct AnimationElement {
     pub render_layer: Option<RenderLayer>,
     pub secondary_draw_order: Option<i8>,
 
-    #[serde(default = "helper::true_bool", skip_serializing_if = "Clone::clone")]
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub draw_as_sprite: bool,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -614,7 +602,7 @@ pub struct AnimationElement {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub apply_tint: bool,
 
-    #[serde(default = "helper::true_bool", skip_serializing_if = "Clone::clone")]
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub always_draw: bool,
 
     pub animation: Option<Animation>,
@@ -622,6 +610,7 @@ pub struct AnimationElement {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AnimationSheetParameters {
+    #[serde(flatten)]
     pub animation_params: AnimationParameters,
     pub variation_count: u32,
 }
@@ -651,14 +640,12 @@ pub struct ShiftAnimationWaypoints {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RotatedAnimationParameters {
-    pub animation_params: AnimationParameters,
-
     pub direction_count: u32,
 
     pub lines_per_file: Option<u32>,
     pub slice: Option<u32>,
 
-    #[serde(default, skip_serializing_if = "helper::is_zero_u32")]
+    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
     pub still_frame: u32,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -668,19 +655,19 @@ pub struct RotatedAnimationParameters {
     pub counterclockwise: bool,
 
     #[serde(
-        default = "helper::half_f64",
+        default = "helper::f64_half",
         skip_serializing_if = "helper::is_half_f64"
     )]
     pub middle_orientation: f64,
 
-    #[serde(
-        default = "helper::one_f64",
-        skip_serializing_if = "helper::is_one_f64"
-    )]
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub orientation_range: f64,
 
-    #[serde(default = "helper::true_bool", skip_serializing_if = "Clone::clone")]
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub apply_projection: bool,
+
+    #[serde(flatten)]
+    pub animation_params: AnimationParameters,
 }
 
 /// [`Types/RotatedAnimation`](https://lua-api.factorio.com/latest/types/RotatedAnimation.html)
@@ -689,7 +676,7 @@ pub struct RotatedAnimationParameters {
 #[serde(untagged)]
 pub enum RotatedAnimation {
     Layered {
-        layers: Vec<RotatedAnimation>,
+        layers: Vec<Self>,
     },
     Striped {
         stripes: Vec<Stripe>,
@@ -697,7 +684,7 @@ pub enum RotatedAnimation {
         #[serde(flatten)]
         data: RotatedAnimationParameters,
 
-        hr_version: Option<Box<RotatedAnimation>>,
+        hr_version: Option<Box<Self>>,
     },
     Multi {
         filenames: Vec<FileName>,
@@ -705,7 +692,7 @@ pub enum RotatedAnimation {
         #[serde(flatten)]
         data: RotatedAnimationParameters,
 
-        hr_version: Option<Box<RotatedAnimation>>,
+        hr_version: Option<Box<Self>>,
     },
     Single {
         filename: FileName,
@@ -713,13 +700,14 @@ pub enum RotatedAnimation {
         #[serde(flatten)]
         data: RotatedAnimationParameters,
 
-        hr_version: Option<Box<RotatedAnimation>>,
+        hr_version: Option<Box<Self>>,
     },
 }
 
 /// [`Types/RotatedAnimation4Way`](https://lua-api.factorio.com/latest/types/RotatedAnimation4Way.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum RotatedAnimation4Way {
     RotatedAnimation(RotatedAnimation),
     Struct {
