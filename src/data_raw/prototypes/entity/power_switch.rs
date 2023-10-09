@@ -14,7 +14,10 @@ pub struct PowerSwitchData {
     pub overlay_loop: Animation,
     pub led_on: Sprite,
     pub led_off: Sprite,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub overlay_start_delay: u8,
+
     pub circuit_wire_connection_point: WireConnectionPoint,
     pub left_wire_connection_point: WireConnectionPoint,
     pub right_wire_connection_point: WireConnectionPoint,

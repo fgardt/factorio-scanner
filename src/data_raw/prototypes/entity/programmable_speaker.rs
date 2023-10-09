@@ -14,7 +14,10 @@ pub struct ProgrammableSpeakerData {
     pub energy_source: AnyEnergySource,
     pub energy_usage_per_tick: Energy,
     pub sprite: Sprite,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub maximum_polyphony: u32,
+
     pub instruments: Vec<ProgrammableSpeakerInstrument>,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]

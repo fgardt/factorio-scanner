@@ -14,14 +14,22 @@ pub struct RoboportData {
     pub energy_source: AnyEnergySource, // electric or void
     pub energy_usage: Energy,
     pub recharge_minimum: Energy,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub robot_slots_count: ItemStackIndex,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub material_slots_count: ItemStackIndex,
+
     pub base: Sprite,
     pub base_patch: Sprite,
     pub base_animation: Animation,
     pub door_animation_up: Animation,
     pub door_animation_down: Animation,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub request_to_open_door_timeout: u32,
+
     pub recharging_animation: Animation,
     pub spawn_and_station_height: f64, // docs specify single precision float
     pub charge_approach_distance: f64, // docs specify single precision float
@@ -59,7 +67,11 @@ pub struct RoboportData {
 
     pub recharging_light: Option<LightDefinition>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub charging_station_count: u32,
 
     // docs specify single precision float

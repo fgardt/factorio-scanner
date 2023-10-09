@@ -32,10 +32,18 @@ pub struct TurretData {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub allow_turning_when_starting_attack: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u8")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub base_picture_secondary_draw_order: u8,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u8")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub gun_animation_secondary_draw_order: u8,
 
     // TODO: defaults
@@ -128,8 +136,12 @@ pub type AmmoTurretPrototype = EntityWithOwnerPrototype<AmmoTurretData>;
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AmmoTurretData {
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub inventory_size: ItemStackIndex,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub automated_ammo_count: ItemCountType,
+
     pub entity_info_icon_shift: Option<Vector>,
 
     #[serde(flatten)]

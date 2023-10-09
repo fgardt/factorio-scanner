@@ -39,10 +39,18 @@ pub struct CraftingMachineData<T> {
     pub default_recipe_tint: Option<Color>,
     pub shift_animation_waypoints: Option<ShiftAnimationWaypoints>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u16",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub shift_animation_waypoint_stop_duration: u16,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u16",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub shift_animation_transition_duration: u16,
 
     pub status_colors: Option<StatusColors>,
@@ -91,7 +99,10 @@ pub type FurnacePrototype = CraftingMachinePrototype<FurnaceData>;
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct FurnaceData {
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub result_inventory_size: ItemStackIndex,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub source_inventory_size: ItemStackIndex,
 
     pub cant_insert_at_source_message_key: Option<String>,
@@ -111,7 +122,11 @@ pub struct AssemblingMachineData {
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub gui_title_key: String,
 
-    #[serde(default = "helper::u8_max", skip_serializing_if = "helper::is_max_u8")]
+    #[serde(
+        default = "helper::u8_max",
+        skip_serializing_if = "helper::is_max_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub ingredient_count: u8,
     // TODO: `entity_info_icon_shift` has overriden default
 }
@@ -149,23 +164,38 @@ pub struct RocketSiloData {
     pub door_front_open_offset: Vector,
     pub silo_fade_out_start_distance: f64,
     pub silo_fade_out_end_distance: f64,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub times_to_blink: u8,
     pub light_blinking_speed: f64,
     pub door_opening_speed: f64,
 
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub rocket_parts_required: u32,
 
     pub base_night_sprite: Option<Sprite>,
     pub base_light: Option<LightDefinition>,
     pub base_engine_light: Option<LightDefinition>,
 
-    #[serde(default = "helper::u8_30", skip_serializing_if = "helper::is_30_u8")]
+    #[serde(
+        default = "helper::u8_30",
+        skip_serializing_if = "helper::is_30_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub rocket_rising_delay: u8,
 
-    #[serde(default = "helper::u8_120", skip_serializing_if = "helper::is_120_u8")]
+    #[serde(
+        default = "helper::u8_120",
+        skip_serializing_if = "helper::is_120_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub launch_wait_time: u8,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u16",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub rocket_result_inventory_size: ItemStackIndex,
 
     #[serde(flatten)]

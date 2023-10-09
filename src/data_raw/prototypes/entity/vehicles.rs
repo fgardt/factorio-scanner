@@ -79,6 +79,8 @@ pub struct CarData {
 
     #[serde(flatten)]
     pub energy_source: BurnerOrVoidEnergySource,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub inventory_size: ItemStackIndex,
 
     pub turret_animation: Option<RotatedAnimation>,
@@ -108,7 +110,11 @@ pub struct CarData {
     )]
     pub turret_rotation_speed: f64,
 
-    #[serde(default = "helper::u32_60", skip_serializing_if = "helper::is_60_u32")]
+    #[serde(
+        default = "helper::u32_60",
+        skip_serializing_if = "helper::is_60_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub turret_return_timeout: u32,
 
     pub light: Option<LightDefinition>,
@@ -175,8 +181,13 @@ pub type ArtilleryWagonPrototype = RollingStockPrototype<ArtilleryWagonData>;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ArtilleryWagonData {
     pub gun: ItemID,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub inventory_size: ItemStackIndex,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub ammo_stack_limit: ItemCountType,
+
     pub turret_rotation_speed: f64,
     pub manual_range_modifier: f64,
 
@@ -186,10 +197,18 @@ pub struct ArtilleryWagonData {
     pub cannon_base_pictures: Option<RotatedSprite>,
     pub cannon_barrel_pictures: Option<RotatedSprite>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u16",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub turn_after_shooting_cooldown: u16,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u16",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub cannon_parking_frame_count: u16,
 
     // docs say single precision float
@@ -209,6 +228,7 @@ pub type CargoWagonPrototype = RollingStockPrototype<CargoWagonData>;
 /// [`Prototypes/CargoWagonPrototype`](https://lua-api.factorio.com/latest/prototypes/CargoWagonPrototype.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CargoWagonData {
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub inventory_size: ItemStackIndex,
 }
 

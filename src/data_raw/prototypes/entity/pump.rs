@@ -29,7 +29,11 @@ pub struct PumpData {
     )]
     pub fluid_wagon_connector_alignment_tolerance: f64,
 
-    #[serde(default = "helper::u8_1", skip_serializing_if = "helper::is_1_u8")]
+    #[serde(
+        default = "helper::u8_1",
+        skip_serializing_if = "helper::is_1_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub fluid_wagon_connector_frame_count: u8,
 
     pub fluid_animation: Option<Animation4Way>,

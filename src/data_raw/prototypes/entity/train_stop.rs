@@ -11,7 +11,9 @@ pub type TrainStopPrototype = EntityWithOwnerPrototype<TrainStopData>;
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TrainStopData {
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub animation_ticks_per_frame: u32,
+
     pub rail_overlay_animations: Option<Animation4Way>,
     pub animations: Option<Animation4Way>,
     pub top_animations: Option<Animation4Way>,

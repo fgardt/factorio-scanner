@@ -16,7 +16,11 @@ pub struct RadarData {
     pub energy_per_nearby_scan: Energy,
     pub energy_source: AnyEnergySource,
     pub pictures: RotatedSprite,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub max_distance_of_sector_revealed: u32,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub max_distance_of_nearby_sector_revealed: u32,
 
     pub radius_minimap_visualisation_color: Option<Color>,

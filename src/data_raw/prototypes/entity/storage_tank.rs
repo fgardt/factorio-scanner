@@ -14,6 +14,8 @@ pub struct StorageTankData {
     pub fluid_box: FluidBox,
     pub window_bounding_box: BoundingBox,
     pub pictures: StorageTankPictures,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub flow_length_in_ticks: u32,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]

@@ -30,7 +30,11 @@ pub struct CombinatorPrototype<T> {
     pub activity_led_light: Option<LightDefinition>,
     pub screen_light: Option<LightDefinition>,
 
-    #[serde(default = "helper::u8_5", skip_serializing_if = "helper::is_5_u8")]
+    #[serde(
+        default = "helper::u8_5",
+        skip_serializing_if = "helper::is_5_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub activity_led_hold_time: u8,
 
     #[serde(default, skip_serializing_if = "helper::is_0_f64")]
@@ -85,7 +89,9 @@ pub type ConstantCombinatorPrototype = EntityWithOwnerPrototype<ConstantCombinat
 /// [`Prototypes/ConstantCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/ConstantCombinatorPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ConstantCombinatorData {
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub item_slot_count: u32,
+
     pub sprites: Sprite4Way,
     pub activity_led_sprites: Sprite4Way,
     pub activity_led_light_offsets: (Vector, Vector, Vector, Vector),

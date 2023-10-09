@@ -13,7 +13,11 @@ pub type AccumulatorPrototype = EntityWithOwnerPrototype<AccumulatorData>;
 pub struct AccumulatorData {
     pub energy_source: ElectricEnergySource,
     pub picture: Sprite,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub charge_cooldown: u16,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub discharge_cooldown: u16,
 
     pub charge_animation: Option<Animation>,

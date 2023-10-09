@@ -13,7 +13,11 @@ pub type WallPrototype = EntityWithOwnerPrototype<WallData>;
 pub struct WallData {
     pub pictures: WallPictures,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub visual_merge_group: u32,
 
     pub circuit_wire_connection_point: Option<WireConnectionPoint>,

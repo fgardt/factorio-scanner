@@ -81,7 +81,11 @@ pub struct OffshorePumpGraphicsSet {
     // TODO: default value
     pub base_render_layer: Option<RenderLayer>,
 
-    #[serde(default = "helper::i8_1", skip_serializing_if = "helper::is_1_i8")]
+    #[serde(
+        default = "helper::i8_1",
+        skip_serializing_if = "helper::is_1_i8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub underwater_layer_offset: i8,
 
     pub fluid_animation: Option<Animation4Way>,

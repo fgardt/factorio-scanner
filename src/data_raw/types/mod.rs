@@ -171,13 +171,21 @@ pub enum PipeConnectionDefinition {
     Multi {
         positions: Vec<Vector>,
 
-        #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+        #[serde(
+            default,
+            skip_serializing_if = "helper::is_0_u32",
+            deserialize_with = "helper::truncating_deserializer"
+        )]
         max_underground_distance: u32,
     },
     Single {
         position: Vector,
 
-        #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+        #[serde(
+            default,
+            skip_serializing_if = "helper::is_0_u32",
+            deserialize_with = "helper::truncating_deserializer"
+        )]
         max_underground_distance: u32,
 
         #[serde(default, rename = "type")]
@@ -202,20 +210,40 @@ pub enum FluidBoxProductionType {
 #[serde(untagged)]
 pub enum FluidBoxSecondaryDrawOrders {
     Global {
-        #[serde(default = "helper::i8_1", skip_serializing_if = "helper::is_1_i8")]
+        #[serde(
+            default = "helper::i8_1",
+            skip_serializing_if = "helper::is_1_i8",
+            deserialize_with = "helper::truncating_deserializer"
+        )]
         secondary_draw_order: i8,
     },
     Cardinal {
-        #[serde(default = "helper::i8_1", skip_serializing_if = "helper::is_1_i8")]
+        #[serde(
+            default = "helper::i8_1",
+            skip_serializing_if = "helper::is_1_i8",
+            deserialize_with = "helper::truncating_deserializer"
+        )]
         north: i8,
 
-        #[serde(default = "helper::i8_1", skip_serializing_if = "helper::is_1_i8")]
+        #[serde(
+            default = "helper::i8_1",
+            skip_serializing_if = "helper::is_1_i8",
+            deserialize_with = "helper::truncating_deserializer"
+        )]
         east: i8,
 
-        #[serde(default = "helper::i8_1", skip_serializing_if = "helper::is_1_i8")]
+        #[serde(
+            default = "helper::i8_1",
+            skip_serializing_if = "helper::is_1_i8",
+            deserialize_with = "helper::truncating_deserializer"
+        )]
         south: i8,
 
-        #[serde(default = "helper::i8_1", skip_serializing_if = "helper::is_1_i8")]
+        #[serde(
+            default = "helper::i8_1",
+            skip_serializing_if = "helper::is_1_i8",
+            deserialize_with = "helper::truncating_deserializer"
+        )]
         west: i8,
     },
 }
@@ -294,6 +322,8 @@ pub type ItemSubGroupID = String;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ItemToPlace {
     pub item: ItemID,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub count: u32,
 }
 
@@ -308,10 +338,25 @@ pub enum PlaceableBy {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModuleSpecification {
-    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u16",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub module_slots: ItemStackIndex,
 
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "helper::truncating_opt_deserializer"
+    )]
     pub module_info_max_icons_per_row: Option<u8>,
+
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "helper::truncating_opt_deserializer"
+    )]
     pub module_info_max_icon_rows: Option<u8>,
     pub module_info_icon_shift: Option<Vector>,
     pub module_info_separation_multiplier: Option<f32>,
@@ -576,7 +621,11 @@ pub struct BeaconModuleVisualization {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub draw_as_sprite: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_i8")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_i8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub secondary_draw_order: i8,
 
     // TODO: skip serializing if is default
@@ -595,7 +644,11 @@ pub struct BeaconModuleVisualizations {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub use_for_empty_slots: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_i32")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_i32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub tier_offset: i32,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -699,30 +752,78 @@ pub struct CharacterArmorAnimation {
 pub struct TransportBeltAnimationSet {
     pub animation_set: RotatedAnimation,
 
-    #[serde(default = "helper::u8_1", skip_serializing_if = "helper::is_1_u8")]
+    #[serde(
+        default = "helper::u8_1",
+        skip_serializing_if = "helper::is_1_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub east_index: u8,
-    #[serde(default = "helper::u8_2", skip_serializing_if = "helper::is_2_u8")]
+    #[serde(
+        default = "helper::u8_2",
+        skip_serializing_if = "helper::is_2_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub west_index: u8,
-    #[serde(default = "helper::u8_3", skip_serializing_if = "helper::is_3_u8")]
+    #[serde(
+        default = "helper::u8_3",
+        skip_serializing_if = "helper::is_3_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub north_index: u8,
-    #[serde(default = "helper::u8_4", skip_serializing_if = "helper::is_4_u8")]
+    #[serde(
+        default = "helper::u8_4",
+        skip_serializing_if = "helper::is_4_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub south_index: u8,
 
-    #[serde(default = "helper::u8_13", skip_serializing_if = "helper::is_13_u8")]
+    #[serde(
+        default = "helper::u8_13",
+        skip_serializing_if = "helper::is_13_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub starting_south_index: u8,
-    #[serde(default = "helper::u8_14", skip_serializing_if = "helper::is_14_u8")]
+    #[serde(
+        default = "helper::u8_14",
+        skip_serializing_if = "helper::is_14_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub ending_south_index: u8,
-    #[serde(default = "helper::u8_15", skip_serializing_if = "helper::is_15_u8")]
+    #[serde(
+        default = "helper::u8_15",
+        skip_serializing_if = "helper::is_15_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub starting_west_index: u8,
-    #[serde(default = "helper::u8_16", skip_serializing_if = "helper::is_16_u8")]
+    #[serde(
+        default = "helper::u8_16",
+        skip_serializing_if = "helper::is_16_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub ending_west_index: u8,
-    #[serde(default = "helper::u8_17", skip_serializing_if = "helper::is_17_u8")]
+    #[serde(
+        default = "helper::u8_17",
+        skip_serializing_if = "helper::is_17_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub starting_north_index: u8,
-    #[serde(default = "helper::u8_18", skip_serializing_if = "helper::is_18_u8")]
+    #[serde(
+        default = "helper::u8_18",
+        skip_serializing_if = "helper::is_18_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub ending_north_index: u8,
-    #[serde(default = "helper::u8_19", skip_serializing_if = "helper::is_19_u8")]
+    #[serde(
+        default = "helper::u8_19",
+        skip_serializing_if = "helper::is_19_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub starting_east_index: u8,
-    #[serde(default = "helper::u8_20", skip_serializing_if = "helper::is_20_u8")]
+    #[serde(
+        default = "helper::u8_20",
+        skip_serializing_if = "helper::is_20_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub ending_east_index: u8,
 
     pub ending_patch: Option<Sprite4Way>,
@@ -734,21 +835,53 @@ pub struct TransportBeltAnimationSet {
 /// [`Types/TransportBeltAnimationSetWithCorners`](https://lua-api.factorio.com/latest/types/TransportBeltAnimationSetWithCorners.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TransportBeltAnimationSetWithCorners {
-    #[serde(default = "helper::u8_5", skip_serializing_if = "helper::is_5_u8")]
+    #[serde(
+        default = "helper::u8_5",
+        skip_serializing_if = "helper::is_5_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub east_to_north_index: u8,
-    #[serde(default = "helper::u8_6", skip_serializing_if = "helper::is_6_u8")]
+    #[serde(
+        default = "helper::u8_6",
+        skip_serializing_if = "helper::is_6_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub north_to_east_index: u8,
-    #[serde(default = "helper::u8_7", skip_serializing_if = "helper::is_7_u8")]
+    #[serde(
+        default = "helper::u8_7",
+        skip_serializing_if = "helper::is_7_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub west_to_north_index: u8,
-    #[serde(default = "helper::u8_8", skip_serializing_if = "helper::is_8_u8")]
+    #[serde(
+        default = "helper::u8_8",
+        skip_serializing_if = "helper::is_8_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub north_to_west_index: u8,
-    #[serde(default = "helper::u8_9", skip_serializing_if = "helper::is_9_u8")]
+    #[serde(
+        default = "helper::u8_9",
+        skip_serializing_if = "helper::is_9_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub south_to_east_index: u8,
-    #[serde(default = "helper::u8_10", skip_serializing_if = "helper::is_10_u8")]
+    #[serde(
+        default = "helper::u8_10",
+        skip_serializing_if = "helper::is_10_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub east_to_south_index: u8,
-    #[serde(default = "helper::u8_11", skip_serializing_if = "helper::is_11_u8")]
+    #[serde(
+        default = "helper::u8_11",
+        skip_serializing_if = "helper::is_11_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub south_to_west_index: u8,
-    #[serde(default = "helper::u8_12", skip_serializing_if = "helper::is_12_u8")]
+    #[serde(
+        default = "helper::u8_12",
+        skip_serializing_if = "helper::is_12_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub west_to_south_index: u8,
 
     #[serde(flatten)]
@@ -804,6 +937,11 @@ pub struct WorkingVisualisation {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub align_to_waypoint: bool,
 
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "helper::truncating_opt_deserializer"
+    )]
     pub secondary_draw_order: Option<i8>,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -1048,15 +1186,27 @@ pub struct MiningDrillGraphicsSet {
 
     pub shift_animation_waypoints: Option<ShiftAnimationWaypoints>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
-    pub shift_animation_waypoint_stop_duration: f64,
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u16",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
+    pub shift_animation_waypoint_stop_duration: u16,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u16",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub shift_animation_transition_duration: u16,
 
     pub status_colors: Option<StatusColors>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u16",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub drilling_vertical_movement_duration: u16,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
@@ -1093,18 +1243,41 @@ pub enum CircuitConnectorLayer {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum CircuitConnectorSecondaryDrawOrder {
-    Single(#[serde(default = "helper::i8_100", skip_serializing_if = "helper::is_100_i8")] i8),
+    Single(
+        #[serde(
+            default = "helper::i8_100",
+            skip_serializing_if = "helper::is_100_i8",
+            deserialize_with = "helper::truncating_deserializer"
+        )]
+        i8,
+    ),
     Directional {
-        #[serde(default = "helper::i8_100", skip_serializing_if = "helper::is_100_i8")]
+        #[serde(
+            default = "helper::i8_100",
+            skip_serializing_if = "helper::is_100_i8",
+            deserialize_with = "helper::truncating_deserializer"
+        )]
         north: i8,
 
-        #[serde(default = "helper::i8_100", skip_serializing_if = "helper::is_100_i8")]
+        #[serde(
+            default = "helper::i8_100",
+            skip_serializing_if = "helper::is_100_i8",
+            deserialize_with = "helper::truncating_deserializer"
+        )]
         east: i8,
 
-        #[serde(default = "helper::i8_100", skip_serializing_if = "helper::is_100_i8")]
+        #[serde(
+            default = "helper::i8_100",
+            skip_serializing_if = "helper::is_100_i8",
+            deserialize_with = "helper::truncating_deserializer"
+        )]
         south: i8,
 
-        #[serde(default = "helper::i8_100", skip_serializing_if = "helper::is_100_i8")]
+        #[serde(
+            default = "helper::i8_100",
+            skip_serializing_if = "helper::is_100_i8",
+            deserialize_with = "helper::truncating_deserializer"
+        )]
         west: i8,
     },
 }

@@ -14,7 +14,11 @@ pub struct SimpleEntityData {
     // TODO: defaults
     pub render_layer: Option<RenderLayer>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_i8")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_i8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub secondary_draw_order: i8,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]

@@ -113,10 +113,18 @@ pub struct EntityData<T> {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub selectable_in_game: bool,
 
-    #[serde(default = "helper::u8_50", skip_serializing_if = "helper::is_50_u8")]
+    #[serde(
+        default = "helper::u8_50",
+        skip_serializing_if = "helper::is_50_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub selection_priority: u8,
 
-    #[serde(default = "helper::u8_1", skip_serializing_if = "helper::is_1_u8")]
+    #[serde(
+        default = "helper::u8_1",
+        skip_serializing_if = "helper::is_1_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub build_grid_size: u8,
 
     // skip serializing if default
@@ -150,7 +158,18 @@ pub struct EntityData<T> {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub additional_pastable_entities: Vec<EntityID>,
 
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "helper::truncating_opt_deserializer"
+    )]
     pub tile_width: Option<u32>,
+
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "helper::truncating_opt_deserializer"
+    )]
     pub tile_height: Option<u32>,
 
     pub map_color: Option<Color>,

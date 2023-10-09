@@ -11,8 +11,14 @@ pub type ContainerPrototype = EntityWithOwnerPrototype<ContainerData>;
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ContainerData {
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "helper::truncating_opt_deserializer"
+    )]
     pub inventory_size: Option<ItemStackIndex>, // overridden in `InfinityContainerPrototype`
-    pub picture: Option<Sprite>,                // overridden in `LogisticContainerPrototype`
+
+    pub picture: Option<Sprite>, // overridden in `LogisticContainerPrototype`
 
     #[serde(default)]
     pub inventory_type: InventoryType,
@@ -53,12 +59,22 @@ pub type LogisticContainerPrototype = EntityWithOwnerPrototype<LogisticContainer
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LogisticContainerData {
     pub logistic_mode: Option<LogisticMode>, // overridden in `InfinityContainerPrototype`
+
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "helper::truncating_opt_deserializer"
+    )]
     pub max_logistic_slots: Option<u16>,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub render_not_in_network_icon: bool, // overridden in `InfinityContainerPrototype`
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u8")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub opened_duration: u8,
 
     pub animation: Option<Animation>,
@@ -106,7 +122,9 @@ pub type LinkedContainerPrototype = EntityWithOwnerPrototype<LinkedContainerData
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LinkedContainerData {
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub inventory_size: ItemStackIndex,
+
     pub picture: Option<Sprite>,
 
     // TODO: skip serializing if default

@@ -92,6 +92,8 @@ pub type LoaderPrototype<T> = TransportBeltConnectablePrototype<BeltGraphics, Lo
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoaderData<T> {
     pub structure: LoaderStructure,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub filter_count: u8,
 
     // TODO: default
@@ -219,7 +221,9 @@ pub type UndergroundBeltPrototype =
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UndergroundBeltData {
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub max_distance: u8,
+
     pub structure: UndergroundBeltStructure,
     pub underground_sprite: Sprite,
     pub underground_remove_belts_sprite: Option<Sprite>,

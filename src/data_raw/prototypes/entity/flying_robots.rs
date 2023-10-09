@@ -47,7 +47,9 @@ pub type CombatRobotPrototype = FlyingRobotPrototype<CombatRobotData>;
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CombatRobotData {
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub time_to_live: u32,
+
     pub idle: RotatedAnimation,
     pub in_motion: RotatedAnimation,
     pub shadow_idle: RotatedAnimation,
@@ -75,7 +77,9 @@ pub type RobotWithLogisticInterfacePrototype<T> =
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RobotWithLogisticInterfaceData<T> {
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub max_payload_size: ItemCountType,
+
     pub cargo_centered: Vector,
 
     pub idle: Option<RotatedAnimation>,

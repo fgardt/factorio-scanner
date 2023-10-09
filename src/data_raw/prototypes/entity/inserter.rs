@@ -43,7 +43,11 @@ pub struct InserterData {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub use_easter_egg: bool, // can the inserter fish or not?
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u8")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub filter_count: u8,
 
     #[serde(
@@ -69,7 +73,11 @@ pub struct InserterData {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub chase_belt_items: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u8")]
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
     pub stack_size_bonus: u8,
 
     pub circuit_wire_connection_points: Option<(
