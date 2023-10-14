@@ -16,43 +16,57 @@ pub use icon::*;
 
 use super::helper;
 
-// TODO: support the array specification
-
 ///[`Types/Color`](https://lua-api.factorio.com/latest/types/Color.html)
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Color {
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
-    r: f64,
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
-    g: f64,
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
-    b: f64,
-    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
-    a: f64,
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Color {
+    Struct {
+        r: Option<f64>,
+        g: Option<f64>,
+        b: Option<f64>,
+        a: Option<f64>,
+    },
+    RGB(f64, f64, f64),
+    RGBA(f64, f64, f64, f64),
 }
 
 impl Color {
-    pub const fn white() -> Self {
-        Self {
-            r: 1.0,
-            g: 1.0,
-            b: 1.0,
-            a: 1.0,
+    pub fn to_rgba(&self) -> [f64; 4] {
+        let (r, g, b, a) = match self {
+            Self::Struct { r, g, b, a } => (*r, *g, *b, *a),
+            Self::RGB(r, g, b) => (Some(*r), Some(*g), Some(*b), None::<f64>),
+            Self::RGBA(r, g, b, a) => (Some(*r), Some(*g), Some(*b), Some(*a)),
+        };
+
+        let r = r.unwrap_or(0.0);
+        let g = g.unwrap_or(0.0);
+        let b = b.unwrap_or(0.0);
+
+        if r > 1.0 || g > 1.0 || b > 1.0 {
+            let a = a.unwrap_or(255.0);
+
+            [r / 255.0, g / 255.0, b / 255.0, a / 255.0]
+        } else {
+            let a = a.unwrap_or(1.0);
+
+            [r, g, b, a]
         }
     }
+
+    pub const fn white() -> Self {
+        Self::RGBA(1.0, 1.0, 1.0, 1.0)
+    }
+
     pub fn is_white(color: &Self) -> bool {
-        color.r == 1.0 && color.g == 1.0 && color.b == 1.0 && color.a == 1.0
+        let [r, g, b, a] = color.to_rgba();
+
+        r == 1.0 && g == 1.0 && b == 1.0 && a == 1.0
     }
 }
 
 impl Default for Color {
     fn default() -> Self {
-        Self {
-            r: 0.0,
-            g: 0.0,
-            b: 0.0,
-            a: 1.0,
-        }
+        Self::RGBA(0.0, 0.0, 0.0, 1.0)
     }
 }
 
@@ -117,7 +131,73 @@ pub struct WireConnectionPoint {
 }
 
 /// [`Types/FileName`](https://lua-api.factorio.com/latest/types/FileName.html)
-pub type FileName = String;
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileName(String);
+
+impl FileName {
+    pub fn get(&self) -> &str {
+        self.0.as_str()
+    }
+
+    pub fn load(
+        &self,
+        factorio_dir: &str,
+        used_mods: &HashMap<&str, &str>,
+    ) -> Option<image::DynamicImage> {
+        const VANILLA_MODS: [&str; 2] = ["core", "base"];
+        let filename = self.get();
+
+        let re = regex::Regex::new(r"^__([^/\\]+)__").ok()?;
+        let mod_name = re.captures(filename)?.get(1)?.as_str();
+        let sprite_path = &filename[(2 + mod_name.len() + 2 + 1)..]; // +1 to include the slash to prevent joining to interpret it as a absolute path
+
+        if VANILLA_MODS.contains(&mod_name) {
+            let location = std::path::Path::new(factorio_dir)
+                .join("data")
+                .join(mod_name)
+                .join(sprite_path);
+
+            image::open(location).ok()
+        } else {
+            // TODO: support unzipped mods?
+
+            let mod_version = used_mods.get(&mod_name)?;
+            let mod_zip_path = std::path::Path::new(factorio_dir)
+                .join("mods")
+                .join(format!("{mod_name}_{mod_version}.zip"));
+
+            let mod_zip_file = std::fs::File::open(mod_zip_path).ok()?;
+            let mut zip = zip::ZipArchive::new(mod_zip_file).ok()?;
+
+            if zip.is_empty() {
+                return None;
+            }
+
+            // TODO: this could break if there are files in the root of the zip alongside the mod folder
+            let internal_mod_folder;
+            {
+                let extractor_file = &zip.by_index(0).ok()?;
+                let re = regex::Regex::new(r"^([^/]+)/").ok()?;
+                internal_mod_folder = re
+                    .captures(extractor_file.name())?
+                    .get(1)?
+                    .as_str()
+                    .to_owned();
+            }
+
+            let location = filename.replace(
+                format!("__{mod_name}__").as_str(),
+                internal_mod_folder.as_str(),
+            );
+            let mut file = zip.by_name(location.as_str()).ok()?;
+
+            let mut file_buff = Vec::new();
+            std::io::Read::read_to_end(&mut file, &mut file_buff).ok()?;
+
+            image::load_from_memory(&file_buff).ok()
+        }
+    }
+}
 
 /// [`Types/LocalisedString`](https://lua-api.factorio.com/latest/types/LocalisedString.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -442,13 +522,22 @@ pub enum MapPosition {
     Tuple(f64, f64),
 }
 
+impl MapPosition {
+    pub const fn as_tuple(&self) -> (f64, f64) {
+        match self {
+            Self::Tuple(x, y) | Self::XY { x, y } => (*x, *y),
+        }
+    }
+}
+
 /// [`Types/BoundingBox`](https://lua-api.factorio.com/latest/types/BoundingBox.html)
 pub type BoundingBox = (MapPosition, MapPosition);
 
 /// [`Types/Direction`](https://lua-api.factorio.com/latest/types/Direction.html)
-#[derive(Debug, Serialize_repr, Deserialize_repr)]
+#[derive(Debug, Clone, Copy, Default, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum Direction {
+    #[default]
     North = 0,
     NorthEast = 1,
     East = 2,
@@ -457,6 +546,44 @@ pub enum Direction {
     SouthWest = 5,
     West = 6,
     NorthWest = 7,
+}
+
+impl Direction {
+    pub const fn flip(self) -> Self {
+        match self {
+            Self::North => Self::South,
+            Self::NorthEast => Self::SouthWest,
+            Self::East => Self::West,
+            Self::SouthEast => Self::NorthWest,
+            Self::South => Self::North,
+            Self::SouthWest => Self::NorthEast,
+            Self::West => Self::East,
+            Self::NorthWest => Self::SouthEast,
+        }
+    }
+
+    /// Rotate the provided vector to fit the direction.
+    /// The vector is assumed to be in the north direction.
+    pub fn rotate_vector(self, vector: Vector) -> Vector {
+        let (x_fac, y_fac, swap) = match self {
+            Self::North => (1.0, 1.0, false),
+            Self::NorthEast => todo!(),
+            Self::East => (-1.0, 1.0, true),
+            Self::SouthEast => todo!(),
+            Self::South => (1.0, -1.0, false),
+            Self::SouthWest => todo!(),
+            Self::West => (1.0, -1.0, true),
+            Self::NorthWest => todo!(),
+        };
+
+        let (x, y) = if swap {
+            (vector.1, vector.0)
+        } else {
+            (vector.0, vector.1)
+        };
+
+        (x * x_fac, y * y_fac)
+    }
 }
 
 /// [`Types/DamageTypeID`](https://lua-api.factorio.com/latest/types/DamageTypeID.html)
@@ -708,6 +835,28 @@ pub struct BeaconGraphicsSet {
     /// TODO: skip serializing if is default
     #[serde(default)]
     pub module_tint_mode: ModuleTintMode,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct BeaconGraphicsSetRenderOpts {}
+
+impl<'a> From<&'a super::prototypes::RenderOpts<'a>> for BeaconGraphicsSetRenderOpts {
+    fn from(_: &'a super::prototypes::RenderOpts) -> Self {
+        Self {}
+    }
+}
+
+impl RenderableGraphics for BeaconGraphicsSet {
+    type RenderOpts = BeaconGraphicsSetRenderOpts;
+
+    fn render(
+        &self,
+        factorio_dir: &str,
+        used_mods: &HashMap<&str, &str>,
+        opts: &Self::RenderOpts,
+    ) -> Option<GraphicsOutput> {
+        todo!()
+    }
 }
 
 /// [`Types/PumpConnectorGraphicsAnimation`](https://lua-api.factorio.com/latest/types/PumpConnectorGraphicsAnimation.html)

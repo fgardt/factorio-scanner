@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/OffshorePumpPrototype`](https://lua-api.factorio.com/latest/prototypes/OffshorePumpPrototype.html)
-pub type OffshorePumpPrototype = EntityWithOwnerPrototype<OffshorePumpData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct OffshorePumpPrototype(EntityWithOwnerPrototype<OffshorePumpData>);
+
+impl super::Renderable for OffshorePumpPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/OffshorePumpPrototype`](https://lua-api.factorio.com/latest/prototypes/OffshorePumpPrototype.html)
 #[skip_serializing_none]
@@ -59,6 +66,12 @@ pub struct OffshorePumpData {
         CircuitConnectorSprites,
         CircuitConnectorSprites,
     )>,
+}
+
+impl super::Renderable for OffshorePumpData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
 }
 
 #[skip_serializing_none]

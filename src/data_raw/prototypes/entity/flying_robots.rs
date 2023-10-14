@@ -5,12 +5,19 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/FlyingRobotPrototype`](https://lua-api.factorio.com/latest/prototypes/FlyingRobotPrototype.html)
-pub type FlyingRobotPrototype<T> = EntityWithOwnerPrototype<FlyingRobotData<T>>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct FlyingRobotPrototype<T: super::Renderable>(EntityWithOwnerPrototype<FlyingRobotData<T>>);
+
+impl<T: super::Renderable> super::Renderable for FlyingRobotPrototype<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/FlyingRobotPrototype`](https://lua-api.factorio.com/latest/prototypes/FlyingRobotPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
-pub struct FlyingRobotData<T> {
+pub struct FlyingRobotData<T: super::Renderable> {
     pub speed: f64,
 
     #[serde(
@@ -40,8 +47,21 @@ pub struct FlyingRobotData<T> {
     pub child: T,
 }
 
+impl<T: super::Renderable> super::Renderable for FlyingRobotData<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/CombatRobotPrototype`](https://lua-api.factorio.com/latest/prototypes/CombatRobotPrototype.html)
-pub type CombatRobotPrototype = FlyingRobotPrototype<CombatRobotData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CombatRobotPrototype(FlyingRobotPrototype<CombatRobotData>);
+
+impl super::Renderable for CombatRobotPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/CombatRobotPrototype`](https://lua-api.factorio.com/latest/prototypes/CombatRobotPrototype.html)
 #[skip_serializing_none]
@@ -69,14 +89,28 @@ pub struct CombatRobotData {
     // pub destroy_action: Option<Trigger>,
 }
 
+impl super::Renderable for CombatRobotData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/RobotWithLogisticInterfacePrototype`](https://lua-api.factorio.com/latest/prototypes/RobotWithLogisticInterfacePrototype.html)
-pub type RobotWithLogisticInterfacePrototype<T> =
-    FlyingRobotPrototype<RobotWithLogisticInterfaceData<T>>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct RobotWithLogisticInterfacePrototype<T: super::Renderable>(
+    FlyingRobotPrototype<RobotWithLogisticInterfaceData<T>>,
+);
+
+impl<T: super::Renderable> super::Renderable for RobotWithLogisticInterfacePrototype<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/RobotWithLogisticInterfacePrototype`](https://lua-api.factorio.com/latest/prototypes/RobotWithLogisticInterfacePrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
-pub struct RobotWithLogisticInterfaceData<T> {
+pub struct RobotWithLogisticInterfaceData<T: super::Renderable> {
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub max_payload_size: ItemCountType,
 
@@ -96,8 +130,21 @@ pub struct RobotWithLogisticInterfaceData<T> {
     // pub destroy_action: Option<Trigger>,
 }
 
+impl<T: super::Renderable> super::Renderable for RobotWithLogisticInterfaceData<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/ConstructionRobotPrototype`](https://lua-api.factorio.com/latest/prototypes/ConstructionRobotPrototype.html)
-pub type ConstructionRobotPrototype = RobotWithLogisticInterfacePrototype<ConstructionRobotData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ConstructionRobotPrototype(RobotWithLogisticInterfacePrototype<ConstructionRobotData>);
+
+impl super::Renderable for ConstructionRobotPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/ConstructionRobotPrototype`](https://lua-api.factorio.com/latest/prototypes/ConstructionRobotPrototype.html)
 #[skip_serializing_none]
@@ -113,8 +160,21 @@ pub struct ConstructionRobotData {
     // pub reparing_sound: Option<Sound>,
 }
 
+impl super::Renderable for ConstructionRobotData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/LogisticRobotPrototype`](https://lua-api.factorio.com/latest/prototypes/LogisticRobotPrototype.html)
-pub type LogisticRobotPrototype = RobotWithLogisticInterfacePrototype<LogisticRobotData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct LogisticRobotPrototype(RobotWithLogisticInterfacePrototype<LogisticRobotData>);
+
+impl super::Renderable for LogisticRobotPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/LogisticRobotPrototype`](https://lua-api.factorio.com/latest/prototypes/LogisticRobotPrototype.html)
 #[skip_serializing_none]
@@ -124,4 +184,10 @@ pub struct LogisticRobotData {
     pub in_motion_with_cargo: Option<RotatedAnimation>,
     pub shadow_idle_with_cargo: Option<RotatedAnimation>,
     pub shadow_in_motion_with_cargo: Option<RotatedAnimation>,
+}
+
+impl super::Renderable for LogisticRobotData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
 }

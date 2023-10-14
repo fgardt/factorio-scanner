@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/ElectricPolePrototype`](https://lua-api.factorio.com/latest/prototypes/ElectricPolePrototype.html)
-pub type ElectricPolePrototype = EntityWithOwnerPrototype<ElectricPoleData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ElectricPolePrototype(EntityWithOwnerPrototype<ElectricPoleData>);
+
+impl super::Renderable for ElectricPolePrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/ElectricPolePrototype`](https://lua-api.factorio.com/latest/prototypes/ElectricPolePrototype.html)
 #[skip_serializing_none]
@@ -31,4 +38,11 @@ pub struct ElectricPoleData {
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub track_coverage_during_build_by_moving: bool,
+}
+
+impl super::Renderable for ElectricPoleData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.pictures
+            .render(options.factorio_dir, &options.used_mods, &options.into())
+    }
 }

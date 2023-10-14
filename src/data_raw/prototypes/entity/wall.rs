@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/WallPrototype`](https://lua-api.factorio.com/latest/prototypes/WallPrototype.html)
-pub type WallPrototype = EntityWithOwnerPrototype<WallData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct WallPrototype(EntityWithOwnerPrototype<WallData>);
+
+impl super::Renderable for WallPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/WallPrototype`](https://lua-api.factorio.com/latest/prototypes/WallPrototype.html)
 #[skip_serializing_none]
@@ -46,6 +53,12 @@ pub struct WallData {
     pub wall_diode_red_light_left: Option<LightDefinition>,
 
     pub connected_gate_visualization: Option<Sprite>,
+}
+
+impl super::Renderable for WallData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
 }
 
 #[skip_serializing_none]

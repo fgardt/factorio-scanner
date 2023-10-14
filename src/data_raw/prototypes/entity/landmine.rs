@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/LandMinePrototype`](https://lua-api.factorio.com/latest/prototypes/LandMinePrototype.html)
-pub type LandMinePrototype = EntityWithOwnerPrototype<LandMineData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct LandMinePrototype(EntityWithOwnerPrototype<LandMineData>);
+
+impl super::Renderable for LandMinePrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/LandMinePrototype`](https://lua-api.factorio.com/latest/prototypes/LandMinePrototype.html)
 #[skip_serializing_none]
@@ -38,4 +45,11 @@ pub struct LandMineData {
     pub trigger_collision_mask: Option<CollisionMask>,
     // not implemented
     // pub action: Option<Trigger>,
+}
+
+impl super::Renderable for LandMineData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.picture_set
+            .render(options.factorio_dir, &options.used_mods, &options.into())
+    }
 }

@@ -5,12 +5,21 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/RailSignalBasePrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalBasePrototype.html)
-pub type RailSignalBasePrototype<T> = EntityWithOwnerPrototype<RailSignalBaseData<T>>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct RailSignalBasePrototype<T: super::Renderable>(
+    EntityWithOwnerPrototype<RailSignalBaseData<T>>,
+);
+
+impl<T: super::Renderable> super::Renderable for RailSignalBasePrototype<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/RailSignalBasePrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalBasePrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RailSignalBaseData<T> {
+pub struct RailSignalBaseData<T: super::Renderable> {
     pub animation: RotatedAnimation,
     pub rail_piece: Option<Animation>,
     pub red_light: Option<LightDefinition>,
@@ -39,8 +48,21 @@ pub struct RailSignalBaseData<T> {
     pub child: T,
 }
 
+impl<T: super::Renderable> super::Renderable for RailSignalBaseData<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/RailChainSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailChainSignalPrototype.html)
-pub type RailChainSignalPrototype = RailSignalBasePrototype<RailChainSignalData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct RailChainSignalPrototype(RailSignalBasePrototype<RailChainSignalData>);
+
+impl super::Renderable for RailChainSignalPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/RailChainSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailChainSignalPrototype.html)
 #[skip_serializing_none]
@@ -51,9 +73,28 @@ pub struct RailChainSignalData {
     pub default_blue_output_signal: Option<SignalIDConnector>,
 }
 
+impl super::Renderable for RailChainSignalData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/RailSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalPrototype.html)
-pub type RailSignalPrototype = EntityWithOwnerPrototype<RailSignalData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct RailSignalPrototype(EntityWithOwnerPrototype<RailSignalData>);
+
+impl super::Renderable for RailSignalPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/RailSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalPrototype.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RailSignalData {}
+
+impl super::Renderable for RailSignalData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}

@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/PumpPrototype`](https://lua-api.factorio.com/latest/prototypes/PumpPrototype.html)
-pub type PumpPrototype = EntityWithOwnerPrototype<PumpData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct PumpPrototype(EntityWithOwnerPrototype<PumpData>);
+
+impl super::Renderable for PumpPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/PumpPrototype`](https://lua-api.factorio.com/latest/prototypes/PumpPrototype.html)
 #[skip_serializing_none]
@@ -62,6 +69,13 @@ pub struct PumpData {
     )>,
 
     pub fluid_wagon_connector_graphics: Option<FluidWagonConnectorGraphics>,
+}
+
+impl super::Renderable for PumpData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.animations
+            .render(options.factorio_dir, &options.used_mods, &options.into())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

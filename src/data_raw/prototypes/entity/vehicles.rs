@@ -6,12 +6,19 @@ use super::{helper, ArtilleryTurretCannonBarrelShiftings, EntityWithOwnerPrototy
 use crate::data_raw::types::*;
 
 /// [`Prototypes/VehiclePrototype`](https://lua-api.factorio.com/latest/prototypes/VehiclePrototype.html)
-pub type VehiclePrototype<T> = EntityWithOwnerPrototype<VehicleData<T>>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct VehiclePrototype<T: super::Renderable>(EntityWithOwnerPrototype<VehicleData<T>>);
+
+impl<T: super::Renderable> super::Renderable for VehiclePrototype<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/VehiclePrototype`](https://lua-api.factorio.com/latest/prototypes/VehiclePrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct VehicleData<T> {
+pub struct VehicleData<T: super::Renderable> {
     pub weight: f64,
 
     #[serde(flatten)]
@@ -51,6 +58,12 @@ pub struct VehicleData<T> {
     // pub stop_trigger: Option<TriggerEffect>,
 }
 
+impl<T: super::Renderable> super::Renderable for VehicleData<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum BreakingVariant {
@@ -66,7 +79,14 @@ pub enum FrictionVariant {
 }
 
 /// [`Prototypes/CarPrototype`](https://lua-api.factorio.com/latest/prototypes/CarPrototype.html)
-pub type CarPrototype = VehiclePrototype<CarData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CarPrototype(VehiclePrototype<CarData>);
+
+impl super::Renderable for CarPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/CarPrototype`](https://lua-api.factorio.com/latest/prototypes/CarPrototype.html)
 #[skip_serializing_none]
@@ -130,6 +150,12 @@ pub struct CarData {
     // pub track_particle_triggers: Option<FootstepTriggerEffectList>,
 }
 
+impl super::Renderable for CarData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum BurnerOrVoidEnergySource {
@@ -138,12 +164,19 @@ pub enum BurnerOrVoidEnergySource {
 }
 
 /// [`Prototypes/RollingStockPrototype`](https://lua-api.factorio.com/latest/prototypes/RollingStockPrototype.html)
-pub type RollingStockPrototype<T> = VehiclePrototype<RollingStockData<T>>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct RollingStockPrototype<T: super::Renderable>(VehiclePrototype<RollingStockData<T>>);
+
+impl<T: super::Renderable> super::Renderable for RollingStockPrototype<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/RollingStockPrototype`](https://lua-api.factorio.com/latest/prototypes/RollingStockPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RollingStockData<T> {
+pub struct RollingStockData<T: super::Renderable> {
     pub max_speed: f64,
     pub air_resistance: f64,
     pub joint_distance: f64,
@@ -173,8 +206,21 @@ pub struct RollingStockData<T> {
     // pub drive_over_tie_trigger: Option<TriggerEffect>,
 }
 
+impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/ArtilleryWagonPrototype`](https://lua-api.factorio.com/latest/prototypes/ArtilleryWagonPrototype.html)
-pub type ArtilleryWagonPrototype = RollingStockPrototype<ArtilleryWagonData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ArtilleryWagonPrototype(RollingStockPrototype<ArtilleryWagonData>);
+
+impl super::Renderable for ArtilleryWagonPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/ArtilleryWagonPrototype`](https://lua-api.factorio.com/latest/prototypes/ArtilleryWagonPrototype.html)
 #[skip_serializing_none]
@@ -222,8 +268,21 @@ pub struct ArtilleryWagonData {
     // pub rotating_stopped_sound: Option<Sound>,
 }
 
+impl super::Renderable for ArtilleryWagonData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/CargoWagonPrototype`](https://lua-api.factorio.com/latest/prototypes/CargoWagonPrototype.html)
-pub type CargoWagonPrototype = RollingStockPrototype<CargoWagonData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CargoWagonPrototype(RollingStockPrototype<CargoWagonData>);
+
+impl super::Renderable for CargoWagonPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/CargoWagonPrototype`](https://lua-api.factorio.com/latest/prototypes/CargoWagonPrototype.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -232,8 +291,21 @@ pub struct CargoWagonData {
     pub inventory_size: ItemStackIndex,
 }
 
+impl super::Renderable for CargoWagonData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/FluidWagonPrototype`](https://lua-api.factorio.com/latest/prototypes/FluidWagonPrototype.html)
-pub type FluidWagonPrototype = RollingStockPrototype<FluidWagonData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct FluidWagonPrototype(RollingStockPrototype<FluidWagonData>);
+
+impl super::Renderable for FluidWagonPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/FluidWagonPrototype`](https://lua-api.factorio.com/latest/prototypes/FluidWagonPrototype.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -243,6 +315,12 @@ pub struct FluidWagonData {
     // TODO: skip serializing if default
     #[serde(default)]
     pub tank_count: FluidWagonTankCount,
+}
+
+impl super::Renderable for FluidWagonData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
 }
 
 #[derive(Debug, Default, Serialize_repr, Deserialize_repr)]
@@ -255,7 +333,14 @@ pub enum FluidWagonTankCount {
 }
 
 /// [`Prototypes/LocomotivePrototype`](https://lua-api.factorio.com/latest/prototypes/LocomotivePrototype.html)
-pub type LocomotivePrototype = RollingStockPrototype<LocomotiveData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct LocomotivePrototype(RollingStockPrototype<LocomotiveData>);
+
+impl super::Renderable for LocomotivePrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/LocomotivePrototype`](https://lua-api.factorio.com/latest/prototypes/LocomotivePrototype.html)
 #[skip_serializing_none]
@@ -277,4 +362,10 @@ pub struct LocomotiveData {
     // docs say single precision float
     #[serde(default = "helper::f64_3", skip_serializing_if = "helper::is_3_f64")]
     pub max_snap_to_train_stop_distance: f64,
+}
+
+impl super::Renderable for LocomotiveData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
 }

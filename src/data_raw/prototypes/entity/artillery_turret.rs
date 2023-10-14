@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/ArtilleryTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/ArtilleryTurretPrototype.html)
-pub type ArtilleryTurretPrototype = EntityWithOwnerPrototype<ArtilleryTurretData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ArtilleryTurretPrototype(EntityWithOwnerPrototype<ArtilleryTurretData>);
+
+impl super::Renderable for ArtilleryTurretPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/ArtilleryTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/ArtilleryTurretPrototype.html)
 #[skip_serializing_none]
@@ -65,6 +72,22 @@ pub struct ArtilleryTurretData {
     // not implemented
     // pub rotating_sound: Option<InterruptibleSound>,
     // pub rotating_stopped_sound: Option<Sound>,
+}
+
+impl super::Renderable for ArtilleryTurretData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        merge_renders(&[
+            self.base_picture
+                .as_ref()
+                .and_then(|a| a.render(options.factorio_dir, &options.used_mods, &options.into())),
+            self.cannon_barrel_pictures
+                .as_ref()
+                .and_then(|s| s.render(options.factorio_dir, &options.used_mods, &options.into())),
+            self.cannon_base_pictures
+                .as_ref()
+                .and_then(|s| s.render(options.factorio_dir, &options.used_mods, &options.into())),
+        ])
+    }
 }
 
 #[skip_serializing_none]

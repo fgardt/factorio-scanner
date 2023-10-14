@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/ProgrammableSpeakerPrototype`](https://lua-api.factorio.com/latest/prototypes/ProgrammableSpeakerPrototype.html)
-pub type ProgrammableSpeakerPrototype = EntityWithOwnerPrototype<ProgrammableSpeakerData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ProgrammableSpeakerPrototype(EntityWithOwnerPrototype<ProgrammableSpeakerData>);
+
+impl super::Renderable for ProgrammableSpeakerPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/ProgrammableSpeakerPrototype`](https://lua-api.factorio.com/latest/prototypes/ProgrammableSpeakerPrototype.html)
 #[skip_serializing_none]
@@ -35,6 +42,13 @@ pub struct ProgrammableSpeakerData {
     pub draw_circuit_wires: bool,
 
     pub circuit_connector_sprites: Option<CircuitConnectorSprites>,
+}
+
+impl super::Renderable for ProgrammableSpeakerData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.sprite
+            .render(options.factorio_dir, &options.used_mods, &options.into())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -1,3 +1,6 @@
+use std::{collections::HashMap, ops::Deref};
+
+use image::DynamicImage;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -83,13 +86,57 @@ pub use turrets::*;
 pub use vehicles::*;
 pub use wall::*;
 
+#[derive(Debug, Clone)]
+pub struct RenderOpts<'a> {
+    pub factorio_dir: &'a str,
+    pub used_mods: HashMap<&'a str, &'a str>,
+
+    pub direction: Option<Direction>,
+    pub orientation: Option<RealOrientation>,
+
+    pub pickup_position: Option<Vector>,
+
+    pub runtime_tint: Option<Color>,
+}
+
+pub trait Renderable {
+    fn render(&self, options: &RenderOpts) -> Option<(DynamicImage, f64, Vector)>;
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct EntityPrototypeMap<T: Renderable>(HashMap<String, T>);
+
+impl<T: Renderable> Deref for EntityPrototypeMap<T> {
+    type Target = HashMap<String, T>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+// impl<T: Renderable> IntoIterator for EntityPrototypeMap<T> {
+//     type Item = (String, T);
+//     type IntoIter = std::collections::hash_map::IntoIter<String, T>;
+
+//     fn into_iter(self) -> Self::IntoIter {
+//         self.0.into_iter()
+//     }
+// }
+
 /// [`Prototypes/EntityPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityPrototype.html)
-pub type EntityPrototype<T> = BasePrototype<EntityData<T>>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EntityPrototype<T: Renderable>(BasePrototype<EntityData<T>>);
+
+impl<T: Renderable> Renderable for EntityPrototype<T> {
+    fn render(&self, options: &RenderOpts) -> Option<(DynamicImage, f64, Vector)> {
+        self.0.child.render(options)
+    }
+}
 
 /// [`Prototypes/EntityPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
-pub struct EntityData<T> {
+pub struct EntityData<T: Renderable> {
     #[serde(flatten)]
     pub icon: Option<Icon>,
 
@@ -196,6 +243,12 @@ pub struct EntityData<T> {
     pub child: T,
 }
 
+impl<T: Renderable> Renderable for EntityData<T> {
+    fn render(&self, options: &RenderOpts) -> Option<(DynamicImage, f64, Vector)> {
+        self.child.render(options)
+    }
+}
+
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum DecorativeRemoveMode {
@@ -206,12 +259,19 @@ pub enum DecorativeRemoveMode {
 }
 
 /// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
-pub type EntityWithHealthPrototype<T> = EntityData<EntityWithHealthData<T>>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EntityWithHealthPrototype<T: Renderable>(EntityData<EntityWithHealthData<T>>);
+
+impl<T: Renderable> Renderable for EntityWithHealthPrototype<T> {
+    fn render(&self, options: &RenderOpts) -> Option<(DynamicImage, f64, Vector)> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
-pub struct EntityWithHealthData<T> {
+pub struct EntityWithHealthData<T: Renderable> {
     #[serde(default = "helper::f64_10", skip_serializing_if = "helper::is_10_f64")]
     pub max_health: f64,
 
@@ -250,12 +310,27 @@ pub struct EntityWithHealthData<T> {
     pub child: T,
 }
 
-/// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
-pub type EntityWithOwnerPrototype<T> = EntityWithHealthPrototype<EntityWithOwnerData<T>>;
+impl<T: Renderable> Renderable for EntityWithHealthData<T> {
+    fn render(&self, options: &RenderOpts) -> Option<(DynamicImage, f64, Vector)> {
+        self.child.render(options)
+    }
+}
 
 /// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
-pub struct EntityWithOwnerData<T> {
+pub struct EntityWithOwnerPrototype<T: Renderable>(
+    EntityWithHealthPrototype<EntityWithOwnerData<T>>,
+);
+
+impl<T: Renderable> Renderable for EntityWithOwnerPrototype<T> {
+    fn render(&self, options: &RenderOpts) -> Option<(DynamicImage, f64, Vector)> {
+        self.0.render(options)
+    }
+}
+
+/// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EntityWithOwnerData<T: Renderable> {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub is_military_target: bool,
 
@@ -264,4 +339,10 @@ pub struct EntityWithOwnerData<T> {
 
     #[serde(flatten)]
     pub child: T,
+}
+
+impl<T: Renderable> Renderable for EntityWithOwnerData<T> {
+    fn render(&self, options: &RenderOpts) -> Option<(DynamicImage, f64, Vector)> {
+        self.child.render(options)
+    }
 }

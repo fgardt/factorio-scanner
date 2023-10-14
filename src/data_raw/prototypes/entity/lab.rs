@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/LabPrototype`](https://lua-api.factorio.com/latest/prototypes/LabPrototype.html)
-pub type LabPrototype = EntityWithOwnerPrototype<LabData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct LabPrototype(EntityWithOwnerPrototype<LabData>);
+
+impl super::Renderable for LabPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/LabPrototype`](https://lua-api.factorio.com/latest/prototypes/LabPrototype.html)
 #[skip_serializing_none]
@@ -28,4 +35,11 @@ pub struct LabData {
 
     pub entity_info_icon_shift: Option<Vector>,
     pub module_specification: Option<ModuleSpecification>,
+}
+
+impl super::Renderable for LabData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.off_animation
+            .render(options.factorio_dir, &options.used_mods, &options.into())
+    }
 }

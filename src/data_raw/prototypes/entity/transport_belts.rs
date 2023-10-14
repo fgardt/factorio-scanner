@@ -5,8 +5,16 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/TransportBeltConnectablePrototype`](https://lua-api.factorio.com/latest/prototypes/TransportBeltConnectablePrototype.html)
-pub type TransportBeltConnectablePrototype<G, T> =
-    EntityWithOwnerPrototype<TransportBeltConnectableData<G, T>>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct TransportBeltConnectablePrototype<G, T: super::Renderable>(
+    EntityWithOwnerPrototype<TransportBeltConnectableData<G, T>>,
+);
+
+impl<G, T: super::Renderable> super::Renderable for TransportBeltConnectablePrototype<G, T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/TransportBeltConnectablePrototype`](https://lua-api.factorio.com/latest/prototypes/TransportBeltConnectablePrototype.html)
 #[skip_serializing_none]
@@ -22,6 +30,12 @@ pub struct TransportBeltConnectableData<G, T> {
 
     #[serde(flatten)]
     pub child: T,
+}
+
+impl<G, T: super::Renderable> super::Renderable for TransportBeltConnectableData<G, T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -50,7 +64,14 @@ pub enum BeltGraphics {
 }
 
 /// [`Prototypes/LinkedBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/LinkedBeltPrototype.html)
-pub type LinkedBeltPrototype = TransportBeltConnectablePrototype<BeltGraphics, LinkedBeltData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct LinkedBeltPrototype(TransportBeltConnectablePrototype<BeltGraphics, LinkedBeltData>);
+
+impl super::Renderable for LinkedBeltPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/LinkedBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/LinkedBeltPrototype.html)
 #[skip_serializing_none]
@@ -71,6 +92,12 @@ pub struct LinkedBeltData {
     // TODO: collision_mask overridden
 }
 
+impl super::Renderable for LinkedBeltData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LinkedBeltStructure {
@@ -85,12 +112,21 @@ pub struct LinkedBeltStructure {
 }
 
 /// [`Prototypes/LoaderPrototype`](https://lua-api.factorio.com/latest/prototypes/LoaderPrototype.html)
-pub type LoaderPrototype<T> = TransportBeltConnectablePrototype<BeltGraphics, LoaderData<T>>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct LoaderPrototype<T: super::Renderable>(
+    TransportBeltConnectablePrototype<BeltGraphics, LoaderData<T>>,
+);
+
+impl<T: super::Renderable> super::Renderable for LoaderPrototype<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/LoaderPrototype`](https://lua-api.factorio.com/latest/prototypes/LoaderPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct LoaderData<T> {
+pub struct LoaderData<T: super::Renderable> {
     pub structure: LoaderStructure,
 
     #[serde(deserialize_with = "helper::truncating_deserializer")]
@@ -119,6 +155,12 @@ pub struct LoaderData<T> {
     pub child: T,
 }
 
+impl<T: super::Renderable> super::Renderable for LoaderData<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Types/LoaderStructure`](https://lua-api.factorio.com/latest/types/LoaderStructure.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
@@ -131,7 +173,14 @@ pub struct LoaderStructure {
 }
 
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
-pub type Loader1x1Prototype = LoaderPrototype<Loader1x1Data>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Loader1x1Prototype(LoaderPrototype<Loader1x1Data>);
+
+impl super::Renderable for Loader1x1Prototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 // TODO: loaders `belt_length` is not actually hardcoded but defaults to a internal hardcoded value instead..
 
@@ -143,8 +192,21 @@ pub struct Loader1x1Data {
     pub belt_length: f64,
 }
 
+impl super::Renderable for Loader1x1Data {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
-pub type Loader1x2Prototype = LoaderPrototype<Loader1x2Data>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Loader1x2Prototype(LoaderPrototype<Loader1x2Data>);
+
+impl super::Renderable for Loader1x2Prototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -157,8 +219,21 @@ pub struct Loader1x2Data {
     pub belt_length: f64,
 }
 
+impl super::Renderable for Loader1x2Data {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/SplitterPrototype`](https://lua-api.factorio.com/latest/prototypes/SplitterPrototype.html)
-pub type SplitterPrototype = TransportBeltConnectablePrototype<BeltGraphics, SplitterData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SplitterPrototype(TransportBeltConnectablePrototype<BeltGraphics, SplitterData>);
+
+impl super::Renderable for SplitterPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/SplitterPrototype`](https://lua-api.factorio.com/latest/prototypes/SplitterPrototype.html)
 #[skip_serializing_none]
@@ -174,9 +249,23 @@ pub struct SplitterData {
     pub structure_animation_movement_cooldown: u32,
 }
 
+impl super::Renderable for SplitterData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/TransportBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/TransportBeltPrototype.html)
-pub type TransportBeltPrototype =
-    TransportBeltConnectablePrototype<BeltGraphicsWithCorners, TransportBeltData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct TransportBeltPrototype(
+    TransportBeltConnectablePrototype<BeltGraphicsWithCorners, TransportBeltData>,
+);
+
+impl super::Renderable for TransportBeltPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/TransportBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/TransportBeltPrototype.html)
 #[skip_serializing_none]
@@ -202,6 +291,12 @@ pub struct TransportBeltData {
     pub related_underground_belt: Option<EntityID>,
 }
 
+impl super::Renderable for TransportBeltData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum BeltGraphicsWithCorners {
@@ -214,8 +309,16 @@ pub enum BeltGraphicsWithCorners {
 }
 
 /// [`Prototypes/UndergroundBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/UndergroundBeltPrototype.html)
-pub type UndergroundBeltPrototype =
-    TransportBeltConnectablePrototype<BeltGraphics, UndergroundBeltData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct UndergroundBeltPrototype(
+    TransportBeltConnectablePrototype<BeltGraphics, UndergroundBeltData>,
+);
+
+impl super::Renderable for UndergroundBeltPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/UndergroundBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/UndergroundBeltPrototype.html)
 #[skip_serializing_none]
@@ -227,6 +330,12 @@ pub struct UndergroundBeltData {
     pub structure: UndergroundBeltStructure,
     pub underground_sprite: Sprite,
     pub underground_remove_belts_sprite: Option<Sprite>,
+}
+
+impl super::Renderable for UndergroundBeltData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
 }
 
 #[skip_serializing_none]

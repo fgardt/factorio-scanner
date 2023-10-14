@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/GatePrototype`](https://lua-api.factorio.com/latest/prototypes/GatePrototype.html)
-pub type GatePrototype = EntityWithOwnerPrototype<GateData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct GatePrototype(EntityWithOwnerPrototype<GateData>);
+
+impl super::Renderable for GatePrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/GatePrototype`](https://lua-api.factorio.com/latest/prototypes/GatePrototype.html)
 #[skip_serializing_none]
@@ -38,4 +45,10 @@ pub struct GateData {
     pub fadeout_interval: u32,
 
     pub opened_collision_mask: Option<CollisionMask>,
+}
+
+impl super::Renderable for GateData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
 }

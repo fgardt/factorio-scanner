@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/MiningDrillPrototype`](https://lua-api.factorio.com/latest/prototypes/MiningDrillPrototype.html)
-pub type MiningDrillPrototype = EntityWithOwnerPrototype<MiningDrillData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct MiningDrillPrototype(EntityWithOwnerPrototype<MiningDrillData>);
+
+impl super::Renderable for MiningDrillPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/MiningDrillPrototype`](https://lua-api.factorio.com/latest/prototypes/MiningDrillPrototype.html)
 #[skip_serializing_none]
@@ -60,4 +67,10 @@ pub struct MiningDrillData {
     )>,
 
     pub module_specification: Option<ModuleSpecification>,
+}
+
+impl super::Renderable for MiningDrillData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
 }

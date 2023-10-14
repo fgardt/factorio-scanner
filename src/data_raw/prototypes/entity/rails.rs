@@ -5,12 +5,19 @@ use super::EntityWithOwnerPrototype;
 use crate::data_raw::types::*;
 
 /// [`Prototypes/RailPrototype`](https://lua-api.factorio.com/latest/prototypes/RailPrototype.html)
-pub type RailPrototype<T> = EntityWithOwnerPrototype<RailData<T>>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct RailPrototype<T: super::Renderable>(EntityWithOwnerPrototype<RailData<T>>);
+
+impl<T: super::Renderable> super::Renderable for RailPrototype<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/RailPrototype`](https://lua-api.factorio.com/latest/prototypes/RailPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RailData<T> {
+pub struct RailData<T: super::Renderable> {
     pub pictures: RailPictureSet,
 
     #[serde(flatten)]
@@ -19,14 +26,33 @@ pub struct RailData<T> {
     // pub walking_sound: Option<Sound>,
 }
 
+impl<T: super::Renderable> super::Renderable for RailData<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/CurvedRailPrototype`](https://lua-api.factorio.com/latest/prototypes/CurvedRailPrototype.html)
-pub type CurvedRailPrototype = RailPrototype<CurvedRailData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CurvedRailPrototype(RailPrototype<CurvedRailData>);
+
+impl super::Renderable for CurvedRailPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/CurvedRailPrototype`](https://lua-api.factorio.com/latest/prototypes/CurvedRailPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CurvedRailData {
     pub bending_type: Option<CurvedBendType>,
+}
+
+impl super::Renderable for CurvedRailData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -36,13 +62,26 @@ pub enum CurvedBendType {
 }
 
 /// [`Prototypes/StraightRailPrototype`](https://lua-api.factorio.com/latest/prototypes/StraightRailPrototype.html)
-pub type StraightRailPrototype = RailPrototype<StraightRailData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct StraightRailPrototype(RailPrototype<StraightRailData>);
+
+impl super::Renderable for StraightRailPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/StraightRailPrototype`](https://lua-api.factorio.com/latest/prototypes/StraightRailPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StraightRailData {
     pub bending_type: Option<StraightBendType>,
+}
+
+impl super::Renderable for StraightRailData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

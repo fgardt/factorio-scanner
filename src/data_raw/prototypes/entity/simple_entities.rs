@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/SimpleEntityWithOwnerPrototype`](https://lua-api.factorio.com/latest/prototypes/SimpleEntityWithOwnerPrototype.html)
-pub type SimpleEntityWithOwnerPrototype = EntityWithOwnerPrototype<SimpleEntityData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SimpleEntityWithOwnerPrototype(EntityWithOwnerPrototype<SimpleEntityData>);
+
+impl super::Renderable for SimpleEntityWithOwnerPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/SimpleEntityWithOwnerPrototype`](https://lua-api.factorio.com/latest/prototypes/SimpleEntityWithOwnerPrototype.html)
 #[skip_serializing_none]
@@ -37,6 +44,12 @@ pub struct SimpleEntityData {
     pub force_visibility: ForceCondition,
 }
 
+impl super::Renderable for SimpleEntityData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum SimpleEntityGraphics {
@@ -48,4 +61,11 @@ pub enum SimpleEntityGraphics {
 /// [`Prototypes/SimpleEntityWithForcePrototype`](https://lua-api.factorio.com/latest/prototypes/SimpleEntityWithForcePrototype.html)
 ///
 /// The only difference to `SimpleEntityWithOwnerPrototype` is that `is_military_target` defaults to `true` which is not relevant -> difference is not implemented.
-pub type SimpleEntityWithForcePrototype = SimpleEntityWithOwnerPrototype;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SimpleEntityWithForcePrototype(SimpleEntityWithOwnerPrototype);
+
+impl super::Renderable for SimpleEntityWithForcePrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}

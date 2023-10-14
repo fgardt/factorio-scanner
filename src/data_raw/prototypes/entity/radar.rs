@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/RadarPrototype`](https://lua-api.factorio.com/latest/prototypes/RadarPrototype.html)
-pub type RadarPrototype = EntityWithOwnerPrototype<RadarData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct RadarPrototype(EntityWithOwnerPrototype<RadarData>);
+
+impl super::Renderable for RadarPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/RadarPrototype`](https://lua-api.factorio.com/latest/prototypes/RadarPrototype.html)
 #[skip_serializing_none]
@@ -30,4 +37,11 @@ pub struct RadarData {
         skip_serializing_if = "helper::is_001_f64"
     )]
     pub rotation_speed: f64,
+}
+
+impl super::Renderable for RadarData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.pictures
+            .render(options.factorio_dir, &options.used_mods, &options.into())
+    }
 }

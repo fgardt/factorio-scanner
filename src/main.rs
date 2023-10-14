@@ -5,12 +5,19 @@
     clippy::unwrap_used,
     clippy::expect_used
 )]
-#![allow(dead_code, clippy::upper_case_acronyms)]
+#![allow(dead_code, clippy::upper_case_acronyms, unused_variables)]
+
+use image::GenericImageView;
 
 mod blueprint;
 mod data_raw;
 mod mod_settings;
 mod proto_locale;
+
+use data_raw::{
+    prototypes::{EntityRenderOpts, RenderableEntity},
+    types::{Color, Direction},
+};
 
 fn main() {
     //let test_bp_data = "0eNqdkuFqxCAQhN9lfytcjMarr1KOEnNLKiQqxhwNh+9+miulkBSa+yULM9/M4t5BDzP6YGwEdYfJtp5GR/tgrmX+AiVOBJbyJAKmc3YC9Z6FprftUCRx8QgKTMQRCNh2LFNw2nkXIhSTvWLmVOlCAG000eCTsQ7Lh51HjSELftza9BQH7GIwHfVuwAz2bspOZ79bMbG2onUOsGj6T+3mULD1JZENmh1BP/dl7F/k+oXSW3RFGOGk2QvgRwLEoe5i+11/VhZpB9C8sDyXO93yZaz3o35dI4Ebhmn1s3PF5RuTsuGVZOeUHgxE4/c=";
@@ -59,18 +66,85 @@ fn main() {
     let data_raw: data_raw::prototypes::DataRaw = serde_json::from_str(data_raw_dump).unwrap();
 
     //println!("{data_raw:?}");
-    let util_sprites = &data_raw.utility_sprites["default"];
-    let sprites = &util_sprites.sprites;
+    // let util_sprites = &data_raw.utility_sprites["default"];
+    // let sprites = &util_sprites.child.sprites;
 
-    for (name, sprite) in sprites {
-        if let data_raw::types::graphics::SimpleGraphics::Simple { filename, .. } = &sprite {
-            println!("{name}: {filename}");
-        } else {
-            println!("{name}: [LAYERED]");
-        }
+    // for (name, sprite) in sprites {
+    //     if let data_raw::types::SimpleGraphics::Simple { filename, .. } = &sprite {
+    //         println!("{name}: {filename}");
+    //     } else {
+    //         println!("{name}: [LAYERED]");
+    //     }
+    // }
+
+    // println!("{}", util_sprites.child.sprites.len());
+
+    // println!("{:?}", data_raw.wall.keys());
+    // println!("{:?}", data_raw.fluid_wagon.keys());
+    // println!("{:?}", data_raw.locomotive.keys());
+
+    // =====[  RENDER TEST  ]=====
+    let render_opts = EntityRenderOpts {
+        factorio_dir: "/home/flo/dev/factorio",
+        used_mods: [("EditorExtensions", "2.2.1")].iter().copied().collect(),
+        direction: Some(Direction::North),
+        orientation: Some(0.0),
+        runtime_tint: Some(Color::RGBA(1.0, 0.0, 0.0, 0.5)),
+        pickup_position: None,
+    };
+
+    let data = data_raw::prototypes::DataUtil::new(data_raw);
+
+    for name in data.entities() {
+        data.get_entity(name).map_or_else(
+            || println!("UNABLE TO FIND {name}"),
+            |entity| render_entity(name, entity, &render_opts),
+        );
     }
 
-    println!("{}", util_sprites.sprites.len());
+    //render_by_name("pump", &data, &render_opts);
+
+    // (*data_raw.radar)
+    //     .iter()
+    //     .for_each(|(name, data)| render_util(name, data, &render_opts));
 
     //println!("Hello, world!");
+}
+
+fn render_entity(name: &str, entity: &dyn RenderableEntity, render_opts: &EntityRenderOpts) {
+    match entity.render(render_opts) {
+        Some((img, scale, (shift_x, shift_y))) => {
+            // println!(
+            //     "{name}: {}x{} x{scale} ({shift_x}, {shift_y})",
+            //     img.dimensions().0,
+            //     img.dimensions().1,
+            // );
+
+            img.save(format!("render_test/{name}.png")).unwrap();
+        }
+        None => {
+            println!("{name}: NO SPRITE!");
+        }
+    }
+}
+
+fn render_by_name(
+    name: &str,
+    data: &data_raw::prototypes::DataUtil,
+    render_opts: &EntityRenderOpts,
+) {
+    match data.render_entity(name, render_opts) {
+        Some((img, scale, (shift_x, shift_y))) => {
+            println!(
+                "{name}: {}x{} x{scale} ({shift_x}, {shift_y})",
+                img.dimensions().0,
+                img.dimensions().1,
+            );
+
+            img.save(format!("render_test/{name}.png")).unwrap();
+        }
+        None => {
+            println!("{name}: NO SPRITE!");
+        }
+    }
 }

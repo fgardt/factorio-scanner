@@ -5,7 +5,14 @@ use super::EntityWithOwnerPrototype;
 use crate::data_raw::types::*;
 
 /// [`Prototypes/BeaconPrototype`](https://lua-api.factorio.com/latest/prototypes/BeaconPrototype.html)
-pub type BeaconPrototype = EntityWithOwnerPrototype<BeaconData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct BeaconPrototype(EntityWithOwnerPrototype<BeaconData>);
+
+impl super::Renderable for BeaconPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/BeaconPrototype`](https://lua-api.factorio.com/latest/prototypes/BeaconPrototype.html)
 #[skip_serializing_none]
@@ -22,4 +29,10 @@ pub struct BeaconData {
     pub base_picture: Option<Sprite>,
     pub radius_visualisation_picture: Option<Sprite>,
     pub allowed_effects: Option<EffectTypeLimitation>,
+}
+
+impl super::Renderable for BeaconData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
 }
