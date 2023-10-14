@@ -25,12 +25,21 @@
 			"use crate::data_raw::types::*;",
 			"",
 			"/// [`Prototypes/$1Prototype`](https://lua-api.factorio.com/latest/prototypes/$1Prototype.html)",
-			"pub type $1Prototype = EntityWithOwnerPrototype<$1Data>;",
+			"#[derive(Debug, Deserialize, Serialize)]",
+			"pub struct $1Prototype(EntityWithOwnerPrototype<$1Data>);",
 			"",
 			"/// [`Prototypes/$1Prototype`](https://lua-api.factorio.com/latest/prototypes/$1Prototype.html)",
 			"#[skip_serializing_none]",
 			"#[derive(Debug, Serialize, Deserialize)]",
 			"pub struct $1Data {}",
+		]
+	},
+	"New Entity Name Type Map": {
+		"prefix": "newentmap",
+		"body": [
+			"(*data.$1).keys().fold((), |(), name| {",
+			"	entities.insert(name.clone(), EntityType::$2);",
+			"});",
 		]
 	}
 }

@@ -5,10 +5,13 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use super::helper;
+use super::types::GraphicsOutput;
 #[allow(clippy::wildcard_imports)]
 use super::types::{Animation, BoxSpecification, LocalisedString, Order, Sprite};
 
 mod entity;
+pub use entity::RenderOpts as EntityRenderOpts;
+pub use entity::Renderable as RenderableEntity;
 pub use entity::*;
 
 /// [`Prototypes/PrototypeBase`](https://lua-api.factorio.com/latest/PrototypeBase.html)
@@ -56,544 +59,6 @@ pub struct UtilitySpritesData {
 
     #[serde(flatten)]
     pub sprites: HashMap<String, Sprite>,
-    /*
-    pub achievement_label_failed: Sprite,
-    pub achievement_label_locked: Sprite,
-    pub achievement_label_unlocked: Sprite,
-    pub achievement_label_unlocked_off: Sprite,
-    pub add: Sprite,
-    pub alert_arrow: Sprite,
-    pub ammo_damage_modifier_constant: Option<Sprite>,
-    pub ammo_damage_modifier_icon: Sprite,
-    pub ammo_icon: Sprite,
-    pub and_or: Sprite,
-    pub area_icon: Sprite,
-    pub arrow_button: Animation,
-    pub artillery_range_modifier_constant: Option<Sprite>,
-    pub artillery_range_modifier_icon: Sprite,
-    pub bar_gray_pip: Sprite,
-    pub battery: Sprite,
-    pub bookmark: Sprite,
-    pub brush_circle_shape: Sprite,
-    pub brush_icon: Sprite,
-    pub brush_square_shape: Sprite,
-    pub cable_editor_icon: Sprite,
-    pub center: Sprite,
-    pub change_recipe: Sprite,
-    pub character_additional_mining_categories_modifier_constant: Option<Sprite>,
-    pub character_additional_mining_categories_modifier_icon: Sprite,
-    pub character_build_distance_modifier_constant: Option<Sprite>,
-    pub character_build_distance_modifier_icon: Sprite,
-    pub character_crafting_speed_modifier_constant: Option<Sprite>,
-    pub character_crafting_speed_modifier_icon: Sprite,
-    pub character_health_bonus_modifier_constant: Option<Sprite>,
-    pub character_health_bonus_modifier_icon: Sprite,
-    pub character_inventory_slots_bonus_modifier_constant: Option<Sprite>,
-    pub character_inventory_slots_bonus_modifier_icon: Sprite,
-    pub character_item_drop_distance_modifier_constant: Option<Sprite>,
-    pub character_item_drop_distance_modifier_icon: Sprite,
-    pub character_item_pickup_distance_modifier_constant: Option<Sprite>,
-    pub character_item_pickup_distance_modifier_icon: Sprite,
-    pub character_logistic_requests_modifier_constant: Option<Sprite>,
-    pub character_logistic_requests_modifier_icon: Sprite,
-    pub character_logistic_slots_modifier_constant: Option<Sprite>,
-    pub character_logistic_slots_modifier_icon: Sprite,
-    pub character_logistic_trash_slots_modifier_constant: Option<Sprite>,
-    pub character_logistic_trash_slots_modifier_icon: Sprite,
-    pub character_loot_pickup_distance_modifier_constant: Option<Sprite>,
-    pub character_loot_pickup_distance_modifier_icon: Sprite,
-    pub character_mining_speed_modifier_constant: Option<Sprite>,
-    pub character_mining_speed_modifier_icon: Sprite,
-    pub character_reach_distance_modifier_constant: Option<Sprite>,
-    pub character_reach_distance_modifier_icon: Sprite,
-    pub character_resource_reach_distance_modifier_constant: Option<Sprite>,
-    pub character_resource_reach_distance_modifier_icon: Sprite,
-    pub character_running_speed_modifier_constant: Option<Sprite>,
-    pub character_running_speed_modifier_icon: Sprite,
-    pub check_mark: Sprite,
-    pub check_mark_dark_green: Sprite,
-    pub check_mark_green: Sprite,
-    pub check_mark_white: Sprite,
-    pub circuit_network_panel_black: Sprite,
-    pub circuit_network_panel_white: Sprite,
-    pub cliff_editor_icon: Sprite,
-    pub clock: Sprite,
-    pub clone: Sprite,
-    pub clone_editor_icon: Sprite,
-    pub close_black: Sprite,
-    pub close_fat: Sprite,
-    pub close_map_preview: Sprite,
-    pub close_white: Sprite,
-    pub clouds: Animation,
-    pub collapse: Sprite,
-    pub collapse_dark: Sprite,
-    pub color_effect: Sprite,
-    pub color_picker: Sprite,
-    pub confirm_slot: Sprite,
-    pub construction_radius_visualization: Sprite,
-    pub controller_joycon_a: Sprite,
-    pub controller_joycon_b: Sprite,
-    pub controller_joycon_back: Sprite,
-    pub controller_joycon_black_a: Sprite,
-    pub controller_joycon_black_b: Sprite,
-    pub controller_joycon_black_back: Sprite,
-    pub controller_joycon_black_dpdown: Sprite,
-    pub controller_joycon_black_dpleft: Sprite,
-    pub controller_joycon_black_dpright: Sprite,
-    pub controller_joycon_black_dpup: Sprite,
-    pub controller_joycon_black_left_stick: Sprite,
-    pub controller_joycon_black_leftshoulder: Sprite,
-    pub controller_joycon_black_leftstick: Sprite,
-    pub controller_joycon_black_lefttrigger: Sprite,
-    pub controller_joycon_black_paddle1: Sprite,
-    pub controller_joycon_black_paddle2: Sprite,
-    pub controller_joycon_black_paddle3: Sprite,
-    pub controller_joycon_black_paddle4: Sprite,
-    pub controller_joycon_black_right_stick: Sprite,
-    pub controller_joycon_black_rightshoulder: Sprite,
-    pub controller_joycon_black_rightstick: Sprite,
-    pub controller_joycon_black_righttrigger: Sprite,
-    pub controller_joycon_black_start: Sprite,
-    pub controller_joycon_black_x: Sprite,
-    pub controller_joycon_black_y: Sprite,
-    pub controller_joycon_dpdown: Sprite,
-    pub controller_joycon_dpleft: Sprite,
-    pub controller_joycon_dpright: Sprite,
-    pub controller_joycon_dpup: Sprite,
-    pub controller_joycon_left_stick: Sprite,
-    pub controller_joycon_leftshoulder: Sprite,
-    pub controller_joycon_leftstick: Sprite,
-    pub controller_joycon_lefttrigger: Sprite,
-    pub controller_joycon_paddle1: Sprite,
-    pub controller_joycon_paddle2: Sprite,
-    pub controller_joycon_paddle3: Sprite,
-    pub controller_joycon_paddle4: Sprite,
-    pub controller_joycon_right_stick: Sprite,
-    pub controller_joycon_rightshoulder: Sprite,
-    pub controller_joycon_rightstick: Sprite,
-    pub controller_joycon_righttrigger: Sprite,
-    pub controller_joycon_start: Sprite,
-    pub controller_joycon_x: Sprite,
-    pub controller_joycon_y: Sprite,
-    pub controller_ps_a: Sprite,
-    pub controller_ps_b: Sprite,
-    pub controller_ps_back: Sprite,
-    pub controller_ps_black_a: Sprite,
-    pub controller_ps_black_b: Sprite,
-    pub controller_ps_black_back: Sprite,
-    pub controller_ps_black_dpdown: Sprite,
-    pub controller_ps_black_dpleft: Sprite,
-    pub controller_ps_black_dpright: Sprite,
-    pub controller_ps_black_dpup: Sprite,
-    pub controller_ps_black_left_stick: Sprite,
-    pub controller_ps_black_leftshoulder: Sprite,
-    pub controller_ps_black_leftstick: Sprite,
-    pub controller_ps_black_lefttrigger: Sprite,
-    pub controller_ps_black_right_stick: Sprite,
-    pub controller_ps_black_rightshoulder: Sprite,
-    pub controller_ps_black_rightstick: Sprite,
-    pub controller_ps_black_righttrigger: Sprite,
-    pub controller_ps_black_start: Sprite,
-    pub controller_ps_black_x: Sprite,
-    pub controller_ps_black_y: Sprite,
-    pub controller_ps_dpdown: Sprite,
-    pub controller_ps_dpleft: Sprite,
-    pub controller_ps_dpright: Sprite,
-    pub controller_ps_dpup: Sprite,
-    pub controller_ps_left_stick: Sprite,
-    pub controller_ps_leftshoulder: Sprite,
-    pub controller_ps_leftstick: Sprite,
-    pub controller_ps_lefttrigger: Sprite,
-    pub controller_ps_right_stick: Sprite,
-    pub controller_ps_rightshoulder: Sprite,
-    pub controller_ps_rightstick: Sprite,
-    pub controller_ps_righttrigger: Sprite,
-    pub controller_ps_start: Sprite,
-    pub controller_ps_x: Sprite,
-    pub controller_ps_y: Sprite,
-    pub controller_steamdeck_a: Sprite,
-    pub controller_steamdeck_b: Sprite,
-    pub controller_steamdeck_back: Sprite,
-    pub controller_steamdeck_black_a: Sprite,
-    pub controller_steamdeck_black_b: Sprite,
-    pub controller_steamdeck_black_back: Sprite,
-    pub controller_steamdeck_black_dpdown: Sprite,
-    pub controller_steamdeck_black_dpleft: Sprite,
-    pub controller_steamdeck_black_dpright: Sprite,
-    pub controller_steamdeck_black_dpup: Sprite,
-    pub controller_steamdeck_black_left_stick: Sprite,
-    pub controller_steamdeck_black_leftshoulder: Sprite,
-    pub controller_steamdeck_black_leftstick: Sprite,
-    pub controller_steamdeck_black_lefttrigger: Sprite,
-    pub controller_steamdeck_black_paddle1: Sprite,
-    pub controller_steamdeck_black_paddle2: Sprite,
-    pub controller_steamdeck_black_paddle3: Sprite,
-    pub controller_steamdeck_black_paddle4: Sprite,
-    pub controller_steamdeck_black_right_stick: Sprite,
-    pub controller_steamdeck_black_rightshoulder: Sprite,
-    pub controller_steamdeck_black_rightstick: Sprite,
-    pub controller_steamdeck_black_righttrigger: Sprite,
-    pub controller_steamdeck_black_start: Sprite,
-    pub controller_steamdeck_black_x: Sprite,
-    pub controller_steamdeck_black_y: Sprite,
-    pub controller_steamdeck_dpdown: Sprite,
-    pub controller_steamdeck_dpleft: Sprite,
-    pub controller_steamdeck_dpright: Sprite,
-    pub controller_steamdeck_dpup: Sprite,
-    pub controller_steamdeck_left_stick: Sprite,
-    pub controller_steamdeck_leftshoulder: Sprite,
-    pub controller_steamdeck_leftstick: Sprite,
-    pub controller_steamdeck_lefttrigger: Sprite,
-    pub controller_steamdeck_paddle1: Sprite,
-    pub controller_steamdeck_paddle2: Sprite,
-    pub controller_steamdeck_paddle3: Sprite,
-    pub controller_steamdeck_paddle4: Sprite,
-    pub controller_steamdeck_right_stick: Sprite,
-    pub controller_steamdeck_rightshoulder: Sprite,
-    pub controller_steamdeck_rightstick: Sprite,
-    pub controller_steamdeck_righttrigger: Sprite,
-    pub controller_steamdeck_start: Sprite,
-    pub controller_steamdeck_x: Sprite,
-    pub controller_steamdeck_y: Sprite,
-    pub controller_xbox_a: Sprite,
-    pub controller_xbox_b: Sprite,
-    pub controller_xbox_back: Sprite,
-    pub controller_xbox_black_a: Sprite,
-    pub controller_xbox_black_b: Sprite,
-    pub controller_xbox_black_back: Sprite,
-    pub controller_xbox_black_dpdown: Sprite,
-    pub controller_xbox_black_dpleft: Sprite,
-    pub controller_xbox_black_dpright: Sprite,
-    pub controller_xbox_black_dpup: Sprite,
-    pub controller_xbox_black_left_stick: Sprite,
-    pub controller_xbox_black_leftshoulder: Sprite,
-    pub controller_xbox_black_leftstick: Sprite,
-    pub controller_xbox_black_lefttrigger: Sprite,
-    pub controller_xbox_black_right_stick: Sprite,
-    pub controller_xbox_black_rightshoulder: Sprite,
-    pub controller_xbox_black_rightstick: Sprite,
-    pub controller_xbox_black_righttrigger: Sprite,
-    pub controller_xbox_black_start: Sprite,
-    pub controller_xbox_black_x: Sprite,
-    pub controller_xbox_black_y: Sprite,
-    pub controller_xbox_dpdown: Sprite,
-    pub controller_xbox_dpleft: Sprite,
-    pub controller_xbox_dpright: Sprite,
-    pub controller_xbox_dpup: Sprite,
-    pub controller_xbox_left_stick: Sprite,
-    pub controller_xbox_leftshoulder: Sprite,
-    pub controller_xbox_leftstick: Sprite,
-    pub controller_xbox_lefttrigger: Sprite,
-    pub controller_xbox_right_stick: Sprite,
-    pub controller_xbox_rightshoulder: Sprite,
-    pub controller_xbox_rightstick: Sprite,
-    pub controller_xbox_righttrigger: Sprite,
-    pub controller_xbox_start: Sprite,
-    pub controller_xbox_x: Sprite,
-    pub controller_xbox_y: Sprite,
-    pub copper_wire: Sprite,
-    pub copy: Sprite,
-    pub covered_chunk: Sprite,
-    pub crafting_machine_recipe_not_unlocked: Sprite,
-    pub cross_select: Sprite,
-    pub cursor_box: CursorBoxSpecification,
-    pub cursor_icon: Sprite,
-    pub custom_tag_icon: Sprite,
-    pub custom_tag_in_map_view: Sprite,
-    pub danger_icon: Sprite,
-    pub deconstruction_mark: Sprite,
-    pub deconstruction_time_to_live_modifier_constant: Option<Sprite>,
-    pub deconstruction_time_to_live_modifier_icon: Sprite,
-    pub decorative_editor_icon: Sprite,
-    pub default_ammo_damage_modifier_icon: Sprite,
-    pub default_gun_speed_modifier_icon: Sprite,
-    pub default_turret_attack_modifier_icon: Sprite,
-    pub destroyed_icon: Sprite,
-    pub down_arrow: Sprite,
-    pub downloaded: Sprite,
-    pub downloaded_white: Sprite,
-    pub downloading: Sprite,
-    pub downloading_white: Sprite,
-    pub dropdown: Sprite,
-    pub editor_pause: Sprite,
-    pub editor_play: Sprite,
-    pub editor_selection: Sprite,
-    pub editor_speed_down: Sprite,
-    pub editor_speed_up: Sprite,
-    pub electricity_icon: Sprite,
-    pub electricity_icon_unplugged: Sprite,
-    pub enemy_force_icon: Sprite,
-    pub enter: Sprite,
-    pub entity_editor_icon: Sprite,
-    pub entity_info_dark_background: Sprite,
-    pub equipment_collision: Sprite,
-    pub equipment_grid: Sprite,
-    pub equipment_slot: Sprite,
-    pub expand: Sprite,
-    pub expand_dark: Sprite,
-    pub expand_dots: Sprite,
-    pub expand_dots_white: Sprite,
-    pub explosion_chart_visualization: Animation,
-    pub export: Sprite,
-    pub export_slot: Sprite,
-    pub favourite_server_icon: Sprite,
-    pub fluid_icon: Sprite,
-    pub fluid_indication_arrow: Sprite,
-    pub fluid_indication_arrow_both_ways: Sprite,
-    pub follower_robot_lifetime_modifier_constant: Option<Sprite>,
-    pub follower_robot_lifetime_modifier_icon: Sprite,
-    pub force_editor_icon: Sprite,
-    pub fuel_icon: Sprite,
-    pub game_stopped_visualization: Sprite,
-    pub ghost_bar_pip: Sprite,
-    pub ghost_cursor: Sprite,
-    pub ghost_time_to_live_modifier_constant: Option<Sprite>,
-    pub ghost_time_to_live_modifier_icon: Sprite,
-    pub give_item_modifier_constant: Option<Sprite>,
-    pub give_item_modifier_icon: Sprite,
-    pub go_to_arrow: Sprite,
-    pub gps_map_icon: Sprite,
-    pub gradient: Sprite,
-    pub green_circle: Sprite,
-    pub green_dot: Sprite,
-    pub green_wire: Sprite,
-    pub green_wire_hightlight: Sprite,
-    pub grey_placement_indicator_leg: Sprite,
-    pub grey_rail_signal_placement_indicator: Sprite,
-    pub grid_view: Sprite,
-    pub gun_speed_modifier_constant: Option<Sprite>,
-    pub gun_speed_modifier_icon: Sprite,
-    pub hand: Sprite,
-    pub hand_black: Sprite,
-    pub health_bar_green_pip: Sprite,
-    pub health_bar_red_pip: Sprite,
-    pub health_bar_yellow_pip: Sprite,
-    pub heat_exchange_indication: Sprite,
-    pub hint_arrow_down: Sprite,
-    pub hint_arrow_left: Sprite,
-    pub hint_arrow_right: Sprite,
-    pub hint_arrow_up: Sprite,
-    pub import: Sprite,
-    pub import_slot: Sprite,
-    pub indication_arrow: Sprite,
-    pub indication_line: Sprite,
-    pub inserter_stack_size_bonus_modifier_constant: Option<Sprite>,
-    pub inserter_stack_size_bonus_modifier_icon: Sprite,
-    pub item_editor_icon: Sprite,
-    pub laboratory_productivity_modifier_constant: Option<Sprite>,
-    pub laboratory_productivity_modifier_icon: Sprite,
-    pub laboratory_speed_modifier_constant: Option<Sprite>,
-    pub laboratory_speed_modifier_icon: Sprite,
-    pub left_arrow: Sprite,
-    pub light_cone: Sprite,
-    pub light_medium: Sprite,
-    pub light_small: Sprite,
-    pub line_icon: Sprite,
-    pub list_view: Sprite,
-    pub logistic_network_panel_black: Sprite,
-    pub logistic_network_panel_white: Sprite,
-    pub logistic_radius_visualization: Sprite,
-    pub lua_snippet_tool_icon: Sprite,
-    pub map: Sprite,
-    pub map_exchange_string: Sprite,
-    pub max_failed_attempts_per_tick_per_construction_queue_modifier_constant: Option<Sprite>,
-    pub max_failed_attempts_per_tick_per_construction_queue_modifier_icon: Sprite,
-    pub max_successful_attempts_per_tick_per_construction_queue_modifier_constant: Option<Sprite>,
-    pub max_successful_attempts_per_tick_per_construction_queue_modifier_icon: Sprite,
-    pub maximum_following_robots_count_modifier_constant: Option<Sprite>,
-    pub maximum_following_robots_count_modifier_icon: Sprite,
-    pub medium_gui_arrow: Sprite,
-    pub mining_drill_productivity_bonus_modifier_constant: Option<Sprite>,
-    pub mining_drill_productivity_bonus_modifier_icon: Sprite,
-    pub missing_icon: Sprite,
-    pub missing_mod_icon: Sprite,
-    pub mod_dependency_arrow: Sprite,
-    pub mouse_cursor: Sprite,
-    pub multiplayer_waiting_icon: Sprite,
-    pub nature_icon: Sprite,
-    pub neutral_force_icon: Sprite,
-    pub no_building_material_icon: Sprite,
-    pub no_nature_icon: Sprite,
-    pub no_storage_space_icon: Sprite,
-    pub none_editor_icon: Sprite,
-    pub not_available: Sprite,
-    pub not_enough_construction_robots_icon: Sprite,
-    pub not_enough_repair_packs_icon: Sprite,
-    pub not_played_yet_dark_green: Sprite,
-    pub not_played_yet_green: Sprite,
-    pub nothing_modifier_constant: Option<Sprite>,
-    pub nothing_modifier_icon: Sprite,
-    pub notification: Sprite,
-    pub output_console_gradient: Sprite,
-    pub paint_bucket_icon: Sprite,
-    pub pause: Sprite,
-    pub placement_indicator_leg: Sprite,
-    pub play: Sprite,
-    pub played_dark_green: Sprite,
-    pub played_green: Sprite,
-    pub player_force_icon: Sprite,
-    pub preset: Sprite,
-    pub pump_cannot_connect_icon: Sprite,
-    pub questionmark: Sprite,
-    pub rail_path_not_possible: Sprite,
-    pub rail_planner_indication_arrow: Sprite,
-    pub rail_planner_indication_arrow_too_far: Sprite,
-    pub rail_signal_placement_indicator: Sprite,
-    pub reassign: Sprite,
-    pub recharge_icon: Sprite,
-    pub red_wire: Sprite,
-    pub red_wire_hightlight: Sprite,
-    pub reference_point: Sprite,
-    pub refresh: Sprite,
-    pub refresh_white: Animation,
-    pub rename_icon_normal: Sprite,
-    pub rename_icon_small_black: Sprite,
-    pub rename_icon_small_white: Sprite,
-    pub reset: Sprite,
-    pub reset_white: Sprite,
-    pub resource_editor_icon: Sprite,
-    pub right_arrow: Sprite,
-    pub robot_slot: Sprite,
-    pub scripting_editor_icon: Sprite,
-    pub search_black: Sprite,
-    pub search_icon: Sprite,
-    pub search_white: Sprite,
-    pub select_icon_black: Sprite,
-    pub select_icon_white: Sprite,
-    pub set_bar_slot: Sprite,
-    pub shield_bar_pip: Sprite,
-    pub shoot_cursor_green: Sprite,
-    pub shoot_cursor_red: Sprite,
-    pub short_indication_line: Sprite,
-    pub short_indication_line_green: Sprite,
-    pub show_electric_network_in_map_view: Sprite,
-    pub show_electric_network_in_map_view_black: Sprite,
-    pub show_logistics_network_in_map_view: Sprite,
-    pub show_logistics_network_in_map_view_black: Sprite,
-    pub show_player_names_in_map_view: Sprite,
-    pub show_player_names_in_map_view_black: Sprite,
-    pub show_pollution_in_map_view: Sprite,
-    pub show_pollution_in_map_view_black: Sprite,
-    pub show_rail_signal_states_in_map_view: Sprite,
-    pub show_rail_signal_states_in_map_view_black: Sprite,
-    pub show_recipe_icons_in_map_view: Sprite,
-    pub show_recipe_icons_in_map_view_black: Sprite,
-    pub show_tags_in_map_view: Sprite,
-    pub show_tags_in_map_view_black: Sprite,
-    pub show_train_station_names_in_map_view: Sprite,
-    pub show_train_station_names_in_map_view_black: Sprite,
-    pub show_turret_range_in_map_view: Sprite,
-    pub show_turret_range_in_map_view_black: Sprite,
-    pub show_worker_robots_in_map_view: Sprite,
-    pub show_worker_robots_in_map_view_black: Sprite,
-    pub shuffle: Sprite,
-    pub side_menu_achievements_hover_icon: Sprite,
-    pub side_menu_achievements_icon: Sprite,
-    pub side_menu_blueprint_library_hover_icon: Sprite,
-    pub side_menu_blueprint_library_icon: Sprite,
-    pub side_menu_bonus_hover_icon: Sprite,
-    pub side_menu_bonus_icon: Sprite,
-    pub side_menu_logistic_network_hover_icon: Sprite,
-    pub side_menu_map_hover_icon: Sprite,
-    pub side_menu_map_icon: Sprite,
-    pub side_menu_menu_hover_icon: Sprite,
-    pub side_menu_menu_icon: Sprite,
-    pub side_menu_production_hover_icon: Sprite,
-    pub side_menu_production_icon: Sprite,
-    pub side_menu_technology_hover_icon: Sprite,
-    pub side_menu_train_hover_icon: Sprite,
-    pub side_menu_train_icon: Sprite,
-    pub side_menu_tutorials_hover_icon: Sprite,
-    pub side_menu_tutorials_icon: Sprite,
-    pub slot: Sprite,
-    pub slot_icon_ammo: Sprite,
-    pub slot_icon_ammo_black: Sprite,
-    pub slot_icon_armor: Sprite,
-    pub slot_icon_armor_black: Sprite,
-    pub slot_icon_fuel: Sprite,
-    pub slot_icon_fuel_black: Sprite,
-    pub slot_icon_gun: Sprite,
-    pub slot_icon_gun_black: Sprite,
-    pub slot_icon_inserter_hand: Sprite,
-    pub slot_icon_inserter_hand_black: Sprite,
-    pub slot_icon_module: Sprite,
-    pub slot_icon_module_black: Sprite,
-    pub slot_icon_resource: Sprite,
-    pub slot_icon_resource_black: Sprite,
-    pub slot_icon_result: Sprite,
-    pub slot_icon_result_black: Sprite,
-    pub slot_icon_robot: Sprite,
-    pub slot_icon_robot_black: Sprite,
-    pub slot_icon_robot_material: Sprite,
-    pub slot_icon_robot_material_black: Sprite,
-    pub small_gui_arrow: Sprite,
-    pub spawn_flag: Sprite,
-    pub speed_down: Sprite,
-    pub speed_up: Sprite,
-    pub spray_icon: Sprite,
-    pub stack_inserter_capacity_bonus_modifier_constant: Option<Sprite>,
-    pub stack_inserter_capacity_bonus_modifier_icon: Sprite,
-    pub station_name: Sprite,
-    pub status_not_working: Sprite,
-    pub status_working: Sprite,
-    pub status_yellow: Sprite,
-    pub stop: Sprite,
-    pub surface_editor_icon: Sprite,
-    pub sync_mods: Sprite,
-    pub technology_black: Sprite,
-    pub technology_white: Sprite,
-    pub tick_custom: Sprite,
-    pub tick_once: Sprite,
-    pub tick_sixty: Sprite,
-    pub tile_editor_icon: Sprite,
-    pub tile_ghost_cursor: Sprite,
-    pub time_editor_icon: Sprite,
-    pub too_far: Sprite,
-    pub too_far_from_roboport_icon: Sprite,
-    pub track_button: Sprite,
-    pub train_braking_force_bonus_modifier_constant: Option<Sprite>,
-    pub train_braking_force_bonus_modifier_icon: Sprite,
-    pub train_stop_disabled_in_map_view: Sprite,
-    pub train_stop_full_in_map_view: Sprite,
-    pub train_stop_in_map_view: Sprite,
-    pub train_stop_placement_indicator: Sprite,
-    pub trash: Sprite,
-    pub trash_white: Sprite,
-    pub turret_attack_modifier_constant: Option<Sprite>,
-    pub turret_attack_modifier_icon: Sprite,
-    pub underground_pipe_connection: Sprite,
-    pub underground_remove_belts: Sprite,
-    pub underground_remove_pipes: Sprite,
-    pub unlock_recipe_modifier_constant: Option<Sprite>,
-    pub unlock_recipe_modifier_icon: Sprite,
-    pub upgrade_blueprint: Sprite,
-    pub upgrade_mark: Sprite,
-    pub variations_tool_icon: Sprite,
-    pub warning: Sprite,
-    pub warning_icon: Sprite,
-    pub warning_white: Sprite,
-    pub white_mask: Sprite,
-    pub white_square: Sprite,
-    pub wire_shadow: Sprite,
-    pub worker_robot_battery_modifier_constant: Option<Sprite>,
-    pub worker_robot_battery_modifier_icon: Sprite,
-    pub worker_robot_speed_modifier_constant: Option<Sprite>,
-    pub worker_robot_speed_modifier_icon: Sprite,
-    pub worker_robot_storage_modifier_constant: Option<Sprite>,
-    pub worker_robot_storage_modifier_icon: Sprite,
-    pub zoom_to_world_blueprint_enabled_modifier_constant: Option<Sprite>,
-    pub zoom_to_world_blueprint_enabled_modifier_icon: Sprite,
-    pub zoom_to_world_deconstruction_planner_enabled_modifier_constant: Option<Sprite>,
-    pub zoom_to_world_deconstruction_planner_enabled_modifier_icon: Sprite,
-    pub zoom_to_world_enabled_modifier_constant: Option<Sprite>,
-    pub zoom_to_world_enabled_modifier_icon: Sprite,
-    pub zoom_to_world_ghost_building_enabled_modifier_constant: Option<Sprite>,
-    pub zoom_to_world_ghost_building_enabled_modifier_icon: Sprite,
-    pub zoom_to_world_selection_tool_enabled_modifier_constant: Option<Sprite>,
-    pub zoom_to_world_selection_tool_enabled_modifier_icon: Sprite,
-    pub zoom_to_world_upgrade_planner_enabled_modifier_constant: Option<Sprite>,
-    pub zoom_to_world_upgrade_planner_enabled_modifier_icon: Sprite,
-    */
 }
 
 pub type UtilitySprites = BasePrototype<UtilitySpritesData>;
@@ -603,97 +68,759 @@ pub type PrototypeMap<T> = HashMap<String, T>;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct DataRaw {
-    pub accumulator: PrototypeMap<AccumulatorPrototype>,
-    pub artillery_turret: PrototypeMap<ArtilleryTurretPrototype>,
-    pub beacon: PrototypeMap<BeaconPrototype>,
-    pub boiler: PrototypeMap<BoilerPrototype>,
-    pub burner_generator: PrototypeMap<BurnerGeneratorPrototype>,
+    pub accumulator: EntityPrototypeMap<AccumulatorPrototype>,
+    pub artillery_turret: EntityPrototypeMap<ArtilleryTurretPrototype>,
+    pub beacon: EntityPrototypeMap<BeaconPrototype>,
+    pub boiler: EntityPrototypeMap<BoilerPrototype>,
+    pub burner_generator: EntityPrototypeMap<BurnerGeneratorPrototype>,
 
-    pub arithmetic_combinator: PrototypeMap<ArithmeticCombinatorPrototype>,
-    pub decider_combinator: PrototypeMap<DeciderCombinatorPrototype>,
-    pub constant_combinator: PrototypeMap<ConstantCombinatorPrototype>,
-    pub programmable_speaker: PrototypeMap<ProgrammableSpeakerPrototype>,
+    pub arithmetic_combinator: EntityPrototypeMap<ArithmeticCombinatorPrototype>,
+    pub decider_combinator: EntityPrototypeMap<DeciderCombinatorPrototype>,
+    pub constant_combinator: EntityPrototypeMap<ConstantCombinatorPrototype>,
+    pub programmable_speaker: EntityPrototypeMap<ProgrammableSpeakerPrototype>,
 
-    pub container: PrototypeMap<ContainerPrototype>,
-    pub logistic_container: PrototypeMap<LogisticContainerPrototype>,
-    pub infinity_container: PrototypeMap<InfinityContainerPrototype>,
-    pub linked_container: PrototypeMap<LinkedContainerPrototype>,
+    pub container: EntityPrototypeMap<ContainerPrototype>,
+    pub logistic_container: EntityPrototypeMap<LogisticContainerPrototype>,
+    pub infinity_container: EntityPrototypeMap<InfinityContainerPrototype>,
+    pub linked_container: EntityPrototypeMap<LinkedContainerPrototype>,
 
-    pub assembling_machine: PrototypeMap<AssemblingMachinePrototype>,
-    pub rocket_silo: PrototypeMap<RocketSiloPrototype>,
-    pub furnace: PrototypeMap<FurnacePrototype>,
+    pub assembling_machine: EntityPrototypeMap<AssemblingMachinePrototype>,
+    pub rocket_silo: EntityPrototypeMap<RocketSiloPrototype>,
+    pub furnace: EntityPrototypeMap<FurnacePrototype>,
 
-    pub electric_energy_interface: PrototypeMap<ElectricEnergyInterfacePrototype>,
-    pub electric_pole: PrototypeMap<ElectricPolePrototype>,
-    pub power_switch: PrototypeMap<PowerSwitchPrototype>,
+    pub electric_energy_interface: EntityPrototypeMap<ElectricEnergyInterfacePrototype>,
+    pub electric_pole: EntityPrototypeMap<ElectricPolePrototype>,
+    pub power_switch: EntityPrototypeMap<PowerSwitchPrototype>,
 
-    pub combat_robot: PrototypeMap<CombatRobotPrototype>,
-    pub construction_robot: PrototypeMap<ConstructionRobotPrototype>,
-    pub logistic_robot: PrototypeMap<LogisticRobotPrototype>,
-    pub roboport: PrototypeMap<RoboportPrototype>,
+    pub combat_robot: EntityPrototypeMap<CombatRobotPrototype>,
+    pub construction_robot: EntityPrototypeMap<ConstructionRobotPrototype>,
+    pub logistic_robot: EntityPrototypeMap<LogisticRobotPrototype>,
+    pub roboport: EntityPrototypeMap<RoboportPrototype>,
 
-    pub gate: PrototypeMap<GatePrototype>,
-    pub wall: PrototypeMap<WallPrototype>,
+    pub gate: EntityPrototypeMap<GatePrototype>,
+    pub wall: EntityPrototypeMap<WallPrototype>,
 
-    pub generator: PrototypeMap<GeneratorPrototype>,
+    pub generator: EntityPrototypeMap<GeneratorPrototype>,
 
-    pub reactor: PrototypeMap<ReactorPrototype>,
-    pub heat_interface: PrototypeMap<HeatInterfacePrototype>,
-    pub heat_pipe: PrototypeMap<HeatPipePrototype>,
+    pub reactor: EntityPrototypeMap<ReactorPrototype>,
+    pub heat_interface: EntityPrototypeMap<HeatInterfacePrototype>,
+    pub heat_pipe: EntityPrototypeMap<HeatPipePrototype>,
 
-    pub inserter: PrototypeMap<InserterPrototype>,
+    pub inserter: EntityPrototypeMap<InserterPrototype>,
 
-    pub lab: PrototypeMap<LabPrototype>,
+    pub lab: EntityPrototypeMap<LabPrototype>,
 
-    pub lamp: PrototypeMap<LampPrototype>,
+    pub lamp: EntityPrototypeMap<LampPrototype>,
 
-    pub land_mine: PrototypeMap<LandMinePrototype>,
+    pub land_mine: EntityPrototypeMap<LandMinePrototype>,
 
-    pub mining_drill: PrototypeMap<MiningDrillPrototype>,
-    pub offshore_pump: PrototypeMap<OffshorePumpPrototype>,
+    pub mining_drill: EntityPrototypeMap<MiningDrillPrototype>,
+    pub offshore_pump: EntityPrototypeMap<OffshorePumpPrototype>,
 
-    pub pipe: PrototypeMap<PipePrototype>,
-    pub infinity_pipe: PrototypeMap<InfinityPipePrototype>,
-    pub pipe_to_ground: PrototypeMap<PipeToGroundPrototype>,
-    pub pump: PrototypeMap<PumpPrototype>,
+    pub pipe: EntityPrototypeMap<PipePrototype>,
+    pub infinity_pipe: EntityPrototypeMap<InfinityPipePrototype>,
+    pub pipe_to_ground: EntityPrototypeMap<PipeToGroundPrototype>,
+    pub pump: EntityPrototypeMap<PumpPrototype>,
 
-    pub simple_entity_with_owner: PrototypeMap<SimpleEntityWithOwnerPrototype>,
-    pub simple_entity_with_force: PrototypeMap<SimpleEntityWithForcePrototype>,
+    pub simple_entity_with_owner: EntityPrototypeMap<SimpleEntityWithOwnerPrototype>,
+    pub simple_entity_with_force: EntityPrototypeMap<SimpleEntityWithForcePrototype>,
 
-    pub solar_panel: PrototypeMap<SolarPanelPrototype>,
+    pub solar_panel: EntityPrototypeMap<SolarPanelPrototype>,
 
-    pub storage_tank: PrototypeMap<StorageTankPrototype>,
+    pub storage_tank: EntityPrototypeMap<StorageTankPrototype>,
 
-    pub linked_belt: PrototypeMap<LinkedBeltPrototype>,
-    pub loader_1x1: PrototypeMap<Loader1x1Prototype>,
-    pub loader: PrototypeMap<Loader1x2Prototype>,
-    pub splitter: PrototypeMap<SplitterPrototype>,
-    pub transport_belt: PrototypeMap<TransportBeltPrototype>,
-    pub underground_belt: PrototypeMap<UndergroundBeltPrototype>,
+    pub linked_belt: EntityPrototypeMap<LinkedBeltPrototype>,
+    pub loader_1x1: EntityPrototypeMap<Loader1x1Prototype>,
+    pub loader: EntityPrototypeMap<Loader1x2Prototype>,
+    pub splitter: EntityPrototypeMap<SplitterPrototype>,
+    pub transport_belt: EntityPrototypeMap<TransportBeltPrototype>,
+    pub underground_belt: EntityPrototypeMap<UndergroundBeltPrototype>,
 
-    pub radar: PrototypeMap<RadarPrototype>,
-    pub turret: PrototypeMap<TurretPrototype>,
-    pub ammo_turret: PrototypeMap<AmmoTurretPrototype>,
-    pub electric_turret: PrototypeMap<ElectricTurretPrototype>,
-    pub fluid_turret: PrototypeMap<FluidTurretPrototype>,
+    pub radar: EntityPrototypeMap<RadarPrototype>,
+    pub turret: EntityPrototypeMap<TurretPrototype>,
+    pub ammo_turret: EntityPrototypeMap<AmmoTurretPrototype>,
+    pub electric_turret: EntityPrototypeMap<ElectricTurretPrototype>,
+    pub fluid_turret: EntityPrototypeMap<FluidTurretPrototype>,
 
-    pub car: PrototypeMap<CarPrototype>,
+    pub car: EntityPrototypeMap<CarPrototype>,
 
-    pub curved_rail: PrototypeMap<CurvedRailPrototype>,
-    pub straight_rail: PrototypeMap<StraightRailPrototype>,
-    pub rail_signal: PrototypeMap<RailSignalPrototype>,
-    pub rail_chain_signal: PrototypeMap<RailChainSignalPrototype>,
-    pub train_stop: PrototypeMap<TrainStopPrototype>,
-    pub locomotive: PrototypeMap<LocomotivePrototype>,
-    pub cargo_wagon: PrototypeMap<CargoWagonPrototype>,
-    pub fluid_wagon: PrototypeMap<FluidWagonPrototype>,
-    pub artillery_wagon: PrototypeMap<ArtilleryWagonPrototype>,
+    pub curved_rail: EntityPrototypeMap<CurvedRailPrototype>,
+    pub straight_rail: EntityPrototypeMap<StraightRailPrototype>,
+    pub rail_signal: EntityPrototypeMap<RailSignalPrototype>,
+    pub rail_chain_signal: EntityPrototypeMap<RailChainSignalPrototype>,
+    pub train_stop: EntityPrototypeMap<TrainStopPrototype>,
+    pub locomotive: EntityPrototypeMap<LocomotivePrototype>,
+    pub cargo_wagon: EntityPrototypeMap<CargoWagonPrototype>,
+    pub fluid_wagon: EntityPrototypeMap<FluidWagonPrototype>,
+    pub artillery_wagon: EntityPrototypeMap<ArtilleryWagonPrototype>,
 
     pub utility_sprites: PrototypeMap<UtilitySprites>,
     // not implemented
-    // pub character: PrototypeMap<CharacterPrototype>,
-    // pub unit_spawner: PrototypeMap<EnemySpawnerPrototype>,
-    // pub player_port: PrototypeMap<PlayerPortPrototype>,
-    // pub unit: PrototypeMap<UnitPrototype>,
-    // pub spider_vehicle: PrototypeMap<SpiderVehiclePrototype>,
+    // pub character: EntityPrototypeMap<CharacterPrototype>,
+    // pub unit_spawner: EntityPrototypeMap<EnemySpawnerPrototype>,
+    // pub player_port: EntityPrototypeMap<PlayerPortPrototype>,
+    // pub unit: EntityPrototypeMap<UnitPrototype>,
+    // pub spider_vehicle: EntityPrototypeMap<SpiderVehiclePrototype>,
+}
+
+pub enum EntityType {
+    Accumulator,
+    ArtilleryTurret,
+    Beacon,
+    Boiler,
+    BurnerGenerator,
+    ArithmeticCombinator,
+    DeciderCombinator,
+    ConstantCombinator,
+    ProgrammableSpeaker,
+    Container,
+    LogisticContainer,
+    InfinityContainer,
+    LinkedContainer,
+    AssemblingMachine,
+    RocketSilo,
+    Furnace,
+    ElectricEnergyInterface,
+    ElectricPole,
+    PowerSwitch,
+    CombatRobot,
+    ConstructionRobot,
+    LogisticRobot,
+    Roboport,
+    Gate,
+    Wall,
+    Generator,
+    Reactor,
+    HeatInterface,
+    HeatPipe,
+    Inserter,
+    Lab,
+    Lamp,
+    LandMine,
+    MiningDrill,
+    OffshorePump,
+    Pipe,
+    InfinityPipe,
+    PipeToGround,
+    Pump,
+    SimpleEntityWithOwner,
+    SimpleEntityWithForce,
+    SolarPanel,
+    StorageTank,
+    LinkedBelt,
+    Loader1x1,
+    Loader,
+    Splitter,
+    TransportBelt,
+    UndergroundBelt,
+    Radar,
+    Turret,
+    AmmoTurret,
+    ElectricTurret,
+    FluidTurret,
+    Car,
+    CurvedRail,
+    StraightRail,
+    RailSignal,
+    RailChainSignal,
+    TrainStop,
+    Locomotive,
+    CargoWagon,
+    FluidWagon,
+    ArtilleryWagon,
+}
+
+pub struct DataUtil {
+    data: DataRaw,
+
+    entities: HashMap<String, EntityType>,
+}
+
+impl DataUtil {
+    #[allow(clippy::too_many_lines)]
+    pub fn new(data: DataRaw) -> Self {
+        let mut entities: HashMap<String, EntityType> = HashMap::new();
+
+        {
+            (*data.accumulator).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Accumulator);
+            });
+
+            (*data.artillery_turret).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::ArtilleryTurret);
+            });
+
+            (*data.beacon).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Beacon);
+            });
+
+            (*data.boiler).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Boiler);
+            });
+
+            (*data.burner_generator).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::BurnerGenerator);
+            });
+
+            (*data.arithmetic_combinator).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::ArithmeticCombinator);
+            });
+
+            (*data.decider_combinator).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::DeciderCombinator);
+            });
+
+            (*data.constant_combinator).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::ConstantCombinator);
+            });
+
+            (*data.programmable_speaker).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::ProgrammableSpeaker);
+            });
+
+            (*data.container).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Container);
+            });
+
+            (*data.logistic_container).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::LogisticContainer);
+            });
+
+            (*data.infinity_container).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::InfinityContainer);
+            });
+
+            (*data.linked_container).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::LinkedContainer);
+            });
+
+            (*data.assembling_machine).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::AssemblingMachine);
+            });
+
+            (*data.rocket_silo).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::RocketSilo);
+            });
+
+            (*data.furnace).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Furnace);
+            });
+
+            (*data.electric_energy_interface)
+                .keys()
+                .fold((), |(), name| {
+                    entities.insert(name.clone(), EntityType::ElectricEnergyInterface);
+                });
+
+            (*data.electric_pole).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::ElectricPole);
+            });
+
+            (*data.power_switch).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::PowerSwitch);
+            });
+
+            (*data.combat_robot).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::CombatRobot);
+            });
+
+            (*data.construction_robot).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::ConstructionRobot);
+            });
+
+            (*data.logistic_robot).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::LogisticRobot);
+            });
+
+            (*data.roboport).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Roboport);
+            });
+
+            (*data.gate).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Gate);
+            });
+
+            (*data.gate).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Gate);
+            });
+
+            (*data.wall).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Wall);
+            });
+
+            (*data.generator).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Generator);
+            });
+
+            (*data.reactor).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Reactor);
+            });
+
+            (*data.heat_interface).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::HeatInterface);
+            });
+
+            (*data.heat_pipe).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::HeatPipe);
+            });
+
+            (*data.inserter).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Inserter);
+            });
+
+            (*data.lab).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Lab);
+            });
+
+            (*data.lamp).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Lamp);
+            });
+
+            (*data.land_mine).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::LandMine);
+            });
+
+            (*data.mining_drill).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::MiningDrill);
+            });
+
+            (*data.offshore_pump).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::OffshorePump);
+            });
+
+            (*data.pipe).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Pipe);
+            });
+
+            (*data.infinity_pipe).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::InfinityPipe);
+            });
+
+            (*data.pipe_to_ground).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::PipeToGround);
+            });
+
+            (*data.pump).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Pump);
+            });
+
+            (*data.simple_entity_with_owner)
+                .keys()
+                .fold((), |(), name| {
+                    entities.insert(name.clone(), EntityType::SimpleEntityWithOwner);
+                });
+
+            (*data.simple_entity_with_force)
+                .keys()
+                .fold((), |(), name| {
+                    entities.insert(name.clone(), EntityType::SimpleEntityWithForce);
+                });
+
+            (*data.solar_panel).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::SolarPanel);
+            });
+
+            (*data.storage_tank).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::StorageTank);
+            });
+
+            (*data.linked_belt).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::LinkedBelt);
+            });
+
+            (*data.loader_1x1).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Loader1x1);
+            });
+
+            (*data.loader).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Loader);
+            });
+
+            (*data.splitter).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Splitter);
+            });
+
+            (*data.transport_belt).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::TransportBelt);
+            });
+
+            (*data.underground_belt).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::UndergroundBelt);
+            });
+
+            (*data.radar).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Radar);
+            });
+
+            (*data.turret).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Turret);
+            });
+
+            (*data.ammo_turret).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::AmmoTurret);
+            });
+
+            (*data.electric_turret).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::ElectricTurret);
+            });
+
+            (*data.fluid_turret).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::FluidTurret);
+            });
+
+            (*data.car).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Car);
+            });
+
+            (*data.curved_rail).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::CurvedRail);
+            });
+
+            (*data.straight_rail).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::StraightRail);
+            });
+
+            (*data.rail_signal).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::RailSignal);
+            });
+
+            (*data.rail_chain_signal).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::RailChainSignal);
+            });
+
+            (*data.train_stop).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::TrainStop);
+            });
+
+            (*data.locomotive).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Locomotive);
+            });
+
+            (*data.cargo_wagon).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::CargoWagon);
+            });
+
+            (*data.fluid_wagon).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::FluidWagon);
+            });
+
+            (*data.artillery_wagon).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::ArtilleryWagon);
+            });
+        }
+
+        Self { data, entities }
+    }
+
+    #[allow(clippy::too_many_lines)]
+    pub fn get_entity(&self, name: &str) -> Option<&dyn RenderableEntity> {
+        let entity_type = self.entities.get(name)?;
+
+        match entity_type {
+            EntityType::Accumulator => self
+                .data
+                .accumulator
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::ArtilleryTurret => self
+                .data
+                .artillery_turret
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Beacon => self
+                .data
+                .beacon
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Boiler => self
+                .data
+                .boiler
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::BurnerGenerator => self
+                .data
+                .burner_generator
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::ArithmeticCombinator => self
+                .data
+                .arithmetic_combinator
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::DeciderCombinator => self
+                .data
+                .decider_combinator
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::ConstantCombinator => self
+                .data
+                .constant_combinator
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::ProgrammableSpeaker => self
+                .data
+                .programmable_speaker
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Container => self
+                .data
+                .container
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::LogisticContainer => self
+                .data
+                .logistic_container
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::InfinityContainer => self
+                .data
+                .infinity_container
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::LinkedContainer => self
+                .data
+                .linked_container
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::AssemblingMachine => self
+                .data
+                .assembling_machine
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::RocketSilo => self
+                .data
+                .rocket_silo
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Furnace => self
+                .data
+                .furnace
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::ElectricEnergyInterface => self
+                .data
+                .electric_energy_interface
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::ElectricPole => self
+                .data
+                .electric_pole
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::PowerSwitch => self
+                .data
+                .power_switch
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::CombatRobot => self
+                .data
+                .combat_robot
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::ConstructionRobot => self
+                .data
+                .construction_robot
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::LogisticRobot => self
+                .data
+                .logistic_robot
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Roboport => self
+                .data
+                .roboport
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Gate => self.data.gate.get(name).map(|x| x as &dyn RenderableEntity),
+            EntityType::Wall => self.data.wall.get(name).map(|x| x as &dyn RenderableEntity),
+            EntityType::Generator => self
+                .data
+                .generator
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Reactor => self
+                .data
+                .reactor
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::HeatInterface => self
+                .data
+                .heat_interface
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::HeatPipe => self
+                .data
+                .heat_pipe
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Inserter => self
+                .data
+                .inserter
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Lab => self.data.lab.get(name).map(|x| x as &dyn RenderableEntity),
+            EntityType::Lamp => self.data.lamp.get(name).map(|x| x as &dyn RenderableEntity),
+            EntityType::LandMine => self
+                .data
+                .land_mine
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::MiningDrill => self
+                .data
+                .mining_drill
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::OffshorePump => self
+                .data
+                .offshore_pump
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Pipe => self.data.pipe.get(name).map(|x| x as &dyn RenderableEntity),
+            EntityType::InfinityPipe => self
+                .data
+                .infinity_pipe
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::PipeToGround => self
+                .data
+                .pipe_to_ground
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Pump => self.data.pump.get(name).map(|x| x as &dyn RenderableEntity),
+            EntityType::SimpleEntityWithOwner => self
+                .data
+                .simple_entity_with_owner
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::SimpleEntityWithForce => self
+                .data
+                .simple_entity_with_force
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::SolarPanel => self
+                .data
+                .solar_panel
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::StorageTank => self
+                .data
+                .storage_tank
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::LinkedBelt => self
+                .data
+                .linked_belt
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Loader1x1 => self
+                .data
+                .loader_1x1
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Loader => self
+                .data
+                .loader
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Splitter => self
+                .data
+                .splitter
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::TransportBelt => self
+                .data
+                .transport_belt
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::UndergroundBelt => self
+                .data
+                .underground_belt
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Radar => self
+                .data
+                .radar
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Turret => self
+                .data
+                .turret
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::AmmoTurret => self
+                .data
+                .ammo_turret
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::ElectricTurret => self
+                .data
+                .electric_turret
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::FluidTurret => self
+                .data
+                .fluid_turret
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Car => self.data.car.get(name).map(|x| x as &dyn RenderableEntity),
+            EntityType::CurvedRail => self
+                .data
+                .curved_rail
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::StraightRail => self
+                .data
+                .straight_rail
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::RailSignal => self
+                .data
+                .rail_signal
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::RailChainSignal => self
+                .data
+                .rail_chain_signal
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::TrainStop => self
+                .data
+                .train_stop
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Locomotive => self
+                .data
+                .locomotive
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::CargoWagon => self
+                .data
+                .cargo_wagon
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::FluidWagon => self
+                .data
+                .fluid_wagon
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::ArtilleryWagon => self
+                .data
+                .artillery_wagon
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+        }
+    }
+
+    pub fn entities(&self) -> std::collections::HashSet<&String> {
+        self.entities.keys().collect()
+    }
+
+    pub fn render_entity(
+        &self,
+        entity_name: &str,
+        render_opts: &RenderOpts,
+    ) -> Option<GraphicsOutput> {
+        self.get_entity(entity_name)?.render(render_opts)
+    }
 }

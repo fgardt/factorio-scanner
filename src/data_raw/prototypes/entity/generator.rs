@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/GeneratorPrototype`](https://lua-api.factorio.com/latest/prototypes/GeneratorPrototype.html)
-pub type GeneratorPrototype = EntityWithOwnerPrototype<GeneratorData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct GeneratorPrototype(EntityWithOwnerPrototype<GeneratorData>);
+
+impl super::Renderable for GeneratorPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/GeneratorPrototype`](https://lua-api.factorio.com/latest/prototypes/GeneratorPrototype.html)
 #[skip_serializing_none]
@@ -43,4 +50,15 @@ pub struct GeneratorData {
     pub max_power_output: Option<Energy>,
     // not implemented
     // pub smoke: Vec<SmokeSource>,
+}
+
+impl super::Renderable for GeneratorData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        match options.direction.unwrap_or(Direction::North) {
+            Direction::North | Direction::South => &self.vertical_animation,
+            Direction::East | Direction::West => &self.horizontal_animation,
+            _ => panic!("Invalid direction, generators only support cardinal directions"),
+        }
+        .render(options.factorio_dir, &options.used_mods, &options.into())
+    }
 }

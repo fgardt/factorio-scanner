@@ -436,6 +436,14 @@ mod helper {
         *value == u32_1()
     }
 
+    pub const fn is_4_u32(value: &u32) -> bool {
+        *value == u32_4()
+    }
+
+    pub const fn is_8_u32(value: &u32) -> bool {
+        *value == u32_8()
+    }
+
     pub const fn is_10_u32(value: &u32) -> bool {
         *value == u32_10()
     }

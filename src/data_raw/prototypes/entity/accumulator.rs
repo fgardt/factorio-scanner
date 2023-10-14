@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/AccumulatorPrototype`](https://lua-api.factorio.com/latest/prototypes/AccumulatorPrototype.html)
-pub type AccumulatorPrototype = EntityWithOwnerPrototype<AccumulatorData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct AccumulatorPrototype(EntityWithOwnerPrototype<AccumulatorData>);
+
+impl super::Renderable for AccumulatorPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/AccumulatorPrototype`](https://lua-api.factorio.com/latest/prototypes/AccumulatorPrototype.html)
 #[skip_serializing_none]
@@ -36,4 +43,11 @@ pub struct AccumulatorData {
     pub draw_circuit_wires: bool,
     pub circuit_connector_sprites: Option<CircuitConnectorSprites>,
     pub default_output_signal: Option<SignalIDConnector>,
+}
+
+impl super::Renderable for AccumulatorData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.picture
+            .render(options.factorio_dir, &options.used_mods, &options.into())
+    }
 }

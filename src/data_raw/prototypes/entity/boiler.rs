@@ -5,7 +5,14 @@ use super::EntityWithOwnerPrototype;
 use crate::data_raw::{helper, types::*};
 
 /// [`Prototypes/BoilerPrototype`](https://lua-api.factorio.com/latest/prototypes/BoilerPrototype.html)
-pub type BoilerPrototype = EntityWithOwnerPrototype<BoilerData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct BoilerPrototype(EntityWithOwnerPrototype<BoilerData>);
+
+impl super::Renderable for BoilerPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
@@ -35,7 +42,14 @@ pub struct BoilerData {
     pub patch: Option<BoilerPatch>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+impl super::Renderable for BoilerData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        let structure: Animation4Way = self.structure.clone().into();
+        structure.render(options.factorio_dir, &options.used_mods, &options.into())
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BoilerStructure {
     pub north: Animation,
     pub east: Animation,
@@ -43,8 +57,19 @@ pub struct BoilerStructure {
     pub west: Animation,
 }
 
+impl From<BoilerStructure> for Animation4Way {
+    fn from(value: BoilerStructure) -> Self {
+        Self::Struct {
+            north: value.north,
+            east: Some(value.east),
+            south: Some(value.south),
+            west: Some(value.west),
+        }
+    }
+}
+
 #[skip_serializing_none]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BoilerFire {
     pub north: Option<Animation>,
     pub east: Option<Animation>,
@@ -53,7 +78,7 @@ pub struct BoilerFire {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BoilerFireGlow {
     pub north: Option<Animation>,
     pub east: Option<Animation>,
@@ -61,7 +86,7 @@ pub struct BoilerFireGlow {
     pub west: Option<Animation>,
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum BoilerMode {
     #[default]
@@ -70,7 +95,7 @@ pub enum BoilerMode {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BoilerPatch {
     pub north: Option<Sprite>,
     pub east: Option<Sprite>,

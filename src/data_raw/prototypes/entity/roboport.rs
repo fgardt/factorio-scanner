@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/RoboportPrototype`](https://lua-api.factorio.com/latest/prototypes/RoboportPrototype.html)
-pub type RoboportPrototype = EntityWithOwnerPrototype<RoboportData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct RoboportPrototype(EntityWithOwnerPrototype<RoboportData>);
+
+impl super::Renderable for RoboportPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/RoboportPrototype`](https://lua-api.factorio.com/latest/prototypes/RoboportPrototype.html)
 #[skip_serializing_none]
@@ -107,4 +114,27 @@ pub struct RoboportData {
     // not implemented
     // pub open_door_trigger_effect: Option<TriggerEffect>,
     // pub close_door_trigger_effect: Option<TriggerEffect>,
+}
+
+impl super::Renderable for RoboportData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        merge_renders(&[
+            self.base
+                .render(options.factorio_dir, &options.used_mods, &options.into()),
+            self.base_animation
+                .render(options.factorio_dir, &options.used_mods, &options.into()),
+            self.door_animation_up.render(
+                options.factorio_dir,
+                &options.used_mods,
+                &options.into(),
+            ),
+            self.door_animation_down.render(
+                options.factorio_dir,
+                &options.used_mods,
+                &options.into(),
+            ),
+        ])
+
+        // TODO: include base_animation & doors
+    }
 }

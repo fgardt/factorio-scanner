@@ -1,3 +1,5 @@
+use image::{DynamicImage, GenericImageView};
+use imageproc::geometric_transformations::{self, rotate_about_center};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -5,7 +7,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/InserterPrototype`](https://lua-api.factorio.com/latest/prototypes/InserterPrototype.html)
-pub type InserterPrototype = EntityWithOwnerPrototype<InserterData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct InserterPrototype(EntityWithOwnerPrototype<InserterData>);
+
+impl super::Renderable for InserterPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/InserterPrototype`](https://lua-api.factorio.com/latest/prototypes/InserterPrototype.html)
 #[skip_serializing_none]
@@ -93,4 +102,69 @@ pub struct InserterData {
         CircuitConnectorSprites,
         CircuitConnectorSprites,
     )>,
+}
+
+impl super::Renderable for InserterData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        const TILE_RES: f64 = 32.0;
+
+        let direction = options.direction.unwrap_or_default();
+
+        let hand = self
+            .hand_open_picture
+            .render(options.factorio_dir, &options.used_mods, &options.into())
+            .map(|(img, scale, shift)| {
+                let raw_pickup_pos = options.pickup_position.unwrap_or(self.pickup_position);
+                let pickup_pos = direction.rotate_vector(raw_pickup_pos);
+
+                let length = pickup_pos.0.hypot(pickup_pos.1);
+                let angle = pickup_pos.1.atan2(pickup_pos.0) + (std::f64::consts::PI / 2.0);
+
+                let (width, height) = img.dimensions();
+                let diagonal = f64::from(width).hypot(f64::from(height));
+
+                let size = diagonal * length;
+                let stretch_lentgh = f64::from(height) * length;
+                let mut hand = DynamicImage::new_rgba8(size.round() as u32, size.round() as u32);
+                image::imageops::overlay(
+                    &mut hand,
+                    &img.resize_exact(
+                        width,
+                        stretch_lentgh.round() as u32,
+                        image::imageops::FilterType::Nearest,
+                    ),
+                    (size / 2.0 - f64::from(width) / 2.0).round() as i64,
+                    (size / 2.0 - stretch_lentgh / 2.0).round() as i64,
+                );
+
+                let rotated_hand = rotate_about_center(
+                    &hand.to_rgba8(),
+                    angle as f32,
+                    geometric_transformations::Interpolation::Nearest,
+                    image::Rgba([0, 0, 0, 0]),
+                );
+
+                let shift_amount = stretch_lentgh / 2.0 / (TILE_RES / scale);
+
+                (
+                    rotated_hand.into(),
+                    scale,
+                    (shift_amount * angle.sin(), shift_amount * -angle.cos()),
+                )
+            });
+
+        let platform_options = &super::RenderOpts {
+            direction: Some(direction.flip()),
+            ..options.clone()
+        };
+
+        merge_renders(&[
+            self.platform_picture.render(
+                options.factorio_dir,
+                &options.used_mods,
+                &platform_options.into(),
+            ),
+            hand,
+        ])
+    }
 }

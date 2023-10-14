@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/ContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/ContainerPrototype.html)
-pub type ContainerPrototype = EntityWithOwnerPrototype<ContainerData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ContainerPrototype(EntityWithOwnerPrototype<ContainerData>);
+
+impl super::Renderable for ContainerPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/ContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/ContainerPrototype.html)
 #[skip_serializing_none]
@@ -43,6 +50,14 @@ pub struct ContainerData {
     pub circuit_connector_sprites: Option<CircuitConnectorSprites>,
 }
 
+impl super::Renderable for ContainerData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.picture.as_ref().and_then(|picture| {
+            picture.render(options.factorio_dir, &options.used_mods, &options.into())
+        })
+    }
+}
+
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum InventoryType {
@@ -52,7 +67,14 @@ pub enum InventoryType {
 }
 
 /// [`Prototypes/LogisticContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/LogisticContainerPrototype.html)
-pub type LogisticContainerPrototype = EntityWithOwnerPrototype<LogisticContainerData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct LogisticContainerPrototype(EntityWithOwnerPrototype<LogisticContainerData>);
+
+impl super::Renderable for LogisticContainerPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/LogisticContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/LogisticContainerPrototype.html)
 #[skip_serializing_none]
@@ -89,6 +111,14 @@ pub struct LogisticContainerData {
     // pub animation_sound: Option<Sound>,
 }
 
+impl super::Renderable for LogisticContainerData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.animation
+            .as_ref()?
+            .render(options.factorio_dir, &options.used_mods, &options.into())
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum LogisticMode {
@@ -100,7 +130,14 @@ pub enum LogisticMode {
 }
 
 /// [`Prototypes/InfinityContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityContainerPrototype.html)
-pub type InfinityContainerPrototype = EntityWithOwnerPrototype<InfinityContainerData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct InfinityContainerPrototype(EntityWithOwnerPrototype<InfinityContainerData>);
+
+impl super::Renderable for InfinityContainerPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/InfinityContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityContainerPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -115,8 +152,21 @@ pub struct InfinityContainerData {
     pub parent: LogisticContainerData,
 }
 
+impl super::Renderable for InfinityContainerData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.parent.parent.render(options)
+    }
+}
+
 /// [`Prototypes/LinkedContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/LinkedContainerPrototype.html)
-pub type LinkedContainerPrototype = EntityWithOwnerPrototype<LinkedContainerData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct LinkedContainerPrototype(EntityWithOwnerPrototype<LinkedContainerData>);
+
+impl super::Renderable for LinkedContainerPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/LinkedContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/LinkedContainerPrototype.html)
 #[skip_serializing_none]
@@ -149,4 +199,12 @@ pub struct LinkedContainerData {
     pub draw_circuit_wires: bool,
 
     pub circuit_connector_sprites: Option<CircuitConnectorSprites>,
+}
+
+impl super::Renderable for LinkedContainerData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.picture.as_ref().and_then(|picture| {
+            picture.render(options.factorio_dir, &options.used_mods, &options.into())
+        })
+    }
 }

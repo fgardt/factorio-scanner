@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/ReactorPrototype`](https://lua-api.factorio.com/latest/prototypes/ReactorPrototype.html)
-pub type ReactorPrototype = EntityWithOwnerPrototype<ReactorData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ReactorPrototype(EntityWithOwnerPrototype<ReactorData>);
+
+impl super::Renderable for ReactorPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/ReactorPrototype`](https://lua-api.factorio.com/latest/prototypes/ReactorPrototype.html)
 #[skip_serializing_none]
@@ -38,4 +45,19 @@ pub struct ReactorData {
     pub default_fuel_glow_color: Color,
     // not implemented
     // pub meltdown_action: Option<Trigger>,
+}
+
+impl super::Renderable for ReactorData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        merge_renders(&[
+            self.lower_layer_picture
+                .as_ref()
+                .and_then(|s| s.render(options.factorio_dir, &options.used_mods, &options.into())),
+            self.picture
+                .as_ref()
+                .and_then(|s| s.render(options.factorio_dir, &options.used_mods, &options.into())),
+        ])
+
+        // TODO: include heatpipes (and maybe glow?)
+    }
 }

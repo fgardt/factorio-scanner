@@ -4,7 +4,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/PowerSwitchPrototype`](https://lua-api.factorio.com/latest/prototypes/PowerSwitchPrototype.html)
-pub type PowerSwitchPrototype = EntityWithOwnerPrototype<PowerSwitchData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct PowerSwitchPrototype(EntityWithOwnerPrototype<PowerSwitchData>);
+
+impl super::Renderable for PowerSwitchPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/PowerSwitchPrototype`](https://lua-api.factorio.com/latest/prototypes/PowerSwitchPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -30,4 +37,13 @@ pub struct PowerSwitchData {
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub draw_circuit_wires: bool,
+}
+
+impl super::Renderable for PowerSwitchData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.power_on_animation
+            .render(options.factorio_dir, &options.used_mods, &options.into())
+
+        // TODO: render open / closed depending on render option flag
+    }
 }

@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/TrainStopPrototype`](https://lua-api.factorio.com/latest/prototypes/TrainStopPrototype.html)
-pub type TrainStopPrototype = EntityWithOwnerPrototype<TrainStopData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct TrainStopPrototype(EntityWithOwnerPrototype<TrainStopData>);
+
+impl super::Renderable for TrainStopPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/TrainStopPrototype`](https://lua-api.factorio.com/latest/prototypes/TrainStopPrototype.html)
 #[skip_serializing_none]
@@ -54,6 +61,12 @@ pub struct TrainStopData {
 
     pub drawing_boxes: Option<TrainStopDrawingBoxes>,
     // TODO: overrides build_grid_size to 2
+}
+
+impl super::Renderable for TrainStopData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

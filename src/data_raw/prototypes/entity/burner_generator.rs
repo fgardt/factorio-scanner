@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/BurnerGeneratorPrototype`](https://lua-api.factorio.com/latest/prototypes/BurnerGeneratorPrototype.html)
-pub type BurnerGeneratorPrototype = EntityWithOwnerPrototype<BurnerGeneratorData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct BurnerGeneratorPrototype(EntityWithOwnerPrototype<BurnerGeneratorData>);
+
+impl super::Renderable for BurnerGeneratorPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/BurnerGeneratorPrototype`](https://lua-api.factorio.com/latest/prototypes/BurnerGeneratorPrototype.html)
 #[skip_serializing_none]
@@ -32,4 +39,11 @@ pub struct BurnerGeneratorData {
         skip_serializing_if = "helper::is_half_f64"
     )]
     pub performance_to_sound_speedup: f64,
+}
+
+impl super::Renderable for BurnerGeneratorData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.animation
+            .render(options.factorio_dir, &options.used_mods, &options.into())
+    }
 }

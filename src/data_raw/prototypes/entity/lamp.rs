@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/LampPrototype`](https://lua-api.factorio.com/latest/prototypes/LampPrototype.html)
-pub type LampPrototype = EntityWithOwnerPrototype<LampData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct LampPrototype(EntityWithOwnerPrototype<LampData>);
+
+impl super::Renderable for LampPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/LampPrototype`](https://lua-api.factorio.com/latest/prototypes/LampPrototype.html)
 #[skip_serializing_none]
@@ -55,6 +62,13 @@ pub struct LampData {
     // TODO: skip serializing if default
     #[serde(default)]
     pub glow_render_mode: GlowRenderMode,
+}
+
+impl super::Renderable for LampData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.picture_off
+            .render(options.factorio_dir, &options.used_mods, &options.into())
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]

@@ -5,7 +5,14 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/TurretPrototype`](https://lua-api.factorio.com/latest/prototypes/TurretPrototype.html)
-pub type TurretPrototype = EntityWithOwnerPrototype<TurretData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct TurretPrototype(EntityWithOwnerPrototype<TurretData>);
+
+impl super::Renderable for TurretPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/TurretPrototype`](https://lua-api.factorio.com/latest/prototypes/TurretPrototype.html)
 #[skip_serializing_none]
@@ -129,8 +136,28 @@ pub struct TurretData {
     // pub spawn_decoration: Option<CreateDecorativesTriggerEffectItem or array of that>,
 }
 
+impl super::Renderable for TurretData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        merge_renders(&[
+            self.base_picture
+                .as_ref()
+                .and_then(|a| a.render(options.factorio_dir, &options.used_mods, &options.into())),
+            self.folding_animation
+                .as_ref()
+                .and_then(|a| a.render(options.factorio_dir, &options.used_mods, &options.into())),
+        ])
+    }
+}
+
 /// [`Prototypes/AmmoTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/AmmoTurretPrototype.html)
-pub type AmmoTurretPrototype = EntityWithOwnerPrototype<AmmoTurretData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct AmmoTurretPrototype(EntityWithOwnerPrototype<AmmoTurretData>);
+
+impl super::Renderable for AmmoTurretPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/AmmoTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/AmmoTurretPrototype.html)
 #[skip_serializing_none]
@@ -148,8 +175,21 @@ pub struct AmmoTurretData {
     pub parent: TurretData,
 }
 
+impl super::Renderable for AmmoTurretData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.parent.render(options)
+    }
+}
+
 /// [`Prototypes/ElectricTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/ElectricTurretPrototype.html)
-pub type ElectricTurretPrototype = EntityWithOwnerPrototype<ElectricTurretData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ElectricTurretPrototype(EntityWithOwnerPrototype<ElectricTurretData>);
+
+impl super::Renderable for ElectricTurretPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/ElectricTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/ElectricTurretPrototype.html)
 #[skip_serializing_none]
@@ -161,8 +201,21 @@ pub struct ElectricTurretData {
     pub parent: TurretData,
 }
 
+impl super::Renderable for ElectricTurretData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.parent.render(options)
+    }
+}
+
 /// [`Prototypes/FluidTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/FluidTurretPrototype.html)
-pub type FluidTurretPrototype = EntityWithOwnerPrototype<FluidTurretData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct FluidTurretPrototype(EntityWithOwnerPrototype<FluidTurretData>);
+
+impl super::Renderable for FluidTurretPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/FluidTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/FluidTurretPrototype.html)
 #[skip_serializing_none]
@@ -178,6 +231,15 @@ pub struct FluidTurretData {
     pub not_enough_fuel_indicator_light: Option<LightDefinition>,
     pub muzzle_animation: Option<Animation>,
     pub folded_muzzle_animation_shift: Option<AnimatedVector>,
+
+    #[serde(flatten)]
+    pub parent: TurretData,
+}
+
+impl super::Renderable for FluidTurretData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.parent.render(options)
+    }
 }
 
 /// [`Types/AnimatedVector`](https://lua-api.factorio.com/latest/types/AnimatedVector.html)

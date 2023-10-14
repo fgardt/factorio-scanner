@@ -4,7 +4,14 @@ use super::EntityWithOwnerPrototype;
 use crate::data_raw::types::*;
 
 /// [`Prototypes/PipePrototype`](https://lua-api.factorio.com/latest/prototypes/PipePrototype.html)
-pub type PipePrototype = EntityWithOwnerPrototype<PipeData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct PipePrototype(EntityWithOwnerPrototype<PipeData>);
+
+impl super::Renderable for PipePrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/PipePrototype`](https://lua-api.factorio.com/latest/prototypes/PipePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -13,6 +20,12 @@ pub struct PipeData {
     pub horizontal_window_bounding_box: BoundingBox,
     pub vertical_window_bounding_box: BoundingBox,
     pub pictures: PipePictures,
+}
+
+impl super::Renderable for PipeData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -45,7 +58,14 @@ pub struct PipePictures {
 }
 
 /// [`Prototypes/InfinityPipePrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityPipePrototype.html)
-pub type InfinityPipePrototype = EntityWithOwnerPrototype<InfinityPipeData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct InfinityPipePrototype(EntityWithOwnerPrototype<InfinityPipeData>);
+
+impl super::Renderable for InfinityPipePrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/InfinityPipePrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityPipePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -57,8 +77,21 @@ pub struct InfinityPipeData {
     pub parent: PipeData,
 }
 
+impl super::Renderable for InfinityPipeData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/PipeToGroundPrototype`](https://lua-api.factorio.com/latest/prototypes/PipeToGroundPrototype.html)
-pub type PipeToGroundPrototype = EntityWithOwnerPrototype<PipeToGroundData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct PipeToGroundPrototype(EntityWithOwnerPrototype<PipeToGroundData>);
+
+impl super::Renderable for PipeToGroundPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
 
 /// [`Prototypes/PipeToGroundPrototype`](https://lua-api.factorio.com/latest/prototypes/PipeToGroundPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -68,6 +101,12 @@ pub struct PipeToGroundData {
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub draw_fluid_icon_override: bool,
+}
+
+impl super::Renderable for PipeToGroundData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]

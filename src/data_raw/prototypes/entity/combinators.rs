@@ -50,8 +50,24 @@ pub struct CombinatorPrototype<T> {
     pub child: T,
 }
 
+impl<T: super::Renderable> super::Renderable for CombinatorPrototype<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.sprites
+            .render(options.factorio_dir, &options.used_mods, &options.into())
+
+        // TODO: render lights + selected operation
+    }
+}
+
 /// [`Prototypes/ArithmeticCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/ArithmeticCombinatorPrototype.html)
-pub type ArithmeticCombinatorPrototype = CombinatorPrototype<ArithmeticCombinatorData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ArithmeticCombinatorPrototype(CombinatorPrototype<ArithmeticCombinatorData>);
+
+impl super::Renderable for ArithmeticCombinatorPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/ArithmeticCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/ArithmeticCombinatorPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -69,8 +85,21 @@ pub struct ArithmeticCombinatorData {
     pub xor_symbol_sprites: Sprite4Way,
 }
 
+impl super::Renderable for ArithmeticCombinatorData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/DeciderCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/DeciderCombinatorPrototype.html)
-pub type DeciderCombinatorPrototype = CombinatorPrototype<DeciderCombinatorData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct DeciderCombinatorPrototype(CombinatorPrototype<DeciderCombinatorData>);
+
+impl super::Renderable for DeciderCombinatorPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/DeciderCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/DeciderCombinatorPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -83,8 +112,21 @@ pub struct DeciderCombinatorData {
     pub less_or_equal_symbol_sprites: Sprite4Way,
 }
 
+impl super::Renderable for DeciderCombinatorData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/ConstantCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/ConstantCombinatorPrototype.html)
-pub type ConstantCombinatorPrototype = EntityWithOwnerPrototype<ConstantCombinatorData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ConstantCombinatorPrototype(EntityWithOwnerPrototype<ConstantCombinatorData>);
+
+impl super::Renderable for ConstantCombinatorPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/ConstantCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/ConstantCombinatorPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -112,4 +154,11 @@ pub struct ConstantCombinatorData {
 
     #[serde(default, skip_serializing_if = "Clone::clone")]
     pub draw_circuit_wires: bool,
+}
+
+impl super::Renderable for ConstantCombinatorData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.sprites
+            .render(options.factorio_dir, &options.used_mods, &options.into())
+    }
 }

@@ -7,12 +7,21 @@ use super::{helper, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
 
 /// [`Prototypes/CraftingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/CraftingMachinePrototype.html)
-pub type CraftingMachinePrototype<T> = EntityWithOwnerPrototype<CraftingMachineData<T>>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CraftingMachinePrototype<T: super::Renderable>(
+    EntityWithOwnerPrototype<CraftingMachineData<T>>,
+);
+
+impl<T: super::Renderable> super::Renderable for CraftingMachinePrototype<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/CraftingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/CraftingMachinePrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
-pub struct CraftingMachineData<T> {
+pub struct CraftingMachineData<T: super::Renderable> {
     pub energy_usage: Energy,
     pub crafting_speed: f64,
     pub crafting_categories: Vec<RecipeCategoryID>,
@@ -77,6 +86,17 @@ pub struct CraftingMachineData<T> {
     pub child: T,
 }
 
+impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        if self.always_draw_idle_animation && self.idle_animation.is_some() {
+            self.idle_animation.as_ref()?
+        } else {
+            self.animation.as_ref()?
+        }
+        .render(options.factorio_dir, &options.used_mods, &options.into())
+    }
+}
+
 // TODO: find a better way to work around this abomination of a type
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
@@ -93,7 +113,14 @@ pub enum CraftingMachineFluidBoxCursedType {
 }
 
 /// [`Prototypes/FurnacePrototype`](https://lua-api.factorio.com/latest/prototypes/FurnacePrototype.html)
-pub type FurnacePrototype = CraftingMachinePrototype<FurnaceData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct FurnacePrototype(CraftingMachinePrototype<FurnaceData>);
+
+impl super::Renderable for FurnacePrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/FurnacePrototype`](https://lua-api.factorio.com/latest/prototypes/FurnacePrototype.html)
 #[skip_serializing_none]
@@ -109,8 +136,21 @@ pub struct FurnaceData {
     // TODO: `entity_info_icon_shift` has overriden default
 }
 
+impl super::Renderable for FurnaceData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/AssemblingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/AssemblingMachinePrototype.html)
-pub type AssemblingMachinePrototype = CraftingMachinePrototype<AssemblingMachineData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct AssemblingMachinePrototype(CraftingMachinePrototype<AssemblingMachineData>);
+
+impl super::Renderable for AssemblingMachinePrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/AssemblingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/AssemblingMachinePrototype.html)
 #[skip_serializing_none]
@@ -131,8 +171,21 @@ pub struct AssemblingMachineData {
     // TODO: `entity_info_icon_shift` has overriden default
 }
 
+impl super::Renderable for AssemblingMachineData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
 /// [`Prototypes/RocketSiloPrototype`](https://lua-api.factorio.com/latest/prototypes/RocketSiloPrototype.html)
-pub type RocketSiloPrototype = CraftingMachinePrototype<RocketSiloData>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct RocketSiloPrototype(CraftingMachinePrototype<RocketSiloData>);
+
+impl super::Renderable for RocketSiloPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        self.0.render(options)
+    }
+}
 
 /// [`Prototypes/RocketSiloPrototype`](https://lua-api.factorio.com/latest/prototypes/RocketSiloPrototype.html)
 #[skip_serializing_none]
@@ -212,4 +265,10 @@ pub struct RocketSiloData {
     // pub doors_sound: Option<Sound>,
     // pub raise_rocket_sound: Option<Sound>,
     // pub flying_sound: Option<Sound>,
+}
+
+impl super::Renderable for RocketSiloData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
 }
