@@ -88,6 +88,53 @@ impl Data {
             Self::Blueprint { info, .. } | Self::BlueprintBook { info, .. } => info,
         }
     }
+
+    fn normalize_positions(&mut self) {
+        match self {
+            Self::BlueprintBook { blueprints, .. } => {
+                for blueprint in blueprints {
+                    blueprint.data.normalize_positions();
+                }
+            }
+            Self::Blueprint {
+                entities, tiles, ..
+            } => {
+                let mut min_x = f32::MAX;
+                let mut min_y = f32::MAX;
+                let mut max_x = f32::MIN;
+                let mut max_y = f32::MIN;
+
+                for entity in &*entities {
+                    min_x = min_x.min(entity.position.x);
+                    min_y = min_y.min(entity.position.y);
+                    max_x = max_x.max(entity.position.x);
+                    max_y = max_y.max(entity.position.y);
+                }
+
+                for tile in &*tiles {
+                    min_x = min_x.min(tile.position.x);
+                    min_y = min_y.min(tile.position.y);
+                    max_x = max_x.max(tile.position.x);
+                    max_y = max_y.max(tile.position.y);
+                }
+
+                let width = ((max_x - min_x) / 2.0).round();
+                let height = ((max_y - min_y) / 2.0).round();
+                let offset_x = (min_x + width).round();
+                let offset_y = (min_y + height).round();
+
+                for entity in entities {
+                    entity.position.x -= offset_x;
+                    entity.position.y -= offset_y;
+                }
+
+                for tile in tiles {
+                    tile.position.x -= offset_x;
+                    tile.position.y -= offset_y;
+                }
+            }
+        }
+    }
 }
 
 // TODO: properly propagate/bubble errors up for better handling
@@ -122,7 +169,11 @@ impl TryFrom<&str> for Data {
             return Err("Error decompressing blueprint string.");
         }
 
-        serde_json::from_str(&uncompressed).map_or(Err("Error deserializing blueprint."), Ok)
+        let mut data: Self = serde_json::from_str(&uncompressed).unwrap(); //.map_or(Err("Error deserializing blueprint."), Ok)?;
+
+        data.normalize_positions();
+
+        Ok(data)
     }
 }
 
@@ -138,14 +189,13 @@ impl TryFrom<Data> for String {
     type Error = &'static str;
 
     fn try_from(data: Data) -> Result<Self, Self::Error> {
-        let uncompressed = match serde_json::to_string(&data) {
-            Ok(uncompressed) => uncompressed,
-            Err(_) => return Err("Error serializing blueprint."),
+        let Ok(uncompressed) = serde_json::to_string(&data) else {
+            return Err("Error serializing blueprint.");
         };
 
         let mut deflate = ZlibEncoder::new(Vec::new(), flate2::Compression::new(9));
         match deflate.write_all(uncompressed.as_bytes()) {
-            Ok(_) => (),
+            Ok(()) => (),
             Err(_) => return Err("Error compressing blueprint."),
         };
 
@@ -254,6 +304,8 @@ pub struct Entity {
 
     #[serde(rename = "type")]
     pub type_: Option<UndergroundType>,
+    pub belt_link: Option<u32>,
+    pub link_id: Option<u32>,
 
     pub input_priority: Option<SplitterPriority>,
     pub output_priority: Option<SplitterPriority>,
@@ -292,6 +344,15 @@ pub struct Entity {
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub switch_state: bool,
+
+    // electric energy interface
+    pub buffer_size: Option<f64>,
+    pub power_production: Option<f64>,
+    pub power_usage: Option<f64>,
+
+    // heat interface
+    pub temperature: Option<f64>,
+    pub mode: Option<String>,
 
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub tags: TagTable,
@@ -494,6 +555,8 @@ pub enum InfinityFilterMode {
     AtLeast,
     AtMost,
     Exactly,
+    Remove,
+    Add,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

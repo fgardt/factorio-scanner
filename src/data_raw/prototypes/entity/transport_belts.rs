@@ -6,13 +6,17 @@ use crate::data_raw::types::*;
 
 /// [`Prototypes/TransportBeltConnectablePrototype`](https://lua-api.factorio.com/latest/prototypes/TransportBeltConnectablePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
-pub struct TransportBeltConnectablePrototype<G, T: super::Renderable>(
+pub struct TransportBeltConnectablePrototype<G: super::Renderable, T: super::Renderable>(
     EntityWithOwnerPrototype<TransportBeltConnectableData<G, T>>,
 );
 
-impl<G, T: super::Renderable> super::Renderable for TransportBeltConnectablePrototype<G, T> {
+impl<G, T> super::Renderable for TransportBeltConnectablePrototype<G, T>
+where
+    G: super::Renderable,
+    T: super::Renderable,
+{
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.0.render(options)
     }
 }
 
@@ -32,9 +36,16 @@ pub struct TransportBeltConnectableData<G, T> {
     pub child: T,
 }
 
-impl<G, T: super::Renderable> super::Renderable for TransportBeltConnectableData<G, T> {
+impl<G, T> super::Renderable for TransportBeltConnectableData<G, T>
+where
+    G: super::Renderable,
+    T: super::Renderable,
+{
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        merge_renders(&[
+            self.graphics_set.render(options),
+            self.child.render(options),
+        ])
     }
 }
 
@@ -63,13 +74,24 @@ pub enum BeltGraphics {
     },
 }
 
+impl super::Renderable for BeltGraphics {
+    fn render(&self, options: &super::RenderOpts) -> Option<(image::DynamicImage, f64, Vector)> {
+        match self {
+            Self::BeltAnimationSet { belt_animation_set } => {
+                belt_animation_set.render(options.factorio_dir, &options.used_mods, &options.into())
+            }
+            Self::Individual { .. } => None,
+        }
+    }
+}
+
 /// [`Prototypes/LinkedBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/LinkedBeltPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LinkedBeltPrototype(TransportBeltConnectablePrototype<BeltGraphics, LinkedBeltData>);
 
 impl super::Renderable for LinkedBeltPrototype {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.0.render(options)
     }
 }
 
@@ -94,7 +116,23 @@ pub struct LinkedBeltData {
 
 impl super::Renderable for LinkedBeltData {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        if options.underground_in.unwrap_or_default() {
+            self.structure.direction_in.render(
+                options.factorio_dir,
+                &options.used_mods,
+                &options.into(),
+            )
+        } else {
+            let flipped_opts = &super::RenderOpts {
+                direction: Some(options.direction.unwrap_or_default().flip()),
+                ..options.clone()
+            };
+            self.structure.direction_out.render(
+                options.factorio_dir,
+                &options.used_mods,
+                &flipped_opts.into(),
+            )
+        }
     }
 }
 
@@ -119,7 +157,7 @@ pub struct LoaderPrototype<T: super::Renderable>(
 
 impl<T: super::Renderable> super::Renderable for LoaderPrototype<T> {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.0.render(options)
     }
 }
 
@@ -178,7 +216,7 @@ pub struct Loader1x1Prototype(LoaderPrototype<Loader1x1Data>);
 
 impl super::Renderable for Loader1x1Prototype {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.0.render(options)
     }
 }
 
@@ -204,7 +242,7 @@ pub struct Loader1x2Prototype(LoaderPrototype<Loader1x2Data>);
 
 impl super::Renderable for Loader1x2Prototype {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.0.render(options)
     }
 }
 
@@ -231,7 +269,7 @@ pub struct SplitterPrototype(TransportBeltConnectablePrototype<BeltGraphics, Spl
 
 impl super::Renderable for SplitterPrototype {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.0.render(options)
     }
 }
 
@@ -251,7 +289,15 @@ pub struct SplitterData {
 
 impl super::Renderable for SplitterData {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        // TODO: figure out how to render the 2 belts below the splitter
+
+        merge_renders(&[
+            self.structure_patch
+                .as_ref()
+                .and_then(|a| a.render(options.factorio_dir, &options.used_mods, &options.into())),
+            self.structure
+                .render(options.factorio_dir, &options.used_mods, &options.into()),
+        ])
     }
 }
 
@@ -263,7 +309,7 @@ pub struct TransportBeltPrototype(
 
 impl super::Renderable for TransportBeltPrototype {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.0.render(options)
     }
 }
 
@@ -308,6 +354,17 @@ pub enum BeltGraphicsWithCorners {
     },
 }
 
+impl super::Renderable for BeltGraphicsWithCorners {
+    fn render(&self, options: &super::RenderOpts) -> Option<(image::DynamicImage, f64, Vector)> {
+        match self {
+            Self::BeltAnimationSetWithCorners { belt_animation_set } => {
+                belt_animation_set.render(options.factorio_dir, &options.used_mods, &options.into())
+            }
+            Self::Animations { .. } => None,
+        }
+    }
+}
+
 /// [`Prototypes/UndergroundBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/UndergroundBeltPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct UndergroundBeltPrototype(
@@ -316,7 +373,7 @@ pub struct UndergroundBeltPrototype(
 
 impl super::Renderable for UndergroundBeltPrototype {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.0.render(options)
     }
 }
 
@@ -334,7 +391,23 @@ pub struct UndergroundBeltData {
 
 impl super::Renderable for UndergroundBeltData {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        if options.underground_in.unwrap_or_default() {
+            self.structure.direction_in.render(
+                options.factorio_dir,
+                &options.used_mods,
+                &options.into(),
+            )
+        } else {
+            let flipped_opts = &super::RenderOpts {
+                direction: Some(options.direction.unwrap_or_default().flip()),
+                ..options.clone()
+            };
+            self.structure.direction_out.render(
+                options.factorio_dir,
+                &options.used_mods,
+                &flipped_opts.into(),
+            )
+        }
     }
 }
 

@@ -33,6 +33,13 @@ pub struct BeaconData {
 
 impl super::Renderable for BeaconData {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.graphics_set.as_ref().map_or_else(
+            || {
+                self.base_picture.as_ref().and_then(|b| {
+                    b.render(options.factorio_dir, &options.used_mods, &options.into())
+                })
+            },
+            |g| g.render(options.factorio_dir, &options.used_mods, &options.into()),
+        )
     }
 }

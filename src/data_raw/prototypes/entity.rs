@@ -96,6 +96,12 @@ pub struct RenderOpts<'a> {
 
     pub pickup_position: Option<Vector>,
 
+    pub connections: Option<ConnectedDirections>,
+
+    pub underground_in: Option<bool>,
+
+    pub connected_gates: Vec<Direction>,
+
     pub runtime_tint: Option<Color>,
 }
 
@@ -113,15 +119,6 @@ impl<T: Renderable> Deref for EntityPrototypeMap<T> {
         &self.0
     }
 }
-
-// impl<T: Renderable> IntoIterator for EntityPrototypeMap<T> {
-//     type Item = (String, T);
-//     type IntoIter = std::collections::hash_map::IntoIter<String, T>;
-
-//     fn into_iter(self) -> Self::IntoIter {
-//         self.0.into_iter()
-//     }
-// }
 
 /// [`Prototypes/EntityPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]

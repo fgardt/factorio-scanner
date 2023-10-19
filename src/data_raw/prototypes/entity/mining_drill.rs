@@ -10,7 +10,7 @@ pub struct MiningDrillPrototype(EntityWithOwnerPrototype<MiningDrillData>);
 
 impl super::Renderable for MiningDrillPrototype {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.0.render(options)
     }
 }
 
@@ -71,6 +71,20 @@ pub struct MiningDrillData {
 
 impl super::Renderable for MiningDrillData {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.graphics_set.as_ref().map_or_else(
+            || {
+                merge_renders(&[
+                    self.base_picture.as_ref().and_then(|s| {
+                        s.render(options.factorio_dir, &options.used_mods, &options.into())
+                    }),
+                    self.animations.as_ref().and_then(|s| {
+                        s.render(options.factorio_dir, &options.used_mods, &options.into())
+                    }),
+                ])
+            },
+            |graphics_set| {
+                graphics_set.render(options.factorio_dir, &options.used_mods, &options.into())
+            },
+        )
     }
 }

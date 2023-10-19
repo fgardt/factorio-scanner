@@ -88,12 +88,14 @@ pub struct CraftingMachineData<T: super::Renderable> {
 
 impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        if self.always_draw_idle_animation && self.idle_animation.is_some() {
-            self.idle_animation.as_ref()?
+        let anim = if self.always_draw_idle_animation && self.idle_animation.is_some() {
+            self.idle_animation.as_ref()
         } else {
-            self.animation.as_ref()?
+            self.animation.as_ref()
         }
-        .render(options.factorio_dir, &options.used_mods, &options.into())
+        .and_then(|anim| anim.render(options.factorio_dir, &options.used_mods, &options.into()));
+
+        merge_renders(&[anim, self.child.render(options)])
     }
 }
 
@@ -269,6 +271,31 @@ pub struct RocketSiloData {
 
 impl super::Renderable for RocketSiloData {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        merge_renders(&[
+            self.door_back_sprite
+                .render(options.factorio_dir, &options.used_mods, &options.into()),
+            self.door_front_sprite.render(
+                options.factorio_dir,
+                &options.used_mods,
+                &options.into(),
+            ),
+            self.base_day_sprite
+                .render(options.factorio_dir, &options.used_mods, &options.into()),
+            self.arm_01_back_animation.render(
+                options.factorio_dir,
+                &options.used_mods,
+                &options.into(),
+            ),
+            self.arm_02_right_animation.render(
+                options.factorio_dir,
+                &options.used_mods,
+                &options.into(),
+            ),
+            self.arm_03_front_animation.render(
+                options.factorio_dir,
+                &options.used_mods,
+                &options.into(),
+            ),
+        ])
     }
 }

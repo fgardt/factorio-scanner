@@ -9,7 +9,7 @@ pub struct PipePrototype(EntityWithOwnerPrototype<PipeData>);
 
 impl super::Renderable for PipePrototype {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.0.render(options)
     }
 }
 
@@ -24,7 +24,25 @@ pub struct PipeData {
 
 impl super::Renderable for PipeData {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        match options.connections.unwrap_or_default() {
+            super::ConnectedDirections::None => &self.pictures.straight_vertical_single,
+            super::ConnectedDirections::Up => &self.pictures.ending_up,
+            super::ConnectedDirections::Down => &self.pictures.ending_down,
+            super::ConnectedDirections::Left => &self.pictures.ending_left,
+            super::ConnectedDirections::Right => &self.pictures.ending_right,
+            super::ConnectedDirections::UpDown => &self.pictures.straight_vertical,
+            super::ConnectedDirections::UpLeft => &self.pictures.corner_up_left,
+            super::ConnectedDirections::UpRight => &self.pictures.corner_up_right,
+            super::ConnectedDirections::DownLeft => &self.pictures.corner_down_left,
+            super::ConnectedDirections::DownRight => &self.pictures.corner_down_right,
+            super::ConnectedDirections::LeftRight => &self.pictures.straight_horizontal,
+            super::ConnectedDirections::UpDownLeft => &self.pictures.t_left,
+            super::ConnectedDirections::UpDownRight => &self.pictures.t_right,
+            super::ConnectedDirections::UpLeftRight => &self.pictures.t_up,
+            super::ConnectedDirections::DownLeftRight => &self.pictures.t_down,
+            super::ConnectedDirections::All => &self.pictures.cross,
+        }
+        .render(options.factorio_dir, &options.used_mods, &options.into())
     }
 }
 
@@ -63,7 +81,7 @@ pub struct InfinityPipePrototype(EntityWithOwnerPrototype<InfinityPipeData>);
 
 impl super::Renderable for InfinityPipePrototype {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.0.render(options)
     }
 }
 
@@ -79,7 +97,7 @@ pub struct InfinityPipeData {
 
 impl super::Renderable for InfinityPipeData {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.parent.render(options)
     }
 }
 
@@ -89,7 +107,7 @@ pub struct PipeToGroundPrototype(EntityWithOwnerPrototype<PipeToGroundData>);
 
 impl super::Renderable for PipeToGroundPrototype {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.0.render(options)
     }
 }
 
@@ -105,7 +123,14 @@ pub struct PipeToGroundData {
 
 impl super::Renderable for PipeToGroundData {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        match options.direction.unwrap_or_default() {
+            Direction::North => &self.pictures.up,
+            Direction::East => &self.pictures.right,
+            Direction::South => &self.pictures.down,
+            Direction::West => &self.pictures.left,
+            _ => unimplemented!("PipeToGround only supports cardinal directions"),
+        }
+        .render(options.factorio_dir, &options.used_mods, &options.into())
     }
 }
 

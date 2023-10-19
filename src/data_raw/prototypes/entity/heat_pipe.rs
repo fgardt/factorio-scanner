@@ -9,7 +9,7 @@ pub struct HeatPipePrototype(EntityWithOwnerPrototype<HeatPipeData>);
 
 impl super::Renderable for HeatPipePrototype {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.0.render(options)
     }
 }
 
@@ -23,6 +23,8 @@ pub struct HeatPipeData {
 
 impl super::Renderable for HeatPipeData {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.connection_sprites
+            .get(options.connections.unwrap_or_default())
+            .render(options.factorio_dir, &options.used_mods, &options.into())
     }
 }
