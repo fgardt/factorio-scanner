@@ -10,7 +10,7 @@ pub struct GatePrototype(EntityWithOwnerPrototype<GateData>);
 
 impl super::Renderable for GatePrototype {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        None
+        self.0.render(options)
     }
 }
 

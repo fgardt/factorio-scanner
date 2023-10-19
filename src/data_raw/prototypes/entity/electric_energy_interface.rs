@@ -35,13 +35,13 @@ pub struct ElectricEnergyInterfaceData {
     pub light: Option<LightDefinition>,
 
     #[serde(flatten)]
-    pub graphics: ElectricEnergyInterfaceGraphics,
+    pub graphics: Option<ElectricEnergyInterfaceGraphics>,
     // TODO: `allow_copy_paste` has overriden default
 }
 
 impl super::Renderable for ElectricEnergyInterfaceData {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.graphics.render(options)
+        self.graphics.as_ref()?.render(options)
     }
 }
 

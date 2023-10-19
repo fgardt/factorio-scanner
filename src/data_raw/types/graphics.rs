@@ -202,7 +202,7 @@ pub trait RenderableGraphics {
     ) -> Option<GraphicsOutput>;
 }
 
-fn merge_layers<O, T: RenderableGraphics<RenderOpts = O>>(
+pub fn merge_layers<O, T: RenderableGraphics<RenderOpts = O>>(
     layers: &[T],
     factorio_dir: &str,
     used_mods: &HashMap<&str, &str>,
@@ -393,7 +393,9 @@ impl FetchSprite for SpriteParams {
 
         // TODO: add extra output for shadows
         // rendering shadows / glow / light is not supported
-        if self.draw_as_shadow || self.draw_as_glow || self.draw_as_light {
+        if self.draw_as_shadow 
+        //|| self.draw_as_glow
+        || self.draw_as_light {
             return None;
         }
 
@@ -410,7 +412,7 @@ impl FetchSprite for SpriteParams {
 
         // apply tint if applicable
         let tint = if self.apply_runtime_tint {
-            runtime_tint.unwrap_or_default()
+            runtime_tint.unwrap_or(self.tint)
         } else {
             self.tint
         };
@@ -1506,7 +1508,7 @@ impl RenderableGraphics for Animation {
                     // rendering shadows / glow / light is not supported
                     // theoretically this is not needed here
                     if data.sprite_params.draw_as_shadow
-                        || data.sprite_params.draw_as_glow
+                        //|| data.sprite_params.draw_as_glow
                         || data.sprite_params.draw_as_light
                     {
                         return None;
@@ -1689,6 +1691,25 @@ pub struct AnimationElement {
     pub always_draw: bool,
 
     pub animation: Option<Animation>,
+}
+
+impl RenderableGraphics for AnimationElement {
+    type RenderOpts = AnimationRenderOpts;
+
+    fn render(
+        &self,
+        factorio_dir: &str,
+        used_mods: &HashMap<&str, &str>,
+        opts: &Self::RenderOpts,
+    ) -> Option<GraphicsOutput> {
+        if !self.draw_as_sprite || self.draw_as_light {
+            return None;
+        }
+
+        self.animation
+            .as_ref()
+            .and_then(|animation| animation.render(factorio_dir, used_mods, opts))
+    }
 }
 
 // TODO: check & properly implement AnimationSheet & AnimationVariations
@@ -1923,6 +1944,8 @@ pub struct RotatedAnimationRenderOpts {
     pub orientation: f64,
     pub progress: f64,
     pub runtime_tint: Option<Color>,
+
+    pub override_index: Option<u8>,
 }
 
 impl<'a> From<&'a EntityRenderOpts<'a>> for RotatedAnimationRenderOpts {
@@ -1931,6 +1954,7 @@ impl<'a> From<&'a EntityRenderOpts<'a>> for RotatedAnimationRenderOpts {
             orientation: value.orientation.unwrap_or_default(),
             progress: 0.0,
             runtime_tint: value.runtime_tint,
+            override_index: None,
         }
     }
 }
@@ -1979,7 +2003,10 @@ impl RenderableGraphics for RotatedAnimation {
                 if let Some(hr_version) = hr_version {
                     hr_version.render(factorio_dir, used_mods, opts)
                 } else {
-                    let orientation_index = data.orientation_index(opts.orientation);
+                    let orientation_index = match opts.override_index {
+                        Some(index) => u32::from(index),
+                        None => data.orientation_index(opts.orientation),
+                    };
                     let file_index = orientation_index / data.lines_per_file.unwrap_or(1);
                     let frame_index = data.animation_params.frame_index(opts.progress);
                     let line_length = data.animation_params.line_length();
@@ -2006,7 +2033,10 @@ impl RenderableGraphics for RotatedAnimation {
                 if let Some(hr_version) = hr_version {
                     hr_version.render(factorio_dir, used_mods, opts)
                 } else {
-                    let orientation_index = data.orientation_index(opts.orientation);
+                    let orientation_index = match opts.override_index {
+                        Some(index) => u32::from(index),
+                        None => data.orientation_index(opts.orientation),
+                    };
                     let frame_index = data.animation_params.frame_index(opts.progress);
                     let line_length = data.animation_params.line_length();
 
@@ -2054,6 +2084,7 @@ impl From<&RotatedAnimation4WayRenderOpts> for RotatedAnimationRenderOpts {
             orientation: value.orientation,
             progress: value.progress,
             runtime_tint: value.runtime_tint,
+            override_index: None,
         }
     }
 }

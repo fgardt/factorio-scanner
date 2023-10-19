@@ -586,6 +586,22 @@ impl Direction {
     }
 }
 
+impl From<u8> for Direction {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => Self::North,
+            1 => Self::NorthEast,
+            2 => Self::East,
+            3 => Self::SouthEast,
+            4 => Self::South,
+            5 => Self::SouthWest,
+            6 => Self::West,
+            7 => Self::NorthWest,
+            _ => panic!("Invalid direction value: {value}"),
+        }
+    }
+}
+
 /// [`Types/DamageTypeID`](https://lua-api.factorio.com/latest/types/DamageTypeID.html)
 pub type DamageTypeID = String;
 
@@ -838,11 +854,24 @@ pub struct BeaconGraphicsSet {
 }
 
 #[derive(Debug, Clone, Copy, Default)]
-pub struct BeaconGraphicsSetRenderOpts {}
+pub struct BeaconGraphicsSetRenderOpts {
+    pub runtime_tint: Option<Color>,
+}
 
 impl<'a> From<&'a super::prototypes::RenderOpts<'a>> for BeaconGraphicsSetRenderOpts {
-    fn from(_: &'a super::prototypes::RenderOpts) -> Self {
-        Self {}
+    fn from(value: &'a super::prototypes::RenderOpts) -> Self {
+        Self {
+            runtime_tint: value.runtime_tint,
+        }
+    }
+}
+
+impl From<&BeaconGraphicsSetRenderOpts> for AnimationRenderOpts {
+    fn from(value: &BeaconGraphicsSetRenderOpts) -> Self {
+        Self {
+            progress: 0.0,
+            runtime_tint: value.runtime_tint,
+        }
     }
 }
 
@@ -855,7 +884,8 @@ impl RenderableGraphics for BeaconGraphicsSet {
         used_mods: &HashMap<&str, &str>,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
-        todo!()
+        // TODO: render module visualisations
+        merge_layers(&self.animation_list, factorio_dir, used_mods, &opts.into())
     }
 }
 
@@ -981,6 +1011,68 @@ pub struct TransportBeltAnimationSet {
     pub ends_with_stopper: bool,
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+pub struct TransportBeltAnimationSetRenderOpts {
+    pub direction: Option<Direction>,
+    pub connections: Option<ConnectedDirections>,
+
+    pub runtime_tint: Option<Color>,
+
+    pub index_override: Option<u8>,
+}
+
+impl<'a> From<&'a super::prototypes::RenderOpts<'a>> for TransportBeltAnimationSetRenderOpts {
+    fn from(opts: &'a super::prototypes::RenderOpts) -> Self {
+        Self {
+            direction: opts.direction,
+            connections: opts.connections,
+
+            runtime_tint: opts.runtime_tint,
+
+            index_override: None,
+        }
+    }
+}
+
+impl From<&TransportBeltAnimationSetRenderOpts> for RotatedAnimationRenderOpts {
+    fn from(value: &TransportBeltAnimationSetRenderOpts) -> Self {
+        Self {
+            progress: 0.0,
+            runtime_tint: value.runtime_tint,
+            orientation: 0.0,
+            override_index: value.index_override,
+        }
+    }
+}
+
+impl RenderableGraphics for TransportBeltAnimationSet {
+    type RenderOpts = TransportBeltAnimationSetRenderOpts;
+
+    fn render(
+        &self,
+        factorio_dir: &str,
+        used_mods: &HashMap<&str, &str>,
+        opts: &Self::RenderOpts,
+    ) -> Option<GraphicsOutput> {
+        // -1 because the index is 1-based. Lua stuff :)
+        let index = match opts.direction.unwrap_or_default() {
+            Direction::North => self.north_index - 1,
+            Direction::East => self.east_index - 1,
+            Direction::South => self.south_index - 1,
+            Direction::West => self.west_index - 1,
+            _ => unreachable!("Belts only support cardinal directions"),
+        };
+
+        let index_options = &Self::RenderOpts {
+            index_override: Some(index),
+            ..*opts
+        };
+
+        self.animation_set
+            .render(factorio_dir, used_mods, &index_options.into())
+    }
+}
+
 /// [`Types/TransportBeltAnimationSetWithCorners`](https://lua-api.factorio.com/latest/types/TransportBeltAnimationSetWithCorners.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TransportBeltAnimationSetWithCorners {
@@ -1035,6 +1127,61 @@ pub struct TransportBeltAnimationSetWithCorners {
 
     #[serde(flatten)]
     pub animation_set: TransportBeltAnimationSet,
+}
+
+impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
+    type RenderOpts = TransportBeltAnimationSetRenderOpts;
+
+    fn render(
+        &self,
+        factorio_dir: &str,
+        used_mods: &HashMap<&str, &str>,
+        opts: &Self::RenderOpts,
+    ) -> Option<GraphicsOutput> {
+        let connections = opts.connections.unwrap_or_default();
+        let index = match opts.direction.unwrap_or_default() {
+            Direction::North => match connections {
+                ConnectedDirections::Left | ConnectedDirections::UpLeft => self.west_to_north_index,
+                ConnectedDirections::Right | ConnectedDirections::UpRight => {
+                    self.east_to_north_index
+                }
+                _ => self.animation_set.north_index,
+            },
+            Direction::South => match connections {
+                ConnectedDirections::Left | ConnectedDirections::DownLeft => {
+                    self.west_to_south_index
+                }
+                ConnectedDirections::Right | ConnectedDirections::DownRight => {
+                    self.east_to_south_index
+                }
+                _ => self.animation_set.south_index,
+            },
+            Direction::East => match connections {
+                ConnectedDirections::Up | ConnectedDirections::UpRight => self.north_to_east_index,
+                ConnectedDirections::Down | ConnectedDirections::DownRight => {
+                    self.south_to_east_index
+                }
+                _ => self.animation_set.east_index,
+            },
+            Direction::West => match connections {
+                ConnectedDirections::Up | ConnectedDirections::UpLeft => self.north_to_west_index,
+                ConnectedDirections::Down | ConnectedDirections::DownLeft => {
+                    self.south_to_west_index
+                }
+                _ => self.animation_set.west_index,
+            },
+            _ => unreachable!("Belts only support cardinal directions"),
+        } - 1;
+
+        let index_options = &Self::RenderOpts {
+            index_override: Some(index),
+            ..*opts
+        };
+
+        self.animation_set
+            .animation_set
+            .render(factorio_dir, used_mods, &index_options.into())
+    }
 }
 
 /// [`Types/TransportBeltConnectorFrame`](https://lua-api.factorio.com/latest/types/TransportBeltConnectorFrame.html)
@@ -1245,6 +1392,56 @@ pub struct ConnectableEntityGraphics {
     pub ending_down: SpriteVariations,
     pub ending_left: SpriteVariations,
     pub ending_right: SpriteVariations,
+
+    pub cross: SpriteVariations,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub enum ConnectedDirections {
+    #[default]
+    None,
+
+    Up,
+    Down,
+    Left,
+    Right,
+
+    UpDown,
+    UpLeft,
+    UpRight,
+    DownLeft,
+    DownRight,
+    LeftRight,
+
+    UpDownLeft,
+    UpDownRight,
+    UpLeftRight,
+    DownLeftRight,
+
+    All,
+}
+
+impl ConnectableEntityGraphics {
+    pub fn get(&self, connections: ConnectedDirections) -> &SpriteVariations {
+        match connections {
+            ConnectedDirections::None => &self.single,
+            ConnectedDirections::Up => &self.ending_up,
+            ConnectedDirections::Down => &self.ending_down,
+            ConnectedDirections::Left => &self.ending_left,
+            ConnectedDirections::Right => &self.ending_right,
+            ConnectedDirections::UpDown => &self.straight_vertical,
+            ConnectedDirections::UpLeft => &self.corner_left_up,
+            ConnectedDirections::UpRight => &self.corner_right_up,
+            ConnectedDirections::DownLeft => &self.corner_left_down,
+            ConnectedDirections::DownRight => &self.corner_right_down,
+            ConnectedDirections::LeftRight => &self.straight_horizontal,
+            ConnectedDirections::UpDownLeft => &self.t_left,
+            ConnectedDirections::UpDownRight => &self.t_right,
+            ConnectedDirections::UpLeftRight => &self.t_up,
+            ConnectedDirections::DownLeftRight => &self.t_down,
+            ConnectedDirections::All => &self.cross,
+        }
+    }
 }
 
 /// [`Types/ForceCondition`](https://lua-api.factorio.com/latest/types/ForceCondition.html)
@@ -1372,6 +1569,52 @@ pub struct MiningDrillGraphicsSet {
 
     pub circuit_connector_layer: CircuitConnectorLayer,
     pub circuit_connector_secondary_draw_order: CircuitConnectorSecondaryDrawOrder,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct MiningDrillGraphicsRenderOpts {
+    pub direction: Option<Direction>,
+    pub runtime_tint: Option<Color>,
+}
+
+impl<'a> From<&'a super::prototypes::EntityRenderOpts<'a>> for MiningDrillGraphicsRenderOpts {
+    fn from(value: &'a super::prototypes::EntityRenderOpts<'a>) -> Self {
+        Self {
+            direction: value.direction,
+            runtime_tint: value.runtime_tint,
+        }
+    }
+}
+
+impl From<&MiningDrillGraphicsRenderOpts> for Animation4WayRenderOpts {
+    fn from(value: &MiningDrillGraphicsRenderOpts) -> Self {
+        Self {
+            direction: value.direction.unwrap_or_default(),
+            progress: 0.0,
+            runtime_tint: value.runtime_tint,
+        }
+    }
+}
+
+impl RenderableGraphics for MiningDrillGraphicsSet {
+    type RenderOpts = MiningDrillGraphicsRenderOpts;
+
+    fn render(
+        &self,
+        factorio_dir: &str,
+        used_mods: &HashMap<&str, &str>,
+        opts: &Self::RenderOpts,
+    ) -> Option<GraphicsOutput> {
+        // TODO: fix for electric drills
+        self.idle_animation.as_ref().map_or_else(
+            || {
+                self.animation
+                    .as_ref()
+                    .and_then(|a| a.render(factorio_dir, used_mods, &opts.into()))
+            },
+            |idle| idle.render(factorio_dir, used_mods, &opts.into()),
+        )
+    }
 }
 
 #[skip_serializing_none]
