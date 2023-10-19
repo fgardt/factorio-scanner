@@ -20,9 +20,12 @@ impl super::Renderable for GeneratorPrototype {
 pub struct GeneratorData {
     pub energy_source: ElectricEnergySource,
     pub fluid_box: FluidBox,
-    pub horizontal_animation: Animation,
-    pub vertical_animation: Animation,
+    pub horizontal_animation: Option<Animation>,
+    pub vertical_animation: Option<Animation>,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub effectivity: f64,
+
     pub fluid_usage_per_tick: f64,
     pub maximum_temperature: f64,
 
@@ -59,6 +62,7 @@ impl super::Renderable for GeneratorData {
             Direction::East | Direction::West => &self.horizontal_animation,
             _ => panic!("Invalid direction, generators only support cardinal directions"),
         }
-        .render(options.factorio_dir, &options.used_mods, &options.into())
+        .as_ref()
+        .and_then(|a| a.render(options.factorio_dir, &options.used_mods, &options.into()))
     }
 }

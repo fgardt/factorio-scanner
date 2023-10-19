@@ -19,7 +19,7 @@ impl super::Renderable for AccumulatorPrototype {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AccumulatorData {
     pub energy_source: ElectricEnergySource,
-    pub picture: Sprite,
+    pub picture: Option<Sprite>,
 
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub charge_cooldown: u16,
@@ -48,6 +48,7 @@ pub struct AccumulatorData {
 impl super::Renderable for AccumulatorData {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
         self.picture
-            .render(options.factorio_dir, &options.used_mods, &options.into())
+            .as_ref()
+            .and_then(|p| p.render(options.factorio_dir, &options.used_mods, &options.into()))
     }
 }

@@ -122,6 +122,7 @@ pub struct DataRaw {
     pub pipe_to_ground: EntityPrototypeMap<PipeToGroundPrototype>,
     pub pump: EntityPrototypeMap<PumpPrototype>,
 
+    pub simple_entity: EntityPrototypeMap<SimpleEntityPrototype>,
     pub simple_entity_with_owner: EntityPrototypeMap<SimpleEntityWithOwnerPrototype>,
     pub simple_entity_with_force: EntityPrototypeMap<SimpleEntityWithForcePrototype>,
 

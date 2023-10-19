@@ -65,7 +65,7 @@ pub struct ArtilleryTurretData {
     pub cannon_parking_frame_count: u16,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
-    pub cannon_parking_speed: f64, //docs say its u16, but data dump is f64
+    pub cannon_parking_speed: f64,
 
     #[serde(flatten)]
     pub cannon_barrel_recoil_shiftings: Option<ArtilleryTurretCannonBarrelShiftings>,
