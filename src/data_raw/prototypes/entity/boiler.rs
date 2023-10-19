@@ -23,7 +23,7 @@ pub struct BoilerData {
     pub energy_consumption: Energy,
 
     #[serde(deserialize_with = "helper::truncating_deserializer")]
-    pub burning_cooldown: u32,
+    pub burning_cooldown: u16,
     pub target_temperature: f64,
     pub structure: BoilerStructure,
     pub fire: BoilerFire,

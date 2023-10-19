@@ -329,7 +329,7 @@ pub struct TransportBeltData {
     pub draw_circuit_wires: bool,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub circuit_wire_connection_point: Vec<WireConnectionPoint>,
+    pub circuit_wire_connection_points: Vec<WireConnectionPoint>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub circuit_connector_sprites: Vec<CircuitConnectorSprites>,

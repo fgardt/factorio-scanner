@@ -20,7 +20,7 @@ impl super::Renderable for BurnerGeneratorPrototype {
 pub struct BurnerGeneratorData {
     pub energy_source: ElectricEnergySource,
     pub burner: BurnerEnergySource, // TODO: should be limited to burner, type is apparently not mandatory for burnersources (?)
-    pub animation: Animation4Way,
+    pub animation: Option<Animation4Way>,
     pub max_power_output: Energy,
 
     pub idle_animation: Option<Animation4Way>,
@@ -44,6 +44,7 @@ pub struct BurnerGeneratorData {
 impl super::Renderable for BurnerGeneratorData {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
         self.animation
-            .render(options.factorio_dir, &options.used_mods, &options.into())
+            .as_ref()
+            .and_then(|a| a.render(options.factorio_dir, &options.used_mods, &options.into()))
     }
 }

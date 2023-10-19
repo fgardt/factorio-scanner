@@ -26,7 +26,7 @@ pub struct BeaconData {
 
     pub graphics_set: Option<BeaconGraphicsSet>,
     pub animation: Option<Animation>,
-    pub base_picture: Option<Sprite>,
+    pub base_picture: Option<Animation>,
     pub radius_visualisation_picture: Option<Sprite>,
     pub allowed_effects: Option<EffectTypeLimitation>,
 }

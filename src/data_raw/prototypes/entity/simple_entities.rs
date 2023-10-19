@@ -1,12 +1,64 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use super::{helper, EntityWithOwnerPrototype};
+use super::{helper, EntityWithHealthPrototype, EntityWithOwnerPrototype};
 use crate::data_raw::types::*;
+
+// TODO: implement rendering for simple entities
+
+/// [`Prototypes/SimpleEntityPrototype`](https://lua-api.factorio.com/latest/prototypes/SimpleEntityPrototype.html)
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SimpleEntityPrototype(EntityWithHealthPrototype<SimpleEntityData>);
+
+impl super::Renderable for SimpleEntityPrototype {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
+/// [`Prototypes/SimpleEntityPrototype`](https://lua-api.factorio.com/latest/prototypes/SimpleEntityPrototype.html)
+#[skip_serializing_none]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SimpleEntityData {
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub count_as_rock_for_filtered_deconstruction: bool,
+
+    pub render_layer: Option<RenderLayer>,
+
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_0_i8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
+    pub secondary_draw_order: i8,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub random_animation_offset: bool,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub random_variation_on_create: bool,
+
+    #[serde(flatten)]
+    pub graphics: Option<SimpleEntityGraphics>,
+}
+
+impl super::Renderable for SimpleEntityData {
+    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+        None
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SimpleEntityGraphics {
+    Pictures { pictures: SpriteVariations },
+    Picture { picture: Sprite },
+    Animations { animations: AnimationVariations },
+}
 
 /// [`Prototypes/SimpleEntityWithOwnerPrototype`](https://lua-api.factorio.com/latest/prototypes/SimpleEntityWithOwnerPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
-pub struct SimpleEntityWithOwnerPrototype(EntityWithOwnerPrototype<SimpleEntityData>);
+pub struct SimpleEntityWithOwnerPrototype(EntityWithOwnerPrototype<SimpleEntityWithOwnerData>);
 
 impl super::Renderable for SimpleEntityWithOwnerPrototype {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
@@ -17,7 +69,7 @@ impl super::Renderable for SimpleEntityWithOwnerPrototype {
 /// [`Prototypes/SimpleEntityWithOwnerPrototype`](https://lua-api.factorio.com/latest/prototypes/SimpleEntityWithOwnerPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct SimpleEntityData {
+pub struct SimpleEntityWithOwnerData {
     // TODO: defaults
     pub render_layer: Option<RenderLayer>,
 
@@ -35,7 +87,7 @@ pub struct SimpleEntityData {
     pub random_variation_on_create: bool,
 
     #[serde(flatten)]
-    pub graphics: SimpleEntityGraphics,
+    pub graphics: Option<SimpleEntityGraphics>,
 
     #[serde(
         default = "ForceCondition::all",
@@ -44,18 +96,10 @@ pub struct SimpleEntityData {
     pub force_visibility: ForceCondition,
 }
 
-impl super::Renderable for SimpleEntityData {
+impl super::Renderable for SimpleEntityWithOwnerData {
     fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
         None
     }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum SimpleEntityGraphics {
-    Picture { picture: Sprite },
-    Pictures { pictures: SpriteVariations },
-    Animations { animations: AnimationVariations },
 }
 
 /// [`Prototypes/SimpleEntityWithForcePrototype`](https://lua-api.factorio.com/latest/prototypes/SimpleEntityWithForcePrototype.html)

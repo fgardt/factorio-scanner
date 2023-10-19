@@ -79,7 +79,7 @@ impl super::Renderable for OffshorePumpData {
 #[serde(untagged)]
 pub enum OffshorePumpGraphicsVariant {
     Deprecated {
-        picture: Sprite4Way,
+        picture: Animation4Way,
     },
     GraphicsSet {
         graphics_set: OffshorePumpGraphicsSet,
