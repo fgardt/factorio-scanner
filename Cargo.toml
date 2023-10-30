@@ -1,17 +1,32 @@
-[package]
-name = "factorio-scanner"
-version = "0.1.0"
+[workspace]
+resolver = "2"
+members = [
+    "blueprint",
+    "locale",
+    "mod_settings",
+    "prototypes",
+    "serde_helper",
+    "scanner",
+    "types",
+]
+
+[workspace.package]
+authors = ["fgardt <me@fgardt.dev>"]
 edition = "2021"
 
-[dependencies]
-base64 = "0.21.4"
-flate2 = "1.0.27"
+[profile.release]
+strip = true
+lto = "thin"
+
+[workspace.dependencies]
+blueprint = { path = "blueprint" }
 image = { version = "0.24.7", features = ["png"], default-features = false }
-imageproc = "0.23.0"
-num = "0.4.1"
-regex = "1.10.0"
+locale = { path = "locale" }
+mod_settings = { path = "mod_settings" }
+prototypes = { path = "prototypes" }
 serde = { version = "1.0", features = ["derive"] }
+serde_helper = { path = "serde_helper" }
 serde_json = "1.0.107"
 serde_repr = "0.1.16"
 serde_with = "3.3.0"
-zip = "0.6.6"
+types = { path = "types" }
