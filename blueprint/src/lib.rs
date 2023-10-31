@@ -16,46 +16,6 @@ use serde_with::skip_serializing_none;
 
 use types::{ItemCountType, ItemStackIndex};
 
-fn decode_bp_string(bp_string: &str) -> String {
-    assert!(
-        bp_string.len() > 1,
-        "Blueprint string must be at least 2 characters long"
-    );
-
-    let mut chars = bp_string.chars();
-
-    // this .next() call on chars is required to advance the iterator past the version byte
-    assert!(
-        chars.next().unwrap() == '0',
-        "Unsupported blueprint version"
-    );
-
-    let compressed = general_purpose::STANDARD.decode(chars.as_str()).unwrap();
-
-    let mut deflate = ZlibDecoder::new(compressed.as_slice());
-    let mut decoded = String::new();
-    deflate.read_to_string(&mut decoded).unwrap();
-
-    decoded
-}
-
-fn encode_bp_string(bp_data: &str) -> String {
-    assert!(
-        bp_data.len() >= 2,
-        "Blueprint data must be at least 2 characters long"
-    );
-
-    let mut deflate = ZlibEncoder::new(Vec::new(), flate2::Compression::new(9));
-    deflate.write_all(bp_data.as_bytes()).unwrap();
-    let compressed = deflate.finish().unwrap();
-
-    let mut encoded = general_purpose::STANDARD.encode(compressed);
-
-    encoded.insert(0, '0');
-
-    encoded
-}
-
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case", deny_unknown_fields)]
