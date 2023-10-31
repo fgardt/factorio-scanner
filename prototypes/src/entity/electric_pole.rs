@@ -11,8 +11,12 @@ use types::*;
 pub struct ElectricPolePrototype(EntityWithOwnerPrototype<ElectricPoleData>);
 
 impl super::Renderable for ElectricPolePrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -43,8 +47,16 @@ pub struct ElectricPoleData {
 }
 
 impl super::Renderable for ElectricPoleData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.pictures
-            .render(options.factorio_dir, &options.used_mods, &options.into())
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.pictures.render(
+            options.factorio_dir,
+            &options.used_mods,
+            image_cache,
+            &options.into(),
+        )
     }
 }

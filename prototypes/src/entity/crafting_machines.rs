@@ -15,8 +15,12 @@ pub struct CraftingMachinePrototype<T: super::Renderable>(
 );
 
 impl<T: super::Renderable> super::Renderable for CraftingMachinePrototype<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -89,15 +93,26 @@ pub struct CraftingMachineData<T: super::Renderable> {
 }
 
 impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         let anim = if self.always_draw_idle_animation && self.idle_animation.is_some() {
             self.idle_animation.as_ref()
         } else {
             self.animation.as_ref()
         }
-        .and_then(|anim| anim.render(options.factorio_dir, &options.used_mods, &options.into()));
+        .and_then(|anim| {
+            anim.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            )
+        });
 
-        merge_renders(&[anim, self.child.render(options)])
+        merge_renders(&[anim, self.child.render(options, image_cache)])
     }
 }
 
@@ -121,8 +136,12 @@ pub enum CraftingMachineFluidBoxCursedType {
 pub struct FurnacePrototype(CraftingMachinePrototype<FurnaceData>);
 
 impl super::Renderable for FurnacePrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -141,7 +160,11 @@ pub struct FurnaceData {
 }
 
 impl super::Renderable for FurnaceData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -151,8 +174,12 @@ impl super::Renderable for FurnaceData {
 pub struct AssemblingMachinePrototype(CraftingMachinePrototype<AssemblingMachineData>);
 
 impl super::Renderable for AssemblingMachinePrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -176,7 +203,11 @@ pub struct AssemblingMachineData {
 }
 
 impl super::Renderable for AssemblingMachineData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -186,8 +217,12 @@ impl super::Renderable for AssemblingMachineData {
 pub struct RocketSiloPrototype(CraftingMachinePrototype<RocketSiloData>);
 
 impl super::Renderable for RocketSiloPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -272,30 +307,46 @@ pub struct RocketSiloData {
 }
 
 impl super::Renderable for RocketSiloData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         merge_renders(&[
-            self.door_back_sprite
-                .render(options.factorio_dir, &options.used_mods, &options.into()),
+            self.door_back_sprite.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            ),
             self.door_front_sprite.render(
                 options.factorio_dir,
                 &options.used_mods,
+                image_cache,
                 &options.into(),
             ),
-            self.base_day_sprite
-                .render(options.factorio_dir, &options.used_mods, &options.into()),
+            self.base_day_sprite.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            ),
             self.arm_01_back_animation.render(
                 options.factorio_dir,
                 &options.used_mods,
+                image_cache,
                 &options.into(),
             ),
             self.arm_02_right_animation.render(
                 options.factorio_dir,
                 &options.used_mods,
+                image_cache,
                 &options.into(),
             ),
             self.arm_03_front_animation.render(
                 options.factorio_dir,
                 &options.used_mods,
+                image_cache,
                 &options.into(),
             ),
         ])

@@ -10,7 +10,7 @@
 use image::GenericImageView;
 
 use prototypes::{EntityRenderOpts, RenderableEntity};
-use types::{merge_renders, GraphicsOutput};
+use types::{merge_renders, GraphicsOutput, ImageCache};
 
 fn main() {
     //let test_bp_data = "0eNqdkuFqxCAQhN9lfytcjMarr1KOEnNLKiQqxhwNh+9+miulkBSa+yULM9/M4t5BDzP6YGwEdYfJtp5GR/tgrmX+AiVOBJbyJAKmc3YC9Z6FprftUCRx8QgKTMQRCNh2LFNw2nkXIhSTvWLmVOlCAG000eCTsQ7Lh51HjSELftza9BQH7GIwHfVuwAz2bspOZ79bMbG2onUOsGj6T+3mULD1JZENmh1BP/dl7F/k+oXSW3RFGOGk2QvgRwLEoe5i+11/VhZpB9C8sDyXO93yZaz3o35dI4Ebhmn1s3PF5RuTsuGVZOeUHgxE4/c=";
@@ -47,6 +47,8 @@ fn main() {
 
     let bp = blueprint::Data::try_from(test_bp_data).unwrap();
 
+    println!("loaded BP");
+
     // =====[ SETTINGS DUMP ]=====
     // let settings_dump = include_str!("../dumps/mod-settings-dump.json");
     // let settings_data: mod_settings::Data = serde_json::from_str(settings_dump).unwrap();
@@ -65,6 +67,8 @@ fn main() {
     //let data_raw_dump = include_str!("../dumps/data-raw-dump.json");
     let data_raw_dump = include_str!("../dumps/data-raw-dump.json");
     let data_raw: prototypes::DataRaw = serde_json::from_str(data_raw_dump).unwrap();
+
+    println!("loaded prototype data");
 
     // =====[  RENDER TEST  ]=====
     let render_opts = EntityRenderOpts {
@@ -101,8 +105,17 @@ fn main() {
 
     //println!("Hello, world!");
 
-    match render_bp(&bp, &data) {
+    let mut image_cache = ImageCache::new();
+
+    match render_bp(&bp, &data, &mut image_cache) {
         Some((img, scale, (shift_x, shift_y))) => {
+            println!("render done");
+
+            let img = img.resize(
+                img.dimensions().0 / 4,
+                img.dimensions().1 / 4,
+                image::imageops::FilterType::CatmullRom,
+            );
             println!(
                 "BP: {}x{} x{scale} ({shift_x}, {shift_y})",
                 img.dimensions().0,
@@ -113,10 +126,25 @@ fn main() {
         }
         None => println!("EMPTY BP!"),
     }
+
+    println!("cache size: {}", image_cache.len());
+
+    // cache entries:
+    for (name, img) in &image_cache {
+        img.as_ref().map_or_else(
+            || println!("{name}: NONE"),
+            |img| println!("{name}: {}x{}", img.dimensions().0, img.dimensions().1),
+        );
+    }
 }
 
-fn render_entity(name: &str, entity: &dyn RenderableEntity, render_opts: &EntityRenderOpts) {
-    match entity.render(render_opts) {
+fn render_entity(
+    name: &str,
+    entity: &dyn RenderableEntity,
+    render_opts: &EntityRenderOpts,
+    image_cache: &mut ImageCache,
+) {
+    match entity.render(render_opts, image_cache) {
         Some((img, scale, (shift_x, shift_y))) => {
             // println!(
             //     "{name}: {}x{} x{scale} ({shift_x}, {shift_y})",
@@ -132,8 +160,13 @@ fn render_entity(name: &str, entity: &dyn RenderableEntity, render_opts: &Entity
     }
 }
 
-fn render_by_name(name: &str, data: &prototypes::DataUtil, render_opts: &EntityRenderOpts) {
-    match data.render_entity(name, render_opts) {
+fn render_by_name(
+    name: &str,
+    data: &prototypes::DataUtil,
+    render_opts: &EntityRenderOpts,
+    image_cache: &mut ImageCache,
+) {
+    match data.render_entity(name, render_opts, image_cache) {
         Some((img, scale, (shift_x, shift_y))) => {
             println!(
                 "{name}: {}x{} x{scale} ({shift_x}, {shift_y})",
@@ -177,17 +210,21 @@ fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::EntityRenderO
     }
 }
 
-fn render_bp(bp: &blueprint::Data, data: &prototypes::DataUtil) -> Option<GraphicsOutput> {
+fn render_bp(
+    bp: &blueprint::Data,
+    data: &prototypes::DataUtil,
+    image_cache: &mut ImageCache,
+) -> Option<GraphicsOutput> {
     match bp {
         blueprint::Data::BlueprintBook { blueprints, .. } => {
-            render_bp(&blueprints.get(0)?.data, data)
+            render_bp(&blueprints.get(0)?.data, data, image_cache)
         }
         blueprint::Data::Blueprint { entities, .. } => {
             let renders = entities
                 .iter()
                 .map(|e| {
-                    data.render_entity(&e.name, &bp_entity2render_opts(e)).map(
-                        |(img, scale, (shift_x, shift_y))| {
+                    data.render_entity(&e.name, &bp_entity2render_opts(e), image_cache)
+                        .map(|(img, scale, (shift_x, shift_y))| {
                             (
                                 img,
                                 scale,
@@ -196,8 +233,7 @@ fn render_bp(bp: &blueprint::Data, data: &prototypes::DataUtil) -> Option<Graphi
                                     shift_y + f64::from(e.position.y),
                                 ),
                             )
-                        },
-                    )
+                        })
                 })
                 .collect::<Vec<_>>();
 

@@ -11,8 +11,12 @@ use types::*;
 pub struct GatePrototype(EntityWithOwnerPrototype<GateData>);
 
 impl super::Renderable for GatePrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -50,7 +54,11 @@ pub struct GateData {
 }
 
 impl super::Renderable for GateData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }

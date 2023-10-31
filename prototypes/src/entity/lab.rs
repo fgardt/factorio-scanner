@@ -11,8 +11,12 @@ use types::*;
 pub struct LabPrototype(EntityWithOwnerPrototype<LabData>);
 
 impl super::Renderable for LabPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -40,8 +44,16 @@ pub struct LabData {
 }
 
 impl super::Renderable for LabData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.off_animation
-            .render(options.factorio_dir, &options.used_mods, &options.into())
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.off_animation.render(
+            options.factorio_dir,
+            &options.used_mods,
+            image_cache,
+            &options.into(),
+        )
     }
 }

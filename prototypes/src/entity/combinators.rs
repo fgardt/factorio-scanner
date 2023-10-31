@@ -53,10 +53,19 @@ pub struct CombinatorPrototype<T> {
 }
 
 impl<T: super::Renderable> super::Renderable for CombinatorPrototype<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.sprites
-            .as_ref()
-            .and_then(|s| s.render(options.factorio_dir, &options.used_mods, &options.into()))
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.sprites.as_ref().and_then(|s| {
+            s.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })
 
         // TODO: render lights + selected operation
     }
@@ -67,8 +76,12 @@ impl<T: super::Renderable> super::Renderable for CombinatorPrototype<T> {
 pub struct ArithmeticCombinatorPrototype(CombinatorPrototype<ArithmeticCombinatorData>);
 
 impl super::Renderable for ArithmeticCombinatorPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -89,7 +102,11 @@ pub struct ArithmeticCombinatorData {
 }
 
 impl super::Renderable for ArithmeticCombinatorData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -99,8 +116,12 @@ impl super::Renderable for ArithmeticCombinatorData {
 pub struct DeciderCombinatorPrototype(CombinatorPrototype<DeciderCombinatorData>);
 
 impl super::Renderable for DeciderCombinatorPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -116,7 +137,11 @@ pub struct DeciderCombinatorData {
 }
 
 impl super::Renderable for DeciderCombinatorData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -126,8 +151,12 @@ impl super::Renderable for DeciderCombinatorData {
 pub struct ConstantCombinatorPrototype(EntityWithOwnerPrototype<ConstantCombinatorData>);
 
 impl super::Renderable for ConstantCombinatorPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -160,9 +189,18 @@ pub struct ConstantCombinatorData {
 }
 
 impl super::Renderable for ConstantCombinatorData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.sprites
-            .as_ref()
-            .and_then(|s| s.render(options.factorio_dir, &options.used_mods, &options.into()))
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.sprites.as_ref().and_then(|s| {
+            s.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })
     }
 }

@@ -11,8 +11,12 @@ use types::*;
 pub struct LandMinePrototype(EntityWithOwnerPrototype<LandMineData>);
 
 impl super::Renderable for LandMinePrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -50,8 +54,16 @@ pub struct LandMineData {
 }
 
 impl super::Renderable for LandMineData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.picture_set
-            .render(options.factorio_dir, &options.used_mods, &options.into())
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.picture_set.render(
+            options.factorio_dir,
+            &options.used_mods,
+            image_cache,
+            &options.into(),
+        )
     }
 }

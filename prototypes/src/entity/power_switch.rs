@@ -10,8 +10,12 @@ use types::*;
 pub struct PowerSwitchPrototype(EntityWithOwnerPrototype<PowerSwitchData>);
 
 impl super::Renderable for PowerSwitchPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -42,9 +46,17 @@ pub struct PowerSwitchData {
 }
 
 impl super::Renderable for PowerSwitchData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.power_on_animation
-            .render(options.factorio_dir, &options.used_mods, &options.into())
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.power_on_animation.render(
+            options.factorio_dir,
+            &options.used_mods,
+            image_cache,
+            &options.into(),
+        )
 
         // TODO: render open / closed depending on render option flag
     }

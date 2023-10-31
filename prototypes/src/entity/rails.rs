@@ -9,7 +9,11 @@ use types::*;
 pub struct RailPrototype<T: super::Renderable>(EntityWithOwnerPrototype<RailData<T>>);
 
 impl<T: super::Renderable> super::Renderable for RailPrototype<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -27,7 +31,11 @@ pub struct RailData<T: super::Renderable> {
 }
 
 impl<T: super::Renderable> super::Renderable for RailData<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -37,7 +45,11 @@ impl<T: super::Renderable> super::Renderable for RailData<T> {
 pub struct CurvedRailPrototype(RailPrototype<CurvedRailData>);
 
 impl super::Renderable for CurvedRailPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -50,7 +62,11 @@ pub struct CurvedRailData {
 }
 
 impl super::Renderable for CurvedRailData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -66,7 +82,11 @@ pub enum CurvedBendType {
 pub struct StraightRailPrototype(RailPrototype<StraightRailData>);
 
 impl super::Renderable for StraightRailPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -79,7 +99,11 @@ pub struct StraightRailData {
 }
 
 impl super::Renderable for StraightRailData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }

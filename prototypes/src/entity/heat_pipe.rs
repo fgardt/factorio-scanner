@@ -8,8 +8,12 @@ use types::*;
 pub struct HeatPipePrototype(EntityWithOwnerPrototype<HeatPipeData>);
 
 impl super::Renderable for HeatPipePrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -22,9 +26,18 @@ pub struct HeatPipeData {
 }
 
 impl super::Renderable for HeatPipeData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         self.connection_sprites
             .get(options.connections.unwrap_or_default())
-            .render(options.factorio_dir, &options.used_mods, &options.into())
+            .render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            )
     }
 }

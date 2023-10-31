@@ -11,8 +11,12 @@ use types::*;
 pub struct LampPrototype(EntityWithOwnerPrototype<LampData>);
 
 impl super::Renderable for LampPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -67,9 +71,17 @@ pub struct LampData {
 }
 
 impl super::Renderable for LampData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.picture_off
-            .render(options.factorio_dir, &options.used_mods, &options.into())
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.picture_off.render(
+            options.factorio_dir,
+            &options.used_mods,
+            image_cache,
+            &options.into(),
+        )
     }
 }
 

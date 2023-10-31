@@ -9,8 +9,12 @@ use types::*;
 pub struct ElectricEnergyInterfacePrototype(EntityWithOwnerPrototype<ElectricEnergyInterfaceData>);
 
 impl super::Renderable for ElectricEnergyInterfacePrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -40,8 +44,12 @@ pub struct ElectricEnergyInterfaceData {
 }
 
 impl super::Renderable for ElectricEnergyInterfaceData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.graphics.as_ref()?.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.graphics.as_ref()?.render(options, image_cache)
     }
 }
 
@@ -55,20 +63,36 @@ pub enum ElectricEnergyInterfaceGraphics {
 }
 
 impl super::Renderable for ElectricEnergyInterfaceGraphics {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         match self {
-            Self::Picture { picture } => {
-                picture.render(options.factorio_dir, &options.used_mods, &options.into())
-            }
-            Self::Pictures { pictures } => {
-                pictures.render(options.factorio_dir, &options.used_mods, &options.into())
-            }
-            Self::Animation { animation } => {
-                animation.render(options.factorio_dir, &options.used_mods, &options.into())
-            }
-            Self::Animations { animations } => {
-                animations.render(options.factorio_dir, &options.used_mods, &options.into())
-            }
+            Self::Picture { picture } => picture.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            ),
+            Self::Pictures { pictures } => pictures.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            ),
+            Self::Animation { animation } => animation.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            ),
+            Self::Animations { animations } => animations.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            ),
         }
     }
 }

@@ -825,7 +825,9 @@ impl DataUtil {
         &self,
         entity_name: &str,
         render_opts: &RenderOpts,
+        image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.get_entity(entity_name)?.render(render_opts)
+        self.get_entity(entity_name)?
+            .render(render_opts, image_cache)
     }
 }

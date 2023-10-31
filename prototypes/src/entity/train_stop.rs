@@ -11,7 +11,11 @@ use types::*;
 pub struct TrainStopPrototype(EntityWithOwnerPrototype<TrainStopData>);
 
 impl super::Renderable for TrainStopPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -66,7 +70,11 @@ pub struct TrainStopData {
 }
 
 impl super::Renderable for TrainStopData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }

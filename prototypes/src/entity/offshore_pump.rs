@@ -11,7 +11,11 @@ use types::*;
 pub struct OffshorePumpPrototype(EntityWithOwnerPrototype<OffshorePumpData>);
 
 impl super::Renderable for OffshorePumpPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -71,7 +75,11 @@ pub struct OffshorePumpData {
 }
 
 impl super::Renderable for OffshorePumpData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }

@@ -11,8 +11,12 @@ use types::*;
 pub struct ContainerPrototype(EntityWithOwnerPrototype<ContainerData>);
 
 impl super::Renderable for ContainerPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -53,9 +57,18 @@ pub struct ContainerData {
 }
 
 impl super::Renderable for ContainerData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         self.picture.as_ref().and_then(|picture| {
-            picture.render(options.factorio_dir, &options.used_mods, &options.into())
+            picture.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            )
         })
     }
 }
@@ -73,8 +86,12 @@ pub enum InventoryType {
 pub struct LogisticContainerPrototype(EntityWithOwnerPrototype<LogisticContainerData>);
 
 impl super::Renderable for LogisticContainerPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -114,10 +131,17 @@ pub struct LogisticContainerData {
 }
 
 impl super::Renderable for LogisticContainerData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.animation
-            .as_ref()?
-            .render(options.factorio_dir, &options.used_mods, &options.into())
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.animation.as_ref()?.render(
+            options.factorio_dir,
+            &options.used_mods,
+            image_cache,
+            &options.into(),
+        )
     }
 }
 
@@ -136,8 +160,12 @@ pub enum LogisticMode {
 pub struct InfinityContainerPrototype(EntityWithOwnerPrototype<InfinityContainerData>);
 
 impl super::Renderable for InfinityContainerPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -155,8 +183,12 @@ pub struct InfinityContainerData {
 }
 
 impl super::Renderable for InfinityContainerData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.parent.parent.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.parent.parent.render(options, image_cache)
     }
 }
 
@@ -165,8 +197,12 @@ impl super::Renderable for InfinityContainerData {
 pub struct LinkedContainerPrototype(EntityWithOwnerPrototype<LinkedContainerData>);
 
 impl super::Renderable for LinkedContainerPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -204,9 +240,18 @@ pub struct LinkedContainerData {
 }
 
 impl super::Renderable for LinkedContainerData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         self.picture.as_ref().and_then(|picture| {
-            picture.render(options.factorio_dir, &options.used_mods, &options.into())
+            picture.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            )
         })
     }
 }

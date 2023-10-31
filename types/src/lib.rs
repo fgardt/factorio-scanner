@@ -140,24 +140,31 @@ pub struct WireConnectionPoint {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileName(String);
 
+pub type ImageCache = HashMap<String, Option<image::DynamicImage>>;
+
 impl FileName {
     pub fn get(&self) -> &str {
         self.0.as_str()
     }
 
-    pub fn load(
+    pub fn load<'a>(
         &self,
         factorio_dir: &str,
         used_mods: &HashMap<&str, &str>,
-    ) -> Option<image::DynamicImage> {
+        image_cache: &'a mut ImageCache,
+    ) -> Option<&'a image::DynamicImage> {
         const VANILLA_MODS: [&str; 2] = ["core", "base"];
         let filename = self.get();
+
+        if image_cache.contains_key(&filename.to_owned()) {
+            return image_cache.get(filename)?.as_ref();
+        }
 
         let re = regex::Regex::new(r"^__([^/\\]+)__").ok()?;
         let mod_name = re.captures(filename)?.get(1)?.as_str();
         let sprite_path = &filename[(2 + mod_name.len() + 2 + 1)..]; // +1 to include the slash to prevent joining to interpret it as a absolute path
 
-        if VANILLA_MODS.contains(&mod_name) {
+        let img = if VANILLA_MODS.contains(&mod_name) {
             let location = std::path::Path::new(factorio_dir)
                 .join("data")
                 .join(mod_name)
@@ -201,7 +208,10 @@ impl FileName {
             std::io::Read::read_to_end(&mut file, &mut file_buff).ok()?;
 
             image::load_from_memory(&file_buff).ok()
-        }
+        };
+
+        image_cache.insert(filename.to_owned(), img.clone());
+        image_cache.get(&filename.to_owned())?.as_ref()
     }
 }
 
@@ -880,10 +890,17 @@ impl RenderableGraphics for BeaconGraphicsSet {
         &self,
         factorio_dir: &str,
         used_mods: &HashMap<&str, &str>,
+        image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         // TODO: render module visualisations
-        merge_layers(&self.animation_list, factorio_dir, used_mods, &opts.into())
+        merge_layers(
+            &self.animation_list,
+            factorio_dir,
+            used_mods,
+            image_cache,
+            &opts.into(),
+        )
     }
 }
 
@@ -1037,6 +1054,7 @@ impl RenderableGraphics for TransportBeltAnimationSet {
         &self,
         factorio_dir: &str,
         used_mods: &HashMap<&str, &str>,
+        image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         // -1 because the index is 1-based. Lua stuff :)
@@ -1054,7 +1072,7 @@ impl RenderableGraphics for TransportBeltAnimationSet {
         };
 
         self.animation_set
-            .render(factorio_dir, used_mods, &index_options.into())
+            .render(factorio_dir, used_mods, image_cache, &index_options.into())
     }
 }
 
@@ -1121,6 +1139,7 @@ impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
         &self,
         factorio_dir: &str,
         used_mods: &HashMap<&str, &str>,
+        image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         let connections = opts.connections.unwrap_or_default();
@@ -1163,9 +1182,12 @@ impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
             ..*opts
         };
 
-        self.animation_set
-            .animation_set
-            .render(factorio_dir, used_mods, &index_options.into())
+        self.animation_set.animation_set.render(
+            factorio_dir,
+            used_mods,
+            image_cache,
+            &index_options.into(),
+        )
     }
 }
 
@@ -1579,17 +1601,14 @@ impl RenderableGraphics for MiningDrillGraphicsSet {
         &self,
         factorio_dir: &str,
         used_mods: &HashMap<&str, &str>,
+        image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         // TODO: fix for electric drills
-        self.idle_animation.as_ref().map_or_else(
-            || {
-                self.animation
-                    .as_ref()
-                    .and_then(|a| a.render(factorio_dir, used_mods, &opts.into()))
-            },
-            |idle| idle.render(factorio_dir, used_mods, &opts.into()),
-        )
+        self.idle_animation
+            .as_ref()
+            .or(self.animation.as_ref())
+            .and_then(|a| a.render(factorio_dir, used_mods, image_cache, &opts.into()))
     }
 }
 

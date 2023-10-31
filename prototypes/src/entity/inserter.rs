@@ -13,8 +13,12 @@ use types::*;
 pub struct InserterPrototype(EntityWithOwnerPrototype<InserterData>);
 
 impl super::Renderable for InserterPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -107,14 +111,23 @@ pub struct InserterData {
 }
 
 impl super::Renderable for InserterData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         const TILE_RES: f64 = 32.0;
 
         let direction = options.direction.unwrap_or_default();
 
         let hand = self
             .hand_open_picture
-            .render(options.factorio_dir, &options.used_mods, &options.into())
+            .render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            )
             .map(|(img, scale, shift)| {
                 let raw_pickup_pos = options.pickup_position.unwrap_or(self.pickup_position);
                 let pickup_pos = direction.rotate_vector(raw_pickup_pos);
@@ -164,6 +177,7 @@ impl super::Renderable for InserterData {
             self.platform_picture.render(
                 options.factorio_dir,
                 &options.used_mods,
+                image_cache,
                 &platform_options.into(),
             ),
             hand,
