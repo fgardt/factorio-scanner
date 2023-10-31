@@ -11,7 +11,11 @@ use types::*;
 pub struct SimpleEntityPrototype(EntityWithHealthPrototype<SimpleEntityData>);
 
 impl super::Renderable for SimpleEntityPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -43,7 +47,11 @@ pub struct SimpleEntityData {
 }
 
 impl super::Renderable for SimpleEntityData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -61,7 +69,11 @@ pub enum SimpleEntityGraphics {
 pub struct SimpleEntityWithOwnerPrototype(EntityWithOwnerPrototype<SimpleEntityWithOwnerData>);
 
 impl super::Renderable for SimpleEntityWithOwnerPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -97,7 +109,11 @@ pub struct SimpleEntityWithOwnerData {
 }
 
 impl super::Renderable for SimpleEntityWithOwnerData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -109,7 +125,11 @@ impl super::Renderable for SimpleEntityWithOwnerData {
 pub struct SimpleEntityWithForcePrototype(SimpleEntityWithOwnerPrototype);
 
 impl super::Renderable for SimpleEntityWithForcePrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }

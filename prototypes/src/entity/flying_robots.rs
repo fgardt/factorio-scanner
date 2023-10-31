@@ -11,7 +11,11 @@ use types::*;
 pub struct FlyingRobotPrototype<T: super::Renderable>(EntityWithOwnerPrototype<FlyingRobotData<T>>);
 
 impl<T: super::Renderable> super::Renderable for FlyingRobotPrototype<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -50,7 +54,11 @@ pub struct FlyingRobotData<T: super::Renderable> {
 }
 
 impl<T: super::Renderable> super::Renderable for FlyingRobotData<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -60,7 +68,11 @@ impl<T: super::Renderable> super::Renderable for FlyingRobotData<T> {
 pub struct CombatRobotPrototype(FlyingRobotPrototype<CombatRobotData>);
 
 impl super::Renderable for CombatRobotPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -92,7 +104,11 @@ pub struct CombatRobotData {
 }
 
 impl super::Renderable for CombatRobotData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -104,7 +120,11 @@ pub struct RobotWithLogisticInterfacePrototype<T: super::Renderable>(
 );
 
 impl<T: super::Renderable> super::Renderable for RobotWithLogisticInterfacePrototype<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -133,7 +153,11 @@ pub struct RobotWithLogisticInterfaceData<T: super::Renderable> {
 }
 
 impl<T: super::Renderable> super::Renderable for RobotWithLogisticInterfaceData<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -143,7 +167,11 @@ impl<T: super::Renderable> super::Renderable for RobotWithLogisticInterfaceData<
 pub struct ConstructionRobotPrototype(RobotWithLogisticInterfacePrototype<ConstructionRobotData>);
 
 impl super::Renderable for ConstructionRobotPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -163,7 +191,11 @@ pub struct ConstructionRobotData {
 }
 
 impl super::Renderable for ConstructionRobotData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -173,7 +205,11 @@ impl super::Renderable for ConstructionRobotData {
 pub struct LogisticRobotPrototype(RobotWithLogisticInterfacePrototype<LogisticRobotData>);
 
 impl super::Renderable for LogisticRobotPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -189,7 +225,11 @@ pub struct LogisticRobotData {
 }
 
 impl super::Renderable for LogisticRobotData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }

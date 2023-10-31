@@ -9,8 +9,12 @@ use types::*;
 pub struct HeatInterfacePrototype(EntityWithOwnerPrototype<HeatInterfaceData>);
 
 impl super::Renderable for HeatInterfacePrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -27,9 +31,16 @@ pub struct HeatInterfaceData {
 }
 
 impl super::Renderable for HeatInterfaceData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.picture
-            .as_ref()?
-            .render(options.factorio_dir, &options.used_mods, &options.into())
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.picture.as_ref()?.render(
+            options.factorio_dir,
+            &options.used_mods,
+            image_cache,
+            &options.into(),
+        )
     }
 }

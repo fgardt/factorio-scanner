@@ -13,7 +13,11 @@ pub struct RailSignalBasePrototype<T: super::Renderable>(
 );
 
 impl<T: super::Renderable> super::Renderable for RailSignalBasePrototype<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -51,7 +55,11 @@ pub struct RailSignalBaseData<T: super::Renderable> {
 }
 
 impl<T: super::Renderable> super::Renderable for RailSignalBaseData<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -61,7 +69,11 @@ impl<T: super::Renderable> super::Renderable for RailSignalBaseData<T> {
 pub struct RailChainSignalPrototype(RailSignalBasePrototype<RailChainSignalData>);
 
 impl super::Renderable for RailChainSignalPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -76,7 +88,11 @@ pub struct RailChainSignalData {
 }
 
 impl super::Renderable for RailChainSignalData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -86,7 +102,11 @@ impl super::Renderable for RailChainSignalData {
 pub struct RailSignalPrototype(EntityWithOwnerPrototype<RailSignalData>);
 
 impl super::Renderable for RailSignalPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -96,7 +116,11 @@ impl super::Renderable for RailSignalPrototype {
 pub struct RailSignalData {}
 
 impl super::Renderable for RailSignalData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }

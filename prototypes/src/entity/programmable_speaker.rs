@@ -11,8 +11,12 @@ use types::*;
 pub struct ProgrammableSpeakerPrototype(EntityWithOwnerPrototype<ProgrammableSpeakerData>);
 
 impl super::Renderable for ProgrammableSpeakerPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -47,9 +51,17 @@ pub struct ProgrammableSpeakerData {
 }
 
 impl super::Renderable for ProgrammableSpeakerData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.sprite
-            .render(options.factorio_dir, &options.used_mods, &options.into())
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.sprite.render(
+            options.factorio_dir,
+            &options.used_mods,
+            image_cache,
+            &options.into(),
+        )
     }
 }
 

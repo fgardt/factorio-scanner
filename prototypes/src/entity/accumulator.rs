@@ -11,8 +11,12 @@ use types::*;
 pub struct AccumulatorPrototype(EntityWithOwnerPrototype<AccumulatorData>);
 
 impl super::Renderable for AccumulatorPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -48,9 +52,18 @@ pub struct AccumulatorData {
 }
 
 impl super::Renderable for AccumulatorData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.picture
-            .as_ref()
-            .and_then(|p| p.render(options.factorio_dir, &options.used_mods, &options.into()))
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.picture.as_ref().and_then(|p| {
+            p.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })
     }
 }

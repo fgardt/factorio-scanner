@@ -11,8 +11,12 @@ use types::*;
 pub struct TurretPrototype(EntityWithOwnerPrototype<TurretData>);
 
 impl super::Renderable for TurretPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -139,14 +143,28 @@ pub struct TurretData {
 }
 
 impl super::Renderable for TurretData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         merge_renders(&[
-            self.base_picture
-                .as_ref()
-                .and_then(|a| a.render(options.factorio_dir, &options.used_mods, &options.into())),
-            self.folding_animation
-                .as_ref()
-                .and_then(|a| a.render(options.factorio_dir, &options.used_mods, &options.into())),
+            self.base_picture.as_ref().and_then(|a| {
+                a.render(
+                    options.factorio_dir,
+                    &options.used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            }),
+            self.folding_animation.as_ref().and_then(|a| {
+                a.render(
+                    options.factorio_dir,
+                    &options.used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            }),
         ])
     }
 }
@@ -156,8 +174,12 @@ impl super::Renderable for TurretData {
 pub struct AmmoTurretPrototype(EntityWithOwnerPrototype<AmmoTurretData>);
 
 impl super::Renderable for AmmoTurretPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -178,8 +200,12 @@ pub struct AmmoTurretData {
 }
 
 impl super::Renderable for AmmoTurretData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.parent.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.parent.render(options, image_cache)
     }
 }
 
@@ -188,8 +214,12 @@ impl super::Renderable for AmmoTurretData {
 pub struct ElectricTurretPrototype(EntityWithOwnerPrototype<ElectricTurretData>);
 
 impl super::Renderable for ElectricTurretPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -204,8 +234,12 @@ pub struct ElectricTurretData {
 }
 
 impl super::Renderable for ElectricTurretData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.parent.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.parent.render(options, image_cache)
     }
 }
 
@@ -214,8 +248,12 @@ impl super::Renderable for ElectricTurretData {
 pub struct FluidTurretPrototype(EntityWithOwnerPrototype<FluidTurretData>);
 
 impl super::Renderable for FluidTurretPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -239,8 +277,12 @@ pub struct FluidTurretData {
 }
 
 impl super::Renderable for FluidTurretData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.parent.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.parent.render(options, image_cache)
     }
 }
 

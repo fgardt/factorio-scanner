@@ -11,8 +11,12 @@ use types::*;
 pub struct BoilerPrototype(EntityWithOwnerPrototype<BoilerData>);
 
 impl super::Renderable for BoilerPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -45,9 +49,18 @@ pub struct BoilerData {
 }
 
 impl super::Renderable for BoilerData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         let structure: Animation4Way = self.structure.clone().into();
-        structure.render(options.factorio_dir, &options.used_mods, &options.into())
+        structure.render(
+            options.factorio_dir,
+            &options.used_mods,
+            image_cache,
+            &options.into(),
+        )
     }
 }
 

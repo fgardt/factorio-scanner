@@ -11,8 +11,12 @@ use types::*;
 pub struct GeneratorPrototype(EntityWithOwnerPrototype<GeneratorData>);
 
 impl super::Renderable for GeneratorPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -58,13 +62,24 @@ pub struct GeneratorData {
 }
 
 impl super::Renderable for GeneratorData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         match options.direction.unwrap_or(Direction::North) {
             Direction::North | Direction::South => &self.vertical_animation,
             Direction::East | Direction::West => &self.horizontal_animation,
             _ => panic!("Invalid direction, generators only support cardinal directions"),
         }
         .as_ref()
-        .and_then(|a| a.render(options.factorio_dir, &options.used_mods, &options.into()))
+        .and_then(|a| {
+            a.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })
     }
 }

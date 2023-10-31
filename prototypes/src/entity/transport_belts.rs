@@ -17,8 +17,12 @@ where
     G: super::Renderable,
     T: super::Renderable,
 {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -43,10 +47,14 @@ where
     G: super::Renderable,
     T: super::Renderable,
 {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         merge_renders(&[
-            self.graphics_set.render(options),
-            self.child.render(options),
+            self.graphics_set.render(options, image_cache),
+            self.child.render(options, image_cache),
         ])
     }
 }
@@ -77,11 +85,18 @@ pub enum BeltGraphics {
 }
 
 impl super::Renderable for BeltGraphics {
-    fn render(&self, options: &super::RenderOpts) -> Option<(image::DynamicImage, f64, Vector)> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<(image::DynamicImage, f64, Vector)> {
         match self {
-            Self::BeltAnimationSet { belt_animation_set } => {
-                belt_animation_set.render(options.factorio_dir, &options.used_mods, &options.into())
-            }
+            Self::BeltAnimationSet { belt_animation_set } => belt_animation_set.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            ),
             Self::Individual { .. } => None,
         }
     }
@@ -92,8 +107,12 @@ impl super::Renderable for BeltGraphics {
 pub struct LinkedBeltPrototype(TransportBeltConnectablePrototype<BeltGraphics, LinkedBeltData>);
 
 impl super::Renderable for LinkedBeltPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -117,11 +136,16 @@ pub struct LinkedBeltData {
 }
 
 impl super::Renderable for LinkedBeltData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         if options.underground_in.unwrap_or_default() {
             self.structure.direction_in.render(
                 options.factorio_dir,
                 &options.used_mods,
+                image_cache,
                 &options.into(),
             )
         } else {
@@ -132,6 +156,7 @@ impl super::Renderable for LinkedBeltData {
             self.structure.direction_out.render(
                 options.factorio_dir,
                 &options.used_mods,
+                image_cache,
                 &flipped_opts.into(),
             )
         }
@@ -158,8 +183,12 @@ pub struct LoaderPrototype<T: super::Renderable>(
 );
 
 impl<T: super::Renderable> super::Renderable for LoaderPrototype<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -196,7 +225,11 @@ pub struct LoaderData<T: super::Renderable> {
 }
 
 impl<T: super::Renderable> super::Renderable for LoaderData<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -217,8 +250,12 @@ pub struct LoaderStructure {
 pub struct Loader1x1Prototype(LoaderPrototype<Loader1x1Data>);
 
 impl super::Renderable for Loader1x1Prototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -233,7 +270,11 @@ pub struct Loader1x1Data {
 }
 
 impl super::Renderable for Loader1x1Data {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -243,8 +284,12 @@ impl super::Renderable for Loader1x1Data {
 pub struct Loader1x2Prototype(LoaderPrototype<Loader1x2Data>);
 
 impl super::Renderable for Loader1x2Prototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -260,7 +305,11 @@ pub struct Loader1x2Data {
 }
 
 impl super::Renderable for Loader1x2Data {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -270,8 +319,12 @@ impl super::Renderable for Loader1x2Data {
 pub struct SplitterPrototype(TransportBeltConnectablePrototype<BeltGraphics, SplitterData>);
 
 impl super::Renderable for SplitterPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -290,15 +343,28 @@ pub struct SplitterData {
 }
 
 impl super::Renderable for SplitterData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         // TODO: figure out how to render the 2 belts below the splitter
 
         merge_renders(&[
-            self.structure_patch
-                .as_ref()
-                .and_then(|a| a.render(options.factorio_dir, &options.used_mods, &options.into())),
-            self.structure
-                .render(options.factorio_dir, &options.used_mods, &options.into()),
+            self.structure_patch.as_ref().and_then(|a| {
+                a.render(
+                    options.factorio_dir,
+                    &options.used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            }),
+            self.structure.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            ),
         ])
     }
 }
@@ -310,8 +376,12 @@ pub struct TransportBeltPrototype(
 );
 
 impl super::Renderable for TransportBeltPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -340,7 +410,11 @@ pub struct TransportBeltData {
 }
 
 impl super::Renderable for TransportBeltData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -357,11 +431,18 @@ pub enum BeltGraphicsWithCorners {
 }
 
 impl super::Renderable for BeltGraphicsWithCorners {
-    fn render(&self, options: &super::RenderOpts) -> Option<(image::DynamicImage, f64, Vector)> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<(image::DynamicImage, f64, Vector)> {
         match self {
-            Self::BeltAnimationSetWithCorners { belt_animation_set } => {
-                belt_animation_set.render(options.factorio_dir, &options.used_mods, &options.into())
-            }
+            Self::BeltAnimationSetWithCorners { belt_animation_set } => belt_animation_set.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            ),
             Self::Animations { .. } => None,
         }
     }
@@ -374,8 +455,12 @@ pub struct UndergroundBeltPrototype(
 );
 
 impl super::Renderable for UndergroundBeltPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -392,11 +477,16 @@ pub struct UndergroundBeltData {
 }
 
 impl super::Renderable for UndergroundBeltData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         if options.underground_in.unwrap_or_default() {
             self.structure.direction_in.render(
                 options.factorio_dir,
                 &options.used_mods,
+                image_cache,
                 &options.into(),
             )
         } else {
@@ -407,6 +497,7 @@ impl super::Renderable for UndergroundBeltData {
             self.structure.direction_out.render(
                 options.factorio_dir,
                 &options.used_mods,
+                image_cache,
                 &flipped_opts.into(),
             )
         }

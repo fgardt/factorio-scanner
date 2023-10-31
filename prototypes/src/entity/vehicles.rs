@@ -10,7 +10,11 @@ use types::*;
 pub struct VehiclePrototype<T: super::Renderable>(EntityWithOwnerPrototype<VehicleData<T>>);
 
 impl<T: super::Renderable> super::Renderable for VehiclePrototype<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -59,7 +63,11 @@ pub struct VehicleData<T: super::Renderable> {
 }
 
 impl<T: super::Renderable> super::Renderable for VehicleData<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -83,7 +91,11 @@ pub enum FrictionVariant {
 pub struct CarPrototype(VehiclePrototype<CarData>);
 
 impl super::Renderable for CarPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -151,7 +163,11 @@ pub struct CarData {
 }
 
 impl super::Renderable for CarData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -168,7 +184,11 @@ pub enum BurnerOrVoidEnergySource {
 pub struct RollingStockPrototype<T: super::Renderable>(VehiclePrototype<RollingStockData<T>>);
 
 impl<T: super::Renderable> super::Renderable for RollingStockPrototype<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -207,7 +227,11 @@ pub struct RollingStockData<T: super::Renderable> {
 }
 
 impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -217,7 +241,11 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
 pub struct ArtilleryWagonPrototype(RollingStockPrototype<ArtilleryWagonData>);
 
 impl super::Renderable for ArtilleryWagonPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -269,7 +297,11 @@ pub struct ArtilleryWagonData {
 }
 
 impl super::Renderable for ArtilleryWagonData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -279,7 +311,11 @@ impl super::Renderable for ArtilleryWagonData {
 pub struct CargoWagonPrototype(RollingStockPrototype<CargoWagonData>);
 
 impl super::Renderable for CargoWagonPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -292,7 +328,11 @@ pub struct CargoWagonData {
 }
 
 impl super::Renderable for CargoWagonData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -302,7 +342,11 @@ impl super::Renderable for CargoWagonData {
 pub struct FluidWagonPrototype(RollingStockPrototype<FluidWagonData>);
 
 impl super::Renderable for FluidWagonPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -318,7 +362,11 @@ pub struct FluidWagonData {
 }
 
 impl super::Renderable for FluidWagonData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -337,7 +385,11 @@ pub enum FluidWagonTankCount {
 pub struct LocomotivePrototype(RollingStockPrototype<LocomotiveData>);
 
 impl super::Renderable for LocomotivePrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }
@@ -365,7 +417,11 @@ pub struct LocomotiveData {
 }
 
 impl super::Renderable for LocomotiveData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         None
     }
 }

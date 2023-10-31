@@ -11,8 +11,12 @@ use types::*;
 pub struct ArtilleryTurretPrototype(EntityWithOwnerPrototype<ArtilleryTurretData>);
 
 impl super::Renderable for ArtilleryTurretPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -77,17 +81,36 @@ pub struct ArtilleryTurretData {
 }
 
 impl super::Renderable for ArtilleryTurretData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         merge_renders(&[
-            self.base_picture
-                .as_ref()
-                .and_then(|a| a.render(options.factorio_dir, &options.used_mods, &options.into())),
-            self.cannon_barrel_pictures
-                .as_ref()
-                .and_then(|s| s.render(options.factorio_dir, &options.used_mods, &options.into())),
-            self.cannon_base_pictures
-                .as_ref()
-                .and_then(|s| s.render(options.factorio_dir, &options.used_mods, &options.into())),
+            self.base_picture.as_ref().and_then(|a| {
+                a.render(
+                    options.factorio_dir,
+                    &options.used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            }),
+            self.cannon_barrel_pictures.as_ref().and_then(|s| {
+                s.render(
+                    options.factorio_dir,
+                    &options.used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            }),
+            self.cannon_base_pictures.as_ref().and_then(|s| {
+                s.render(
+                    options.factorio_dir,
+                    &options.used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            }),
         ])
     }
 }

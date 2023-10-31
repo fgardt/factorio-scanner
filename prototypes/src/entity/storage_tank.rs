@@ -11,8 +11,12 @@ use types::*;
 pub struct StorageTankPrototype(EntityWithOwnerPrototype<StorageTankData>);
 
 impl super::Renderable for StorageTankPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -57,11 +61,20 @@ pub struct StorageTankData {
 }
 
 impl super::Renderable for StorageTankData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         let background = self
             .pictures
             .window_background
-            .render(options.factorio_dir, &options.used_mods, &options.into())
+            .render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            )
             .map(|(img, scale, (shift_x, shift_y))| {
                 let (tl_x, tl_y) = self.window_bounding_box.0.as_tuple();
                 let (br_x, br_y) = self.window_bounding_box.1.as_tuple();
@@ -78,9 +91,12 @@ impl super::Renderable for StorageTankData {
 
         merge_renders(&[
             background,
-            self.pictures
-                .picture
-                .render(options.factorio_dir, &options.used_mods, &options.into()),
+            self.pictures.picture.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            ),
         ])
     }
 }

@@ -11,8 +11,12 @@ use types::*;
 pub struct RoboportPrototype(EntityWithOwnerPrototype<RoboportData>);
 
 impl super::Renderable for RoboportPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -119,20 +123,34 @@ pub struct RoboportData {
 }
 
 impl super::Renderable for RoboportData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
         merge_renders(&[
-            self.base
-                .render(options.factorio_dir, &options.used_mods, &options.into()),
-            self.base_animation
-                .render(options.factorio_dir, &options.used_mods, &options.into()),
+            self.base.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            ),
+            self.base_animation.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            ),
             self.door_animation_up.render(
                 options.factorio_dir,
                 &options.used_mods,
+                image_cache,
                 &options.into(),
             ),
             self.door_animation_down.render(
                 options.factorio_dir,
                 &options.used_mods,
+                image_cache,
                 &options.into(),
             ),
         ])

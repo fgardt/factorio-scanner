@@ -9,8 +9,12 @@ use types::*;
 pub struct SolarPanelPrototype(EntityWithOwnerPrototype<SolarPanelData>);
 
 impl super::Renderable for SolarPanelPrototype {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -25,8 +29,16 @@ pub struct SolarPanelData {
 }
 
 impl super::Renderable for SolarPanelData {
-    fn render(&self, options: &super::RenderOpts) -> Option<GraphicsOutput> {
-        self.picture
-            .render(options.factorio_dir, &options.used_mods, &options.into())
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.picture.render(
+            options.factorio_dir,
+            &options.used_mods,
+            image_cache,
+            &options.into(),
+        )
     }
 }

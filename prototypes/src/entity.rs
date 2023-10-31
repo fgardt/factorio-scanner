@@ -224,7 +224,11 @@ impl<'a> From<&'a RenderOpts<'a>> for MiningDrillGraphicsRenderOpts {
 }
 
 pub trait Renderable {
-    fn render(&self, options: &RenderOpts) -> Option<(DynamicImage, f64, Vector)>;
+    fn render(
+        &self,
+        options: &RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<(DynamicImage, f64, Vector)>;
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -243,8 +247,12 @@ impl<T: Renderable> Deref for EntityPrototypeMap<T> {
 pub struct EntityPrototype<T: Renderable>(BasePrototype<EntityData<T>>);
 
 impl<T: Renderable> Renderable for EntityPrototype<T> {
-    fn render(&self, options: &RenderOpts) -> Option<(DynamicImage, f64, Vector)> {
-        self.0.child.render(options)
+    fn render(
+        &self,
+        options: &RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<(DynamicImage, f64, Vector)> {
+        self.0.child.render(options, image_cache)
     }
 }
 
@@ -359,8 +367,12 @@ pub struct EntityData<T: Renderable> {
 }
 
 impl<T: Renderable> Renderable for EntityData<T> {
-    fn render(&self, options: &RenderOpts) -> Option<(DynamicImage, f64, Vector)> {
-        self.child.render(options)
+    fn render(
+        &self,
+        options: &RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<(DynamicImage, f64, Vector)> {
+        self.child.render(options, image_cache)
     }
 }
 
@@ -378,8 +390,12 @@ pub enum DecorativeRemoveMode {
 pub struct EntityWithHealthPrototype<T: Renderable>(EntityData<EntityWithHealthData<T>>);
 
 impl<T: Renderable> Renderable for EntityWithHealthPrototype<T> {
-    fn render(&self, options: &RenderOpts) -> Option<(DynamicImage, f64, Vector)> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<(DynamicImage, f64, Vector)> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -426,8 +442,12 @@ pub struct EntityWithHealthData<T: Renderable> {
 }
 
 impl<T: Renderable> Renderable for EntityWithHealthData<T> {
-    fn render(&self, options: &RenderOpts) -> Option<(DynamicImage, f64, Vector)> {
-        self.child.render(options)
+    fn render(
+        &self,
+        options: &RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<(DynamicImage, f64, Vector)> {
+        self.child.render(options, image_cache)
     }
 }
 
@@ -438,8 +458,12 @@ pub struct EntityWithOwnerPrototype<T: Renderable>(
 );
 
 impl<T: Renderable> Renderable for EntityWithOwnerPrototype<T> {
-    fn render(&self, options: &RenderOpts) -> Option<(DynamicImage, f64, Vector)> {
-        self.0.render(options)
+    fn render(
+        &self,
+        options: &RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<(DynamicImage, f64, Vector)> {
+        self.0.render(options, image_cache)
     }
 }
 
@@ -457,7 +481,11 @@ pub struct EntityWithOwnerData<T: Renderable> {
 }
 
 impl<T: Renderable> Renderable for EntityWithOwnerData<T> {
-    fn render(&self, options: &RenderOpts) -> Option<(DynamicImage, f64, Vector)> {
-        self.child.render(options)
+    fn render(
+        &self,
+        options: &RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<(DynamicImage, f64, Vector)> {
+        self.child.render(options, image_cache)
     }
 }
