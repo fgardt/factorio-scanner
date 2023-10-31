@@ -107,6 +107,22 @@ impl Data {
             }
         }
     }
+
+    fn ensure_ordering(&mut self) {
+        match self {
+            Self::BlueprintBook { blueprints, .. } => {
+                for blueprint in blueprints {
+                    blueprint.data.ensure_ordering();
+                }
+            }
+            Self::Blueprint {
+                entities, tiles, ..
+            } => {
+                entities.sort_by(|a, b| a.partial_cmp(&b).unwrap_or(std::cmp::Ordering::Equal));
+                tiles.sort_by(|a, b| a.partial_cmp(&b).unwrap_or(std::cmp::Ordering::Equal));
+            }
+        }
+    }
 }
 
 // TODO: properly propagate/bubble errors up for better handling
@@ -144,6 +160,7 @@ impl TryFrom<&str> for Data {
         let mut data: Self = serde_json::from_str(&uncompressed).unwrap(); //.map_or(Err("Error deserializing blueprint."), Ok)?;
 
         data.normalize_positions();
+        data.ensure_ordering();
 
         Ok(data)
     }
@@ -235,7 +252,7 @@ pub struct Icon {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum SignalID {
     Item { name: Option<String> },
@@ -248,7 +265,7 @@ pub type GraphicsVariation = u8;
 
 // todo: reduce optionals count by skipping serialization of defaults?
 #[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Entity {
     pub entity_number: EntityNumber,
@@ -329,21 +346,27 @@ pub struct Entity {
     pub tags: TagTable,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+impl PartialOrd for Entity {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.position.partial_cmp(&other.position)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum UndergroundType {
     Input,
     Output,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum SplitterPriority {
     Left,
     Right,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum FilterMode {
     Whitelist,
@@ -351,7 +374,7 @@ pub enum FilterMode {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct Inventory {
     pub filters: Vec<ItemFilter>,
@@ -384,7 +407,7 @@ pub struct WaitCondition {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum WaitConditionType {
     Full,
@@ -399,7 +422,7 @@ pub enum WaitConditionType {
     FluidCount { condition: Option<Condition> },
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum Comparator {
     #[serde(rename = "<")]
     Less,
@@ -416,7 +439,7 @@ pub enum Comparator {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged, deny_unknown_fields)]
 pub enum Condition {
     Signals {
@@ -432,21 +455,27 @@ pub enum Condition {
     },
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum CompareType {
     And,
     Or,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Tile {
     pub name: String,
     pub position: Position,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+impl PartialOrd for Tile {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.position.partial_cmp(&other.position)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Position {
     #[serde(serialize_with = "shorter_floats")]
@@ -456,7 +485,19 @@ pub struct Position {
     pub y: f32,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+impl PartialOrd for Position {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.y.partial_cmp(&other.y).map_or_else(
+            || self.x.partial_cmp(&other.x),
+            |res| match res {
+                std::cmp::Ordering::Equal => self.x.partial_cmp(&other.x),
+                std::cmp::Ordering::Less | std::cmp::Ordering::Greater => Some(res),
+            },
+        )
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged, deny_unknown_fields)]
 pub enum Connection {
     Double {
@@ -472,7 +513,7 @@ pub enum Connection {
     },
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct ConnectionPoint {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -482,7 +523,7 @@ pub struct ConnectionPoint {
     pub green: Vec<ConnectionData>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged, deny_unknown_fields)]
 pub enum ConnectionData {
     Connector {
@@ -496,7 +537,7 @@ pub enum ConnectionData {
 
 pub type ItemRequest = HashMap<String, ItemCountType>;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct ItemFilter {
     pub name: String,
@@ -504,14 +545,14 @@ pub struct ItemFilter {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct InfinitySettings {
     pub remove_unfiltered_items: bool,
     pub filters: Option<Vec<InfinityFilter>>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct InfinityFilter {
     pub name: String,
@@ -520,7 +561,7 @@ pub struct InfinityFilter {
     pub index: ItemStackIndex,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum InfinityFilterMode {
     AtLeast,
@@ -530,7 +571,7 @@ pub enum InfinityFilterMode {
     Add,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct LogisticFilter {
     pub name: String,
@@ -538,7 +579,7 @@ pub struct LogisticFilter {
     pub count: ItemCountType,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct SpeakerParameter {
     pub playback_volume: f32,
@@ -546,7 +587,7 @@ pub struct SpeakerParameter {
     pub allow_polyphony: bool,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct SpeakerAlertParameter {
     pub show_alert: bool,
@@ -555,7 +596,7 @@ pub struct SpeakerAlertParameter {
     pub alert_message: String,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Color {
     pub r: f64,
@@ -572,7 +613,7 @@ impl From<&Color> for types::Color {
 
 #[allow(clippy::struct_excessive_bools)]
 #[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct ControlBehavior {
     pub logistic_condition: Option<Condition>,
@@ -643,7 +684,7 @@ pub struct ControlBehavior {
     pub use_colors: Option<bool>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct ConstantCombinatorFilter {
     pub signal: SignalID,
@@ -652,7 +693,7 @@ pub struct ConstantCombinatorFilter {
 }
 
 // https://lua-api.factorio.com/latest/concepts.html#ArithmeticCombinatorParameters
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum ArithmeticOperation {
     #[serde(rename = "*")]
     Multiply,
@@ -689,7 +730,7 @@ pub enum ArithmeticOperation {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged, deny_unknown_fields)]
 pub enum ArithmeticData {
     SignalSignal {
@@ -723,7 +764,7 @@ pub enum ArithmeticData {
 }
 
 // https://lua-api.factorio.com/latest/concepts.html#DeciderCombinatorParameters
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged, deny_unknown_fields)]
 pub enum DeciderData {
     Signal {
@@ -750,7 +791,7 @@ pub enum DeciderData {
     },
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct SpeakerCircuitParameters {
     //#[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -762,7 +803,7 @@ pub struct SpeakerCircuitParameters {
 // https://lua-api.factorio.com/latest/concepts.html#Tags
 pub type TagTable = HashMap<String, AnyBasic>;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(untagged, deny_unknown_fields)]
 pub enum AnyBasic {
     String(String),
