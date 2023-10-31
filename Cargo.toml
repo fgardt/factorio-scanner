@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "blueprint",
+    "factorio_api",
     "locale",
     "mod_settings",
     "prototypes",
@@ -20,13 +21,14 @@ lto = "thin"
 
 [workspace.dependencies]
 blueprint = { path = "blueprint" }
+factorio_api = { path = "factorio_api" }
 image = { version = "0.24.7", features = ["png"], default-features = false }
 locale = { path = "locale" }
 mod_settings = { path = "mod_settings" }
 prototypes = { path = "prototypes" }
 serde = { version = "1.0", features = ["derive"] }
 serde_helper = { path = "serde_helper" }
-serde_json = "1.0.107"
-serde_repr = "0.1.16"
-serde_with = "3.3.0"
+serde_json = "1.0"
+serde_repr = "0.1.17"
+serde_with = "3.4"
 types = { path = "types" }
