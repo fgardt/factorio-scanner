@@ -168,6 +168,7 @@ pub struct DataRaw {
     // pub spider_vehicle: EntityPrototypeMap<SpiderVehiclePrototype>,
 }
 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum EntityType {
     Accumulator,
     ArtilleryTurret,
