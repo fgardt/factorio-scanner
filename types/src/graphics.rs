@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 use image::{
     imageops::{self, FilterType},
@@ -162,7 +162,7 @@ pub enum SpriteSizeParam {
 pub trait FetchSprite {
     fn fetch(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         filename: &FileName,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
@@ -171,7 +171,7 @@ pub trait FetchSprite {
 
     fn fetch_offset(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         filename: &FileName,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
@@ -181,7 +181,7 @@ pub trait FetchSprite {
 
     fn fetch_offset_by_pixels(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         filename: &FileName,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
@@ -199,7 +199,7 @@ pub trait RenderableGraphics {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -208,7 +208,7 @@ pub trait RenderableGraphics {
 
 pub fn merge_layers<O, T: RenderableGraphics<RenderOpts = O>>(
     layers: &[T],
-    factorio_dir: &str,
+    factorio_dir: &PathBuf,
     used_mods: &HashMap<&str, &str>,
     image_cache: &mut ImageCache,
     opts: &O,
@@ -360,7 +360,7 @@ pub struct SpriteParams {
 impl FetchSprite for SpriteParams {
     fn fetch(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         filename: &FileName,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
@@ -378,7 +378,7 @@ impl FetchSprite for SpriteParams {
 
     fn fetch_offset(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         filename: &FileName,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
@@ -398,7 +398,7 @@ impl FetchSprite for SpriteParams {
 
     fn fetch_offset_by_pixels(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         filename: &FileName,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
@@ -502,7 +502,7 @@ impl<T: FetchSprite> RenderableGraphics for SimpleGraphics<T> {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -566,7 +566,7 @@ where
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -606,7 +606,7 @@ impl RenderableGraphics for Sprite {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -670,7 +670,7 @@ impl RenderableGraphics for RotatedSpriteParams {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -743,7 +743,7 @@ impl RenderableGraphics for RotatedSpriteParamsMultiFile {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -789,7 +789,7 @@ impl RenderableGraphics for RotatedSprite {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -836,7 +836,7 @@ impl RenderableGraphics for Sprite4WaySheet {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -890,7 +890,7 @@ impl RenderableGraphics for Sprite8WaySheet {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -939,7 +939,7 @@ impl RenderableGraphics for Sprite4Way {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1001,7 +1001,7 @@ impl RenderableGraphics for Sprite8Way {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1063,7 +1063,7 @@ pub struct SpriteSheetParams {
 impl FetchSprite for SpriteSheetParams {
     fn fetch(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         filename: &FileName,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
@@ -1075,7 +1075,7 @@ impl FetchSprite for SpriteSheetParams {
 
     fn fetch_offset(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         filename: &FileName,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
@@ -1094,7 +1094,7 @@ impl FetchSprite for SpriteSheetParams {
 
     fn fetch_offset_by_pixels(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         filename: &FileName,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
@@ -1151,7 +1151,7 @@ impl RenderableGraphics for SpriteVariations {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1365,7 +1365,7 @@ pub struct AnimationParams {
 impl FetchSprite for AnimationParams {
     fn fetch(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         filename: &FileName,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
@@ -1377,7 +1377,7 @@ impl FetchSprite for AnimationParams {
 
     fn fetch_offset(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         filename: &FileName,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
@@ -1396,7 +1396,7 @@ impl FetchSprite for AnimationParams {
 
     fn fetch_offset_by_pixels(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         filename: &FileName,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
@@ -1514,7 +1514,7 @@ impl RenderableGraphics for Animation {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1652,7 +1652,7 @@ impl RenderableGraphics for Animation4Way {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1722,7 +1722,7 @@ impl RenderableGraphics for AnimationElement {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1782,7 +1782,7 @@ impl RenderableGraphics for AnimationVariations {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1864,7 +1864,7 @@ pub struct RotatedAnimationParams {
 impl FetchSprite for RotatedAnimationParams {
     fn fetch(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         filename: &FileName,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
@@ -1876,7 +1876,7 @@ impl FetchSprite for RotatedAnimationParams {
 
     fn fetch_offset(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         filename: &FileName,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
@@ -1895,7 +1895,7 @@ impl FetchSprite for RotatedAnimationParams {
 
     fn fetch_offset_by_pixels(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         filename: &FileName,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
@@ -1991,7 +1991,7 @@ impl RenderableGraphics for RotatedAnimation {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -2117,7 +2117,7 @@ impl RenderableGraphics for RotatedAnimation4Way {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
