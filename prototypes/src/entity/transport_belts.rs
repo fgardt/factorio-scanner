@@ -150,7 +150,7 @@ impl super::Renderable for LinkedBeltData {
             )
         } else {
             let flipped_opts = &super::RenderOpts {
-                direction: Some(options.direction.unwrap_or_default().flip()),
+                direction: options.direction.flip(),
                 ..options.clone()
             };
             self.structure.direction_out.render(
@@ -491,7 +491,7 @@ impl super::Renderable for UndergroundBeltData {
             )
         } else {
             let flipped_opts = &super::RenderOpts {
-                direction: Some(options.direction.unwrap_or_default().flip()),
+                direction: options.direction.flip(),
                 ..options.clone()
             };
             self.structure.direction_out.render(

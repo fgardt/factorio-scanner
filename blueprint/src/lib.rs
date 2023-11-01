@@ -14,7 +14,7 @@ use flate2::{read::ZlibDecoder, write::ZlibEncoder};
 use serde::{Deserialize, Serialize, Serializer};
 use serde_with::skip_serializing_none;
 
-use types::{ItemCountType, ItemStackIndex};
+use types::{Direction, ItemCountType, ItemStackIndex};
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -271,7 +271,10 @@ pub struct Entity {
     pub entity_number: EntityNumber,
     pub name: String,
     pub position: Position,
-    pub direction: Option<u8>,
+
+    #[serde(default, skip_serializing_if = "Direction::is_default")]
+    pub direction: Direction,
+
     pub orientation: Option<f32>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -494,6 +497,24 @@ impl PartialOrd for Position {
                 std::cmp::Ordering::Less | std::cmp::Ordering::Greater => Some(res),
             },
         )
+    }
+}
+
+impl From<Position> for types::MapPosition {
+    fn from(value: Position) -> Self {
+        Self::XY {
+            x: f64::from(value.x),
+            y: f64::from(value.y),
+        }
+    }
+}
+
+impl From<&Position> for types::MapPosition {
+    fn from(value: &Position) -> Self {
+        Self::XY {
+            x: f64::from(value.x),
+            y: f64::from(value.y),
+        }
     }
 }
 

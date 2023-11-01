@@ -59,6 +59,43 @@ impl super::Renderable for GateData {
         options: &super::RenderOpts,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        None
+        match options.direction {
+            Direction::North | Direction::South => {
+                let renders = if options.draw_gate_patch {
+                    [
+                        self.vertical_animation.render(
+                            options.factorio_dir,
+                            &options.used_mods,
+                            image_cache,
+                            &options.into(),
+                        ),
+                        self.wall_patch.render(
+                            options.factorio_dir,
+                            &options.used_mods,
+                            image_cache,
+                            &options.into(),
+                        ),
+                    ]
+                } else {
+                    [
+                        self.vertical_animation.render(
+                            options.factorio_dir,
+                            &options.used_mods,
+                            image_cache,
+                            &options.into(),
+                        ),
+                        None,
+                    ]
+                };
+                merge_renders(&renders)
+            }
+            Direction::West | Direction::East => self.horizontal_animation.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            ),
+            _ => None,
+        }
     }
 }

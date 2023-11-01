@@ -235,6 +235,61 @@ pub enum EntityType {
     ArtilleryWagon,
 }
 
+#[allow(clippy::match_like_matches_macro)]
+impl EntityType {
+    pub const fn connectable(&self) -> bool {
+        match self {
+            Self::HeatPipe | Self::HeatInterface => true,
+            Self::Pipe | Self::InfinityPipe => true,
+            Self::TransportBelt => true,
+            Self::Wall | Self::Gate => true,
+            _ => false,
+        }
+    }
+
+    pub const fn can_connect_to(&self, other: &Self) -> bool {
+        match self {
+            Self::Gate => matches!(other, Self::Wall),
+            Self::Wall => match other {
+                Self::Wall => true,
+                Self::Gate => true, // when direction fits
+                _ => false,
+            },
+            Self::TransportBelt => match other {
+                Self::Loader | Self::Loader1x1 => true,
+                Self::UndergroundBelt => true,
+                Self::TransportBelt => true,
+                Self::LinkedBelt => true,
+                Self::Splitter => true,
+                _ => false,
+            },
+            Self::Pipe | Self::InfinityPipe => match other {
+                Self::Pipe | Self::InfinityPipe | Self::PipeToGround => true,
+                Self::Pump | Self::OffshorePump | Self::StorageTank => true,
+                Self::AssemblingMachine | Self::Furnace => true,
+                Self::Boiler | Self::Generator => true,
+                Self::MiningDrill => true,
+                Self::FluidTurret => true,
+                _ => false,
+            },
+            Self::HeatPipe | Self::HeatInterface => match other {
+                Self::HeatPipe | Self::HeatInterface => true,
+                Self::Reactor => true,
+                Self::Boiler
+                | Self::Inserter
+                | Self::AssemblingMachine
+                | Self::Furnace
+                | Self::Lab
+                | Self::MiningDrill
+                | Self::Pump
+                | Self::Radar => true, // when energy_source.type == "heat"
+                _ => false,
+            },
+            _ => false,
+        }
+    }
+}
+
 pub struct DataUtil {
     data: DataRaw,
 
@@ -243,6 +298,7 @@ pub struct DataUtil {
 
 impl DataUtil {
     #[allow(clippy::too_many_lines)]
+    #[must_use]
     pub fn new(data: DataRaw) -> Self {
         let mut entities: HashMap<String, EntityType> = HashMap::new();
 
@@ -517,9 +573,15 @@ impl DataUtil {
         Self { data, entities }
     }
 
+    #[must_use]
+    pub fn get_type(&self, name: &str) -> Option<&EntityType> {
+        self.entities.get(name)
+    }
+
     #[allow(clippy::too_many_lines)]
+    #[must_use]
     pub fn get_entity(&self, name: &str) -> Option<&dyn RenderableEntity> {
-        let entity_type = self.entities.get(name)?;
+        let entity_type = self.get_type(name)?;
 
         match entity_type {
             EntityType::Accumulator => self
@@ -817,10 +879,12 @@ impl DataUtil {
         }
     }
 
+    #[must_use]
     pub fn entities(&self) -> std::collections::HashSet<&String> {
         self.entities.keys().collect()
     }
 
+    #[must_use]
     pub fn render_entity(
         &self,
         entity_name: &str,

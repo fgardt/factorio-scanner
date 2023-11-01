@@ -544,13 +544,51 @@ impl MapPosition {
             Self::Tuple(x, y) | Self::XY { x, y } => (*x, *y),
         }
     }
+
+    pub fn is_close(&self, other: &Self, distance: f64) -> bool {
+        const EPSILON: f64 = 0.125;
+
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = other.as_tuple();
+
+        (x1 - x2).abs() < EPSILON && (y1 - y2).abs() < EPSILON
+    }
+
+    pub fn is_cardinal_neighbor(&self, other: &Self) -> Option<Direction> {
+        const CARDINAL_MAX: f64 = 1.125;
+        const CARDINAL_MIN: f64 = 0.875;
+        const SHEAR_MAX: f64 = 0.125;
+
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = other.as_tuple();
+        let x_diff = (x1 - x2).abs();
+        let y_diff = (y1 - y2).abs();
+
+        if x_diff < CARDINAL_MAX && x_diff > CARDINAL_MIN && y_diff < SHEAR_MAX {
+            if x1 > x2 {
+                Some(Direction::West)
+            } else {
+                Some(Direction::East)
+            }
+        } else if y_diff < CARDINAL_MAX && y_diff > CARDINAL_MIN && x_diff < SHEAR_MAX {
+            if y1 > y2 {
+                Some(Direction::North)
+            } else {
+                Some(Direction::South)
+            }
+        } else {
+            None
+        }
+    }
 }
 
 /// [`Types/BoundingBox`](https://lua-api.factorio.com/latest/types/BoundingBox.html)
 pub type BoundingBox = (MapPosition, MapPosition);
 
 /// [`Types/Direction`](https://lua-api.factorio.com/latest/types/Direction.html)
-#[derive(Debug, Clone, Copy, Default, Serialize_repr, Deserialize_repr)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Serialize_repr, Deserialize_repr,
+)]
 #[repr(u8)]
 pub enum Direction {
     #[default]
@@ -599,6 +637,19 @@ impl Direction {
         };
 
         (x * x_fac, y * y_fac)
+    }
+
+    pub const fn is_straight(&self, other: &Self) -> bool {
+        match self {
+            Self::NorthEast | Self::SouthWest => matches!(other, Self::NorthEast | Self::SouthWest),
+            Self::NorthWest | Self::SouthEast => matches!(other, Self::NorthWest | Self::SouthEast),
+            Self::North | Self::South => matches!(other, Self::North | Self::South),
+            Self::East | Self::West => matches!(other, Self::East | Self::West),
+        }
+    }
+
+    pub fn is_default(other: &Self) -> bool {
+        other == &Self::default()
     }
 }
 
@@ -1028,7 +1079,7 @@ pub struct TransportBeltAnimationSet {
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TransportBeltAnimationSetRenderOpts {
-    pub direction: Option<Direction>,
+    pub direction: Direction,
     pub connections: Option<ConnectedDirections>,
 
     pub runtime_tint: Option<Color>,
@@ -1058,7 +1109,7 @@ impl RenderableGraphics for TransportBeltAnimationSet {
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         // -1 because the index is 1-based. Lua stuff :)
-        let index = match opts.direction.unwrap_or_default() {
+        let index = match opts.direction {
             Direction::North => self.north_index - 1,
             Direction::East => self.east_index - 1,
             Direction::South => self.south_index - 1,
@@ -1143,7 +1194,7 @@ impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         let connections = opts.connections.unwrap_or_default();
-        let index = match opts.direction.unwrap_or_default() {
+        let index = match opts.direction {
             Direction::North => match connections {
                 ConnectedDirections::Left | ConnectedDirections::UpLeft => self.west_to_north_index,
                 ConnectedDirections::Right | ConnectedDirections::UpRight => {
@@ -1428,6 +1479,30 @@ pub enum ConnectedDirections {
     All,
 }
 
+impl ConnectedDirections {
+    #[must_use]
+    pub const fn from_directions(up: bool, down: bool, left: bool, right: bool) -> Self {
+        match (up, down, left, right) {
+            (false, false, false, false) => Self::None,
+            (true, false, false, false) => Self::Up,
+            (false, true, false, false) => Self::Down,
+            (false, false, true, false) => Self::Left,
+            (false, false, false, true) => Self::Right,
+            (true, true, false, false) => Self::UpDown,
+            (true, false, true, false) => Self::UpLeft,
+            (true, false, false, true) => Self::UpRight,
+            (false, true, true, false) => Self::DownLeft,
+            (false, true, false, true) => Self::DownRight,
+            (false, false, true, true) => Self::LeftRight,
+            (true, true, true, false) => Self::UpDownLeft,
+            (true, true, false, true) => Self::UpDownRight,
+            (true, false, true, true) => Self::UpLeftRight,
+            (false, true, true, true) => Self::DownLeftRight,
+            (true, true, true, true) => Self::All,
+        }
+    }
+}
+
 impl ConnectableEntityGraphics {
     pub fn get(&self, connections: ConnectedDirections) -> &SpriteVariations {
         match connections {
@@ -1580,14 +1655,14 @@ pub struct MiningDrillGraphicsSet {
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct MiningDrillGraphicsRenderOpts {
-    pub direction: Option<Direction>,
+    pub direction: Direction,
     pub runtime_tint: Option<Color>,
 }
 
 impl From<&MiningDrillGraphicsRenderOpts> for Animation4WayRenderOpts {
     fn from(value: &MiningDrillGraphicsRenderOpts) -> Self {
         Self {
-            direction: value.direction.unwrap_or_default(),
+            direction: value.direction,
             progress: 0.0,
             runtime_tint: value.runtime_tint,
         }

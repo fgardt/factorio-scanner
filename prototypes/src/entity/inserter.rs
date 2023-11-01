@@ -118,7 +118,7 @@ impl super::Renderable for InserterData {
     ) -> Option<GraphicsOutput> {
         const TILE_RES: f64 = 32.0;
 
-        let direction = options.direction.unwrap_or_default();
+        let direction = options.direction;
 
         let hand = self
             .hand_open_picture
@@ -169,7 +169,7 @@ impl super::Renderable for InserterData {
             });
 
         let platform_options = &super::RenderOpts {
-            direction: Some(direction.flip()),
+            direction: direction.flip(),
             ..options.clone()
         };
 

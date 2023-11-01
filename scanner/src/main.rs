@@ -9,8 +9,8 @@
 
 use image::GenericImageView;
 
-use prototypes::{EntityRenderOpts, RenderableEntity};
-use types::{merge_renders, GraphicsOutput, ImageCache};
+use prototypes::{EntityRenderOpts, EntityType, RenderableEntity};
+use types::{merge_renders, ConnectedDirections, Direction, GraphicsOutput, ImageCache};
 
 fn main() {
     //let test_bp_data = "0eNqdkuFqxCAQhN9lfytcjMarr1KOEnNLKiQqxhwNh+9+miulkBSa+yULM9/M4t5BDzP6YGwEdYfJtp5GR/tgrmX+AiVOBJbyJAKmc3YC9Z6FprftUCRx8QgKTMQRCNh2LFNw2nkXIhSTvWLmVOlCAG000eCTsQ7Lh51HjSELftza9BQH7GIwHfVuwAz2bspOZ79bMbG2onUOsGj6T+3mULD1JZENmh1BP/dl7F/k+oXSW3RFGOGk2QvgRwLEoe5i+11/VhZpB9C8sDyXO93yZaz3o35dI4Ebhmn1s3PF5RuTsuGVZOeUHgxE4/c=";
@@ -45,6 +45,12 @@ fn main() {
     // bilka FBSR test
     let test_bp_data = "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";
 
+    // wall connection test
+    //let test_bp_data = "0eNqV0uGqwiAUB/B3OZ9dNN3a8lUiLlsdQnBnY1r3juG7X10EQVbzm0c8P//KmaHVVxxGRRbkDOrUkwF5mMGoCzU67NlpQJCgLHbAgJouVMb2hNlvozU4BorO+Acyd0cGSFZZhXdlKaYfunYtjv5ArJ/B0Bvf0lO4zTPZdlMymPyi2JTOsReGr2K+KSIxjIgzxSqGPxQeV8o0JY8ru7QnbeNKlfS9b6LUq5D8c5J9UpIF8RO4TKp8GmwGumnRDzMEILNowt4NR7MgvM6Las+rqha1EDvn/gHGLf6e";
+
+    // gate connection test
+    //let test_bp_data = "0eNqVlNtuhCAURf/lPGMziI7Ir0yaRmdOJiSIRpi2xvDvRe3FZjTgG7e9zgY2jFCrB3a91BbECPLaagPiMoKRd12pacwOHYIAabEBArpqpt69sgiOgNQ3/ARB3SsB1FZaiYt+7gxv+tHU2PsFv0pjW43JR6WUp3Wt8ZJWT3U8hr3kBAYQiW84R54o6f/6T/psrSdwkz1el+l0g8aiPOUBT1kUpQxQ8igK/6Gk25TzMcqOlyJwyvQUsMGjbPxhdnyUxzJDtyn0FBuaPQA9lpM9TCi85RoQDC9lx+56z1V28K5mjn/s83cgVr8HAVXVqL63l1g009g79mbZA6dZUaZFwRln7OzcF7j8bhM=";
+
     let bp = blueprint::Data::try_from(test_bp_data).unwrap();
 
     println!("loaded BP");
@@ -71,22 +77,22 @@ fn main() {
     println!("loaded prototype data");
 
     // =====[  RENDER TEST  ]=====
-    let render_opts = EntityRenderOpts {
-        factorio_dir: "/home/flo/dev/factorio",
-        used_mods: [("EditorExtensions", "2.2.1")].iter().copied().collect(),
-        direction: None,
-        orientation: None,
-        pickup_position: None,
-        connections: None,
-        underground_in: None,
-        connected_gates: vec![
-            // Direction::North,
-            // Direction::South,
-            // Direction::East,
-            // Direction::West,
-        ],
-        runtime_tint: None, //Some(Color::RGBA(1.0, 0.0, 0.0, 0.5)),
-    };
+    // let render_opts = EntityRenderOpts {
+    //     factorio_dir: "/home/flo/dev/factorio",
+    //     used_mods: [("EditorExtensions", "2.2.1")].iter().copied().collect(),
+    //     direction: None,
+    //     orientation: None,
+    //     pickup_position: None,
+    //     connections: None,
+    //     underground_in: None,
+    //     connected_gates: vec![
+    //         // Direction::North,
+    //         // Direction::South,
+    //         // Direction::East,
+    //         // Direction::West,
+    //     ],
+    //     runtime_tint: None, //Some(Color::RGBA(1.0, 0.0, 0.0, 0.5)),
+    // };
 
     let data = prototypes::DataUtil::new(data_raw);
 
@@ -194,7 +200,7 @@ fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::EntityRenderO
         .iter()
         .copied()
         .collect(),
-        direction: value.direction.map(std::convert::Into::into),
+        direction: value.direction,
         orientation: value.orientation.map(|v| v as f64),
         pickup_position: value
             .pickup_position
@@ -206,6 +212,7 @@ fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::EntityRenderO
             .as_ref()
             .map(|t| matches!(t, blueprint::UndergroundType::Input)),
         connected_gates: Vec::new(),
+        draw_gate_patch: false,
         runtime_tint: value.color.as_ref().map(std::convert::Into::into),
     }
 }
@@ -223,8 +230,80 @@ fn render_bp(
             let renders = entities
                 .iter()
                 .map(|e| {
-                    data.render_entity(&e.name, &bp_entity2render_opts(e), image_cache)
-                        .map(|(img, scale, (shift_x, shift_y))| {
+                    let mut connected_gates: Vec<Direction> = Vec::new();
+                    let mut draw_gate_patch = false;
+                    let connections = data.get_type(&e.name).and_then(|entity_type| {
+                        if entity_type.connectable() {
+                            let mut up = false;
+                            let mut down = false;
+                            let mut left = false;
+                            let mut right = false;
+
+                            let pos: types::MapPosition = (&e.position).into();
+
+                            for other in entities {
+                                if other == e {
+                                    continue;
+                                }
+
+                                let other_type = data.get_type(&other.name)?;
+
+                                if !entity_type.can_connect_to(other_type) {
+                                    continue;
+                                }
+
+                                let other_pos: types::MapPosition = (&other.position).into();
+
+                                match entity_type {
+                                    EntityType::Gate => {
+                                        match pos.is_cardinal_neighbor(&other_pos) {
+                                            Some(dir) => {
+                                                if dir == Direction::South {
+                                                    draw_gate_patch = true;
+                                                }
+                                            }
+                                            None => continue,
+                                        }
+                                    }
+                                    EntityType::Wall => {
+                                        match pos.is_cardinal_neighbor(&other_pos) {
+                                            Some(dir) => {
+                                                if matches!(other_type, EntityType::Gate) {
+                                                    if dir.is_straight(&other.direction) {
+                                                        connected_gates.push(dir);
+                                                    }
+                                                } else {
+                                                    match dir {
+                                                        Direction::North => up = true,
+                                                        Direction::South => down = true,
+                                                        Direction::East => right = true,
+                                                        Direction::West => left = true,
+                                                        _ => continue,
+                                                    }
+                                                }
+                                            }
+                                            None => continue,
+                                        }
+
+                                        //
+                                    }
+                                    _ => continue,
+                                }
+                            }
+
+                            Some(ConnectedDirections::from_directions(up, down, left, right))
+                        } else {
+                            None
+                        }
+                    });
+
+                    let mut render_opts = bp_entity2render_opts(e);
+                    render_opts.connections = connections;
+                    render_opts.connected_gates = connected_gates;
+                    render_opts.draw_gate_patch = draw_gate_patch;
+
+                    data.render_entity(&e.name, &render_opts, image_cache).map(
+                        |(img, scale, (shift_x, shift_y))| {
                             (
                                 img,
                                 scale,
@@ -233,7 +312,8 @@ fn render_bp(
                                     shift_y + f64::from(e.position.y),
                                 ),
                             )
-                        })
+                        },
+                    )
                 })
                 .collect::<Vec<_>>();
 
