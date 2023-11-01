@@ -216,6 +216,16 @@ fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::EntityRenderO
             .map(|t| matches!(t, blueprint::UndergroundType::Input)),
         connected_gates: Vec::new(),
         draw_gate_patch: false,
+        arithmetic_operation: value.control_behavior.as_ref().and_then(|bhv| {
+            bhv.arithmetic_conditions
+                .as_ref()
+                .map(blueprint::ArithmeticData::operation)
+        }),
+        decider_operation: value.control_behavior.as_ref().and_then(|bhv| {
+            bhv.decider_conditions
+                .as_ref()
+                .map(blueprint::DeciderData::operation)
+        }),
         runtime_tint: value.color.as_ref().map(std::convert::Into::into),
     }
 }

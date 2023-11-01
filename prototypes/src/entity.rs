@@ -104,6 +104,9 @@ pub struct RenderOpts<'a> {
     pub connected_gates: Vec<Direction>,
     pub draw_gate_patch: bool,
 
+    pub arithmetic_operation: Option<ArithmeticOperation>,
+    pub decider_operation: Option<Comparator>,
+
     pub runtime_tint: Option<Color>,
 }
 
