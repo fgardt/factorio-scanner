@@ -8,6 +8,7 @@ edition.workspace = true
 
 [dependencies]
 blueprint.workspace = true
+clap.workspace = true
 image.workspace = true
 locale.workspace = true
 mod_settings.workspace = true

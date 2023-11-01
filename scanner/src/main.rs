@@ -7,12 +7,45 @@
 )]
 #![allow(dead_code, clippy::upper_case_acronyms, unused_variables)]
 
+use std::{
+    fs::{self, File},
+    io::Read,
+    path::PathBuf,
+};
+
+use clap::Parser;
 use image::GenericImageView;
 
 use prototypes::{EntityRenderOpts, EntityType, RenderableEntity};
 use types::{merge_renders, ConnectedDirections, Direction, GraphicsOutput, ImageCache};
 
+#[derive(Parser)]
+#[clap(author, version, about, long_about = None)]
+struct Cli {
+    /// Path to the file that contains your blueprint string
+    #[clap(short, long, value_parser)]
+    blueprint: PathBuf,
+
+    /// Path to the factorio directory that contains the data folder (path.read-data)
+    #[clap(short, long, value_parser)]
+    factorio: PathBuf,
+
+    /// Path to the data dump json file
+    #[clap(short, long, value_parser)]
+    dump: PathBuf,
+
+    /// Use a faster approach to read in the data dump file
+    #[clap(long, action)]
+    fast: bool,
+
+    /// Path to the output file
+    #[clap(short, long, value_parser)]
+    out: PathBuf,
+}
+
 fn main() {
+    let cli = Cli::parse();
+
     //let test_bp_data = "0eNqdkuFqxCAQhN9lfytcjMarr1KOEnNLKiQqxhwNh+9+miulkBSa+yULM9/M4t5BDzP6YGwEdYfJtp5GR/tgrmX+AiVOBJbyJAKmc3YC9Z6FprftUCRx8QgKTMQRCNh2LFNw2nkXIhSTvWLmVOlCAG000eCTsQ7Lh51HjSELftza9BQH7GIwHfVuwAz2bspOZ79bMbG2onUOsGj6T+3mULD1JZENmh1BP/dl7F/k+oXSW3RFGOGk2QvgRwLEoe5i+11/VhZpB9C8sDyXO93yZaz3o35dI4Ebhmn1s3PF5RuTsuGVZOeUHgxE4/c=";
     //let test_bp_data = "0eNp1jkEOgjAURO8y60IEwWKvYowB/TFN4LdpP0ZCencpbty4nMnMm1kxjDP5YFlgVti74whzWRHtk/sxe7J4goEVmqDA/ZSVhJ6jd0GKgUZBUrD8oDdMla4KxGLF0pe0i+XG8zRQ2AL/GArexa3mOK9uqKIrW4UF5li2KWP3C+bnscKLQtwbdVc1+lxrrQ+6PjUpfQDt5kgE";
     //let test_bp_data = "0eNp1jsEKgzAQRP9lzlGq1cbmV0opsS4lEFdJYqlI/r2JXnop7GWGmbezobcLzc5wgNpgnhN7qNsGb16sbfbCOhMUTKARAqzHrILT7OfJhaInGxAFDA/0gariXYA4mGDoIO1iffAy9uRS4B9DYJ58qk2cvyZU0ZWtwAp1LtuYsfsE9bNYwOrUTd7g9XHJe5PzO6XuqkZeaynlSdaXJsYv7bFOmg==";
@@ -54,7 +87,7 @@ fn main() {
     // artillery turret direction test
     //let test_bp_data = "0eNqd0dGOgjAQBdB/uc/FSIuA/RWz2YBONpOUQtqyWUL671KJRnf1wX2cyZ3TZmZGa0YaHNsAPYOPvfXQhxmev2xjUi9MA0GDA3UQsE2XqsYFNobclIXROQqIAmxP9AOdxw8BsoED02pdiunTjl1Lbgm8VgSG3i+DvU0vL1gm5WYnMEGr7WYXo/ijybe08qoViyZwYkfHNVA+sdU7dr5/acsndvG/LVS/7SKt+3IcfXdLAdO0ZB7021AWyKfINzm//q/Oi2ovq6pWtVJljGdkF7FK";
 
-    let bp = blueprint::Data::try_from(test_bp_data).unwrap();
+    let bp = blueprint::Data::try_from(fs::read_to_string(cli.blueprint).unwrap()).unwrap();
 
     println!("loaded BP");
 
@@ -69,15 +102,26 @@ fn main() {
     // println!("{signal_locale_data:?}");
 
     // =====[   DATA DUMP   ]=====
-    let data_raw_dump = include_str!("../dumps/data-raw-dump.json");
-    let data_raw: prototypes::DataRaw = serde_json::from_str(data_raw_dump).unwrap();
+    //let data_raw_dump = include_str!("../dumps/data-raw-dump.json");
+    //let data_raw: prototypes::DataRaw = serde_json::from_str(data_raw_dump).unwrap();
+    let data_raw: prototypes::DataRaw = if cli.fast {
+        let mut bytes = Vec::new();
+        File::open(cli.dump)
+            .unwrap()
+            .read_to_end(&mut bytes)
+            .unwrap();
+        serde_json::from_slice(&bytes).unwrap()
+    } else {
+        let dump_file = File::open(cli.dump).unwrap();
+        serde_json::from_reader(dump_file).unwrap()
+    };
 
     println!("loaded prototype data");
 
     // =====[  RENDER TEST  ]=====
     let data = prototypes::DataUtil::new(data_raw);
 
-    match render_bp(&bp, &data, &mut ImageCache::new()) {
+    match render_bp(&bp, &data, &cli.factorio, &mut ImageCache::new()) {
         Some((img, scale, (shift_x, shift_y))) => {
             println!("render done");
 
@@ -92,7 +136,7 @@ fn main() {
                 img.dimensions().1,
             );
 
-            img.save("render_test/bp-test.png").unwrap();
+            img.save(cli.out).unwrap();
         }
         None => println!("EMPTY BP!"),
     }
@@ -142,9 +186,12 @@ fn render_by_name(
     }
 }
 
-fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::EntityRenderOpts {
+fn bp_entity2render_opts<'a>(
+    value: &blueprint::Entity,
+    factorio_dir: &'a PathBuf,
+) -> prototypes::EntityRenderOpts<'a> {
     prototypes::EntityRenderOpts {
-        factorio_dir: "/home/flo/dev/factorio",
+        factorio_dir,
         used_mods: [
             ("EditorExtensions", "2.2.1"),
             ("Krastorio2", "1.3.22"),
@@ -185,11 +232,12 @@ fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::EntityRenderO
 fn render_bp(
     bp: &blueprint::Data,
     data: &prototypes::DataUtil,
+    factorio_dir: &PathBuf,
     image_cache: &mut ImageCache,
 ) -> Option<GraphicsOutput> {
     match bp {
         blueprint::Data::BlueprintBook { blueprints, .. } => {
-            render_bp(&blueprints.get(0)?.data, data, image_cache)
+            render_bp(&blueprints.get(0)?.data, data, factorio_dir, image_cache)
         }
         blueprint::Data::Blueprint { entities, .. } => {
             let renders = entities
@@ -336,7 +384,7 @@ fn render_bp(
                         }
                     });
 
-                    let mut render_opts = bp_entity2render_opts(e);
+                    let mut render_opts = bp_entity2render_opts(e, factorio_dir);
                     render_opts.connections = connections;
                     render_opts.connected_gates = connected_gates;
                     render_opts.draw_gate_patch = draw_gate_patch;
