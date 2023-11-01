@@ -152,7 +152,7 @@ impl super::Renderable for PipeToGroundData {
         options: &super::RenderOpts,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        match options.direction.unwrap_or_default() {
+        match options.direction {
             Direction::North => &self.pictures.up,
             Direction::East => &self.pictures.right,
             Direction::South => &self.pictures.down,

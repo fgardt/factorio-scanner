@@ -102,7 +102,7 @@ impl super::Renderable for WallData {
 
         for gate_direction in &options.connected_gates {
             let gate_opts = &super::RenderOpts {
-                direction: Some(*gate_direction),
+                direction: *gate_direction,
                 ..options.clone()
             };
 

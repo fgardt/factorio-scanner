@@ -92,7 +92,7 @@ pub struct RenderOpts<'a> {
     pub factorio_dir: &'a str,
     pub used_mods: HashMap<&'a str, &'a str>,
 
-    pub direction: Option<Direction>,
+    pub direction: Direction,
     pub orientation: Option<RealOrientation>,
 
     pub pickup_position: Option<Vector>,
@@ -102,6 +102,7 @@ pub struct RenderOpts<'a> {
     pub underground_in: Option<bool>,
 
     pub connected_gates: Vec<Direction>,
+    pub draw_gate_patch: bool,
 
     pub runtime_tint: Option<Color>,
 }
@@ -127,7 +128,7 @@ impl<'a> From<&'a RenderOpts<'a>> for RotatedSpriteRenderOpts {
 impl<'a> From<&'a RenderOpts<'a>> for SpriteNWayRenderOpts {
     fn from(opts: &'a RenderOpts<'a>) -> Self {
         Self {
-            direction: opts.direction.unwrap_or_default(),
+            direction: opts.direction,
             runtime_tint: opts.runtime_tint,
         }
     }
@@ -154,7 +155,7 @@ impl<'a> From<&'a RenderOpts<'a>> for AnimationRenderOpts {
 impl<'a> From<&'a RenderOpts<'a>> for Animation4WayRenderOpts {
     fn from(value: &'a RenderOpts) -> Self {
         Self {
-            direction: value.direction.unwrap_or_default(),
+            direction: value.direction,
             progress: 0.0,
             runtime_tint: value.runtime_tint,
         }
@@ -185,7 +186,7 @@ impl<'a> From<&'a RenderOpts<'a>> for RotatedAnimationRenderOpts {
 impl<'a> From<&RenderOpts<'a>> for RotatedAnimation4WayRenderOpts {
     fn from(value: &RenderOpts<'a>) -> Self {
         Self {
-            direction: value.direction.unwrap_or_default(),
+            direction: value.direction,
             orientation: value.orientation.unwrap_or_default(),
             progress: 0.0,
             runtime_tint: value.runtime_tint,

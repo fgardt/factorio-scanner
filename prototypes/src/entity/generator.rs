@@ -67,7 +67,7 @@ impl super::Renderable for GeneratorData {
         options: &super::RenderOpts,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        match options.direction.unwrap_or(Direction::North) {
+        match options.direction {
             Direction::North | Direction::South => &self.vertical_animation,
             Direction::East | Direction::West => &self.horizontal_animation,
             _ => panic!("Invalid direction, generators only support cardinal directions"),
