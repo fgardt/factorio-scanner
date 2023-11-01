@@ -1365,6 +1365,52 @@ pub struct WorkingVisualisation {
     pub east_position: Option<Vector>,
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+pub struct WorkingVisualisationRenderOpts {
+    pub progress: f64,
+    pub runtime_tint: Option<Color>,
+    pub direction: Direction,
+}
+
+impl From<&WorkingVisualisationRenderOpts> for AnimationRenderOpts {
+    fn from(value: &WorkingVisualisationRenderOpts) -> Self {
+        Self {
+            progress: value.progress,
+            runtime_tint: value.runtime_tint,
+        }
+    }
+}
+
+impl From<&MiningDrillGraphicsRenderOpts> for WorkingVisualisationRenderOpts {
+    fn from(value: &MiningDrillGraphicsRenderOpts) -> Self {
+        Self {
+            progress: 0.0,
+            runtime_tint: value.runtime_tint,
+            direction: value.direction,
+        }
+    }
+}
+
+impl RenderableGraphics for WorkingVisualisation {
+    type RenderOpts = WorkingVisualisationRenderOpts;
+
+    fn render(
+        &self,
+        factorio_dir: &str,
+        used_mods: &HashMap<&str, &str>,
+        image_cache: &mut ImageCache,
+        opts: &Self::RenderOpts,
+    ) -> Option<GraphicsOutput> {
+        if self.draw_as_light {
+            return None;
+        }
+
+        self.animation
+            .as_ref()?
+            .render(factorio_dir, used_mods, image_cache, opts)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum WorkingVisualisationEffect {
@@ -1400,11 +1446,42 @@ pub enum WorkingVisualisationAnimation {
         animation: Animation,
     },
     Cardinal {
-        north_animation: Animation,
-        east_animation: Animation,
-        south_animation: Animation,
-        west_animation: Animation,
+        north_animation: Option<Animation>,
+        east_animation: Option<Animation>,
+        south_animation: Option<Animation>,
+        west_animation: Option<Animation>,
     },
+}
+
+impl RenderableGraphics for WorkingVisualisationAnimation {
+    type RenderOpts = WorkingVisualisationRenderOpts;
+
+    fn render(
+        &self,
+        factorio_dir: &str,
+        used_mods: &HashMap<&str, &str>,
+        image_cache: &mut ImageCache,
+        opts: &Self::RenderOpts,
+    ) -> Option<GraphicsOutput> {
+        match self {
+            WorkingVisualisationAnimation::Single { animation } => {
+                animation.render(factorio_dir, used_mods, image_cache, &opts.into())
+            }
+            WorkingVisualisationAnimation::Cardinal {
+                north_animation,
+                east_animation,
+                south_animation,
+                west_animation,
+            } => match opts.direction {
+                Direction::North => north_animation.as_ref(),
+                Direction::East => east_animation.as_ref(),
+                Direction::South => south_animation.as_ref(),
+                Direction::West => west_animation.as_ref(),
+                _ => return None,
+            }
+            .and_then(|a| a.render(factorio_dir, used_mods, image_cache, &opts.into())),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -1728,10 +1805,19 @@ impl RenderableGraphics for MiningDrillGraphicsSet {
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         // TODO: fix for electric drills
-        self.idle_animation
+        let mut renders = vec![self
+            .idle_animation
             .as_ref()
             .or(self.animation.as_ref())
-            .and_then(|a| a.render(factorio_dir, used_mods, image_cache, &opts.into()))
+            .and_then(|a| a.render(factorio_dir, used_mods, image_cache, &opts.into()))];
+
+        renders.extend(
+            self.working_visualisations
+                .iter()
+                .map(|wv| wv.render(factorio_dir, used_mods, image_cache, &opts.into())),
+        );
+
+        merge_renders(&renders)
     }
 }
 
