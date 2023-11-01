@@ -19,7 +19,7 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v3
             - name: Stable rust toolchain
-              uses: rustup toolchain install stable --profile minimal
+              run: rustup toolchain install stable --profile minimal
             - name: Check formatting
               run: cargo fmt --all -- --check
 
@@ -31,7 +31,7 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v3
             - name: Stable rust toolchain
-              uses: rustup toolchain install stable --profile minimal
+              run: rustup toolchain install stable --profile minimal
             - name: Add Clippy
               run: rustup component add clippy
             - name: Rust cache
@@ -55,7 +55,7 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v3
             - name: Stable rust toolchain
-              uses: rustup toolchain install stable --profile minimal
+              run: rustup toolchain install stable --profile minimal
             - name: Rust cache
               uses: Swatinem/rust-cache@v2
             - name: Build
