@@ -554,23 +554,25 @@ impl MapPosition {
         (x1 - x2).abs() < EPSILON && (y1 - y2).abs() < EPSILON
     }
 
-    pub fn is_cardinal_neighbor(&self, other: &Self) -> Option<Direction> {
-        const CARDINAL_MAX: f64 = 1.125;
-        const CARDINAL_MIN: f64 = 0.875;
-        const SHEAR_MAX: f64 = 0.125;
-
+    fn is_cardinal_neighbor_internal(
+        &self,
+        other: &Self,
+        cardinal_max: f64,
+        cardinal_min: f64,
+        shear_max: f64,
+    ) -> Option<Direction> {
         let (x1, y1) = self.as_tuple();
         let (x2, y2) = other.as_tuple();
         let x_diff = (x1 - x2).abs();
         let y_diff = (y1 - y2).abs();
 
-        if x_diff < CARDINAL_MAX && x_diff > CARDINAL_MIN && y_diff < SHEAR_MAX {
+        if x_diff < cardinal_max && x_diff > cardinal_min && y_diff < shear_max {
             if x1 > x2 {
                 Some(Direction::West)
             } else {
                 Some(Direction::East)
             }
-        } else if y_diff < CARDINAL_MAX && y_diff > CARDINAL_MIN && x_diff < SHEAR_MAX {
+        } else if y_diff < cardinal_max && y_diff > cardinal_min && x_diff < shear_max {
             if y1 > y2 {
                 Some(Direction::North)
             } else {
@@ -579,6 +581,30 @@ impl MapPosition {
         } else {
             None
         }
+    }
+
+    pub fn is_cardinal_neighbor(&self, other: &Self) -> Option<Direction> {
+        const CARDINAL_MAX: f64 = 1.125;
+        const CARDINAL_MIN: f64 = 0.875;
+        const SHEAR_MAX: f64 = 0.125;
+
+        self.is_cardinal_neighbor_internal(other, CARDINAL_MAX, CARDINAL_MIN, SHEAR_MAX)
+    }
+
+    pub fn is_2long_cardinal_neighbor(&self, other: &Self) -> Option<Direction> {
+        const CARDINAL_MAX: f64 = 2.125;
+        const CARDINAL_MIN: f64 = 1.875;
+        const SHEAR_MAX: f64 = 0.125;
+
+        self.is_cardinal_neighbor_internal(other, CARDINAL_MAX, CARDINAL_MIN, SHEAR_MAX)
+    }
+
+    pub fn is_2wide_cardinal_neighbor(&self, other: &Self) -> Option<Direction> {
+        const CARDINAL_MAX: f64 = 1.125;
+        const CARDINAL_MIN: f64 = 0.875;
+        const SHEAR_MAX: f64 = 0.875;
+
+        self.is_cardinal_neighbor_internal(other, CARDINAL_MAX, CARDINAL_MIN, SHEAR_MAX)
     }
 }
 
@@ -645,6 +671,15 @@ impl Direction {
             Self::NorthWest | Self::SouthEast => matches!(other, Self::NorthWest | Self::SouthEast),
             Self::North | Self::South => matches!(other, Self::North | Self::South),
             Self::East | Self::West => matches!(other, Self::East | Self::West),
+        }
+    }
+
+    pub const fn is_right_angle(&self, other: &Self) -> bool {
+        match self {
+            Self::NorthEast | Self::SouthWest => matches!(other, Self::NorthWest | Self::SouthEast),
+            Self::NorthWest | Self::SouthEast => matches!(other, Self::NorthEast | Self::SouthWest),
+            Self::North | Self::South => matches!(other, Self::East | Self::West),
+            Self::East | Self::West => matches!(other, Self::North | Self::South),
         }
     }
 

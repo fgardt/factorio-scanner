@@ -217,6 +217,7 @@ fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::EntityRenderO
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn render_bp(
     bp: &blueprint::Data,
     data: &prototypes::DataUtil,
@@ -286,6 +287,80 @@ fn render_bp(
                                         }
 
                                         //
+                                    }
+                                    EntityType::Pipe | EntityType::InfinityPipe => {
+                                        if !matches!(
+                                            &other_type,
+                                            EntityType::Pipe
+                                                | EntityType::InfinityPipe
+                                                | EntityType::PipeToGround
+                                        ) {
+                                            continue;
+                                        }
+
+                                        if let Some(dir) = pos.is_cardinal_neighbor(&other_pos) {
+                                            if matches!(other_type, EntityType::PipeToGround)
+                                                && dir != other.direction.flip()
+                                            {
+                                                continue;
+                                            }
+
+                                            match dir {
+                                                Direction::North => up = true,
+                                                Direction::South => down = true,
+                                                Direction::East => right = true,
+                                                Direction::West => left = true,
+                                                _ => {}
+                                            }
+                                        }
+                                    }
+                                    EntityType::HeatPipe | EntityType::HeatInterface => {
+                                        if !matches!(
+                                            &other_type,
+                                            EntityType::HeatPipe | EntityType::HeatInterface
+                                        ) {
+                                            continue;
+                                        }
+
+                                        if let Some(dir) = pos.is_cardinal_neighbor(&other_pos) {
+                                            match dir {
+                                                Direction::North => up = true,
+                                                Direction::South => down = true,
+                                                Direction::East => right = true,
+                                                Direction::West => left = true,
+                                                _ => {}
+                                            }
+                                        }
+                                    }
+                                    EntityType::TransportBelt => {
+                                        let neighbor = match other_type {
+                                            EntityType::TransportBelt
+                                            | EntityType::UndergroundBelt
+                                            | EntityType::LinkedBelt => {
+                                                pos.is_cardinal_neighbor(&other_pos)
+                                            }
+                                            EntityType::Splitter => {
+                                                pos.is_2wide_cardinal_neighbor(&other_pos)
+                                            }
+                                            EntityType::Loader => {
+                                                pos.is_2long_cardinal_neighbor(&other_pos)
+                                            }
+                                            _ => continue,
+                                        };
+
+                                        if let Some(dir) = neighbor {
+                                            if dir != other.direction.flip() {
+                                                continue;
+                                            }
+
+                                            match dir {
+                                                Direction::North => up = true,
+                                                Direction::South => down = true,
+                                                Direction::East => right = true,
+                                                Direction::West => left = true,
+                                                _ => {}
+                                            }
+                                        }
                                     }
                                     _ => continue,
                                 }
