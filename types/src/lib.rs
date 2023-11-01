@@ -1922,3 +1922,57 @@ pub struct TrainStopLight {
     pub red_picture: Sprite4Way,
     pub light: LightDefinition,
 }
+
+// Comparator variants
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub enum Comparator {
+    #[serde(rename = "<")]
+    Less,
+    #[serde(rename = "≤", alias = "<=")]
+    LessOrEqual,
+    #[serde(rename = ">")]
+    Greater,
+    #[serde(rename = "≥", alias = ">=")]
+    GreaterOrEqual,
+    #[serde(rename = "=")]
+    Equal,
+    #[serde(rename = "≠", alias = "!=")]
+    NotEqual,
+}
+
+// https://lua-api.factorio.com/latest/concepts.html#ArithmeticCombinatorParameters
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub enum ArithmeticOperation {
+    #[serde(rename = "*")]
+    Multiply,
+
+    #[serde(rename = "/")]
+    Divide,
+
+    #[serde(rename = "+")]
+    Add,
+
+    #[serde(rename = "-")]
+    Subtract,
+
+    #[serde(rename = "%")]
+    Modulo,
+
+    #[serde(rename = "^")]
+    Power,
+
+    #[serde(rename = "<<")]
+    LeftShift,
+
+    #[serde(rename = ">>")]
+    RightShift,
+
+    #[serde(rename = "AND")]
+    BitwiseAnd,
+
+    #[serde(rename = "OR")]
+    BitwiseOr,
+
+    #[serde(rename = "XOR")]
+    BitwiseXor,
+}

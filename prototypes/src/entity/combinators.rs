@@ -66,8 +66,6 @@ impl<T: super::Renderable> super::Renderable for CombinatorPrototype<T> {
                 &options.into(),
             )
         })
-
-        // TODO: render lights + selected operation
     }
 }
 
@@ -81,7 +79,10 @@ impl super::Renderable for ArithmeticCombinatorPrototype {
         options: &super::RenderOpts,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        merge_renders(&[
+            self.0.render(options, image_cache),
+            self.0.child.render(options, image_cache),
+        ])
     }
 }
 
@@ -107,7 +108,29 @@ impl super::Renderable for ArithmeticCombinatorData {
         options: &super::RenderOpts,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        None
+        options.arithmetic_operation.as_ref().and_then(|op| {
+            match op {
+                ArithmeticOperation::Add => self.plus_symbol_sprites.as_ref(),
+                ArithmeticOperation::Subtract => self.minus_symbol_sprites.as_ref(),
+                ArithmeticOperation::Multiply => self.multiply_symbol_sprites.as_ref(),
+                ArithmeticOperation::Divide => self.divide_symbol_sprites.as_ref(),
+                ArithmeticOperation::Modulo => self.modulo_symbol_sprites.as_ref(),
+                ArithmeticOperation::Power => self.power_symbol_sprites.as_ref(),
+                ArithmeticOperation::LeftShift => self.left_shift_symbol_sprites.as_ref(),
+                ArithmeticOperation::RightShift => self.right_shift_symbol_sprites.as_ref(),
+                ArithmeticOperation::BitwiseAnd => self.and_symbol_sprites.as_ref(),
+                ArithmeticOperation::BitwiseOr => self.or_symbol_sprites.as_ref(),
+                ArithmeticOperation::BitwiseXor => self.xor_symbol_sprites.as_ref(),
+            }
+            .and_then(|s| {
+                s.render(
+                    options.factorio_dir,
+                    &options.used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            })
+        })
     }
 }
 
@@ -121,7 +144,10 @@ impl super::Renderable for DeciderCombinatorPrototype {
         options: &super::RenderOpts,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        merge_renders(&[
+            self.0.render(options, image_cache),
+            self.0.child.render(options, image_cache),
+        ])
     }
 }
 
@@ -142,7 +168,24 @@ impl super::Renderable for DeciderCombinatorData {
         options: &super::RenderOpts,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        None
+        options.decider_operation.as_ref().and_then(|op| {
+            match op {
+                Comparator::Equal => self.equal_symbol_sprites.as_ref(),
+                Comparator::Greater => self.greater_symbol_sprites.as_ref(),
+                Comparator::Less => self.less_symbol_sprites.as_ref(),
+                Comparator::NotEqual => self.not_equal_symbol_sprites.as_ref(),
+                Comparator::GreaterOrEqual => self.greater_or_equal_symbol_sprites.as_ref(),
+                Comparator::LessOrEqual => self.less_or_equal_symbol_sprites.as_ref(),
+            }
+            .and_then(|s| {
+                s.render(
+                    options.factorio_dir,
+                    &options.used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            })
+        })
     }
 }
 

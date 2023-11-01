@@ -14,7 +14,7 @@ use flate2::{read::ZlibDecoder, write::ZlibEncoder};
 use serde::{Deserialize, Serialize, Serializer};
 use serde_with::skip_serializing_none;
 
-use types::{Direction, ItemCountType, ItemStackIndex};
+use types::{ArithmeticOperation, Comparator, Direction, ItemCountType, ItemStackIndex};
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -425,22 +425,6 @@ pub enum WaitConditionType {
     FluidCount { condition: Option<Condition> },
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-pub enum Comparator {
-    #[serde(rename = "<")]
-    Less,
-    #[serde(rename = "≤", alias = "<=")]
-    LessOrEqual,
-    #[serde(rename = ">")]
-    Greater,
-    #[serde(rename = "≥", alias = ">=")]
-    GreaterOrEqual,
-    #[serde(rename = "=")]
-    Equal,
-    #[serde(rename = "≠", alias = "!=")]
-    NotEqual,
-}
-
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged, deny_unknown_fields)]
@@ -713,43 +697,6 @@ pub struct ConstantCombinatorFilter {
     pub index: ItemStackIndex,
 }
 
-// https://lua-api.factorio.com/latest/concepts.html#ArithmeticCombinatorParameters
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-pub enum ArithmeticOperation {
-    #[serde(rename = "*")]
-    Multiply,
-
-    #[serde(rename = "/")]
-    Divide,
-
-    #[serde(rename = "+")]
-    Add,
-
-    #[serde(rename = "-")]
-    Subtract,
-
-    #[serde(rename = "%")]
-    Modulo,
-
-    #[serde(rename = "^")]
-    Power,
-
-    #[serde(rename = "<<")]
-    LeftShift,
-
-    #[serde(rename = ">>")]
-    RightShift,
-
-    #[serde(rename = "AND")]
-    BitwiseAnd,
-
-    #[serde(rename = "OR")]
-    BitwiseOr,
-
-    #[serde(rename = "XOR")]
-    BitwiseXor,
-}
-
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged, deny_unknown_fields)]
@@ -784,6 +731,18 @@ pub enum ArithmeticData {
     },
 }
 
+impl ArithmeticData {
+    #[must_use]
+    pub fn operation(&self) -> ArithmeticOperation {
+        match self {
+            Self::SignalSignal { operation, .. }
+            | Self::SignalConstant { operation, .. }
+            | Self::ConstantSignal { operation, .. }
+            | Self::ConstantConstant { operation, .. } => operation.clone(),
+        }
+    }
+}
+
 // https://lua-api.factorio.com/latest/concepts.html#DeciderCombinatorParameters
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged, deny_unknown_fields)]
@@ -810,6 +769,17 @@ pub enum DeciderData {
         #[serde(default = "default_true", skip_serializing_if = "Clone::clone")]
         copy_count_from_input: bool,
     },
+}
+
+impl DeciderData {
+    #[must_use]
+    pub fn operation(&self) -> Comparator {
+        match self {
+            Self::Signal { comparator, .. } | Self::Constant { comparator, .. } => {
+                comparator.clone()
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
