@@ -51,6 +51,9 @@ fn main() {
     // gate connection test
     //let test_bp_data = "0eNqVlNtuhCAURf/lPGMziI7Ir0yaRmdOJiSIRpi2xvDvRe3FZjTgG7e9zgY2jFCrB3a91BbECPLaagPiMoKRd12pacwOHYIAabEBArpqpt69sgiOgNQ3/ARB3SsB1FZaiYt+7gxv+tHU2PsFv0pjW43JR6WUp3Wt8ZJWT3U8hr3kBAYQiW84R54o6f/6T/psrSdwkz1el+l0g8aiPOUBT1kUpQxQ8igK/6Gk25TzMcqOlyJwyvQUsMGjbPxhdnyUxzJDtyn0FBuaPQA9lpM9TCi85RoQDC9lx+56z1V28K5mjn/s83cgVr8HAVXVqL63l1g009g79mbZA6dZUaZFwRln7OzcF7j8bhM=";
 
+    // artillery turret direction test
+    //let test_bp_data = "0eNqd0dGOgjAQBdB/uc/FSIuA/RWz2YBONpOUQtqyWUL671KJRnf1wX2cyZ3TZmZGa0YaHNsAPYOPvfXQhxmev2xjUi9MA0GDA3UQsE2XqsYFNobclIXROQqIAmxP9AOdxw8BsoED02pdiunTjl1Lbgm8VgSG3i+DvU0vL1gm5WYnMEGr7WYXo/ijybe08qoViyZwYkfHNVA+sdU7dr5/acsndvG/LVS/7SKt+3IcfXdLAdO0ZB7021AWyKfINzm//q/Oi2ovq6pWtVJljGdkF7FK";
+
     let bp = blueprint::Data::try_from(test_bp_data).unwrap();
 
     println!("loaded BP");

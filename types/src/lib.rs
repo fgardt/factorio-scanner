@@ -683,6 +683,19 @@ impl Direction {
         }
     }
 
+    pub const fn to_orientation(&self) -> RealOrientation {
+        match self {
+            Self::North => 0.0,
+            Self::NorthEast => 0.125,
+            Self::East => 0.25,
+            Self::SouthEast => 0.375,
+            Self::South => 0.5,
+            Self::SouthWest => 0.625,
+            Self::West => 0.75,
+            Self::NorthWest => 0.875,
+        }
+    }
+
     pub fn is_default(other: &Self) -> bool {
         other == &Self::default()
     }

@@ -86,6 +86,15 @@ impl super::Renderable for ArtilleryTurretData {
         options: &super::RenderOpts,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
+        let cannon_opts = &super::RenderOpts {
+            orientation: Some(
+                options
+                    .orientation
+                    .map_or(options.direction.to_orientation(), |o| o),
+            ),
+            ..options.clone()
+        };
+
         merge_renders(&[
             self.base_picture.as_ref().and_then(|a| {
                 a.render(
@@ -100,7 +109,7 @@ impl super::Renderable for ArtilleryTurretData {
                     options.factorio_dir,
                     &options.used_mods,
                     image_cache,
-                    &options.into(),
+                    &cannon_opts.into(),
                 )
             }),
             self.cannon_base_pictures.as_ref().and_then(|s| {
@@ -108,7 +117,7 @@ impl super::Renderable for ArtilleryTurretData {
                     options.factorio_dir,
                     &options.used_mods,
                     image_cache,
-                    &options.into(),
+                    &cannon_opts.into(),
                 )
             }),
         ])
