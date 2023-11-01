@@ -61,62 +61,23 @@ fn main() {
     // =====[ SETTINGS DUMP ]=====
     // let settings_dump = include_str!("../dumps/mod-settings-dump.json");
     // let settings_data: mod_settings::Data = serde_json::from_str(settings_dump).unwrap();
-    // let pretty = serde_json::to_string_pretty(&settings_data).unwrap();
-
     // println!("{settings_data:?}");
-    // println!("{pretty}");
 
     // =====[  LOCALE DUMP  ]=====
     // let signal_locale_dump = include_str!("../dumps/prototype-locale/virtual-signal-locale.json");
     // let signal_locale_data: locale::Data = serde_json::from_str(signal_locale_dump).unwrap();
-
     // println!("{signal_locale_data:?}");
 
     // =====[   DATA DUMP   ]=====
-    //let data_raw_dump = include_str!("../dumps/data-raw-dump.json");
     let data_raw_dump = include_str!("../dumps/data-raw-dump.json");
     let data_raw: prototypes::DataRaw = serde_json::from_str(data_raw_dump).unwrap();
 
     println!("loaded prototype data");
 
     // =====[  RENDER TEST  ]=====
-    // let render_opts = EntityRenderOpts {
-    //     factorio_dir: "/home/flo/dev/factorio",
-    //     used_mods: [("EditorExtensions", "2.2.1")].iter().copied().collect(),
-    //     direction: None,
-    //     orientation: None,
-    //     pickup_position: None,
-    //     connections: None,
-    //     underground_in: None,
-    //     connected_gates: vec![
-    //         // Direction::North,
-    //         // Direction::South,
-    //         // Direction::East,
-    //         // Direction::West,
-    //     ],
-    //     runtime_tint: None, //Some(Color::RGBA(1.0, 0.0, 0.0, 0.5)),
-    // };
-
     let data = prototypes::DataUtil::new(data_raw);
 
-    //render_by_name("rocket-silo", &data, &render_opts);
-
-    // for name in data.entities() {
-    //     data.get_entity(name).map_or_else(
-    //         || println!("UNABLE TO FIND {name}"),
-    //         |entity| render_entity(name, entity, &render_opts),
-    //     );
-    // }
-
-    // (*data_raw.radar)
-    //     .iter()
-    //     .for_each(|(name, data)| render_util(name, data, &render_opts));
-
-    //println!("Hello, world!");
-
-    let mut image_cache = ImageCache::new();
-
-    match render_bp(&bp, &data, &mut image_cache) {
+    match render_bp(&bp, &data, &mut ImageCache::new()) {
         Some((img, scale, (shift_x, shift_y))) => {
             println!("render done");
 
@@ -134,16 +95,6 @@ fn main() {
             img.save("render_test/bp-test.png").unwrap();
         }
         None => println!("EMPTY BP!"),
-    }
-
-    println!("cache size: {}", image_cache.len());
-
-    // cache entries:
-    for (name, img) in &image_cache {
-        img.as_ref().map_or_else(
-            || println!("{name}: NONE"),
-            |img| println!("{name}: {}x{}", img.dimensions().0, img.dimensions().1),
-        );
     }
 }
 
