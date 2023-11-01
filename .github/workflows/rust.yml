@@ -1,0 +1,62 @@
+name: rust
+
+on:
+    pull_request:
+        types:
+            - opened
+            - reopened
+            - synchronize
+            - ready_for_review
+    push:
+        branches:
+            - main
+
+jobs:
+    fmt:
+        name: Check formatting
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
+            - name: Stable rust toolchain
+              uses: rustup toolchain install stable --profile minimal
+            - name: Check formatting
+              run: cargo fmt --all -- --check
+
+    clippy:
+        name: Clippy
+        runs-on: ubuntu-latest
+        if: ${{ github.event_name == 'push' || !github.event.pull_request.draft }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
+            - name: Stable rust toolchain
+              uses: rustup toolchain install stable --profile minimal
+            - name: Add Clippy
+              run: rustup component add clippy
+            - name: Rust cache
+              uses: Swatinem/rust-cache@v2
+            - name: Install cargo-binstall
+              run: wget https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-gnu.tgz -O - | tar -xz -C $HOME/.cargo/bin  
+            - name: Install sarif-fmt & clippy-sarif
+              run: cargo binstall --no-confirm --force sarif-fmt clippy-sarif
+            - name: Run Clippy
+              run: cargo clippy --message-format=json -- -W clippy::pedantic -W clippy::nursery -W clippy::unwrap_used -W clippy::expect_used | clippy-sarif | tee results.sarif | sarif-fmt
+            - name: Upload SARIF file
+              uses: github/codeql-action/upload-sarif@v2
+              with:
+                sarif_file: results.sarif
+
+    build:
+        name: Build
+        runs-on: ubuntu-latest
+        if: ${{ github.event_name == 'push' || !github.event.pull_request.draft }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
+            - name: Stable rust toolchain
+              uses: rustup toolchain install stable --profile minimal
+            - name: Rust cache
+              uses: Swatinem/rust-cache@v2
+            - name: Build
+              run: cargo build
