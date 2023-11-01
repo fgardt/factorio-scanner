@@ -6,7 +6,7 @@
     clippy::module_name_repetitions
 )]
 
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -149,7 +149,7 @@ impl FileName {
 
     pub fn load<'a>(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &'a mut ImageCache,
     ) -> Option<&'a image::DynamicImage> {
@@ -165,17 +165,14 @@ impl FileName {
         let sprite_path = &filename[(2 + mod_name.len() + 2 + 1)..]; // +1 to include the slash to prevent joining to interpret it as a absolute path
 
         let img = if VANILLA_MODS.contains(&mod_name) {
-            let location = std::path::Path::new(factorio_dir)
-                .join("data")
-                .join(mod_name)
-                .join(sprite_path);
+            let location = factorio_dir.join("data").join(mod_name).join(sprite_path);
 
             image::open(location).ok()
         } else {
             // TODO: support unzipped mods?
 
             let mod_version = used_mods.get(&mod_name)?;
-            let mod_zip_path = std::path::Path::new(factorio_dir)
+            let mod_zip_path = factorio_dir
                 .join("mods")
                 .join(format!("{mod_name}_{mod_version}.zip"));
 
@@ -987,7 +984,7 @@ impl RenderableGraphics for BeaconGraphicsSet {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1151,7 +1148,7 @@ impl RenderableGraphics for TransportBeltAnimationSet {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1236,7 +1233,7 @@ impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1396,7 +1393,7 @@ impl RenderableGraphics for WorkingVisualisation {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1458,7 +1455,7 @@ impl RenderableGraphics for WorkingVisualisationAnimation {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1799,7 +1796,7 @@ impl RenderableGraphics for MiningDrillGraphicsSet {
 
     fn render(
         &self,
-        factorio_dir: &str,
+        factorio_dir: &PathBuf,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
