@@ -366,7 +366,14 @@ impl FetchSprite for SpriteParams {
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
     ) -> Option<GraphicsOutput> {
-        self.fetch_offset_by_pixels(factorio_dir, filename, used_mods, image_cache, runtime_tint, (0, 0))
+        self.fetch_offset_by_pixels(
+            factorio_dir,
+            filename,
+            used_mods,
+            image_cache,
+            runtime_tint,
+            (0, 0),
+        )
     }
 
     fn fetch_offset(
@@ -402,9 +409,8 @@ impl FetchSprite for SpriteParams {
 
         // TODO: add extra output for shadows
         // rendering shadows / glow / light is not supported
-        if self.draw_as_shadow 
-        //|| self.draw_as_glow
-        || self.draw_as_light {
+        if self.draw_as_shadow || self.draw_as_light {
+            //|| self.draw_as_glow
             return None;
         }
 
@@ -412,12 +418,14 @@ impl FetchSprite for SpriteParams {
         let (offset_x, offset_y) = offset;
         let (width, height) = self.get_size();
 
-        let mut img = filename.load(factorio_dir, used_mods, image_cache)?.crop_imm(
-            (x + offset_x) as u32,
-            (y + offset_y) as u32,
-            width as u32,
-            height as u32,
-        );
+        let mut img = filename
+            .load(factorio_dir, used_mods, image_cache)?
+            .crop_imm(
+                (x + offset_x) as u32,
+                (y + offset_y) as u32,
+                width as u32,
+                height as u32,
+            );
 
         // apply tint if applicable
         let tint = if self.apply_runtime_tint {
@@ -500,7 +508,9 @@ impl<T: FetchSprite> RenderableGraphics for SimpleGraphics<T> {
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match &self {
-            Self::Layered { layers } => merge_layers(layers, factorio_dir, used_mods, image_cache, opts),
+            Self::Layered { layers } => {
+                merge_layers(layers, factorio_dir, used_mods, image_cache, opts)
+            }
             Self::Simple {
                 filename,
                 data,
@@ -511,7 +521,13 @@ impl<T: FetchSprite> RenderableGraphics for SimpleGraphics<T> {
                 if let Some(hr_version) = hr_version {
                     hr_version.render(factorio_dir, used_mods, image_cache, opts)
                 } else {
-                    data.fetch(factorio_dir, filename, used_mods, image_cache, opts.runtime_tint)
+                    data.fetch(
+                        factorio_dir,
+                        filename,
+                        used_mods,
+                        image_cache,
+                        opts.runtime_tint,
+                    )
                 }
             }
         }
@@ -556,7 +572,9 @@ where
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Layered { layers } => merge_layers(layers, factorio_dir, used_mods, image_cache, opts),
+            Self::Layered { layers } => {
+                merge_layers(layers, factorio_dir, used_mods, image_cache, opts)
+            }
             Self::Simple { data, hr_version } => {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
@@ -927,9 +945,15 @@ impl RenderableGraphics for Sprite4Way {
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Sprite(sprite) => sprite.0.render(factorio_dir, used_mods, image_cache, &opts.into()),
+            Self::Sprite(sprite) => {
+                sprite
+                    .0
+                    .render(factorio_dir, used_mods, image_cache, &opts.into())
+            }
             Self::Sheet { sheet } => sheet.render(factorio_dir, used_mods, image_cache, opts),
-            Self::Sheets { sheets } => merge_layers(sheets, factorio_dir, used_mods, image_cache, opts),
+            Self::Sheets { sheets } => {
+                merge_layers(sheets, factorio_dir, used_mods, image_cache, opts)
+            }
             Self::Directions {
                 north,
                 east,
@@ -983,7 +1007,9 @@ impl RenderableGraphics for Sprite8Way {
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Sheets { sheets } => merge_layers(sheets, factorio_dir, used_mods, image_cache, opts),
+            Self::Sheets { sheets } => {
+                merge_layers(sheets, factorio_dir, used_mods, image_cache, opts)
+            }
             Self::Sheet { sheet } => todo!(),
             Self::Directions {
                 north,
@@ -1056,8 +1082,14 @@ impl FetchSprite for SpriteSheetParams {
         runtime_tint: Option<Color>,
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
-        self.sprite_params
-            .fetch_offset(factorio_dir, filename, used_mods, image_cache, runtime_tint, offset)
+        self.sprite_params.fetch_offset(
+            factorio_dir,
+            filename,
+            used_mods,
+            image_cache,
+            runtime_tint,
+            offset,
+        )
     }
 
     fn fetch_offset_by_pixels(
@@ -1352,8 +1384,14 @@ impl FetchSprite for AnimationParams {
         runtime_tint: Option<Color>,
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
-        self.sprite_params
-            .fetch_offset(factorio_dir, filename, used_mods, image_cache, runtime_tint, offset)
+        self.sprite_params.fetch_offset(
+            factorio_dir,
+            filename,
+            used_mods,
+            image_cache,
+            runtime_tint,
+            offset,
+        )
     }
 
     fn fetch_offset_by_pixels(
@@ -1482,7 +1520,9 @@ impl RenderableGraphics for Animation {
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match &self {
-            Self::Layered { layers } => merge_layers(layers, factorio_dir, used_mods, image_cache, opts),
+            Self::Layered { layers } => {
+                merge_layers(layers, factorio_dir, used_mods, image_cache, opts)
+            }
             Self::Striped {
                 stripes,
                 data,
@@ -1618,7 +1658,9 @@ impl RenderableGraphics for Animation4Way {
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Animation(animation) => animation.render(factorio_dir, used_mods, image_cache, &opts.into()),
+            Self::Animation(animation) => {
+                animation.render(factorio_dir, used_mods, image_cache, &opts.into())
+            }
             Self::Struct {
                 north,
                 east,
@@ -1746,7 +1788,9 @@ impl RenderableGraphics for AnimationVariations {
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Animation(animation) => animation.render(factorio_dir, used_mods, image_cache, &opts.into()),
+            Self::Animation(animation) => {
+                animation.render(factorio_dir, used_mods, image_cache, &opts.into())
+            }
             Self::Array(animations) => animations.get(opts.variation as usize)?.render(
                 factorio_dir,
                 used_mods,
@@ -1839,8 +1883,14 @@ impl FetchSprite for RotatedAnimationParams {
         runtime_tint: Option<Color>,
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
-        self.animation_params
-            .fetch_offset(factorio_dir, filename, used_mods, image_cache, runtime_tint, offset)
+        self.animation_params.fetch_offset(
+            factorio_dir,
+            filename,
+            used_mods,
+            image_cache,
+            runtime_tint,
+            offset,
+        )
     }
 
     fn fetch_offset_by_pixels(
@@ -1947,7 +1997,9 @@ impl RenderableGraphics for RotatedAnimation {
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Layered { layers } => merge_layers(layers, factorio_dir, used_mods, image_cache, opts),
+            Self::Layered { layers } => {
+                merge_layers(layers, factorio_dir, used_mods, image_cache, opts)
+            }
             Self::Striped {
                 stripes,
                 data,
