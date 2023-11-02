@@ -1,4 +1,10 @@
 #![forbid(unsafe_code)]
+#![warn(
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::unwrap_used,
+    clippy::expect_used
+)]
 #![allow(
     unused_variables,
     clippy::wildcard_imports,
@@ -37,6 +43,7 @@ pub enum Color {
 }
 
 impl Color {
+    #[must_use]
     pub fn to_rgba(&self) -> [f64; 4] {
         let (r, g, b, a) = match self {
             Self::Struct { r, g, b, a } => (*r, *g, *b, *a),
@@ -59,14 +66,19 @@ impl Color {
         }
     }
 
+    #[must_use]
     pub const fn white() -> Self {
         Self::RGBA(1.0, 1.0, 1.0, 1.0)
     }
 
+    #[must_use]
     pub fn is_white(color: &Self) -> bool {
         let [r, g, b, a] = color.to_rgba();
 
-        r == 1.0 && g == 1.0 && b == 1.0 && a == 1.0
+        (r - 1.0).abs() < f64::EPSILON
+            && (g - 1.0).abs() < f64::EPSILON
+            && (b - 1.0).abs() < f64::EPSILON
+            && (a - 1.0).abs() < f64::EPSILON
     }
 }
 
@@ -143,6 +155,7 @@ pub struct FileName(String);
 pub type ImageCache = HashMap<String, Option<image::DynamicImage>>;
 
 impl FileName {
+    #[must_use]
     pub fn get(&self) -> &str {
         self.0.as_str()
     }
@@ -207,7 +220,7 @@ impl FileName {
             image::load_from_memory(&file_buff).ok()
         };
 
-        image_cache.insert(filename.to_owned(), img.clone());
+        image_cache.insert(filename.to_owned(), img);
         image_cache.get(&filename.to_owned())?.as_ref()
     }
 }
@@ -522,9 +535,6 @@ pub enum EmptyArrayFix<T> {
 }
 
 /// [`Types/EntityPrototypeFlags`](https://lua-api.factorio.com/latest/types/EntityPrototypeFlags.html)
-// pub type EntityPrototypeFlags = Vec<EntityPrototypeFlag>;
-
-/// [`Types/EntityPrototypeFlags`](https://lua-api.factorio.com/latest/types/EntityPrototypeFlags.html)
 pub type EntityPrototypeFlags = EmptyArrayFix<EntityPrototypeFlag>;
 
 /// [`Types/MapPosition`](https://lua-api.factorio.com/latest/types/MapPosition.html)
@@ -536,12 +546,14 @@ pub enum MapPosition {
 }
 
 impl MapPosition {
+    #[must_use]
     pub const fn as_tuple(&self) -> (f64, f64) {
         match self {
             Self::Tuple(x, y) | Self::XY { x, y } => (*x, *y),
         }
     }
 
+    #[must_use]
     pub fn is_close(&self, other: &Self, distance: f64) -> bool {
         const EPSILON: f64 = 0.125;
 
@@ -580,6 +592,7 @@ impl MapPosition {
         }
     }
 
+    #[must_use]
     pub fn is_cardinal_neighbor(&self, other: &Self) -> Option<Direction> {
         const CARDINAL_MAX: f64 = 1.125;
         const CARDINAL_MIN: f64 = 0.875;
@@ -588,6 +601,7 @@ impl MapPosition {
         self.is_cardinal_neighbor_internal(other, CARDINAL_MAX, CARDINAL_MIN, SHEAR_MAX)
     }
 
+    #[must_use]
     pub fn is_2long_cardinal_neighbor(&self, other: &Self) -> Option<Direction> {
         const CARDINAL_MAX: f64 = 2.125;
         const CARDINAL_MIN: f64 = 1.875;
@@ -596,6 +610,7 @@ impl MapPosition {
         self.is_cardinal_neighbor_internal(other, CARDINAL_MAX, CARDINAL_MIN, SHEAR_MAX)
     }
 
+    #[must_use]
     pub fn is_2wide_cardinal_neighbor(&self, other: &Self) -> Option<Direction> {
         const CARDINAL_MAX: f64 = 1.125;
         const CARDINAL_MIN: f64 = 0.875;
@@ -626,6 +641,7 @@ pub enum Direction {
 }
 
 impl Direction {
+    #[must_use]
     pub const fn flip(self) -> Self {
         match self {
             Self::North => Self::South,
@@ -641,6 +657,7 @@ impl Direction {
 
     /// Rotate the provided vector to fit the direction.
     /// The vector is assumed to be in the north direction.
+    #[must_use]
     pub fn rotate_vector(self, vector: Vector) -> Vector {
         let (x_fac, y_fac, swap) = match self {
             Self::North => (1.0, 1.0, false),
@@ -662,6 +679,7 @@ impl Direction {
         (x * x_fac, y * y_fac)
     }
 
+    #[must_use]
     pub const fn is_straight(&self, other: &Self) -> bool {
         match self {
             Self::NorthEast | Self::SouthWest => matches!(other, Self::NorthEast | Self::SouthWest),
@@ -671,6 +689,7 @@ impl Direction {
         }
     }
 
+    #[must_use]
     pub const fn is_right_angle(&self, other: &Self) -> bool {
         match self {
             Self::NorthEast | Self::SouthWest => matches!(other, Self::NorthWest | Self::SouthEast),
@@ -680,6 +699,7 @@ impl Direction {
         }
     }
 
+    #[must_use]
     pub const fn to_orientation(&self) -> RealOrientation {
         match self {
             Self::North => 0.0,
@@ -693,23 +713,26 @@ impl Direction {
         }
     }
 
+    #[must_use]
     pub fn is_default(other: &Self) -> bool {
         other == &Self::default()
     }
 }
 
-impl From<u8> for Direction {
-    fn from(value: u8) -> Self {
+impl TryFrom<u8> for Direction {
+    type Error = ();
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
-            0 => Self::North,
-            1 => Self::NorthEast,
-            2 => Self::East,
-            3 => Self::SouthEast,
-            4 => Self::South,
-            5 => Self::SouthWest,
-            6 => Self::West,
-            7 => Self::NorthWest,
-            _ => panic!("Invalid direction value: {value}"),
+            0 => Ok(Self::North),
+            1 => Ok(Self::NorthEast),
+            2 => Ok(Self::East),
+            3 => Ok(Self::SouthEast),
+            4 => Ok(Self::South),
+            5 => Ok(Self::SouthWest),
+            6 => Ok(Self::West),
+            7 => Ok(Self::NorthWest),
+            _ => Err(()),
         }
     }
 }
@@ -1461,10 +1484,10 @@ impl RenderableGraphics for WorkingVisualisationAnimation {
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            WorkingVisualisationAnimation::Single { animation } => {
+            Self::Single { animation } => {
                 animation.render(factorio_dir, used_mods, image_cache, &opts.into())
             }
-            WorkingVisualisationAnimation::Cardinal {
+            Self::Cardinal {
                 north_animation,
                 east_animation,
                 south_animation,
@@ -1490,26 +1513,32 @@ pub enum GuiMode {
 }
 
 impl GuiMode {
+    #[must_use]
     pub const fn all() -> Self {
         Self::All
     }
 
+    #[must_use]
     pub const fn none() -> Self {
         Self::None
     }
 
+    #[must_use]
     pub const fn admins() -> Self {
         Self::Admins
     }
 
+    #[must_use]
     pub const fn is_all(value: &Self) -> bool {
         matches!(value, Self::All)
     }
 
+    #[must_use]
     pub const fn is_none(value: &Self) -> bool {
         matches!(value, Self::None)
     }
 
+    #[must_use]
     pub const fn is_admins(value: &Self) -> bool {
         matches!(value, Self::Admins)
     }
@@ -1603,6 +1632,7 @@ pub enum ConnectedDirections {
 
 impl ConnectedDirections {
     #[must_use]
+    #[allow(clippy::fn_params_excessive_bools)]
     pub const fn from_directions(up: bool, down: bool, left: bool, right: bool) -> Self {
         match (up, down, left, right) {
             (false, false, false, false) => Self::None,
@@ -1626,7 +1656,8 @@ impl ConnectedDirections {
 }
 
 impl ConnectableEntityGraphics {
-    pub fn get(&self, connections: ConnectedDirections) -> &SpriteVariations {
+    #[must_use]
+    pub const fn get(&self, connections: ConnectedDirections) -> &SpriteVariations {
         match connections {
             ConnectedDirections::None => &self.single,
             ConnectedDirections::Up => &self.ending_up,
@@ -1662,58 +1693,72 @@ pub enum ForceCondition {
 }
 
 impl ForceCondition {
+    #[must_use]
     pub const fn all() -> Self {
         Self::All
     }
 
+    #[must_use]
     pub const fn ally() -> Self {
         Self::Ally
     }
 
+    #[must_use]
     pub const fn same() -> Self {
         Self::Same
     }
 
+    #[must_use]
     pub const fn enemy() -> Self {
         Self::Enemy
     }
 
+    #[must_use]
     pub const fn friend() -> Self {
         Self::Friend
     }
 
+    #[must_use]
     pub const fn not_same() -> Self {
         Self::NotSame
     }
 
+    #[must_use]
     pub const fn not_friend() -> Self {
         Self::NotFriend
     }
 
+    #[must_use]
     pub const fn is_all(value: &Self) -> bool {
         matches!(value, Self::All)
     }
 
+    #[must_use]
     pub const fn is_ally(value: &Self) -> bool {
         matches!(value, Self::Ally)
     }
 
+    #[must_use]
     pub const fn is_same(value: &Self) -> bool {
         matches!(value, Self::Same)
     }
 
+    #[must_use]
     pub const fn is_enemy(value: &Self) -> bool {
         matches!(value, Self::Enemy)
     }
 
+    #[must_use]
     pub const fn is_friend(value: &Self) -> bool {
         matches!(value, Self::Friend)
     }
 
+    #[must_use]
     pub const fn is_not_same(value: &Self) -> bool {
         matches!(value, Self::NotSame)
     }
 
+    #[must_use]
     pub const fn is_not_friend(value: &Self) -> bool {
         matches!(value, Self::NotFriend)
     }
