@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops::Deref, path::PathBuf};
+use std::{collections::HashMap, ops::Deref, path::Path};
 
 use image::DynamicImage;
 use serde::{Deserialize, Serialize};
@@ -89,7 +89,7 @@ pub use wall::*;
 
 #[derive(Debug, Clone)]
 pub struct RenderOpts<'a> {
-    pub factorio_dir: &'a PathBuf,
+    pub factorio_dir: &'a Path,
     pub used_mods: HashMap<&'a str, &'a str>,
 
     pub direction: Direction,

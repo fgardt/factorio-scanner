@@ -10,7 +10,7 @@
 use std::{
     fs::{self, File},
     io::Read,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use clap::Parser;
@@ -188,7 +188,7 @@ fn render_by_name(
 
 fn bp_entity2render_opts<'a>(
     value: &blueprint::Entity,
-    factorio_dir: &'a PathBuf,
+    factorio_dir: &'a Path,
 ) -> prototypes::EntityRenderOpts<'a> {
     prototypes::EntityRenderOpts {
         factorio_dir,
@@ -232,7 +232,7 @@ fn bp_entity2render_opts<'a>(
 fn render_bp(
     bp: &blueprint::Data,
     data: &prototypes::DataUtil,
-    factorio_dir: &PathBuf,
+    factorio_dir: &Path,
     image_cache: &mut ImageCache,
 ) -> Option<GraphicsOutput> {
     match bp {
