@@ -804,6 +804,7 @@ pub enum AnyBasic {
     Array(Vec<AnyBasic>),
 }
 
+#[allow(clippy::trivially_copy_pass_by_ref)]
 fn shorter_floats<S>(x: &f32, s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,

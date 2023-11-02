@@ -32,6 +32,7 @@ pub struct IconData {
     pub icon_mipmaps: IconMipMapType,
 }
 
+#[must_use]
 pub fn is_0_vector(value: &Vector) -> bool {
     value.0 == 0.0 && value.1 == 0.0
 }

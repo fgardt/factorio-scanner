@@ -221,6 +221,7 @@ pub fn merge_layers<O, T: RenderableGraphics<RenderOpts = O>>(
     merge_renders(layers.as_slice())
 }
 
+#[must_use]
 pub fn merge_renders(renders: &[Option<GraphicsOutput>]) -> Option<GraphicsOutput> {
     const TILE_RES: f64 = 32.0;
 
@@ -1305,10 +1306,12 @@ pub struct Stripe {
 }
 
 impl Stripe {
+    #[must_use]
     pub fn frame_count(&self) -> u32 {
         self.width_in_frames * self.height_in_frames.unwrap_or(1)
     }
 
+    #[must_use]
     pub fn rotated_frame_count(&self, direction_count: u32) -> u32 {
         self.frame_count() * self.height_in_frames.unwrap_or(direction_count)
     }
@@ -1423,6 +1426,8 @@ impl FetchSprite for AnimationParams {
 }
 
 impl AnimationParams {
+    #[must_use]
+    #[allow(clippy::match_same_arms)]
     pub fn frame_index(&self, progress: f64) -> u32 {
         let mode_factor = match self.run_mode {
             AnimationRunMode::Forward => 1,
@@ -1466,6 +1471,7 @@ impl AnimationParams {
         }
     }
 
+    #[must_use]
     pub fn line_length(&self) -> u32 {
         let line_length = self.line_length.unwrap_or_default();
 
@@ -1679,7 +1685,9 @@ impl RenderableGraphics for Animation4Way {
                 Direction::SouthWest => {
                     unimplemented!("Animation4Way does not support diagonals")
                 }
-                Direction::West => west.as_ref().unwrap_or(east.as_ref().unwrap_or(north)),
+                Direction::West => west
+                    .as_ref()
+                    .unwrap_or_else(|| east.as_ref().unwrap_or(north)),
                 Direction::NorthWest => {
                     unimplemented!("Animation4Way does not support diagonals")
                 }
@@ -1922,6 +1930,7 @@ impl FetchSprite for RotatedAnimationParams {
 }
 
 impl RotatedAnimationParams {
+    #[must_use]
     pub fn orientation_index(&self, orientation: f64) -> u32 {
         let index =
             (orientation * f64::from(self.direction_count)).round() as u32 % self.direction_count;
