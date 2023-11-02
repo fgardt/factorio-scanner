@@ -6,7 +6,7 @@
     clippy::module_name_repetitions
 )]
 
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, path::Path};
 
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -149,7 +149,7 @@ impl FileName {
 
     pub fn load<'a>(
         &self,
-        factorio_dir: &PathBuf,
+        factorio_dir: &Path,
         used_mods: &HashMap<&str, &str>,
         image_cache: &'a mut ImageCache,
     ) -> Option<&'a image::DynamicImage> {
@@ -984,7 +984,7 @@ impl RenderableGraphics for BeaconGraphicsSet {
 
     fn render(
         &self,
-        factorio_dir: &PathBuf,
+        factorio_dir: &Path,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1148,7 +1148,7 @@ impl RenderableGraphics for TransportBeltAnimationSet {
 
     fn render(
         &self,
-        factorio_dir: &PathBuf,
+        factorio_dir: &Path,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1233,7 +1233,7 @@ impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
 
     fn render(
         &self,
-        factorio_dir: &PathBuf,
+        factorio_dir: &Path,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1393,7 +1393,7 @@ impl RenderableGraphics for WorkingVisualisation {
 
     fn render(
         &self,
-        factorio_dir: &PathBuf,
+        factorio_dir: &Path,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1455,7 +1455,7 @@ impl RenderableGraphics for WorkingVisualisationAnimation {
 
     fn render(
         &self,
-        factorio_dir: &PathBuf,
+        factorio_dir: &Path,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1796,7 +1796,7 @@ impl RenderableGraphics for MiningDrillGraphicsSet {
 
     fn render(
         &self,
-        factorio_dir: &PathBuf,
+        factorio_dir: &Path,
         used_mods: &HashMap<&str, &str>,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
