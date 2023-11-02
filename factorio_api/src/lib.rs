@@ -529,7 +529,7 @@ mod portal {
     }
 
     #[must_use]
-    pub async fn portal_list<'a>(params: PortalListParams<'a>) -> Option<PortalListResponse> {
+    pub async fn portal_list(params: PortalListParams<'_>) -> Option<PortalListResponse> {
         let client = reqwest::Client::new();
         let res = client
             .get(format!(

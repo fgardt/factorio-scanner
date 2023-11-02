@@ -1,4 +1,10 @@
 #![forbid(unsafe_code)]
+#![warn(
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::unwrap_used,
+    clippy::expect_used
+)]
 #![allow(
     unused_variables,
     clippy::wildcard_imports,
@@ -238,6 +244,7 @@ pub enum EntityType {
 
 #[allow(clippy::match_like_matches_macro)]
 impl EntityType {
+    #[must_use]
     pub const fn connectable(&self) -> bool {
         match self {
             Self::HeatPipe | Self::HeatInterface => true,
@@ -248,6 +255,8 @@ impl EntityType {
         }
     }
 
+    #[must_use]
+    #[allow(clippy::match_same_arms)]
     pub const fn can_connect_to(&self, other: &Self) -> bool {
         match self {
             Self::Gate => matches!(other, Self::Wall),
