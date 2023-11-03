@@ -483,7 +483,7 @@ pub enum SimpleGraphics<T: FetchSprite> {
         filename: FileName,
 
         #[serde(flatten)]
-        data: T,
+        data: Box<T>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         hr_version: Option<Box<Self>>,
@@ -541,14 +541,14 @@ impl<T: FetchSprite> RenderableGraphics for SimpleGraphics<T> {
 pub enum MultiFileGraphics<Single, Multi> {
     Simple {
         #[serde(flatten)]
-        data: Single,
+        data: Box<Single>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         hr_version: Option<Box<Self>>,
     },
     MultiFile {
         #[serde(flatten)]
-        data: Multi,
+        data: Box<Multi>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         hr_version: Option<Box<Self>>,
@@ -1190,7 +1190,7 @@ pub struct WaterReflectionDefinition {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TileGraphics<T> {
-    pub data: T,
+    pub data: Box<T>,
     pub hr_version: Option<Box<Self>>,
 }
 
@@ -1495,7 +1495,7 @@ pub enum Animation {
         filename: FileName,
 
         #[serde(flatten)]
-        data: AnimationParams,
+        data: Box<AnimationParams>,
 
         hr_version: Option<Box<Self>>,
     },
@@ -1503,7 +1503,7 @@ pub enum Animation {
         stripes: Vec<Stripe>,
 
         #[serde(flatten)]
-        data: AnimationParams,
+        data: Box<AnimationParams>,
 
         hr_version: Option<Box<Self>>,
     },
@@ -1955,7 +1955,7 @@ pub enum RotatedAnimation {
         filename: FileName,
 
         #[serde(flatten)]
-        data: RotatedAnimationParams,
+        data: Box<RotatedAnimationParams>,
 
         hr_version: Option<Box<Self>>,
     },
@@ -1963,7 +1963,7 @@ pub enum RotatedAnimation {
         filenames: Vec<FileName>,
 
         #[serde(flatten)]
-        data: RotatedAnimationParams,
+        data: Box<RotatedAnimationParams>,
 
         hr_version: Option<Box<Self>>,
     },
@@ -1971,7 +1971,7 @@ pub enum RotatedAnimation {
         stripes: Vec<Stripe>,
 
         #[serde(flatten)]
-        data: RotatedAnimationParams,
+        data: Box<RotatedAnimationParams>,
 
         hr_version: Option<Box<Self>>,
     },
