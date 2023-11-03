@@ -9,8 +9,7 @@
 
 use std::{
     collections::HashMap,
-    fs::{self, File},
-    io::Read,
+    fs::{self},
     path::{Path, PathBuf},
 };
 
@@ -111,12 +110,7 @@ fn main() {
     //let data_raw_dump = include_str!("../dumps/data-raw-dump.json");
     //let data_raw: prototypes::DataRaw = serde_json::from_str(data_raw_dump).unwrap();
 
-    let mut bytes = Vec::new();
-    File::open(cli.dump)
-        .unwrap()
-        .read_to_end(&mut bytes)
-        .unwrap();
-    let data_raw: prototypes::DataRaw = serde_json::from_slice(&bytes).unwrap();
+    let data_raw = prototypes::DataRaw::load(&cli.dump).unwrap();
 
     println!("loaded prototype data");
 
