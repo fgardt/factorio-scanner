@@ -61,6 +61,55 @@ impl Data {
         }
     }
 
+    #[must_use]
+    pub fn get_first_bp(&self) -> Option<&Self> {
+        match self {
+            Self::Blueprint { .. } => Some(self),
+            Self::BlueprintBook { blueprints, .. } => blueprints
+                .first()
+                .as_ref()
+                .and_then(|b| b.data.get_first_bp()),
+        }
+    }
+
+    #[must_use]
+    pub fn get_used_mods(&self) -> Option<HashMap<&str, &str>> {
+        let tmp = self.get_first_bp()?;
+        match tmp {
+            Self::BlueprintBook { .. } => unreachable!("There should be no BP book here!"),
+            Self::Blueprint { entities, .. } => {
+                for entity in entities {
+                    if entity.tags.contains_key("bp_meta_info") {
+                        let info = entity.tags.get("bp_meta_info")?;
+
+                        let AnyBasic::Table(data) = info else {
+                            continue;
+                        };
+
+                        let mods = data.get("mods")?;
+
+                        let AnyBasic::Table(mods) = mods else {
+                            continue;
+                        };
+
+                        let mut result = HashMap::with_capacity(mods.len());
+
+                        for (mod_name, mod_version) in mods {
+                            let AnyBasic::String(mod_version) = mod_version else {
+                                continue;
+                            };
+                            result.insert(mod_name.as_str(), mod_version.as_str());
+                        }
+
+                        return Some(result);
+                    }
+                }
+
+                None
+            }
+        }
+    }
+
     fn normalize_positions(&mut self) {
         match self {
             Self::BlueprintBook { blueprints, .. } => {
