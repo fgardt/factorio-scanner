@@ -12,6 +12,9 @@
     clippy::module_name_repetitions
 )]
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -172,6 +175,15 @@ pub struct DataRaw {
     // pub player_port: EntityPrototypeMap<PlayerPortPrototype>,
     // pub unit: EntityPrototypeMap<UnitPrototype>,
     // pub spider_vehicle: EntityPrototypeMap<SpiderVehiclePrototype>,
+}
+
+impl DataRaw {
+    #[must_use]
+    pub fn load(dump_path: &Path) -> Option<Self> {
+        let mut bytes = Vec::new();
+        File::open(dump_path).ok()?.read_to_end(&mut bytes).ok()?;
+        serde_json::from_slice(&bytes).ok()
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
