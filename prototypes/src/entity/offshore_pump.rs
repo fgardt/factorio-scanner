@@ -16,7 +16,7 @@ impl super::Renderable for OffshorePumpPrototype {
         options: &super::RenderOpts,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        None
+        self.0.render(options, image_cache)
     }
 }
 
@@ -80,7 +80,7 @@ impl super::Renderable for OffshorePumpData {
         options: &super::RenderOpts,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        None
+        self.graphics.render(options, image_cache)
     }
 }
 
@@ -88,12 +88,30 @@ impl super::Renderable for OffshorePumpData {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum OffshorePumpGraphicsVariant {
-    Deprecated {
-        picture: Animation4Way,
-    },
     GraphicsSet {
         graphics_set: OffshorePumpGraphicsSet,
     },
+    Deprecated {
+        picture: Animation4Way,
+    },
+}
+
+impl super::Renderable for OffshorePumpGraphicsVariant {
+    fn render(
+        &self,
+        options: &crate::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<(image::DynamicImage, f64, Vector)> {
+        match self {
+            Self::GraphicsSet { graphics_set } => graphics_set.render(options, image_cache),
+            Self::Deprecated { picture } => picture.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            ),
+        }
+    }
 }
 
 #[skip_serializing_none]
@@ -115,4 +133,37 @@ pub struct OffshorePumpGraphicsSet {
     pub glass_pictures: Option<Sprite4Way>,
     pub base_pictures: Option<Sprite4Way>,
     pub underwater_pictures: Option<Sprite4Way>,
+}
+
+impl super::Renderable for OffshorePumpGraphicsSet {
+    fn render(
+        &self,
+        options: &crate::RenderOpts,
+        image_cache: &mut ImageCache,
+    ) -> Option<(image::DynamicImage, f64, Vector)> {
+        merge_renders(&[
+            self.base_pictures.as_ref().and_then(|b| {
+                b.render(
+                    options.factorio_dir,
+                    &options.used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            }),
+            self.animation.render(
+                options.factorio_dir,
+                &options.used_mods,
+                image_cache,
+                &options.into(),
+            ),
+            self.glass_pictures.as_ref().and_then(|g| {
+                g.render(
+                    options.factorio_dir,
+                    &options.used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            }),
+        ])
+    }
 }
