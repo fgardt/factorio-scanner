@@ -35,10 +35,6 @@ struct Cli {
     #[clap(short, long, value_parser)]
     dump: PathBuf,
 
-    /// Use a faster approach to read in the data dump file
-    #[clap(long, action)]
-    fast: bool,
-
     /// Path to the output file
     #[clap(short, long, value_parser)]
     out: PathBuf,
@@ -114,17 +110,13 @@ fn main() {
     // =====[   DATA DUMP   ]=====
     //let data_raw_dump = include_str!("../dumps/data-raw-dump.json");
     //let data_raw: prototypes::DataRaw = serde_json::from_str(data_raw_dump).unwrap();
-    let data_raw: prototypes::DataRaw = if cli.fast {
-        let mut bytes = Vec::new();
-        File::open(cli.dump)
-            .unwrap()
-            .read_to_end(&mut bytes)
-            .unwrap();
-        serde_json::from_slice(&bytes).unwrap()
-    } else {
-        let dump_file = File::open(cli.dump).unwrap();
-        serde_json::from_reader(dump_file).unwrap()
-    };
+
+    let mut bytes = Vec::new();
+    File::open(cli.dump)
+        .unwrap()
+        .read_to_end(&mut bytes)
+        .unwrap();
+    let data_raw: prototypes::DataRaw = serde_json::from_slice(&bytes).unwrap();
 
     println!("loaded prototype data");
 
