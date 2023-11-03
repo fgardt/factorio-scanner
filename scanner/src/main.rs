@@ -8,6 +8,7 @@
 #![allow(dead_code, clippy::upper_case_acronyms, unused_variables)]
 
 use std::{
+    collections::HashMap,
     fs::{self, File},
     io::Read,
     path::{Path, PathBuf},
@@ -91,6 +92,15 @@ fn main() {
 
     println!("loaded BP");
 
+    // detect mods from meta info (only the very fist BP is checked)
+    let used_mods = bp.get_used_mods().unwrap_or_default();
+
+    if used_mods.is_empty() {
+        println!("no meta info found, assuming vanilla BP");
+    } else {
+        println!("used mods: {used_mods:?}");
+    }
+
     // =====[ SETTINGS DUMP ]=====
     // let settings_dump = include_str!("../dumps/mod-settings-dump.json");
     // let settings_data: mod_settings::Data = serde_json::from_str(settings_dump).unwrap();
@@ -121,7 +131,7 @@ fn main() {
     // =====[  RENDER TEST  ]=====
     let data = prototypes::DataUtil::new(data_raw);
 
-    match render_bp(&bp, &data, &cli.factorio, &mut ImageCache::new()) {
+    match render_bp(&bp, &data, &cli.factorio, used_mods, &mut ImageCache::new()) {
         Some((img, scale, (shift_x, shift_y))) => {
             println!("render done");
 
@@ -189,18 +199,11 @@ fn render_by_name(
 fn bp_entity2render_opts<'a>(
     value: &blueprint::Entity,
     factorio_dir: &'a Path,
+    used_mods: HashMap<&'a str, &'a str>,
 ) -> prototypes::EntityRenderOpts<'a> {
     prototypes::EntityRenderOpts {
         factorio_dir,
-        used_mods: [
-            ("EditorExtensions", "2.2.1"),
-            ("Krastorio2", "1.3.22"),
-            ("Krastorio2Assets", "1.2.1"),
-            ("flib", "0.13.0"),
-        ]
-        .iter()
-        .copied()
-        .collect(),
+        used_mods,
         direction: value.direction,
         orientation: value.orientation.map(f64::from),
         pickup_position: value
@@ -233,16 +236,21 @@ fn render_bp(
     bp: &blueprint::Data,
     data: &prototypes::DataUtil,
     factorio_dir: &Path,
+    used_mods: HashMap<&str, &str>,
     image_cache: &mut ImageCache,
 ) -> Option<GraphicsOutput> {
     match bp {
-        blueprint::Data::BlueprintBook { blueprints, .. } => {
-            render_bp(&blueprints.get(0)?.data, data, factorio_dir, image_cache)
-        }
+        blueprint::Data::BlueprintBook { blueprints, .. } => render_bp(
+            &blueprints.get(0)?.data,
+            data,
+            factorio_dir,
+            used_mods,
+            image_cache,
+        ),
         blueprint::Data::Blueprint { entities, .. } => {
             let renders = entities
                 .iter()
-                .map(|e| {
+                .filter_map(|e| {
                     let mut connected_gates: Vec<Direction> = Vec::new();
                     let mut draw_gate_patch = false;
                     let connections = data.get_type(&e.name).and_then(|entity_type| {
@@ -297,8 +305,6 @@ fn render_bp(
                                             }
                                             None => continue,
                                         }
-
-                                        //
                                     }
                                     EntityType::Pipe | EntityType::InfinityPipe => {
                                         if !matches!(
@@ -384,21 +390,21 @@ fn render_bp(
                         }
                     });
 
-                    let mut render_opts = bp_entity2render_opts(e, factorio_dir);
+                    let mut render_opts = bp_entity2render_opts(e, factorio_dir, used_mods.clone());
                     render_opts.connections = connections;
                     render_opts.connected_gates = connected_gates;
                     render_opts.draw_gate_patch = draw_gate_patch;
 
                     data.render_entity(&e.name, &render_opts, image_cache).map(
                         |(img, scale, (shift_x, shift_y))| {
-                            (
+                            Some((
                                 img,
                                 scale,
                                 (
                                     shift_x + f64::from(e.position.x),
                                     shift_y + f64::from(e.position.y),
                                 ),
-                            )
+                            ))
                         },
                     )
                 })
