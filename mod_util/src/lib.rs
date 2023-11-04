@@ -6,8 +6,6 @@
     clippy::expect_used
 )]
 
-mod mod_list;
+pub mod mod_list;
 pub mod mod_settings;
-mod property_tree;
-
-pub use mod_list::*;
+pub mod property_tree;
