@@ -107,6 +107,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.75"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4668cab20f66d8d020e1fbc0ebe47217433c1b6c8f2040faf858554e394ace6"
+
+[[package]]
 name = "approx"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -992,12 +998,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "mod_settings"
+name = "mod_util"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "blueprint",
+ "byteorder",
  "serde",
  "serde_helper",
+ "serde_json",
  "serde_with",
 ]
 
@@ -1472,7 +1481,7 @@ dependencies = [
  "clap",
  "image",
  "locale",
- "mod_settings",
+ "mod_util",
  "prototypes",
  "serde",
  "serde_json",
