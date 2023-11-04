@@ -253,7 +253,9 @@ fn render_bp(
                                     continue;
                                 }
 
-                                let other_type = data.get_type(&other.name)?;
+                                let Some(other_type) = data.get_type(&other.name) else {
+                                    continue;
+                                };
 
                                 if !entity_type.can_connect_to(other_type) {
                                     continue;
