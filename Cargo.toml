@@ -4,7 +4,7 @@ members = [
     "blueprint",
     "factorio_api",
     "locale",
-    "mod_settings",
+    "mod_util",
     "prototypes",
     "serde_helper",
     "scanner",
@@ -25,7 +25,7 @@ clap = { version = "4.4", features = ["derive"] }
 factorio_api = { path = "factorio_api" }
 image = { version = "0.24.7", features = ["png"], default-features = false }
 locale = { path = "locale" }
-mod_settings = { path = "mod_settings" }
+mod_util = { path = "mod_util" }
 prototypes = { path = "prototypes" }
 serde = { version = "1.0", features = ["derive"] }
 serde_helper = { path = "serde_helper" }

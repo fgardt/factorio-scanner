@@ -1,4 +1,6 @@
-# Mod Settings (De)Serializing
+# Mod Util
+
+- **Mod settings** (de)serialization
 
 ### https://wiki.factorio.com/Tutorial:Mod_settings
 
