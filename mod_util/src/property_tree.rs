@@ -151,7 +151,7 @@ impl PropertyTree {
 
         match self {
             Self::None => {}
-            Self::Bool(val) => out.write_bool(true)?, //out.write_bool(*val)?,
+            Self::Bool(val) => out.write_bool(*val)?,
             Self::Number(val) => out.write_f64::<LittleEndian>(*val)?,
             Self::String(val) => out.write_string(val)?,
             Self::List(val) => {

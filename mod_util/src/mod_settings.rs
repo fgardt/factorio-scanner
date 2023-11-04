@@ -2,7 +2,7 @@ use std::{
     collections::HashMap,
     fs,
     io::{Cursor, Seek, SeekFrom},
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use anyhow::{anyhow, Result};
