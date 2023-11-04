@@ -1,5 +1,5 @@
 [package]
-name = "mod_settings"
+name = "mod_util"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
@@ -7,7 +7,10 @@ edition.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.75"
 blueprint.workspace = true
+byteorder = "1.5.0"
 serde.workspace = true
 serde_helper.workspace = true
+serde_json.workspace = true
 serde_with.workspace = true

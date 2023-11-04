@@ -11,7 +11,7 @@ Building additional tools might also happen along the way (cli tool to edit `mod
 - [`blueprint`](/blueprint/): blueprint string (de)serializing
 - [`factorio_api`](/factorio_api/): internal factorio mod portal api
 - [`locale`](/locale/): locale dump (de)serializing
-- [`mod_settings`](/mod_settings/): mod settings (de)serializing
+- [`mod_util`](/mod_util/): mod settings (de)serializing (`.json` and `.dat` files), mod list (de)serializing, property tree (de)serializing (binary format only)
 - [`prototypes`](/prototypes/): entity prototype (de)serializing & rendering
 - [`types`](/types/): generic type (de)serializing, sprite loading, layering, merging, ...
 - [`serde_helper`](/serde_helper/): util functions for deserialized defaults & serialization skip conditions
