@@ -8,5 +8,6 @@
 
 mod mod_list;
 pub mod mod_settings;
+mod property_tree;
 
 pub use mod_list::*;
