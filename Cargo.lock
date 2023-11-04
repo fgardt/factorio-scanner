@@ -998,6 +998,7 @@ dependencies = [
  "blueprint",
  "serde",
  "serde_helper",
+ "serde_json",
  "serde_with",
 ]
 
