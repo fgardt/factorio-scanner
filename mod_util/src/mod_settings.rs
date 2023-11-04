@@ -1,5 +1,12 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    fs,
+    io::{Cursor, Seek, SeekFrom},
+    path::{Path, PathBuf},
+};
 
+use anyhow::{anyhow, Result};
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -140,7 +147,9 @@ pub struct ModSettings {
 }
 
 #[derive(Debug, Clone)]
-pub struct SettingsDat {
+pub struct SettingsDat<'a> {
+    path: &'a Path,
+
     pub version: u64, // https://wiki.factorio.com/Version_string_format
 
     pub startup: HashMap<String, PropertyTree>,
@@ -148,55 +157,44 @@ pub struct SettingsDat {
     pub runtime_per_user: HashMap<String, PropertyTree>,
 }
 
-impl SettingsDat {
-    #[must_use]
-    pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
-        let version_buff = [
-            *bytes.first()?,
-            *bytes.get(1)?,
-            *bytes.get(2)?,
-            *bytes.get(3)?,
-            *bytes.get(4)?,
-            *bytes.get(5)?,
-            *bytes.get(6)?,
-            *bytes.get(7)?,
-        ];
-        let version = u64::from_le_bytes(version_buff);
-        //let false_bool: bool = *bytes.get(8)? == 0; // always false bool
+impl<'a> SettingsDat<'a> {
+    pub fn load(path: &'a Path) -> Result<Self> {
+        let mut cursor = Cursor::new(fs::read(path)?);
+        let version = cursor.read_u64::<LittleEndian>()?;
+        cursor.seek(SeekFrom::Current(1))?; // skip false bool
 
-        let data = PropertyTree::from_bytes(&bytes[9..])?;
+        let data = PropertyTree::load(&mut cursor)?;
 
         let PropertyTree::Dictionary(data) = data else {
-            return None;
+            return Err(anyhow!("Invalid settings.dat: not a dictionary"));
         };
 
-        let PropertyTree::Dictionary(startup) = data.get("startup")?.clone() else {
-            return None;
+        let Some(PropertyTree::Dictionary(startup)) = data.get("startup") else {
+            return Err(anyhow!("Invalid settings.dat: no startup tree"));
         };
 
-        let PropertyTree::Dictionary(runtime_global) = data.get("runtime-global")?.clone() else {
-            return None;
+        let Some(PropertyTree::Dictionary(rt_g)) = data.get("runtime-global") else {
+            return Err(anyhow!("Invalid settings.dat: no runtime-global tree"));
         };
 
-        let PropertyTree::Dictionary(runtime_per_user) = data.get("runtime-per-user")?.clone()
-        else {
-            return None;
+        let Some(PropertyTree::Dictionary(rt_p_u)) = data.get("runtime-per-user") else {
+            return Err(anyhow!("Invalid settings.dat: no runtime-per-user tree"));
         };
 
-        Some(Self {
+        Ok(Self {
+            path,
             version,
-            startup,
-            runtime_global,
-            runtime_per_user,
+            startup: startup.clone(),
+            runtime_global: rt_g.clone(),
+            runtime_per_user: rt_p_u.clone(),
         })
     }
 
-    #[must_use]
-    pub fn to_bytes(&self) -> Vec<u8> {
-        let mut bytes = Vec::new();
+    pub fn write(&self, path: &Path) -> Result<()> {
+        let mut buf = Vec::new();
 
-        bytes.extend_from_slice(&self.version.to_le_bytes());
-        bytes.push(0); // always false bool
+        buf.write_u64::<LittleEndian>(self.version)?;
+        buf.write_u8(0)?; // false bool
 
         let data = PropertyTree::Dictionary(
             vec![
@@ -218,8 +216,13 @@ impl SettingsDat {
             .collect(),
         );
 
-        bytes.extend(data.to_bytes());
+        data.write(&mut buf)?;
+        fs::write(path, buf)?;
 
-        bytes
+        Ok(())
+    }
+
+    pub fn save(&self) -> Result<()> {
+        self.write(self.path)
     }
 }

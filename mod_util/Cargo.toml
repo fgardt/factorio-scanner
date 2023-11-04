@@ -7,7 +7,9 @@ edition.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.75"
 blueprint.workspace = true
+byteorder = "1.5.0"
 serde.workspace = true
 serde_helper.workspace = true
 serde_json.workspace = true

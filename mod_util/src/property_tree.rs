@@ -1,6 +1,42 @@
+/*
+Parts of this were rewritten after taking some inspiration and copying some code from:
+https://github.com/raiguard/fmm/blob/9744e812797f84f0728efc649e5365feb52d0c7b/src/dat.rs
+For this reason, this file is licensed under the MIT license, as per the license of the above repository.
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+*/
+
 #![allow(dead_code)]
 
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    io::{self, Cursor, Seek, SeekFrom},
+};
+
+use anyhow::{anyhow, Error, Result};
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -11,15 +47,13 @@ enum PropertyTreeType {
     String = 3,
     List = 4,
     Dictionary = 5,
-    // SignedInteger = 6,
-    // UnsignedInteger = 7,
 }
 
 #[allow(clippy::upper_case_acronyms)]
 type PTT = PropertyTreeType;
 
 impl TryFrom<&u8> for PropertyTreeType {
-    type Error = ();
+    type Error = Error;
 
     fn try_from(value: &u8) -> Result<Self, Self::Error> {
         match value {
@@ -29,15 +63,13 @@ impl TryFrom<&u8> for PropertyTreeType {
             3 => Ok(Self::String),
             4 => Ok(Self::List),
             5 => Ok(Self::Dictionary),
-            // 6 => Ok(Self::SignedInteger),
-            // 7 => Ok(Self::UnsignedInteger),
-            _ => Err(()),
+            _ => Err(anyhow!("Invalid PropertyTreeType")),
         }
     }
 }
 
 impl TryFrom<u8> for PropertyTreeType {
-    type Error = ();
+    type Error = Error;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         Self::try_from(&value)
@@ -53,8 +85,6 @@ impl From<&PropertyTree> for PropertyTreeType {
             PropertyTree::String(_) => Self::String,
             PropertyTree::List(_) => Self::List,
             PropertyTree::Dictionary(_) => Self::Dictionary,
-            // PropertyTree::SignedInteger(_) => Self::SignedInteger,
-            // PropertyTree::UnsignedInteger(_) => Self::UnsignedInteger,
         }
     }
 }
@@ -65,6 +95,7 @@ impl From<PropertyTree> for PropertyTreeType {
     }
 }
 
+#[must_use]
 #[derive(Debug, Clone, PartialEq)]
 pub enum PropertyTree {
     None,
@@ -78,206 +109,218 @@ pub enum PropertyTree {
 }
 
 impl PropertyTree {
-    pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
-        Self::from_bytes_internal(bytes, &mut 0)
-    }
+    pub fn load(reader: &mut Cursor<Vec<u8>>) -> Result<Self> {
+        let pt_type: PTT = reader.read_u8()?.try_into()?;
+        reader.seek(SeekFrom::Current(1))?; // skip any type flag
 
-    fn from_bytes_internal(bytes: &[u8], byte_idx: &mut usize) -> Option<Self> {
-        if bytes.len() < 2 {
-            return None;
-        }
-
-        let pt_type: PropertyTreeType = bytes.get(*byte_idx)?.try_into().ok()?;
-        //let any_type: bool = bytes[*byte_idx + 1] == 1;
-
-        *byte_idx += 2;
-
-        let pt = match pt_type {
+        let data = match pt_type {
             PTT::None => Self::None,
-            PTT::Bool => Self::Bool(Self::bool_from_bytes(bytes, byte_idx)?),
-            PTT::Number => Self::Number(Self::number_from_bytes(bytes, byte_idx)?),
-            PTT::String => Self::String(Self::string_from_bytes(bytes, byte_idx)?),
-            PTT::List => Self::List(Self::list_from_bytes(bytes, byte_idx)?),
-            PTT::Dictionary => Self::Dictionary(Self::dict_from_bytes(bytes, byte_idx)?),
-            // PTT::SignedInteger => todo!(),
-            // PTT::UnsignedInteger => Self::UnsignedInteger(Self::u32_from_bytes(bytes, byte_idx)?)
+            PTT::Bool => Self::Bool(reader.read_bool()?),
+            PTT::Number => Self::Number(reader.read_f64::<LittleEndian>()?),
+            PTT::String => Self::String(reader.read_string()?),
+            PTT::List => {
+                let len = reader.read_u32::<LittleEndian>()?;
+                let mut list = Vec::with_capacity(len as usize);
+
+                for _ in 0..len {
+                    reader.read_string()?; // skip key
+                    list.push(Self::load(reader)?);
+                }
+
+                Self::List(list)
+            }
+            PTT::Dictionary => {
+                let len = reader.read_u32::<LittleEndian>()?;
+                let mut dict = HashMap::with_capacity(len as usize);
+
+                for _ in 0..len {
+                    dict.insert(reader.read_string()?, Self::load(reader)?);
+                }
+
+                Self::Dictionary(dict)
+            }
         };
 
-        // if *byte_idx != bytes.len() {
-        //     return None;
-        // }
-
-        Some(pt)
+        Ok(data)
     }
 
-    fn bool_from_bytes(bytes: &[u8], byte_idx: &mut usize) -> Option<bool> {
-        let bool = *bytes.get(*byte_idx)? == 1;
-
-        *byte_idx += 1;
-
-        Some(bool)
-    }
-
-    fn number_from_bytes(bytes: &[u8], byte_idx: &mut usize) -> Option<f64> {
-        let buff = [
-            *bytes.get(*byte_idx)?,
-            *bytes.get(*byte_idx + 1)?,
-            *bytes.get(*byte_idx + 2)?,
-            *bytes.get(*byte_idx + 3)?,
-            *bytes.get(*byte_idx + 4)?,
-            *bytes.get(*byte_idx + 5)?,
-            *bytes.get(*byte_idx + 6)?,
-            *bytes.get(*byte_idx + 7)?,
-        ];
-        let number = f64::from_le_bytes(buff);
-
-        *byte_idx += 8;
-
-        Some(number)
-    }
-
-    fn u32_from_bytes(bytes: &[u8], byte_idx: &mut usize) -> Option<u32> {
-        let buff = [
-            *bytes.get(*byte_idx)?,
-            *bytes.get(*byte_idx + 1)?,
-            *bytes.get(*byte_idx + 2)?,
-            *bytes.get(*byte_idx + 3)?,
-        ];
-        let number = u32::from_le_bytes(buff);
-
-        *byte_idx += 4;
-
-        Some(number)
-    }
-
-    fn packed_u32_from_bytes(bytes: &[u8], byte_idx: &mut usize) -> Option<u32> {
-        let small = *bytes.get(*byte_idx)?;
-        *byte_idx += 1;
-
-        if small == u8::MAX {
-            Self::u32_from_bytes(bytes, byte_idx)
-        } else {
-            Some(u32::from(small))
-        }
-    }
-
-    fn string_from_bytes(bytes: &[u8], byte_idx: &mut usize) -> Option<String> {
-        let empty = *bytes.get(*byte_idx)? == 1;
-        *byte_idx += 1;
-
-        if empty {
-            return Some(String::new());
-        }
-
-        let len = Self::packed_u32_from_bytes(bytes, byte_idx)? as usize;
-        let mut buff = Vec::with_capacity(len);
-
-        for _ in 0..len {
-            buff.push(*bytes.get(*byte_idx)?);
-            *byte_idx += 1;
-        }
-
-        String::from_utf8(buff).ok()
-    }
-
-    fn list_from_bytes(bytes: &[u8], byte_idx: &mut usize) -> Option<Vec<Self>> {
-        let tmp_dict = Self::dict_from_bytes(bytes, byte_idx)?;
-        Some(tmp_dict.values().cloned().collect())
-    }
-
-    fn dict_from_bytes(bytes: &[u8], byte_idx: &mut usize) -> Option<HashMap<String, Self>> {
-        let len = Self::u32_from_bytes(bytes, byte_idx)? as usize; // packed u32 maybe?
-        let mut dict = HashMap::with_capacity(len);
-
-        for _ in 0..len {
-            let key = Self::string_from_bytes(bytes, byte_idx)?;
-            let value = Self::from_bytes_internal(bytes, byte_idx)?;
-
-            dict.insert(key, value);
-        }
-
-        Some(dict)
-    }
-
-    pub fn to_bytes(&self) -> Vec<u8> {
-        let mut buff: Vec<u8> = Vec::new();
-
+    pub fn write(&self, out: &mut Vec<u8>) -> Result<()> {
         let pt_type: PropertyTreeType = self.into();
-        buff.push(pt_type as u8);
-        buff.push(0); // any type flag, false
+        out.write_u8(pt_type as u8)?;
+        out.write_u8(0)?; // any type flag, false
 
-        let data = match self {
-            Self::None => vec![],
-            Self::Bool(val) => vec![u8::from(*val)],
-            Self::Number(val) => val.to_le_bytes().to_vec(),
-            Self::String(val) => Self::string_to_bytes(val),
-            Self::List(val) => Self::list_to_bytes(val),
-            Self::Dictionary(val) => Self::dict_to_bytes(val),
-        };
+        match self {
+            Self::None => {}
+            Self::Bool(val) => out.write_bool(true)?, //out.write_bool(*val)?,
+            Self::Number(val) => out.write_f64::<LittleEndian>(*val)?,
+            Self::String(val) => out.write_string(val)?,
+            Self::List(val) => {
+                #[allow(clippy::cast_possible_truncation)]
+                out.write_u32::<LittleEndian>(val.len() as u32)?;
 
-        buff.extend(data);
+                for val in val {
+                    out.write_string("")?;
+                    val.write(out)?;
+                }
+            }
+            Self::Dictionary(val) => {
+                #[allow(clippy::cast_possible_truncation)]
+                out.write_u32::<LittleEndian>(val.len() as u32)?;
 
-        buff
+                for (key, value) in val {
+                    out.write_string(key)?;
+                    value.write(out)?;
+                }
+            }
+        }
+
+        Ok(())
     }
 
-    fn packed_u32_to_bytes(val: u32) -> Vec<u8> {
-        if val < u32::from(u8::MAX) {
-            #[allow(clippy::cast_possible_truncation)]
-            let val = val as u8;
-            vec![val]
-        } else {
-            let mut buff = Vec::with_capacity(5);
-            buff.push(u8::MAX);
-            buff.extend(val.to_le_bytes());
-            buff
+    pub const fn is_list(&self) -> bool {
+        matches!(self, Self::List(_))
+    }
+
+    pub const fn is_dict(&self) -> bool {
+        matches!(self, Self::Dictionary(_))
+    }
+
+    pub const fn as_list(&self) -> Option<&Vec<Self>> {
+        match self {
+            Self::List(val) => Some(val),
+            _ => None,
         }
     }
 
-    fn string_to_bytes(string: &str) -> Vec<u8> {
-        if string.is_empty() {
-            return vec![1];
+    pub fn as_list_mut(&mut self) -> Option<&mut Vec<Self>> {
+        match self {
+            Self::List(val) => Some(val),
+            _ => None,
         }
-
-        let mut buff: Vec<u8> = vec![0];
-
-        #[allow(clippy::cast_possible_truncation)]
-        let len = string.len() as u32;
-
-        buff.extend(Self::packed_u32_to_bytes(len));
-        buff.extend(string.bytes());
-
-        buff
     }
 
-    fn list_to_bytes(list: &[Self]) -> Vec<u8> {
-        let mut buff: Vec<u8> = Vec::new();
-
-        #[allow(clippy::cast_possible_truncation)]
-        let len = list.len() as u32;
-
-        buff.extend(len.to_le_bytes());
-
-        for val in list {
-            buff.extend(Self::string_to_bytes(""));
-            buff.extend(val.to_bytes());
+    pub const fn as_dict(&self) -> Option<&HashMap<String, Self>> {
+        match self {
+            Self::Dictionary(val) => Some(val),
+            _ => None,
         }
-
-        buff
     }
 
-    fn dict_to_bytes(dict: &HashMap<String, Self>) -> Vec<u8> {
-        let mut buff: Vec<u8> = Vec::new();
-
-        #[allow(clippy::cast_possible_truncation)]
-        let len = dict.len() as u32;
-
-        buff.extend(len.to_le_bytes());
-
-        for (key, value) in dict {
-            buff.extend(Self::string_to_bytes(key));
-            buff.extend(value.to_bytes());
+    pub fn as_dict_mut(&mut self) -> Option<&mut HashMap<String, Self>> {
+        match self {
+            Self::Dictionary(val) => Some(val),
+            _ => None,
         }
+    }
 
-        buff
+    pub fn get<K: Key>(&self, key: &K) -> Option<&Self> {
+        key.index_into(self)
+    }
+
+    pub fn get_mut<K: Key>(&mut self, key: &K) -> Option<&mut Self> {
+        key.index_into_mut(self)
     }
 }
+
+pub trait Key {
+    fn index_into<'a>(&self, pt: &'a PropertyTree) -> Option<&'a PropertyTree>;
+    fn index_into_mut<'a>(&self, pt: &'a mut PropertyTree) -> Option<&'a mut PropertyTree>;
+}
+
+impl Key for &str {
+    fn index_into<'a>(&self, pt: &'a PropertyTree) -> Option<&'a PropertyTree> {
+        match pt {
+            PropertyTree::Dictionary(dict) => dict.get(*self),
+            _ => None,
+        }
+    }
+
+    fn index_into_mut<'a>(&self, pt: &'a mut PropertyTree) -> Option<&'a mut PropertyTree> {
+        match pt {
+            PropertyTree::Dictionary(dict) => dict.get_mut(*self),
+            _ => None,
+        }
+    }
+}
+
+impl Key for usize {
+    fn index_into<'a>(&self, pt: &'a PropertyTree) -> Option<&'a PropertyTree> {
+        match pt {
+            PropertyTree::List(list) => list.get(*self),
+            _ => None,
+        }
+    }
+
+    fn index_into_mut<'a>(&self, pt: &'a mut PropertyTree) -> Option<&'a mut PropertyTree> {
+        match pt {
+            PropertyTree::List(list) => list.get_mut(*self),
+            _ => None,
+        }
+    }
+}
+
+pub trait Read: io::Read {
+    fn read_bool(&mut self) -> Result<bool> {
+        Ok(self.read_u8()? == 1)
+    }
+
+    fn read_optimized_u32(&mut self) -> Result<u32> {
+        let small = self.read_u8()?;
+        if small == u8::MAX {
+            Ok(self.read_u32::<LittleEndian>()?)
+        } else {
+            Ok(small.into())
+        }
+    }
+
+    fn read_string(&mut self) -> Result<String> {
+        if self.read_bool()? {
+            Ok(String::new())
+        } else {
+            let len = self.read_optimized_u32()?;
+            let mut buf = vec![0; len as usize];
+            self.read_exact(&mut buf)?;
+
+            Ok(String::from_utf8_lossy(&buf).to_string())
+        }
+    }
+}
+
+impl<R: io::Read + ?Sized> Read for R {}
+
+pub trait Write: io::Write {
+    fn write_bool(&mut self, val: bool) -> Result<()> {
+        self.write_u8(u8::from(val))?;
+
+        Ok(())
+    }
+
+    fn write_optimized_u32(&mut self, val: u32) -> Result<()> {
+        if val < u32::from(u8::MAX) {
+            #[allow(clippy::cast_possible_truncation)]
+            self.write_u8(val as u8)?;
+        } else {
+            self.write_u8(u8::MAX)?;
+            self.write_u32::<LittleEndian>(val)?;
+        }
+
+        Ok(())
+    }
+
+    fn write_string(&mut self, val: &str) -> Result<()> {
+        if val.is_empty() {
+            self.write_bool(true)?;
+        } else {
+            self.write_bool(false)?;
+
+            #[allow(clippy::cast_possible_truncation)]
+            self.write_optimized_u32(val.len() as u32)?;
+
+            self.write_all(val.as_bytes())?;
+        }
+
+        Ok(())
+    }
+}
+
+impl<W: io::Write + ?Sized> Write for W {}
