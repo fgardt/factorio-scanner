@@ -35,7 +35,7 @@ impl ModListFormat {
 #[derive(Debug, Clone)]
 pub struct Entry {
     pub enabled: bool,
-    pub versions: Vec<(String, String)>,
+    pub versions: HashMap<String, String>,
     pub active_version: Option<String>,
 }
 
@@ -77,13 +77,13 @@ impl<'a> ModList<'a> {
             let versions = entry
                 .version
                 .as_ref()
-                .map_or_else(Vec::new, |v| vec![(String::new(), v.clone())]); // the filename is just "" since we cant know it here :/
+                .map_or_else(Vec::new, |v| vec![(v.clone(), String::new())]); // the filename is just "" since we cant know it here :/
 
             list.insert(
                 entry.name.clone(),
                 Entry {
                     enabled: entry.enabled,
-                    versions,
+                    versions: versions.iter().cloned().collect(),
                     active_version: entry.version,
                 },
             );
@@ -101,7 +101,7 @@ impl<'a> ModList<'a> {
             "base".to_string(),
             Entry {
                 enabled: true,
-                versions: vec![],
+                versions: HashMap::new(),
                 active_version: None,
             },
         );
@@ -154,13 +154,15 @@ impl<'a> ModList<'a> {
                     continue;
                 };
                 let entry: &mut Entry = entry;
-                entry.versions.push((filename.to_owned(), version));
+                entry.versions.insert(version, filename.to_owned());
             } else {
                 list.insert(
                     name.clone(),
                     Entry {
                         enabled: false,
-                        versions: vec![(filename.to_owned(), version)],
+                        versions: std::iter::once(&(version, filename.to_owned()))
+                            .cloned()
+                            .collect(),
                         active_version: None,
                     },
                 );
@@ -190,5 +192,47 @@ impl<'a> ModList<'a> {
 
     pub fn get_mut(&mut self, name: &str) -> Option<&mut Entry> {
         self.list.get_mut(name)
+    }
+
+    #[cfg(feature = "bp_meta_info")]
+    #[must_use]
+    pub fn enable_used_mods<'bp>(
+        &mut self,
+        bp: &'bp blueprint::Blueprint,
+    ) -> Vec<(&'bp str, &'bp str)> {
+        let Some(used_mods) = bp.get_used_mods() else {
+            return Vec::new();
+        };
+
+        let mut missing = Vec::new();
+
+        for (name, version) in used_mods {
+            // skip wube mods
+            if name == "base" || name == "core" {
+                continue;
+            }
+
+            if let Some(entry) = self.list.get_mut(name) {
+                entry.enabled = true;
+                entry.active_version = Some(version.to_owned());
+
+                if !entry.versions.contains_key(version) {
+                    missing.push((name, version));
+                }
+            } else {
+                self.list.insert(
+                    name.to_owned(),
+                    Entry {
+                        enabled: true,
+                        versions: HashMap::new(),
+                        active_version: None,
+                    },
+                );
+
+                missing.push((name, version));
+            }
+        }
+
+        missing
     }
 }
