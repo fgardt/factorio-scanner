@@ -1481,12 +1481,14 @@ version = "0.1.0"
 dependencies = [
  "blueprint",
  "clap",
+ "factorio_api",
  "image",
  "locale",
  "mod_util",
  "prototypes",
  "serde",
  "serde_json",
+ "serde_with",
  "types",
 ]
 
