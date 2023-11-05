@@ -7,6 +7,7 @@ use std::{
 
 use anyhow::{anyhow, Result};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -225,4 +226,59 @@ impl<'a> SettingsDat<'a> {
     pub fn save(&self) -> Result<()> {
         self.write(self.path)
     }
+
+    #[cfg(feature = "bp_meta_info")]
+    pub fn load_bp_settings(bp: &blueprint::Blueprint, path: &'a Path) -> Result<Self> {
+        let settings = bp
+            .get_used_startup_settings()
+            .cloned()
+            .unwrap_or_else(HashMap::new);
+        let mut startup = HashMap::new();
+
+        for (k, v) in settings {
+            let pt = settings_property_tree(&v)?;
+            startup.insert(k.clone(), pt);
+        }
+
+        Ok(Self {
+            path,
+            version: bp.info.version,
+            startup,
+            runtime_global: HashMap::new(),
+            runtime_per_user: HashMap::new(),
+        })
+    }
+}
+
+#[cfg(feature = "bp_meta_info")]
+fn settings_property_tree(value: &blueprint::AnyBasic) -> Result<PropertyTree> {
+    use blueprint::AnyBasic;
+
+    let pt_val = match value {
+        AnyBasic::Bool(val) => PropertyTree::Bool(*val),
+        AnyBasic::Number(val) => PropertyTree::Number(*val),
+        AnyBasic::String(val) => PropertyTree::String(val.clone()),
+        AnyBasic::Table(val) => {
+            let mut map = HashMap::new();
+
+            for (k, v) in val {
+                let AnyBasic::Number(num) = v else {
+                    return Err(anyhow!(
+                        "Invalid settings in blueprint: expected number in color setting"
+                    ));
+                };
+
+                map.insert(k.clone(), PropertyTree::Number(*num));
+            }
+
+            PropertyTree::Dictionary(map)
+        }
+        AnyBasic::Array(_) => {
+            return Err(anyhow!("Invalid settings in blueprint: unexpected array"))
+        }
+    };
+
+    Ok(PropertyTree::Dictionary(
+        vec![("value".to_owned(), pt_val)].into_iter().collect(),
+    ))
 }
