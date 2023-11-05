@@ -10,14 +10,18 @@
 use std::{
     collections::HashMap,
     fs::{self},
+    io::{Read, Write},
     path::{Path, PathBuf},
+    process::Command,
 };
 
 use clap::Parser;
 use image::GenericImageView;
+use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
-use mod_util::mod_settings::SettingsDat;
-use prototypes::{EntityRenderOpts, EntityType, RenderableEntity};
+use mod_util::{mod_list::ModList, mod_settings::SettingsDat};
+use prototypes::{DataRaw, DataUtil, EntityRenderOpts, EntityType, RenderableEntity};
 use types::{merge_renders, ConnectedDirections, Direction, GraphicsOutput, ImageCache};
 
 #[derive(Parser)]
@@ -31,10 +35,13 @@ struct Cli {
     #[clap(short, long, value_parser)]
     factorio: PathBuf,
 
-    /// Path to the data dump json file
-    #[clap(short, long, value_parser)]
-    dump: PathBuf,
+    /// Path to the factorio binary instead of the default expected one
+    #[clap(long, value_parser)]
+    factorio_bin: Option<PathBuf>,
 
+    // /// Path to the data dump json file
+    // #[clap(short, long, value_parser)]
+    // dump: PathBuf,
     /// Path to the output file
     #[clap(short, long, value_parser)]
     out: PathBuf,
@@ -60,7 +67,49 @@ fn main() {
         println!("used mods: {used_mods:?}");
     }
 
-    let settings_path = cli.factorio.join("mods/mod-settings.dat");
+    let mods_path = cli.factorio.join("mods");
+    let old_mod_list = ModList::load(&mods_path).unwrap();
+
+    let mut mod_list = ModList::generate(&mods_path).unwrap();
+    let missing = mod_list.enable_used_mods(bp);
+
+    if !missing.is_empty() {
+        // fetch missing mods from portal
+        println!("need to download missing mods from mod portal");
+        let Some(player_data) = PlayerData::load(&cli.factorio.join("player-data.json")) else {
+            panic!("You need to login inside factorio first!");
+        };
+
+        let Some(username) = player_data.username else {
+            panic!("You need to login inside factorio first!");
+        };
+
+        let Some(token) = player_data.token else {
+            panic!("You need to login inside factorio first!");
+        };
+
+        for (name, version) in missing {
+            print!("downloading {name} v{version}: ");
+            std::io::stdout().flush().unwrap();
+            let Some(dl) = factorio_api::blocking::fetch_mod(name, version, &username, &token)
+            else {
+                println!("failed");
+                panic!();
+            };
+
+            match fs::write(mods_path.join(format!("{name}_{version}.zip")), dl) {
+                Ok(()) => println!("done"),
+                Err(e) => {
+                    println!("failed -> {e}");
+                    panic!();
+                }
+            }
+        }
+    }
+
+    mod_list.save().unwrap();
+
+    let settings_path = mods_path.join("mod-settings.dat");
     let old_settings = SettingsDat::load(&settings_path).unwrap();
 
     // set settings used in BP
@@ -69,12 +118,29 @@ fn main() {
         .save()
         .unwrap();
 
-    let data_raw = prototypes::DataRaw::load(&cli.dump).unwrap();
+    // execute factorio to dump prototypes
+    print!("dumping prototypes: ");
+    std::io::stdout().flush().unwrap();
+    let binary_path = cli.factorio.join("bin/x64/run");
+    let dump_out = Command::new(cli.factorio_bin.unwrap_or(binary_path))
+        .arg("--dump-data")
+        .output()
+        .expect("failed to execute process");
+
+    if dump_out.status.success() {
+        println!("success");
+    } else {
+        println!("failed");
+        panic!();
+    }
+
+    let dump_path = cli.factorio.join("script-output/data-raw-dump.json");
+    let data_raw = DataRaw::load(&dump_path).unwrap();
 
     println!("loaded prototype data");
 
-    // // =====[  RENDER TEST  ]=====
-    let data = prototypes::DataUtil::new(data_raw);
+    // =====[  RENDER TEST  ]=====
+    let data = DataUtil::new(data_raw);
 
     match render_bp(bp, &data, &cli.factorio, &used_mods, &mut ImageCache::new()) {
         Some((img, scale, (shift_x, shift_y))) => {
@@ -96,7 +162,8 @@ fn main() {
         None => println!("EMPTY BP!"),
     }
 
-    // restore previous settings
+    // restore previous modlist & settings
+    old_mod_list.save().unwrap();
     old_settings.save().unwrap();
 }
 
@@ -351,4 +418,22 @@ fn render_bp(
     println!("entities: {}, layers: {}", bp.entities.len(), renders.len());
 
     merge_renders(renders.as_slice())
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct PlayerData {
+    #[serde(rename = "service-username")]
+    username: Option<String>,
+
+    #[serde(rename = "service-token")]
+    token: Option<String>,
+}
+
+impl PlayerData {
+    pub fn load(path: &Path) -> Option<Self> {
+        let mut bytes = Vec::new();
+        fs::File::open(path).ok()?.read_to_end(&mut bytes).ok()?;
+        serde_json::from_slice(&bytes).ok()
+    }
 }

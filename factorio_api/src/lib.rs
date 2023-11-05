@@ -82,9 +82,8 @@ pub mod blocking {
         mod_name: &str,
         version: &str,
         username: &str,
-        password: &str,
+        token: &str,
     ) -> Option<Vec<u8>> {
-        let auth_res = auth(username, password)?;
         let mod_info = short_info(mod_name)?;
 
         for release in mod_info.releases {
@@ -95,8 +94,8 @@ pub mod blocking {
             let client = reqwest::blocking::Client::new();
             let res = client
                 .get(format!(
-                    "https://mods.factorio.com{}?username={}&token={}",
-                    release.download_url, auth_res.username, auth_res.token
+                    "https://mods.factorio.com{}?username={username}&token={token}",
+                    release.download_url
                 ))
                 .send()
                 .ok()?;
@@ -105,6 +104,17 @@ pub mod blocking {
         }
 
         None
+    }
+
+    #[must_use]
+    pub fn fetch_mod_with_password(
+        mod_name: &str,
+        version: &str,
+        username: &str,
+        password: &str,
+    ) -> Option<Vec<u8>> {
+        let auth_res = auth(username, password)?;
+        fetch_mod(mod_name, version, &auth_res.username, &auth_res.token)
     }
 
     #[cfg(test)]
@@ -668,9 +678,8 @@ pub async fn fetch_mod(
     mod_name: &str,
     version: &str,
     username: &str,
-    password: &str,
+    token: &str,
 ) -> Option<Vec<u8>> {
-    let auth_res = auth(username, password).await?;
     let mod_info = short_info(mod_name).await?;
 
     for release in mod_info.releases {
@@ -681,8 +690,8 @@ pub async fn fetch_mod(
         let client = reqwest::Client::new();
         let res = client
             .get(format!(
-                "https://mods.factorio.com{}?username={}&token={}",
-                release.download_url, auth_res.username, auth_res.token
+                "https://mods.factorio.com{}?username={username}&token={token}",
+                release.download_url,
             ))
             .send()
             .await
@@ -692,6 +701,17 @@ pub async fn fetch_mod(
     }
 
     None
+}
+
+#[must_use]
+pub async fn fetch_mod_with_password(
+    mod_name: &str,
+    version: &str,
+    username: &str,
+    password: &str,
+) -> Option<Vec<u8>> {
+    let auth_res = auth(username, password).await?;
+    fetch_mod(mod_name, version, &auth_res.username, &auth_res.token).await
 }
 
 #[cfg(test)]
