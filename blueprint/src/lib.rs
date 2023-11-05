@@ -616,9 +616,13 @@ pub enum Connection {
         #[serde(rename = "2")]
         two: ConnectionPoint,
     },
-    Single {
+    SingleOne {
         #[serde(rename = "1")]
         one: ConnectionPoint,
+    },
+    SingleTwo {
+        #[serde(rename = "2")]
+        two: ConnectionPoint,
     },
 }
 
