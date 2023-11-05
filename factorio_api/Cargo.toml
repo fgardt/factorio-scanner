@@ -8,7 +8,11 @@ edition.workspace = true
 blocking = ["reqwest/blocking"]
 
 [dependencies]
-reqwest = { version = "0.11.22", features = ["rustls-tls", "multipart"], default-features = false }
+mod_util.workspace = true
+reqwest = { version = "0.11.22", features = [
+    "rustls-tls",
+    "multipart",
+], default-features = false }
 serde.workspace = true
 serde_json.workspace = true
 

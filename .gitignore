@@ -2,4 +2,6 @@
 
 /target
 dumps
-/render_test
+
+*.png
+test_bp/
