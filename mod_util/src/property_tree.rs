@@ -177,14 +177,17 @@ impl PropertyTree {
         Ok(())
     }
 
+    #[must_use]
     pub const fn is_list(&self) -> bool {
         matches!(self, Self::List(_))
     }
 
+    #[must_use]
     pub const fn is_dict(&self) -> bool {
         matches!(self, Self::Dictionary(_))
     }
 
+    #[must_use]
     pub const fn as_list(&self) -> Option<&Vec<Self>> {
         match self {
             Self::List(val) => Some(val),
@@ -199,14 +202,15 @@ impl PropertyTree {
         }
     }
 
-    pub const fn as_dict(&self) -> Option<&HashMap<String, Self>> {
+    #[must_use]
+    pub const fn as_dictionary(&self) -> Option<&HashMap<String, Self>> {
         match self {
             Self::Dictionary(val) => Some(val),
             _ => None,
         }
     }
 
-    pub fn as_dict_mut(&mut self) -> Option<&mut HashMap<String, Self>> {
+    pub fn as_dictionary_mut(&mut self) -> Option<&mut HashMap<String, Self>> {
         match self {
             Self::Dictionary(val) => Some(val),
             _ => None,

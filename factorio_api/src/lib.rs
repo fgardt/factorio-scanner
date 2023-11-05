@@ -471,11 +471,19 @@ mod portal {
     }
 
     #[derive(Debug, Deserialize, Serialize)]
+    pub struct InfoJson {
+        pub factorio_version: String,
+
+        #[serde(default)]
+        pub dependencies: Vec<mod_util::mod_info::Dependency>,
+    }
+
+    #[derive(Debug, Deserialize, Serialize)]
     pub struct ModRelease {
         pub download_url: String,
         pub file_name: String,
 
-        // pub info_json: ModInfoJsonObject
+        pub info_json: InfoJson,
         pub released_at: String,
         pub version: String,
 
@@ -485,7 +493,7 @@ mod portal {
     #[derive(Debug, Deserialize, Serialize)]
     #[serde(untagged)]
     pub enum PortalSearchReleaseKind {
-        Latest { latest_release: ModRelease },
+        Latest { latest_release: Box<ModRelease> },
         All { releases: Vec<ModRelease> },
     }
 

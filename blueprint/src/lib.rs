@@ -20,119 +20,80 @@ use types::{ArithmeticOperation, Comparator, Direction, ItemCountType, ItemStack
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case", deny_unknown_fields)]
 pub enum Data {
-    BlueprintBook {
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        icons: Vec<Icon>,
-
-        blueprints: Vec<BookData>,
-        active_index: u16,
-
-        #[serde(flatten)]
-        info: Common,
-    },
-    Blueprint {
-        #[serde(default, skip_serializing_if = "String::is_empty")]
-        description: String,
-
-        #[serde(flatten)]
-        snapping: SnapData,
-
-        icons: Vec<Icon>,
-
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        entities: Vec<Entity>,
-
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        tiles: Vec<Tile>,
-
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        schedules: Vec<Schedule>,
-
-        #[serde(flatten)]
-        info: Common,
-    },
+    BlueprintBook(Book),
+    Blueprint(Box<Blueprint>),
 }
 
 impl Data {
     #[must_use]
     pub const fn get_info(&self) -> &Common {
         match self {
-            Self::Blueprint { info, .. } | Self::BlueprintBook { info, .. } => info,
+            Self::Blueprint(data) => &data.info,
+            Self::BlueprintBook(data) => &data.info,
         }
     }
 
     #[must_use]
-    pub fn get_first_bp(&self) -> Option<&Self> {
+    pub const fn is_book(&self) -> bool {
+        matches!(self, Self::BlueprintBook { .. })
+    }
+
+    #[must_use]
+    pub const fn is_blueprint(&self) -> bool {
+        matches!(self, Self::Blueprint { .. })
+    }
+
+    #[must_use]
+    pub const fn as_book(&self) -> Option<&Book> {
         match self {
-            Self::Blueprint { .. } => Some(self),
-            Self::BlueprintBook { blueprints, .. } => blueprints
-                .first()
-                .as_ref()
-                .and_then(|b| b.data.get_first_bp()),
+            Self::Blueprint(_) => None,
+            Self::BlueprintBook(data) => Some(data),
+        }
+    }
+
+    pub fn as_book_mut(&mut self) -> Option<&mut Book> {
+        match self {
+            Self::Blueprint(_) => None,
+            Self::BlueprintBook(data) => Some(data),
         }
     }
 
     #[must_use]
-    pub fn get_used_mods(&self) -> Option<HashMap<&str, &str>> {
-        let tmp = self.get_first_bp()?;
-        match tmp {
-            Self::BlueprintBook { .. } => unreachable!("There should be no BP book here!"),
-            Self::Blueprint { entities, .. } => {
-                for entity in entities {
-                    if entity.tags.contains_key("bp_meta_info") {
-                        let info = entity.tags.get("bp_meta_info")?;
+    pub const fn as_blueprint(&self) -> Option<&Blueprint> {
+        match self {
+            Self::Blueprint(data) => Some(data),
+            Self::BlueprintBook(_) => None,
+        }
+    }
 
-                        let AnyBasic::Table(data) = info else {
-                            continue;
-                        };
-
-                        let mods = data.get("mods")?;
-
-                        let AnyBasic::Table(mods) = mods else {
-                            continue;
-                        };
-
-                        let mut result = HashMap::with_capacity(mods.len());
-
-                        for (mod_name, mod_version) in mods {
-                            let AnyBasic::String(mod_version) = mod_version else {
-                                continue;
-                            };
-                            result.insert(mod_name.as_str(), mod_version.as_str());
-                        }
-
-                        return Some(result);
-                    }
-                }
-
-                None
-            }
+    pub fn as_blueprint_mut(&mut self) -> Option<&mut Blueprint> {
+        match self {
+            Self::Blueprint(data) => Some(data),
+            Self::BlueprintBook(_) => None,
         }
     }
 
     fn normalize_positions(&mut self) {
         match self {
-            Self::BlueprintBook { blueprints, .. } => {
-                for blueprint in blueprints {
-                    blueprint.data.normalize_positions();
+            Self::BlueprintBook(data) => {
+                for entry in &mut data.blueprints {
+                    entry.data.normalize_positions();
                 }
             }
-            Self::Blueprint {
-                entities, tiles, ..
-            } => {
+            Self::Blueprint(data) => {
                 let mut min_x = f32::MAX;
                 let mut min_y = f32::MAX;
                 let mut max_x = f32::MIN;
                 let mut max_y = f32::MIN;
 
-                for entity in &*entities {
+                for entity in &*data.entities {
                     min_x = min_x.min(entity.position.x);
                     min_y = min_y.min(entity.position.y);
                     max_x = max_x.max(entity.position.x);
                     max_y = max_y.max(entity.position.y);
                 }
 
-                for tile in &*tiles {
+                for tile in &*data.tiles {
                     min_x = min_x.min(tile.position.x);
                     min_y = min_y.min(tile.position.y);
                     max_x = max_x.max(tile.position.x);
@@ -144,12 +105,12 @@ impl Data {
                 let offset_x = (min_x + width).round();
                 let offset_y = (min_y + height).round();
 
-                for entity in entities {
+                for entity in &mut data.entities {
                     entity.position.x -= offset_x;
                     entity.position.y -= offset_y;
                 }
 
-                for tile in tiles {
+                for tile in &mut data.tiles {
                     tile.position.x -= offset_x;
                     tile.position.y -= offset_y;
                 }
@@ -159,16 +120,16 @@ impl Data {
 
     fn ensure_ordering(&mut self) {
         match self {
-            Self::BlueprintBook { blueprints, .. } => {
-                for blueprint in blueprints {
-                    blueprint.data.ensure_ordering();
+            Self::BlueprintBook(data) => {
+                for entry in &mut data.blueprints {
+                    entry.data.ensure_ordering();
                 }
             }
-            Self::Blueprint {
-                entities, tiles, ..
-            } => {
-                entities.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-                tiles.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            Self::Blueprint(data) => {
+                data.entities
+                    .sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+                data.tiles
+                    .sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
             }
         }
     }
@@ -248,11 +209,105 @@ impl TryFrom<Data> for String {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
+pub struct Book {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub icons: Vec<Icon>,
+
+    pub blueprints: Vec<BookEntry>,
+    pub active_index: u16,
+
+    #[serde(flatten)]
+    pub info: Common,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
-pub struct BookData {
+pub struct BookEntry {
     #[serde(flatten)]
     pub data: Data,
     pub index: u16,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Blueprint {
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub description: String,
+
+    #[serde(flatten)]
+    pub snapping: SnapData,
+
+    pub icons: Vec<Icon>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub entities: Vec<Entity>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tiles: Vec<Tile>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub schedules: Vec<Schedule>,
+
+    #[serde(flatten)]
+    pub info: Common,
+}
+
+impl Blueprint {
+    #[must_use]
+    pub fn get_used_mods(&self) -> Option<HashMap<&str, &str>> {
+        for entity in &self.entities {
+            if entity.tags.contains_key("bp_meta_info") {
+                let info = entity.tags.get("bp_meta_info")?;
+
+                let AnyBasic::Table(data) = info else {
+                    continue;
+                };
+
+                let mods = data.get("mods")?;
+
+                let AnyBasic::Table(mods) = mods else {
+                    continue;
+                };
+
+                let mut result = HashMap::with_capacity(mods.len());
+
+                for (mod_name, mod_version) in mods {
+                    let AnyBasic::String(mod_version) = mod_version else {
+                        continue;
+                    };
+                    result.insert(mod_name.as_str(), mod_version.as_str());
+                }
+
+                return Some(result);
+            }
+        }
+
+        None
+    }
+
+    #[must_use]
+    pub fn get_used_startup_settings(&self) -> Option<&HashMap<String, AnyBasic>> {
+        for entity in &self.entities {
+            if entity.tags.contains_key("bp_meta_info") {
+                let info = entity.tags.get("bp_meta_info")?;
+
+                let AnyBasic::Table(data) = info else {
+                    continue;
+                };
+
+                let settings = data.get("startup")?;
+
+                let AnyBasic::Table(settings) = settings else {
+                    continue;
+                };
+
+                return Some(settings);
+            }
+        }
+
+        None
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
