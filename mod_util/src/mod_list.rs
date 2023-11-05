@@ -92,7 +92,6 @@ impl<'a> ModList<'a> {
         Some(Self { mods_folder, list })
     }
 
-    #[must_use]
     pub fn generate(mods_folder: &'a Path) -> Result<Self> {
         let filename_extractor = regex::Regex::new(r"^(.+?)(?:_(\d+\.\d+\.\d+)(?:\.zip)?)?$")?;
 
