@@ -290,7 +290,7 @@ impl super::Renderable for FluidTurretData {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AnimatedVector {
-    pub rotations: Vec<VectorRotation>,
+    pub rotations: FactorioArray<VectorRotation>,
 
     pub render_layer: Option<RenderLayer>,
     pub direction_shift: Option<DirectionShift>,
@@ -299,7 +299,7 @@ pub struct AnimatedVector {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VectorRotation {
-    pub frames: Vec<Vector>,
+    pub frames: FactorioArray<Vector>,
     pub render_layer: Option<RenderLayer>,
 }
 

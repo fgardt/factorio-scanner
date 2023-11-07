@@ -401,10 +401,10 @@ pub struct TransportBeltData {
     pub draw_circuit_wires: bool,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub circuit_wire_connection_points: Vec<WireConnectionPoint>,
+    pub circuit_wire_connection_points: FactorioArray<WireConnectionPoint>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub circuit_connector_sprites: Vec<CircuitConnectorSprites>,
+    pub circuit_connector_sprites: FactorioArray<CircuitConnectorSprites>,
 
     pub related_underground_belt: Option<EntityID>,
 }

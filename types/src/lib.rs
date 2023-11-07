@@ -12,13 +12,29 @@
     clippy::module_name_repetitions
 )]
 
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, fmt, path::Path};
 
+use konst::{primitive::parse_u16, result::unwrap_ctx};
+
+use mod_util::{mod_info::Version, UsedMods};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
+
+#[must_use]
+pub const fn targeted_engine_version() -> Version {
+    Version::new(
+        unwrap_ctx!(parse_u16(env!("CARGO_PKG_VERSION_MAJOR"))),
+        unwrap_ctx!(parse_u16(env!("CARGO_PKG_VERSION_MINOR"))),
+        unwrap_ctx!(parse_u16(env!("CARGO_PKG_VERSION_PATCH"))),
+    )
+}
+
+mod empty_array_fix;
+
+pub use empty_array_fix::*;
 
 mod energy;
 mod graphics;
@@ -122,7 +138,66 @@ pub struct StatusColors {
 }
 
 /// [`Types/Vector`](https://lua-api.factorio.com/latest/types/Vector.html)
-pub type Vector = (f64, f64);
+#[derive(Debug, Serialize, Deserialize, Copy, Clone)]
+#[serde(untagged)]
+pub enum Vector {
+    Tuple(f64, f64),
+    Struct { x: f64, y: f64 },
+}
+
+impl Vector {
+    #[must_use]
+    pub const fn new(x: f64, y: f64) -> Self {
+        Self::Tuple(x, y)
+    }
+
+    #[must_use]
+    pub const fn x(&self) -> f64 {
+        match self {
+            Self::Tuple(x, _) | Self::Struct { x, .. } => *x,
+        }
+    }
+
+    #[must_use]
+    pub const fn y(&self) -> f64 {
+        match self {
+            Self::Tuple(_, y) | Self::Struct { y, .. } => *y,
+        }
+    }
+
+    #[must_use]
+    pub const fn as_tuple(&self) -> (f64, f64) {
+        match self {
+            Self::Tuple(x, y) | Self::Struct { x, y } => (*x, *y),
+        }
+    }
+}
+
+impl Default for Vector {
+    fn default() -> Self {
+        Self::Tuple(Default::default(), Default::default())
+    }
+}
+
+impl From<(f64, f64)> for Vector {
+    fn from((x, y): (f64, f64)) -> Self {
+        Self::Tuple(x, y)
+    }
+}
+
+impl From<Vector> for (f64, f64) {
+    fn from(vector: Vector) -> Self {
+        vector.as_tuple()
+    }
+}
+
+impl fmt::Display for Vector {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (x, y) = self.as_tuple();
+
+        write!(f, "({x}, {y})")
+    }
+}
 
 /// [`Types/Vector3D`](https://lua-api.factorio.com/latest/types/Vector3D.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -163,7 +238,7 @@ impl FileName {
     pub fn load<'a>(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &'a mut ImageCache,
     ) -> Option<&'a image::DynamicImage> {
         const VANILLA_MODS: [&str; 2] = ["core", "base"];
@@ -184,7 +259,7 @@ impl FileName {
         } else {
             // TODO: support unzipped mods?
 
-            let mod_version = used_mods.get(&mod_name)?;
+            let mod_version = used_mods.get(mod_name)?;
             let mod_zip_path = factorio_dir
                 .join("mods")
                 .join(format!("{mod_name}_{mod_version}.zip"));
@@ -231,7 +306,7 @@ impl FileName {
 pub enum LocalisedString {
     Bool(bool),
     String(String),
-    Array(Vec<LocalisedString>),
+    Array(FactorioArray<LocalisedString>),
 }
 
 /// [`Types/Order`](https://lua-api.factorio.com/latest/types/Order.html)
@@ -251,7 +326,7 @@ pub enum FuelCategory {
         fuel_category: FuelCategoryID,
     },
     Multi {
-        fuel_categories: Vec<FuelCategoryID>,
+        fuel_categories: FactorioArray<FuelCategoryID>,
     },
 }
 
@@ -275,7 +350,7 @@ pub enum PipeConnectionType {
 #[serde(untagged)]
 pub enum PipeConnectionDefinition {
     Multi {
-        positions: Vec<Vector>,
+        positions: FactorioArray<Vector>,
 
         #[serde(
             default,
@@ -358,7 +433,7 @@ pub enum FluidBoxSecondaryDrawOrders {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FluidBox {
-    pub pipe_connections: EmptyArrayFix<PipeConnectionDefinition>,
+    pub pipe_connections: FactorioArray<PipeConnectionDefinition>,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub base_area: f64,
@@ -437,7 +512,7 @@ pub struct ItemToPlace {
 #[serde(untagged)]
 pub enum PlaceableBy {
     Single(ItemToPlace),
-    Multiple(Vec<ItemToPlace>),
+    Multiple(FactorioArray<ItemToPlace>),
 }
 
 /// [`Types/ModuleSpecification`](https://lua-api.factorio.com/latest/types/ModuleSpecification.html)
@@ -483,11 +558,11 @@ pub enum EffectType {
 #[serde(untagged)]
 pub enum EffectTypeLimitation {
     Single(EffectType),
-    Multiple(EmptyArrayFix<EffectType>),
+    Multiple(FactorioArray<EffectType>),
 }
 
 /// [`Types/CollisionMask`](https://lua-api.factorio.com/latest/types/CollisionMask.html)
-pub type CollisionMask = EmptyArrayFix<String>;
+pub type CollisionMask = FactorioArray<String>;
 
 /// [`Types/EntityID`](https://lua-api.factorio.com/latest/types/EntityID.html)
 pub type EntityID = String;
@@ -525,17 +600,8 @@ pub enum EntityPrototypeFlag {
     NotInMadeIn,
 }
 
-/// <https://forums.factorio.com/viewtopic.php?t=109077>
-#[allow(clippy::zero_sized_map_values)]
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum EmptyArrayFix<T> {
-    Flags(Vec<T>),
-    Empty(HashMap<(), ()>),
-}
-
 /// [`Types/EntityPrototypeFlags`](https://lua-api.factorio.com/latest/types/EntityPrototypeFlags.html)
-pub type EntityPrototypeFlags = EmptyArrayFix<EntityPrototypeFlag>;
+pub type EntityPrototypeFlags = FactorioArray<EntityPrototypeFlag>;
 
 /// [`Types/MapPosition`](https://lua-api.factorio.com/latest/types/MapPosition.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -671,12 +737,12 @@ impl Direction {
         };
 
         let (x, y) = if swap {
-            (vector.1, vector.0)
+            (vector.y(), vector.x())
         } else {
-            (vector.0, vector.1)
+            (vector.x(), vector.y())
         };
 
-        (x * x_fac, y * y_fac)
+        Vector::new(x * x_fac, y * y_fac)
     }
 
     #[must_use]
@@ -754,7 +820,7 @@ pub struct Resistance {
 }
 
 /// [`Types/Resistances`](https://lua-api.factorio.com/latest/types/Resistances.html)
-pub type Resistances = EmptyArrayFix<Resistance>;
+pub type Resistances = FactorioArray<Resistance>;
 
 /// [`Types/RadiusVisualisationSpecification`](https://lua-api.factorio.com/latest/types/RadiusVisualisationSpecification.html)
 #[skip_serializing_none]
@@ -816,7 +882,7 @@ pub struct LightDefinitionData {
 #[serde(untagged)]
 pub enum LightDefinition {
     Struct(LightDefinitionData),
-    Array(Vec<LightDefinitionData>),
+    Array(FactorioArray<LightDefinitionData>),
 }
 
 /// [`Types/CircuitConnectorSprites`](https://lua-api.factorio.com/latest/types/CircuitConnectorSprites.html)
@@ -930,7 +996,7 @@ pub struct BeaconModuleVisualizations {
     pub tier_offset: i32,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub slots: Vec<Vec<BeaconModuleVisualization>>,
+    pub slots: FactorioArray<FactorioArray<BeaconModuleVisualization>>,
 }
 
 /// [`Types/BeaconGraphicsSet`](https://lua-api.factorio.com/latest/types/BeaconGraphicsSet.html)
@@ -976,12 +1042,12 @@ pub struct BeaconGraphicsSet {
     pub no_modules_tint: Option<Color>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub animation_list: Vec<AnimationElement>,
+    pub animation_list: FactorioArray<AnimationElement>,
 
     pub light: Option<LightDefinition>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub module_visualisations: Vec<BeaconModuleVisualizations>,
+    pub module_visualisations: FactorioArray<BeaconModuleVisualizations>,
 
     /// TODO: skip serializing if is default
     #[serde(default)]
@@ -1008,7 +1074,7 @@ impl RenderableGraphics for BeaconGraphicsSet {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -1038,10 +1104,10 @@ pub struct PumpConnectorGraphicsAnimation {
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PumpConnectorGraphics {
-    pub north: Vec<PumpConnectorGraphicsAnimation>,
-    pub east: Vec<PumpConnectorGraphicsAnimation>,
-    pub south: Vec<PumpConnectorGraphicsAnimation>,
-    pub west: Vec<PumpConnectorGraphicsAnimation>,
+    pub north: FactorioArray<PumpConnectorGraphicsAnimation>,
+    pub east: FactorioArray<PumpConnectorGraphicsAnimation>,
+    pub south: FactorioArray<PumpConnectorGraphicsAnimation>,
+    pub west: FactorioArray<PumpConnectorGraphicsAnimation>,
 }
 
 /// [`Types/CharacterArmorAnimation`](https://lua-api.factorio.com/latest/types/CharacterArmorAnimation.html)
@@ -1056,7 +1122,7 @@ pub struct CharacterArmorAnimation {
     pub flipped_shadow_running_with_gun: Option<RotatedAnimation>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub armors: Vec<String>,
+    pub armors: FactorioArray<String>,
 }
 
 /// [`Types/TransportBeltAnimationSet`](https://lua-api.factorio.com/latest/types/TransportBeltAnimationSet.html)
@@ -1172,7 +1238,7 @@ impl RenderableGraphics for TransportBeltAnimationSet {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -1257,7 +1323,7 @@ impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -1417,7 +1483,7 @@ impl RenderableGraphics for WorkingVisualisation {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -1479,7 +1545,7 @@ impl RenderableGraphics for WorkingVisualisationAnimation {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -1577,7 +1643,7 @@ pub struct HeatBuffer {
     pub heat_glow: Option<Sprite4Way>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub connections: Vec<HeatConnection>,
+    pub connections: FactorioArray<HeatConnection>,
 }
 
 /// [`Types/ConnectableEntityGraphics`](https://lua-api.factorio.com/latest/types/ConnectableEntityGraphics.html)
@@ -1777,7 +1843,7 @@ pub struct MiningDrillGraphicsSet {
     pub default_recipe_tint: Option<Color>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub working_visualisations: Vec<WorkingVisualisation>,
+    pub working_visualisations: FactorioArray<WorkingVisualisation>,
 
     pub shift_animation_waypoints: Option<ShiftAnimationWaypoints>,
 
@@ -1842,7 +1908,7 @@ impl RenderableGraphics for MiningDrillGraphicsSet {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {

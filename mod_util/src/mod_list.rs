@@ -10,12 +10,14 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
+use crate::mod_info::Version;
+
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 struct ModEntry {
     pub name: String,
     pub enabled: bool,
-    pub version: Option<String>,
+    pub version: Option<Version>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -35,8 +37,8 @@ impl ModListFormat {
 #[derive(Debug, Clone)]
 pub struct Entry {
     pub enabled: bool,
-    pub versions: HashMap<String, String>,
-    pub active_version: Option<String>,
+    pub versions: HashMap<Version, String>,
+    pub active_version: Option<Version>,
 }
 
 #[derive(Debug, Clone)]
@@ -53,7 +55,7 @@ impl<'a> From<&ModList<'a>> for ModListFormat {
             mods.push(ModEntry {
                 name: name.clone(),
                 enabled: entry.enabled,
-                version: entry.active_version.clone(),
+                version: entry.active_version.map(Into::into),
             });
         }
 
@@ -70,14 +72,16 @@ impl<'a> From<ModList<'a>> for ModListFormat {
 impl<'a> ModList<'a> {
     #[must_use]
     pub fn load(mods_folder: &'a Path) -> Option<Self> {
-        let tmp = ModListFormat::load(&mods_folder.join("mod-list.json"))?;
-        let mut list = HashMap::new();
+        let Some(tmp) = ModListFormat::load(&mods_folder.join("mod-list.json")) else {
+            return Self::generate(mods_folder).ok();
+        };
 
+        let mut list = HashMap::new();
         for entry in tmp.mods {
             let versions = entry
                 .version
                 .as_ref()
-                .map_or_else(Vec::new, |v| vec![(v.clone(), String::new())]); // the filename is just "" since we cant know it here :/
+                .map_or_else(Vec::new, |v| vec![(*v, String::new())]); // the filename is just "" since we cant know it here :/
 
             list.insert(
                 entry.name.clone(),
@@ -126,22 +130,47 @@ impl<'a> ModList<'a> {
             };
             let version = extracted.get(2).map(|v| v.as_str().to_owned());
 
-            let version = if path.is_file() && filename.to_lowercase().ends_with(".zip") {
+            let version: Version = if path.is_file() && filename.to_lowercase().ends_with(".zip")
+                || version.is_some()
+            {
                 match version {
-                    Some(version) => version,
+                    Some(version) => match version.try_into() {
+                        Ok(version) => version,
+                        Err(e) => {
+                            println!(
+                                "Failed to parse version for mod {name} at {}: {e}",
+                                path.to_string_lossy()
+                            );
+                            continue;
+                        }
+                    },
                     None => continue, // should not happen
                 }
             } else if path.is_dir() {
-                if let Some(version) = version {
-                    version
-                } else {
-                    let Ok(info_file) = fs::read_to_string(path.join("info.json")) else {
-                        continue;
-                    };
+                let Ok(info_file) = fs::read_to_string(path.join("info.json")) else {
+                    continue;
+                };
 
-                    if let Ok(info) = serde_json::from_str::<crate::mod_info::ModInfo>(&info_file) {
-                        info.version
-                    } else {
+                match serde_json::from_str::<crate::mod_info::ModInfo>(&info_file) {
+                    Ok(info) => info.version,
+                    Err(e) => {
+                        println!(
+                            "Failed to parse info.json for mod {name} at {}: {e}",
+                            path.to_string_lossy()
+                        );
+
+                        // make sure the mod is disabled if its the only version
+                        if !list.contains_key(&name) {
+                            list.insert(
+                                name.clone(),
+                                Entry {
+                                    enabled: false,
+                                    versions: HashMap::new(),
+                                    active_version: None,
+                                },
+                            );
+                        }
+
                         continue;
                     }
                 }
@@ -194,16 +223,8 @@ impl<'a> ModList<'a> {
         self.list.get_mut(name)
     }
 
-    #[cfg(feature = "bp_meta_info")]
     #[must_use]
-    pub fn enable_used_mods<'bp>(
-        &mut self,
-        bp: &'bp blueprint::Blueprint,
-    ) -> Vec<(&'bp str, &'bp str)> {
-        let Some(used_mods) = bp.get_used_mods() else {
-            return Vec::new();
-        };
-
+    pub fn enable_used_mods(&mut self, used_mods: &crate::UsedMods) -> Vec<(String, Version)> {
         let mut missing = Vec::new();
 
         for (name, version) in used_mods {
@@ -214,14 +235,14 @@ impl<'a> ModList<'a> {
 
             if let Some(entry) = self.list.get_mut(name) {
                 entry.enabled = true;
-                entry.active_version = Some(version.to_owned());
+                entry.active_version = Some(*version);
 
                 if !entry.versions.contains_key(version) {
-                    missing.push((name, version));
+                    missing.push((name.clone(), *version));
                 }
             } else {
                 self.list.insert(
-                    name.to_owned(),
+                    name.clone(),
                     Entry {
                         enabled: true,
                         versions: HashMap::new(),
@@ -229,7 +250,7 @@ impl<'a> ModList<'a> {
                     },
                 );
 
-                missing.push((name, version));
+                missing.push((name.clone(), *version));
             }
         }
 
