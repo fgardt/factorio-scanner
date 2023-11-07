@@ -31,7 +31,7 @@ pub struct ProgrammableSpeakerData {
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub maximum_polyphony: u32,
 
-    pub instruments: Vec<ProgrammableSpeakerInstrument>,
+    pub instruments: FactorioArray<ProgrammableSpeakerInstrument>,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub audible_distance_modifier: f64, // docs specify single precision float
@@ -68,7 +68,7 @@ impl super::Renderable for ProgrammableSpeakerData {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProgrammableSpeakerInstrument {
     pub name: String,
-    pub notes: Vec<ProgrammableSpeakerNote>,
+    pub notes: FactorioArray<ProgrammableSpeakerNote>,
 }
 
 // TODO: move this to sound type module

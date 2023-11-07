@@ -63,7 +63,7 @@ pub struct LampData {
     pub always_on: bool,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub signal_to_color_mapping: Vec<SignalColorMapping>,
+    pub signal_to_color_mapping: FactorioArray<SignalColorMapping>,
 
     // TODO: skip serializing if default
     #[serde(default)]

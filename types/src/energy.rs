@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
+use crate::FactorioArray;
+
 use super::{helper, Direction, FluidBox, FuelCategory, MapPosition, Sprite4Way};
 
 /// [`Types/Energy`](https://lua-api.factorio.com/latest/types/Energy.html)
@@ -37,7 +39,7 @@ pub struct BurnerEnergySourceData {
     pub burnt_inventory_size: super::ItemStackIndex,
 
     // #[serde(default, skip_serializing_if = "Vec::is_empty"))]
-    // smoke: Vec<SmokeSource>,
+    // smoke: FactorioArray<SmokeSource>,
     // light_flicker: Option<LightFlickeringDefinition>,
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub effectivity: f64,
@@ -70,7 +72,7 @@ pub struct FluidEnergySourceData {
     pub fluid_box: FluidBox,
 
     // #[serde(default, skip_serializing_if = "Vec::is_empty"))]
-    // pub smoke: Vec<SmokeSource>,
+    // pub smoke: FactorioArray<SmokeSource>,
     // pub light_flicker: Option<LightFlickeringDefinition>,
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub effectivity: f64,
@@ -119,7 +121,7 @@ pub struct HeatEnergySourceData {
     pub heat_glow: Option<Sprite4Way>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub connections: Vec<HeatConnection>,
+    pub connections: FactorioArray<HeatConnection>,
 }
 
 /// [`Types/HeatEnergySource`](https://lua-api.factorio.com/latest/types/HeatEnergySource.html)

@@ -1,13 +1,14 @@
-use std::{collections::HashMap, path::Path};
+use std::path::Path;
 
 use image::{
     imageops::{self, FilterType},
     DynamicImage, GenericImageView, Rgba,
 };
+use mod_util::UsedMods;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use crate::ImageCache;
+use crate::{FactorioArray, ImageCache};
 
 use super::{helper, Color, Direction, FileName, Vector};
 
@@ -72,7 +73,7 @@ pub enum SpriteFlag {
 }
 
 /// [`Types/SpriteFlags`](https://lua-api.factorio.com/latest/types/SpriteFlags.html)
-pub type SpriteFlags = Vec<SpriteFlag>;
+pub type SpriteFlags = FactorioArray<SpriteFlag>;
 
 /// [`Types/SpriteSizeType`](https://lua-api.factorio.com/latest/types/SpriteSizeType.html)
 pub type SpriteSizeType = i16;
@@ -164,7 +165,7 @@ pub trait FetchSprite {
         &self,
         factorio_dir: &Path,
         filename: &FileName,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
     ) -> Option<GraphicsOutput>;
@@ -173,7 +174,7 @@ pub trait FetchSprite {
         &self,
         factorio_dir: &Path,
         filename: &FileName,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
         offset: (i16, i16),
@@ -183,7 +184,7 @@ pub trait FetchSprite {
         &self,
         factorio_dir: &Path,
         filename: &FileName,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
         offset: (i16, i16),
@@ -200,7 +201,7 @@ pub trait RenderableGraphics {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput>;
@@ -209,7 +210,7 @@ pub trait RenderableGraphics {
 pub fn merge_layers<O, T: RenderableGraphics<RenderOpts = O>>(
     layers: &[T],
     factorio_dir: &Path,
-    used_mods: &HashMap<&str, &str>,
+    used_mods: &UsedMods,
     image_cache: &mut ImageCache,
     opts: &O,
 ) -> Option<GraphicsOutput> {
@@ -240,7 +241,8 @@ pub fn merge_renders(renders: &[Option<GraphicsOutput>]) -> Option<GraphicsOutpu
     let mut max_y = f64::MIN;
     let mut min_scale = f64::MAX;
 
-    for (img, scale, (shift_x, shift_y)) in &renders {
+    for (img, scale, shift) in &renders {
+        let (shift_x, shift_y) = shift.as_tuple();
         let (width, height) = img.dimensions();
         let width = f64::from(width) * scale / TILE_RES;
         let height = f64::from(height) * scale / TILE_RES;
@@ -274,7 +276,8 @@ pub fn merge_renders(renders: &[Option<GraphicsOutput>]) -> Option<GraphicsOutpu
 
     let mut combined = DynamicImage::new_rgba8(width.ceil() as u32, height.ceil() as u32);
 
-    for (img, scale, (shift_x, shift_y)) in &renders {
+    for (img, scale, shift) in &renders {
+        let (shift_x, shift_y) = shift.as_tuple();
         let effective_scale = scale / min_scale;
         let (pre_width, pre_height) = img.dimensions();
         let scaled = img.resize(
@@ -283,13 +286,13 @@ pub fn merge_renders(renders: &[Option<GraphicsOutput>]) -> Option<GraphicsOutpu
             FilterType::Triangle,
         );
         let (post_width, post_height) = scaled.dimensions();
-        let x = center.0 - (f64::from(post_width) / 2.0) + (shift_x * px_per_tile);
-        let y = center.1 - (f64::from(post_height) / 2.0) + (shift_y * px_per_tile);
+        let x = shift_x.mul_add(px_per_tile, center.0 - (f64::from(post_width) / 2.0));
+        let y = shift_y.mul_add(px_per_tile, center.1 - (f64::from(post_height) / 2.0));
 
         imageops::overlay(&mut combined, &scaled, x.round() as i64, y.round() as i64);
     }
 
-    Some((combined, min_scale, res_shift))
+    Some((combined, min_scale, res_shift.into()))
 }
 
 /// [`Types/SpriteParameters`](https://lua-api.factorio.com/latest/types/SpriteParameters.html)
@@ -363,7 +366,7 @@ impl FetchSprite for SpriteParams {
         &self,
         factorio_dir: &Path,
         filename: &FileName,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
     ) -> Option<GraphicsOutput> {
@@ -381,7 +384,7 @@ impl FetchSprite for SpriteParams {
         &self,
         factorio_dir: &Path,
         filename: &FileName,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
         offset: (i16, i16),
@@ -401,7 +404,7 @@ impl FetchSprite for SpriteParams {
         &self,
         factorio_dir: &Path,
         filename: &FileName,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
         offset: (i16, i16),
@@ -489,7 +492,7 @@ pub enum SimpleGraphics<T: FetchSprite> {
         hr_version: Option<Box<Self>>,
     },
     Layered {
-        layers: Vec<Self>,
+        layers: FactorioArray<Self>,
     },
 }
 
@@ -504,7 +507,7 @@ impl<T: FetchSprite> RenderableGraphics for SimpleGraphics<T> {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -554,7 +557,7 @@ pub enum MultiFileGraphics<Single, Multi> {
         hr_version: Option<Box<Self>>,
     },
     Layered {
-        layers: Vec<Self>,
+        layers: FactorioArray<Self>,
     },
 }
 
@@ -568,7 +571,7 @@ where
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -608,7 +611,7 @@ impl RenderableGraphics for Sprite {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -672,7 +675,7 @@ impl RenderableGraphics for RotatedSpriteParams {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -705,7 +708,7 @@ impl RenderableGraphics for RotatedSpriteParams {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RotatedSpriteParamsMultiFile {
-    filenames: Vec<FileName>,
+    filenames: FactorioArray<FileName>,
 
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     direction_count: u16,
@@ -745,7 +748,7 @@ impl RenderableGraphics for RotatedSpriteParamsMultiFile {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -791,7 +794,7 @@ impl RenderableGraphics for RotatedSprite {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -838,7 +841,7 @@ impl RenderableGraphics for Sprite4WaySheet {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -892,7 +895,7 @@ impl RenderableGraphics for Sprite8WaySheet {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -922,7 +925,7 @@ impl RenderableGraphics for Sprite8WaySheet {
 pub enum Sprite4Way {
     Sprite(Sprite),
     Sheets {
-        sheets: Vec<Sprite4WaySheet>,
+        sheets: FactorioArray<Sprite4WaySheet>,
     },
     Sheet {
         sheet: Sprite4WaySheet,
@@ -941,7 +944,7 @@ impl RenderableGraphics for Sprite4Way {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -980,7 +983,7 @@ impl RenderableGraphics for Sprite4Way {
 #[serde(untagged)]
 pub enum Sprite8Way {
     Sheets {
-        sheets: Vec<Sprite8WaySheet>,
+        sheets: FactorioArray<Sprite8WaySheet>,
     },
     Sheet {
         sheet: Sprite8WaySheet,
@@ -1003,7 +1006,7 @@ impl RenderableGraphics for Sprite8Way {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -1066,7 +1069,7 @@ impl FetchSprite for SpriteSheetParams {
         &self,
         factorio_dir: &Path,
         filename: &FileName,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
     ) -> Option<GraphicsOutput> {
@@ -1078,7 +1081,7 @@ impl FetchSprite for SpriteSheetParams {
         &self,
         factorio_dir: &Path,
         filename: &FileName,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
         offset: (i16, i16),
@@ -1097,7 +1100,7 @@ impl FetchSprite for SpriteSheetParams {
         &self,
         factorio_dir: &Path,
         filename: &FileName,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
         offset: (i16, i16),
@@ -1130,7 +1133,7 @@ pub type SpriteSheet = SimpleGraphics<SpriteSheetParams>;
 pub enum SpriteVariations {
     Struct { sheet: SpriteSheet },
     SpriteSheet(SpriteSheet),
-    Array(Vec<Sprite>),
+    Array(FactorioArray<Sprite>),
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -1153,7 +1156,7 @@ impl RenderableGraphics for SpriteVariations {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -1241,7 +1244,7 @@ pub struct TileSpriteProbabilityParams {
     pub probability: f64,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub weights: Vec<f64>,
+    pub weights: FactorioArray<f64>,
 }
 
 /// [`Types/TileSpriteWithProbability`](https://lua-api.factorio.com/latest/types/TileSpriteWithProbability.html)
@@ -1265,7 +1268,7 @@ pub type TileTransitionSprite = TileGraphics<TileTransitionSpriteParams>;
 
 // TODO: truncating deserializer for arrays....
 /// [`Types/AnimationFrameSequence`](https://lua-api.factorio.com/latest/types/AnimationFrameSequence.html)
-pub type AnimationFrameSequence = Vec<u16>;
+pub type AnimationFrameSequence = FactorioArray<u16>;
 
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -1370,7 +1373,7 @@ impl FetchSprite for AnimationParams {
         &self,
         factorio_dir: &Path,
         filename: &FileName,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
     ) -> Option<GraphicsOutput> {
@@ -1382,7 +1385,7 @@ impl FetchSprite for AnimationParams {
         &self,
         factorio_dir: &Path,
         filename: &FileName,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
         offset: (i16, i16),
@@ -1401,7 +1404,7 @@ impl FetchSprite for AnimationParams {
         &self,
         factorio_dir: &Path,
         filename: &FileName,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
         offset: (i16, i16),
@@ -1489,7 +1492,7 @@ impl AnimationParams {
 #[serde(untagged)]
 pub enum Animation {
     Layered {
-        layers: Vec<Self>,
+        layers: FactorioArray<Self>,
     },
     Simple {
         filename: FileName,
@@ -1500,7 +1503,7 @@ pub enum Animation {
         hr_version: Option<Box<Self>>,
     },
     Striped {
-        stripes: Vec<Stripe>,
+        stripes: FactorioArray<Stripe>,
 
         #[serde(flatten)]
         data: Box<AnimationParams>,
@@ -1521,7 +1524,7 @@ impl RenderableGraphics for Animation {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -1659,7 +1662,7 @@ impl RenderableGraphics for Animation4Way {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -1731,7 +1734,7 @@ impl RenderableGraphics for AnimationElement {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -1764,9 +1767,13 @@ pub struct AnimationSheet {
 #[serde(untagged)]
 pub enum AnimationVariations {
     Animation(Animation),
-    Array(Vec<Animation>),
-    Sheet { sheet: AnimationSheet },
-    Sheets { sheets: Vec<AnimationSheet> },
+    Array(FactorioArray<Animation>),
+    Sheet {
+        sheet: AnimationSheet,
+    },
+    Sheets {
+        sheets: FactorioArray<AnimationSheet>,
+    },
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -1791,7 +1798,7 @@ impl RenderableGraphics for AnimationVariations {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -1814,10 +1821,10 @@ impl RenderableGraphics for AnimationVariations {
 /// [`Types/ShiftAnimationWaypoints`](https://lua-api.factorio.com/latest/types/ShiftAnimationWaypoints.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ShiftAnimationWaypoints {
-    pub north: Vec<Vector>,
-    pub east: Vec<Vector>,
-    pub south: Vec<Vector>,
-    pub west: Vec<Vector>,
+    pub north: FactorioArray<Vector>,
+    pub east: FactorioArray<Vector>,
+    pub south: FactorioArray<Vector>,
+    pub west: FactorioArray<Vector>,
 }
 
 #[skip_serializing_none]
@@ -1874,7 +1881,7 @@ impl FetchSprite for RotatedAnimationParams {
         &self,
         factorio_dir: &Path,
         filename: &FileName,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
     ) -> Option<GraphicsOutput> {
@@ -1886,7 +1893,7 @@ impl FetchSprite for RotatedAnimationParams {
         &self,
         factorio_dir: &Path,
         filename: &FileName,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
         offset: (i16, i16),
@@ -1905,7 +1912,7 @@ impl FetchSprite for RotatedAnimationParams {
         &self,
         factorio_dir: &Path,
         filename: &FileName,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
         offset: (i16, i16),
@@ -1949,7 +1956,7 @@ impl RotatedAnimationParams {
 #[serde(untagged)]
 pub enum RotatedAnimation {
     Layered {
-        layers: Vec<Self>,
+        layers: FactorioArray<Self>,
     },
     Single {
         filename: FileName,
@@ -1960,7 +1967,7 @@ pub enum RotatedAnimation {
         hr_version: Option<Box<Self>>,
     },
     Multi {
-        filenames: Vec<FileName>,
+        filenames: FactorioArray<FileName>,
 
         #[serde(flatten)]
         data: Box<RotatedAnimationParams>,
@@ -1968,7 +1975,7 @@ pub enum RotatedAnimation {
         hr_version: Option<Box<Self>>,
     },
     Striped {
-        stripes: Vec<Stripe>,
+        stripes: FactorioArray<Stripe>,
 
         #[serde(flatten)]
         data: Box<RotatedAnimationParams>,
@@ -2001,7 +2008,7 @@ impl RenderableGraphics for RotatedAnimation {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -2127,7 +2134,7 @@ impl RenderableGraphics for RotatedAnimation4Way {
     fn render(
         &self,
         factorio_dir: &Path,
-        used_mods: &HashMap<&str, &str>,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
@@ -2161,5 +2168,5 @@ impl RenderableGraphics for RotatedAnimation4Way {
 #[serde(untagged)]
 pub enum RotatedAnimationVariations {
     Animation(RotatedAnimation),
-    Array(Vec<RotatedAnimation>),
+    Array(FactorioArray<RotatedAnimation>),
 }

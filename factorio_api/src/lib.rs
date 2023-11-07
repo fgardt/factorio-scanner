@@ -7,8 +7,11 @@
 )]
 #![allow(clippy::module_name_repetitions)]
 
+use mod_util::mod_info::Version;
+
 #[cfg(feature = "blocking")]
 pub mod blocking {
+    use mod_util::mod_info::Version;
 
     pub use auth::*;
     mod auth {
@@ -66,28 +69,45 @@ pub mod blocking {
         #[must_use]
         pub fn full_info(mod_name: &str) -> Option<crate::PortalLongEntry> {
             let client = reqwest::blocking::Client::new();
-            let res = client
-                .get(format!(
-                    "https://mods.factorio.com/api/mods/{mod_name}/full"
-                ))
-                .send()
-                .ok()?;
+            let url = format!("https://mods.factorio.com/api/mods/{mod_name}/full");
+            let mut res = client.get(&url).send().ok()?;
 
-            serde_json::from_str(&res.text().ok()?).ok()
+            if !res.status().is_success() {
+                println!(
+                    "error fetching {mod_name} info [{url}]: {}",
+                    res.text().ok()?
+                );
+                return None;
+            }
+
+            //let output = res.text().ok()?;
+            let mut data = Vec::new();
+            res.copy_to(&mut data).ok()?;
+            let tmp = serde_json::from_slice(&data);
+
+            match tmp {
+                Ok(val) => Some(val),
+                Err(e) => {
+                    println!("{e}");
+                    None
+                }
+            }
+
+            //serde_json::from_str(&res.text().ok()?).ok()
         }
     }
 
     #[must_use]
     pub fn fetch_mod(
         mod_name: &str,
-        version: &str,
+        version: &Version,
         username: &str,
         token: &str,
     ) -> Option<Vec<u8>> {
         let mod_info = short_info(mod_name)?;
 
         for release in mod_info.releases {
-            if release.version != version {
+            if release.version != *version {
                 continue;
             }
 
@@ -109,7 +129,7 @@ pub mod blocking {
     #[must_use]
     pub fn fetch_mod_with_password(
         mod_name: &str,
-        version: &str,
+        version: &Version,
         username: &str,
         password: &str,
     ) -> Option<Vec<u8>> {
@@ -262,7 +282,7 @@ mod auth {
 
     use serde::{Deserialize, Serialize};
 
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Deserialize, Serialize, Clone)]
     pub struct AuthResult {
         pub token: String,
         pub username: String,
@@ -299,9 +319,10 @@ pub use portal::*;
 mod portal {
     use core::fmt;
 
+    use mod_util::mod_info::Version;
     use serde::{Deserialize, Serialize};
 
-    #[derive(Debug)]
+    #[derive(Debug, Copy, Clone)]
     pub enum PortalSearchPageSize {
         Max,
         Custom(u16),
@@ -316,7 +337,7 @@ mod portal {
         }
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Copy, Clone, PartialEq, Eq)]
     pub enum PortalSearchSortBy {
         Name,
         CreatedAt,
@@ -333,7 +354,7 @@ mod portal {
         }
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum PortalSearchVersion {
         V0_13,
         V0_14,
@@ -360,7 +381,7 @@ mod portal {
         }
     }
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Clone)]
     pub struct PortalListParams<'a> {
         pub hide_deprecated: Option<bool>,
 
@@ -463,7 +484,7 @@ mod portal {
         }
     }
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Debug, Deserialize, Serialize, Clone)]
     pub struct PortalSearchPaginationLinks {
         pub first: Option<String>,
         pub last: Option<String>,
@@ -471,7 +492,7 @@ mod portal {
         pub prev: Option<String>,
     }
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Debug, Deserialize, Serialize, Clone)]
     pub struct PortalSearchPagination {
         pub count: u32,
         pub links: PortalSearchPaginationLinks,
@@ -480,7 +501,7 @@ mod portal {
         pub page_size: u32,
     }
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Debug, Deserialize, Serialize, Clone)]
     pub struct InfoJson {
         pub factorio_version: String,
 
@@ -488,26 +509,26 @@ mod portal {
         pub dependencies: Vec<mod_util::mod_info::Dependency>,
     }
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Debug, Deserialize, Serialize, Clone)]
     pub struct ModRelease {
         pub download_url: String,
         pub file_name: String,
 
         pub info_json: InfoJson,
         pub released_at: String,
-        pub version: String,
+        pub version: Version,
 
         pub sha1: String,
     }
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Debug, Deserialize, Serialize, Clone)]
     #[serde(untagged)]
     pub enum PortalSearchReleaseKind {
         Latest { latest_release: Box<ModRelease> },
         All { releases: Vec<ModRelease> },
     }
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
     #[serde(rename_all = "kebab-case")]
     pub enum PortalCategory {
         #[serde(alias = "")]
@@ -525,7 +546,7 @@ mod portal {
         Unknown,
     }
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Debug, Deserialize, Serialize, Clone)]
     pub struct PortalSearchResultEntry {
         pub downloads_count: u32,
 
@@ -540,7 +561,7 @@ mod portal {
         pub category: Option<PortalCategory>, // not sure if this is actually optional
     }
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Debug, Deserialize, Serialize, Clone)]
     pub struct PortalListResponse {
         pub pagination: PortalSearchPagination,
         pub results: Vec<PortalSearchResultEntry>,
@@ -561,7 +582,7 @@ mod portal {
         serde_json::from_str(&res.text().await.ok()?).ok()
     }
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Debug, Deserialize, Serialize, Clone)]
     pub struct PortalShortEntry {
         pub downloads_count: u32,
 
@@ -587,7 +608,7 @@ mod portal {
         serde_json::from_str(&res.text().await.ok()?).ok()
     }
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
     #[serde(rename_all = "kebab-case")]
     pub enum PortalTag {
         Transportation,
@@ -611,7 +632,7 @@ mod portal {
         Unknown,
     }
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
     #[serde(rename_all = "snake_case")]
     pub enum PortalLicenseId {
         DefaultMit,
@@ -625,7 +646,7 @@ mod portal {
         Other,
     }
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Debug, Deserialize, Serialize, Clone)]
     pub struct PortalLicense {
         pub description: String,
         pub id: PortalLicenseId,
@@ -634,7 +655,7 @@ mod portal {
         pub url: String,
     }
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Debug, Deserialize, Serialize, Clone)]
     pub struct PortalLongEntry {
         pub downloads_count: u32,
 
@@ -647,9 +668,9 @@ mod portal {
         pub title: String,
         pub category: Option<PortalCategory>, // not sure if this is actually optional
 
-        pub changelog: String,
+        pub changelog: Option<String>,
         pub created_at: String,
-        pub description: String,
+        pub description: Option<String>,
         pub source_url: Option<String>,
         pub homepage: String,
         pub deprecated: Option<bool>,
@@ -676,14 +697,14 @@ mod portal {
 #[must_use]
 pub async fn fetch_mod(
     mod_name: &str,
-    version: &str,
+    version: &Version,
     username: &str,
     token: &str,
 ) -> Option<Vec<u8>> {
     let mod_info = short_info(mod_name).await?;
 
     for release in mod_info.releases {
-        if release.version != version {
+        if release.version != *version {
             continue;
         }
 
@@ -706,7 +727,7 @@ pub async fn fetch_mod(
 #[must_use]
 pub async fn fetch_mod_with_password(
     mod_name: &str,
-    version: &str,
+    version: &Version,
     username: &str,
     password: &str,
 ) -> Option<Vec<u8>> {

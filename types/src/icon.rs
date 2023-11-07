@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
+use crate::FactorioArray;
+
 use super::{helper, Color, FileName, SpriteSizeType, Vector};
 
 /// [`Types/IconMipMapType`](https://lua-api.factorio.com/latest/types/IconMipMapType.html)
@@ -34,7 +36,7 @@ pub struct IconData {
 
 #[must_use]
 pub fn is_0_vector(value: &Vector) -> bool {
-    value.0 == 0.0 && value.1 == 0.0
+    value.x() == 0.0 && value.y() == 0.0
 }
 
 #[skip_serializing_none]
@@ -42,7 +44,7 @@ pub fn is_0_vector(value: &Vector) -> bool {
 #[serde(untagged)]
 pub enum Icon {
     Array {
-        icons: Vec<IconData>,
+        icons: FactorioArray<IconData>,
 
         #[serde(deserialize_with = "helper::truncating_opt_deserializer")]
         icon_size: Option<SpriteSizeType>,

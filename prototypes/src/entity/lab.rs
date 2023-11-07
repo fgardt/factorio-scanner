@@ -28,7 +28,7 @@ pub struct LabData {
     pub energy_source: AnyEnergySource,
     pub on_animation: Animation,
     pub off_animation: Animation,
-    pub inputs: Vec<ItemID>,
+    pub inputs: FactorioArray<ItemID>,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub researching_speed: f64,

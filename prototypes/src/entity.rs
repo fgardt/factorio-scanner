@@ -90,7 +90,7 @@ pub use wall::*;
 #[derive(Debug, Clone)]
 pub struct RenderOpts<'a> {
     pub factorio_dir: &'a Path,
-    pub used_mods: HashMap<&'a str, &'a str>,
+    pub used_mods: mod_util::UsedMods,
 
     pub direction: Direction,
     pub orientation: Option<RealOrientation>,
@@ -108,6 +108,25 @@ pub struct RenderOpts<'a> {
     pub decider_operation: Option<Comparator>,
 
     pub runtime_tint: Option<Color>,
+}
+
+impl<'a> Default for RenderOpts<'a> {
+    fn default() -> Self {
+        Self {
+            factorio_dir: Path::new(""),
+            used_mods: HashMap::default(),
+            direction: Direction::default(),
+            orientation: Option::default(),
+            pickup_position: Option::default(),
+            connections: Option::default(),
+            underground_in: Option::default(),
+            connected_gates: Vec::default(),
+            draw_gate_patch: Default::default(),
+            arithmetic_operation: Option::default(),
+            decider_operation: Option::default(),
+            runtime_tint: Option::default(),
+        }
+    }
 }
 
 // From impls for RenderOpts variants from types
@@ -330,7 +349,7 @@ pub struct EntityData<T: Renderable> {
     pub placeable_by: Option<PlaceableBy>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_pastable_entities: Vec<EntityID>,
+    pub additional_pastable_entities: FactorioArray<EntityID>,
 
     #[serde(
         default,
@@ -437,8 +456,8 @@ pub struct EntityWithHealthData<T: Renderable> {
     // pub dying_explosion: Option<ExplosionDefinition>,
     // pub dying_trigger_effect: Option<TriggerEffect>,
     // pub damaged_trigger_effect: Option<TriggerEffect>,
-    // pub loot: Vec<LootItem>,
-    // pub attack_reaction: Vec<AttackReactionItem>,
+    // pub loot: FactorioArray<LootItem>,
+    // pub attack_reaction: FactorioArray<AttackReactionItem>,
     // pub repair_sound: Option<Sound>,
     // pub corpse: Option<Corpse>,
     #[serde(flatten)]

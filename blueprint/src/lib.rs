@@ -253,63 +253,6 @@ pub struct Blueprint {
     pub info: Common,
 }
 
-impl Blueprint {
-    #[must_use]
-    pub fn get_used_mods(&self) -> Option<HashMap<&str, &str>> {
-        for entity in &self.entities {
-            if entity.tags.contains_key("bp_meta_info") {
-                let info = entity.tags.get("bp_meta_info")?;
-
-                let AnyBasic::Table(data) = info else {
-                    continue;
-                };
-
-                let mods = data.get("mods")?;
-
-                let AnyBasic::Table(mods) = mods else {
-                    continue;
-                };
-
-                let mut result = HashMap::with_capacity(mods.len());
-
-                for (mod_name, mod_version) in mods {
-                    let AnyBasic::String(mod_version) = mod_version else {
-                        continue;
-                    };
-                    result.insert(mod_name.as_str(), mod_version.as_str());
-                }
-
-                return Some(result);
-            }
-        }
-
-        None
-    }
-
-    #[must_use]
-    pub fn get_used_startup_settings(&self) -> Option<&HashMap<String, AnyBasic>> {
-        for entity in &self.entities {
-            if entity.tags.contains_key("bp_meta_info") {
-                let info = entity.tags.get("bp_meta_info")?;
-
-                let AnyBasic::Table(data) = info else {
-                    continue;
-                };
-
-                let settings = data.get("startup")?;
-
-                let AnyBasic::Table(settings) = settings else {
-                    continue;
-                };
-
-                return Some(settings);
-            }
-        }
-
-        None
-    }
-}
-
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Common {
@@ -450,7 +393,7 @@ pub struct Entity {
     pub mode: Option<String>,
 
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: TagTable,
+    pub tags: mod_util::TagTable,
 }
 
 impl PartialOrd for Entity {
@@ -897,19 +840,6 @@ pub struct SpeakerCircuitParameters {
     pub signal_value_is_pitch: bool,
     pub instrument_id: u8,
     pub note_id: u8,
-}
-
-// https://lua-api.factorio.com/latest/concepts.html#Tags
-pub type TagTable = HashMap<String, AnyBasic>;
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
-#[serde(untagged, deny_unknown_fields)]
-pub enum AnyBasic {
-    String(String),
-    Bool(bool),
-    Number(f64),
-    Table(TagTable),
-    Array(Vec<AnyBasic>),
 }
 
 #[allow(clippy::trivially_copy_pass_by_ref)]

@@ -132,14 +132,14 @@ pub struct ArtilleryTurretCannonBarrelShiftings {
         rename = "cannon_barrel_recoil_shiftings",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub shiftings: Vec<Vector3D>,
+    pub shiftings: FactorioArray<Vector3D>,
 
     #[serde(
         default,
         rename = "cannon_barrel_recoil_shiftings_load_correction_matrix",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub load_correction_matrix: Vec<Vector3D>,
+    pub load_correction_matrix: FactorioArray<Vector3D>,
 
     #[serde(rename = "cannon_barrel_light_direction")]
     pub light_direction: Option<Vector3D>,

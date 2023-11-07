@@ -30,7 +30,7 @@ impl<T: super::Renderable> super::Renderable for CraftingMachinePrototype<T> {
 pub struct CraftingMachineData<T: super::Renderable> {
     pub energy_usage: Energy,
     pub crafting_speed: f64,
-    pub crafting_categories: Vec<RecipeCategoryID>,
+    pub crafting_categories: FactorioArray<RecipeCategoryID>,
     pub energy_source: AnyEnergySource,
 
     pub fluid_boxes: Option<CraftingMachineFluidBoxHell>, // THIS IS HORROR
@@ -86,7 +86,7 @@ pub struct CraftingMachineData<T: super::Renderable> {
     pub module_specification: Option<ModuleSpecification>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub working_visualisations: Vec<WorkingVisualisation>,
+    pub working_visualisations: FactorioArray<WorkingVisualisation>,
 
     #[serde(flatten)]
     pub child: T,
@@ -120,7 +120,7 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum CraftingMachineFluidBoxHell {
-    Array(Vec<FluidBox>),
+    Array(FactorioArray<FluidBox>),
     WHY(HashMap<String, CraftingMachineFluidBoxCursedType>),
 }
 

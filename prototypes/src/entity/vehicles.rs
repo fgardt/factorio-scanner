@@ -156,7 +156,7 @@ pub struct CarData {
     pub darkness_to_render_light_animation: f64,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub guns: Vec<ItemID>,
+    pub guns: FactorioArray<ItemID>,
     // not implemented
     // pub sound_no_fuel: Option<Sound>,
     // pub track_particle_triggers: Option<FootstepTriggerEffectList>,

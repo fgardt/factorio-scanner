@@ -31,7 +31,7 @@ pub struct MiningDrillData {
     pub energy_source: AnyEnergySource,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub resource_categories: Vec<ResourceCategoryID>,
+    pub resource_categories: FactorioArray<ResourceCategoryID>,
 
     pub output_fluid_box: Option<FluidBox>,
     pub input_fluid_box: Option<FluidBox>,
