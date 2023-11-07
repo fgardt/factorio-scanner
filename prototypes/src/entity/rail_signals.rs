@@ -45,10 +45,10 @@ pub struct RailSignalBaseData<T: super::Renderable> {
     pub draw_circuit_wires: bool,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub circuit_wire_connection_points: Vec<WireConnectionPoint>,
+    pub circuit_wire_connection_points: FactorioArray<WireConnectionPoint>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub circuit_connector_sprites: Vec<CircuitConnectorSprites>,
+    pub circuit_connector_sprites: FactorioArray<CircuitConnectorSprites>,
 
     #[serde(flatten)]
     pub child: T,
@@ -82,7 +82,7 @@ impl super::Renderable for RailChainSignalPrototype {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RailChainSignalData {
-    pub selection_box_offsets: Vec<Vector>,
+    pub selection_box_offsets: FactorioArray<Vector>,
     pub blue_light: Option<LightDefinition>,
     pub default_blue_output_signal: Option<SignalIDConnector>,
 }

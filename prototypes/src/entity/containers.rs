@@ -74,7 +74,7 @@ impl super::Renderable for ContainerData {
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "snake_case")]
 pub enum InventoryType {
     #[default]
     WithBar,

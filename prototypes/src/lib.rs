@@ -16,6 +16,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
+use mod_util::mod_info::Version;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -50,14 +51,14 @@ pub struct BasePrototype<T> {
 /// [`Prototypes/UtilitySprites/CursorBoxSpecification`](https://lua-api.factorio.com/latest/prototypes/UtilitySprites.html#cursor_box)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CursorBoxSpecification {
-    pub regular: Vec<BoxSpecification>,
-    pub not_allowed: Vec<BoxSpecification>,
-    pub copy: Vec<BoxSpecification>,
-    pub electricity: Vec<BoxSpecification>,
-    pub logistics: Vec<BoxSpecification>,
-    pub pair: Vec<BoxSpecification>,
-    pub train_visualization: Vec<BoxSpecification>,
-    pub blueprint_snap_rectangle: Vec<BoxSpecification>,
+    pub regular: FactorioArray<BoxSpecification>,
+    pub not_allowed: FactorioArray<BoxSpecification>,
+    pub copy: FactorioArray<BoxSpecification>,
+    pub electricity: FactorioArray<BoxSpecification>,
+    pub logistics: FactorioArray<BoxSpecification>,
+    pub pair: FactorioArray<BoxSpecification>,
+    pub train_visualization: FactorioArray<BoxSpecification>,
+    pub blueprint_snap_rectangle: FactorioArray<BoxSpecification>,
 }
 
 /// [`Prototypes/UtilitySprites`](https://lua-api.factorio.com/latest/prototypes/UtilitySprites.html)
@@ -182,7 +183,7 @@ impl DataRaw {
     pub fn load(dump_path: &Path) -> Option<Self> {
         let mut bytes = Vec::new();
         File::open(dump_path).ok()?.read_to_end(&mut bytes).ok()?;
-        serde_json::from_slice(&bytes).ok()
+        Some(serde_json::from_slice(&bytes).unwrap()) // TODO: something with Sprite4Way is wrong (crashes when all folder mods are active, flamethrower wagons?)
     }
 }
 
@@ -916,4 +917,15 @@ impl DataUtil {
         self.get_entity(entity_name)?
             .render(render_opts, image_cache)
     }
+}
+
+use konst::{primitive::parse_u16, result::unwrap_ctx};
+
+#[must_use]
+pub const fn targeted_engine_version() -> Version {
+    Version::new(
+        unwrap_ctx!(parse_u16(env!("CARGO_PKG_VERSION_MAJOR"))),
+        unwrap_ctx!(parse_u16(env!("CARGO_PKG_VERSION_MINOR"))),
+        unwrap_ctx!(parse_u16(env!("CARGO_PKG_VERSION_PATCH"))),
+    )
 }

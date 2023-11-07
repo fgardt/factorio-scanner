@@ -26,7 +26,7 @@ impl super::Renderable for ElectricPolePrototype {
 pub struct ElectricPoleData {
     pub pictures: RotatedSprite,
     pub supply_area_distance: f64,
-    pub connection_points: Vec<WireConnectionPoint>,
+    pub connection_points: FactorioArray<WireConnectionPoint>,
 
     pub radius_visualisation_picture: Option<Sprite>,
     pub active_picture: Option<Sprite>,

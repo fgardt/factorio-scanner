@@ -113,7 +113,7 @@ pub struct RoboportData {
     pub robots_shrink_when_entering_and_exiting: bool,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub charging_offsets: Vec<Vector>,
+    pub charging_offsets: FactorioArray<Vector>,
 
     // docs specify single precision float
     pub logistics_connection_distance: Option<f64>,

@@ -58,7 +58,7 @@ pub struct GeneratorData {
 
     pub max_power_output: Option<Energy>,
     // not implemented
-    // pub smoke: Vec<SmokeSource>,
+    // pub smoke: FactorioArray<SmokeSource>,
 }
 
 impl super::Renderable for GeneratorData {

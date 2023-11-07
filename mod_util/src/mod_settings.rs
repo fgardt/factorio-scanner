@@ -228,21 +228,21 @@ impl<'a> SettingsDat<'a> {
     }
 
     #[cfg(feature = "bp_meta_info")]
-    pub fn load_bp_settings(bp: &blueprint::Blueprint, path: &'a Path) -> Result<Self> {
-        let settings = bp
-            .get_used_startup_settings()
-            .cloned()
-            .unwrap_or_else(HashMap::new);
+    pub fn load_bp_settings(
+        settings: &crate::TagTable,
+        version: u64,
+        path: &'a Path,
+    ) -> Result<Self> {
         let mut startup = HashMap::new();
 
         for (k, v) in settings {
-            let pt = settings_property_tree(&v)?;
+            let pt = settings_property_tree(v)?;
             startup.insert(k.clone(), pt);
         }
 
         Ok(Self {
             path,
-            version: bp.info.version,
+            version,
             startup,
             runtime_global: HashMap::new(),
             runtime_per_user: HashMap::new(),
@@ -251,8 +251,8 @@ impl<'a> SettingsDat<'a> {
 }
 
 #[cfg(feature = "bp_meta_info")]
-fn settings_property_tree(value: &blueprint::AnyBasic) -> Result<PropertyTree> {
-    use blueprint::AnyBasic;
+fn settings_property_tree(value: &crate::AnyBasic) -> Result<PropertyTree> {
+    use crate::AnyBasic;
 
     let pt_val = match value {
         AnyBasic::Bool(val) => PropertyTree::Bool(*val),

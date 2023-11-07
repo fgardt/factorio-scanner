@@ -132,8 +132,8 @@ impl super::Renderable for InserterData {
                 let raw_pickup_pos = options.pickup_position.unwrap_or(self.pickup_position);
                 let pickup_pos = direction.rotate_vector(raw_pickup_pos);
 
-                let length = pickup_pos.0.hypot(pickup_pos.1);
-                let angle = pickup_pos.1.atan2(pickup_pos.0) + (std::f64::consts::PI / 2.0);
+                let length = pickup_pos.x().hypot(pickup_pos.y());
+                let angle = pickup_pos.y().atan2(pickup_pos.x()) + (std::f64::consts::PI / 2.0);
 
                 let (width, height) = img.dimensions();
                 let diagonal = f64::from(width).hypot(f64::from(height));
@@ -164,7 +164,7 @@ impl super::Renderable for InserterData {
                 (
                     rotated_hand.into(),
                     scale,
-                    (shift_amount * angle.sin(), shift_amount * -angle.cos()),
+                    (shift_amount * angle.sin(), shift_amount * -angle.cos()).into(),
                 )
             });
 

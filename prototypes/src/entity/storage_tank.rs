@@ -75,7 +75,8 @@ impl super::Renderable for StorageTankData {
                 image_cache,
                 &options.into(),
             )
-            .map(|(img, scale, (shift_x, shift_y))| {
+            .map(|(img, scale, shift)| {
+                let (shift_x, shift_y) = shift.as_tuple();
                 let (tl_x, tl_y) = self.window_bounding_box.0.as_tuple();
                 let (br_x, br_y) = self.window_bounding_box.1.as_tuple();
 
@@ -85,7 +86,8 @@ impl super::Renderable for StorageTankData {
                     (
                         shift_x, // + f64::from(br_x - tl_x) / 2.0, // TODO: figure out how to calculate this position
                         shift_y + tl_y + (br_y - tl_y) / 2.0,
-                    ),
+                    )
+                        .into(),
                 )
             });
 
