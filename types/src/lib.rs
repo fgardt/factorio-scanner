@@ -1882,8 +1882,8 @@ pub struct MiningDrillGraphicsSet {
     #[serde(default, skip_serializing_if = "helper::is_0_f64")]
     pub min_animation_progress: f64, // specified as single precision in docs
 
-    pub circuit_connector_layer: CircuitConnectorLayer,
-    pub circuit_connector_secondary_draw_order: CircuitConnectorSecondaryDrawOrder,
+    pub circuit_connector_layer: Option<CircuitConnectorLayer>, // TODO: fix that only the internal members need to be optional
+    pub circuit_connector_secondary_draw_order: Option<CircuitConnectorSecondaryDrawOrder>, // TODO: fix that only the internal members need to be optional
 }
 
 #[derive(Debug, Clone, Copy, Default)]
