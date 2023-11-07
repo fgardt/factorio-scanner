@@ -175,16 +175,8 @@ impl<'de> Visitor<'de> for VersionVisitor {
             .ok_or_else(|| Error::custom("expected 3 parts"))?
             .parse()
             .map_err(Error::custom)?;
-        let minor = parts
-            .next()
-            .ok_or_else(|| Error::custom("expected 3 parts"))?
-            .parse()
-            .map_err(Error::custom)?;
-        let patch = parts
-            .next()
-            .ok_or_else(|| Error::custom("expected 3 parts"))?
-            .parse()
-            .map_err(Error::custom)?;
+        let minor = parts.next().unwrap_or("0").parse().map_err(Error::custom)?; // minor will default to 0 if missing
+        let patch = parts.next().unwrap_or("0").parse().map_err(Error::custom)?; // patch will default to 0 if missing
 
         Ok(Self::Value {
             major,
@@ -397,7 +389,7 @@ impl<'de> Visitor<'de> for DependencyVersionVisitor {
     type Value = DependencyVersion;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("a dependency version: <, <=, =, >=, > or nothing")
+        formatter.write_str("a dependency version: <, <=, =, >=, > + version or nothing")
     }
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
@@ -537,13 +529,13 @@ impl<'de> Visitor<'de> for DependencyVisitor {
     {
         #[allow(clippy::unwrap_used)] // The regex is hardcoded and will always compile
         let extractor =
-            regex::Regex::new(r"^\s*(?:(!|\?|\(\?\)|~)\s*)?([a-zA-Z\d_\-\s]{3,50})(?:\s*(?:(>=?|<=?|=)\s*(\d+\.\d+\.\d+)))?\s*$")
+            regex::Regex::new(r"^\s*(?:(!|\?|\(\?\)|~)\s*)?([a-zA-Z\d_\-\s]{3,50})(?:\s*(?:(>=?|<=?|=)\s*(\d+(?:\.\d+)?(?:\.\d+)?)))?\s*$")
                 .unwrap();
 
         let Some(captures) = extractor.captures(v) else {
-            return Err(Error::custom(
-                "Invalid dependency: does not match expected format",
-            ));
+            return Err(Error::custom(format!(
+                "Invalid dependency: does not match expected format: {v}"
+            )));
         };
 
         let kind = captures.get(1).map_or("", |k| k.as_str());

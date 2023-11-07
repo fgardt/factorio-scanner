@@ -500,6 +500,10 @@ impl<'a> DependencySolver<'a> {
             let name = req.0;
             let version = req.1;
 
+            if node_map.contains_key(name) {
+                continue;
+            }
+
             node_map.insert(name, dep_graph.add_node((name, *version)));
 
             let Some((_, info)) = self.all_deps.get(name) else {
