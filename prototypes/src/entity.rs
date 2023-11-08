@@ -87,7 +87,7 @@ pub use turrets::*;
 pub use vehicles::*;
 pub use wall::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct RenderOpts {
     pub direction: Direction,
     pub orientation: Option<RealOrientation>,
@@ -107,34 +107,17 @@ pub struct RenderOpts {
     pub runtime_tint: Option<Color>,
 }
 
-impl Default for RenderOpts {
-    fn default() -> Self {
-        Self {
-            direction: Direction::default(),
-            orientation: Option::default(),
-            pickup_position: Option::default(),
-            connections: Option::default(),
-            underground_in: Option::default(),
-            connected_gates: Vec::default(),
-            draw_gate_patch: Default::default(),
-            arithmetic_operation: Option::default(),
-            decider_operation: Option::default(),
-            runtime_tint: Option::default(),
-        }
-    }
-}
-
 // From impls for RenderOpts variants from types
-impl<'a> From<&'a RenderOpts> for SimpleGraphicsRenderOpts {
-    fn from(opts: &'a RenderOpts) -> Self {
+impl From<&RenderOpts> for SimpleGraphicsRenderOpts {
+    fn from(opts: &RenderOpts) -> Self {
         Self {
             runtime_tint: opts.runtime_tint,
         }
     }
 }
 
-impl<'a> From<&'a RenderOpts> for RotatedSpriteRenderOpts {
-    fn from(value: &'a RenderOpts) -> Self {
+impl From<&RenderOpts> for RotatedSpriteRenderOpts {
+    fn from(value: &RenderOpts) -> Self {
         Self {
             orientation: value.clone().orientation.unwrap_or_default(),
             runtime_tint: value.runtime_tint,
@@ -142,8 +125,8 @@ impl<'a> From<&'a RenderOpts> for RotatedSpriteRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts> for SpriteNWayRenderOpts {
-    fn from(opts: &'a RenderOpts) -> Self {
+impl From<&RenderOpts> for SpriteNWayRenderOpts {
+    fn from(opts: &RenderOpts) -> Self {
         Self {
             direction: opts.direction,
             runtime_tint: opts.runtime_tint,
@@ -151,8 +134,8 @@ impl<'a> From<&'a RenderOpts> for SpriteNWayRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts> for SpriteVariationsRenderOpts {
-    fn from(opts: &'a RenderOpts) -> Self {
+impl From<&RenderOpts> for SpriteVariationsRenderOpts {
+    fn from(opts: &RenderOpts) -> Self {
         Self {
             variation: 0,
             runtime_tint: opts.runtime_tint,
@@ -160,8 +143,8 @@ impl<'a> From<&'a RenderOpts> for SpriteVariationsRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts> for AnimationRenderOpts {
-    fn from(value: &'a RenderOpts) -> Self {
+impl From<&RenderOpts> for AnimationRenderOpts {
+    fn from(value: &RenderOpts) -> Self {
         Self {
             progress: 0.0,
             runtime_tint: value.runtime_tint,
@@ -169,8 +152,8 @@ impl<'a> From<&'a RenderOpts> for AnimationRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts> for Animation4WayRenderOpts {
-    fn from(value: &'a RenderOpts) -> Self {
+impl From<&RenderOpts> for Animation4WayRenderOpts {
+    fn from(value: &RenderOpts) -> Self {
         Self {
             direction: value.direction,
             progress: 0.0,
@@ -179,8 +162,8 @@ impl<'a> From<&'a RenderOpts> for Animation4WayRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts> for AnimationVariationsRenderOpts {
-    fn from(value: &'a RenderOpts) -> Self {
+impl From<&RenderOpts> for AnimationVariationsRenderOpts {
+    fn from(value: &RenderOpts) -> Self {
         Self {
             variation: 0,
             progress: 0.0,
@@ -189,8 +172,8 @@ impl<'a> From<&'a RenderOpts> for AnimationVariationsRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts> for RotatedAnimationRenderOpts {
-    fn from(value: &'a RenderOpts) -> Self {
+impl From<&RenderOpts> for RotatedAnimationRenderOpts {
+    fn from(value: &RenderOpts) -> Self {
         Self {
             orientation: value.orientation.unwrap_or_default(),
             progress: 0.0,
@@ -200,7 +183,7 @@ impl<'a> From<&'a RenderOpts> for RotatedAnimationRenderOpts {
     }
 }
 
-impl<'a> From<&RenderOpts> for RotatedAnimation4WayRenderOpts {
+impl From<&RenderOpts> for RotatedAnimation4WayRenderOpts {
     fn from(value: &RenderOpts) -> Self {
         Self {
             direction: value.direction,
@@ -211,16 +194,16 @@ impl<'a> From<&RenderOpts> for RotatedAnimation4WayRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts> for BeaconGraphicsSetRenderOpts {
-    fn from(value: &'a RenderOpts) -> Self {
+impl From<&RenderOpts> for BeaconGraphicsSetRenderOpts {
+    fn from(value: &RenderOpts) -> Self {
         Self {
             runtime_tint: value.runtime_tint,
         }
     }
 }
 
-impl<'a> From<&'a RenderOpts> for TransportBeltAnimationSetRenderOpts {
-    fn from(opts: &'a RenderOpts) -> Self {
+impl From<&RenderOpts> for TransportBeltAnimationSetRenderOpts {
+    fn from(opts: &RenderOpts) -> Self {
         Self {
             direction: opts.direction,
             connections: opts.connections,
@@ -232,8 +215,8 @@ impl<'a> From<&'a RenderOpts> for TransportBeltAnimationSetRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts> for MiningDrillGraphicsRenderOpts {
-    fn from(value: &'a RenderOpts) -> Self {
+impl From<&RenderOpts> for MiningDrillGraphicsRenderOpts {
+    fn from(value: &RenderOpts) -> Self {
         Self {
             direction: value.direction,
             runtime_tint: value.runtime_tint,

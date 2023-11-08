@@ -43,7 +43,7 @@ impl Mod {
         #[allow(clippy::unwrap_used)] // known good regex
         let name_extractor = regex::Regex::new(r"^(.+?)(?:_\d+\.\d+\.\d+(?:\.zip)?)?$").unwrap();
 
-        let Some(extracted) = name_extractor.captures(&name) else {
+        let Some(extracted) = name_extractor.captures(name) else {
             anyhow::bail!("mod filename does not match expected format: {name}");
         };
         let Some(name) = extracted.get(1).map(|n| n.as_str().to_owned()) else {
