@@ -4,6 +4,7 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 
 use super::EntityWithOwnerPrototype;
+use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/TransportBeltConnectablePrototype`](https://lua-api.factorio.com/latest/prototypes/TransportBeltConnectablePrototype.html)
@@ -20,9 +21,10 @@ where
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -50,11 +52,12 @@ where
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         merge_renders(&[
-            self.graphics_set.render(options, image_cache),
-            self.child.render(options, image_cache),
+            self.graphics_set.render(options, used_mods, image_cache),
+            self.child.render(options, used_mods, image_cache),
         ])
     }
 }
@@ -88,15 +91,13 @@ impl super::Renderable for BeltGraphics {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
-    ) -> Option<(image::DynamicImage, f64, Vector)> {
+    ) -> Option<GraphicsOutput> {
         match self {
-            Self::BeltAnimationSet { belt_animation_set } => belt_animation_set.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
+            Self::BeltAnimationSet { belt_animation_set } => {
+                belt_animation_set.render(used_mods, image_cache, &options.into())
+            }
             Self::Individual { .. } => None,
         }
     }
@@ -110,9 +111,10 @@ impl super::Renderable for LinkedBeltPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -139,26 +141,21 @@ impl super::Renderable for LinkedBeltData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         if options.underground_in.unwrap_or_default() {
-            self.structure.direction_in.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            )
+            self.structure
+                .direction_in
+                .render(used_mods, image_cache, &options.into())
         } else {
             let flipped_opts = &super::RenderOpts {
                 direction: options.direction.flip(),
                 ..options.clone()
             };
-            self.structure.direction_out.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &flipped_opts.into(),
-            )
+            self.structure
+                .direction_out
+                .render(used_mods, image_cache, &flipped_opts.into())
         }
     }
 }
@@ -186,9 +183,10 @@ impl<T: super::Renderable> super::Renderable for LoaderPrototype<T> {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -228,6 +226,7 @@ impl<T: super::Renderable> super::Renderable for LoaderData<T> {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -253,9 +252,10 @@ impl super::Renderable for Loader1x1Prototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -273,6 +273,7 @@ impl super::Renderable for Loader1x1Data {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -287,9 +288,10 @@ impl super::Renderable for Loader1x2Prototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -308,6 +310,7 @@ impl super::Renderable for Loader1x2Data {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -322,9 +325,10 @@ impl super::Renderable for SplitterPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -346,25 +350,17 @@ impl super::Renderable for SplitterData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         // TODO: figure out how to render the 2 belts below the splitter
 
         merge_renders(&[
-            self.structure_patch.as_ref().and_then(|a| {
-                a.render(
-                    options.factorio_dir,
-                    &options.used_mods,
-                    image_cache,
-                    &options.into(),
-                )
-            }),
-            self.structure.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
+            self.structure_patch
+                .as_ref()
+                .and_then(|a| a.render(used_mods, image_cache, &options.into())),
+            self.structure
+                .render(used_mods, image_cache, &options.into()),
         ])
     }
 }
@@ -379,9 +375,10 @@ impl super::Renderable for TransportBeltPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -413,6 +410,7 @@ impl super::Renderable for TransportBeltData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -434,15 +432,13 @@ impl super::Renderable for BeltGraphicsWithCorners {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
-    ) -> Option<(image::DynamicImage, f64, Vector)> {
+    ) -> Option<GraphicsOutput> {
         match self {
-            Self::BeltAnimationSetWithCorners { belt_animation_set } => belt_animation_set.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
+            Self::BeltAnimationSetWithCorners { belt_animation_set } => {
+                belt_animation_set.render(used_mods, image_cache, &options.into())
+            }
             Self::Animations { .. } => None,
         }
     }
@@ -458,9 +454,10 @@ impl super::Renderable for UndergroundBeltPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -480,26 +477,21 @@ impl super::Renderable for UndergroundBeltData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         if options.underground_in.unwrap_or_default() {
-            self.structure.direction_in.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            )
+            self.structure
+                .direction_in
+                .render(used_mods, image_cache, &options.into())
         } else {
             let flipped_opts = &super::RenderOpts {
                 direction: options.direction.flip(),
                 ..options.clone()
             };
-            self.structure.direction_out.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &flipped_opts.into(),
-            )
+            self.structure
+                .direction_out
+                .render(used_mods, image_cache, &flipped_opts.into())
         }
     }
 }

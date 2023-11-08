@@ -6,6 +6,7 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 
 use super::EntityWithOwnerPrototype;
+use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/CraftingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/CraftingMachinePrototype.html)
@@ -18,9 +19,10 @@ impl<T: super::Renderable> super::Renderable for CraftingMachinePrototype<T> {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -96,6 +98,7 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         let anim = if self.always_draw_idle_animation && self.idle_animation.is_some() {
@@ -103,16 +106,9 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
         } else {
             self.animation.as_ref()
         }
-        .and_then(|anim| {
-            anim.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            )
-        });
+        .and_then(|anim| anim.render(used_mods, image_cache, &options.into()));
 
-        merge_renders(&[anim, self.child.render(options, image_cache)])
+        merge_renders(&[anim, self.child.render(options, used_mods, image_cache)])
     }
 }
 
@@ -139,9 +135,10 @@ impl super::Renderable for FurnacePrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -163,6 +160,7 @@ impl super::Renderable for FurnaceData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -177,9 +175,10 @@ impl super::Renderable for AssemblingMachinePrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -206,6 +205,7 @@ impl super::Renderable for AssemblingMachineData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -220,9 +220,10 @@ impl super::Renderable for RocketSiloPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -310,45 +311,22 @@ impl super::Renderable for RocketSiloData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         merge_renders(&[
-            self.door_back_sprite.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
-            self.door_front_sprite.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
-            self.base_day_sprite.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
-            self.arm_01_back_animation.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
-            self.arm_02_right_animation.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
-            self.arm_03_front_animation.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
+            self.door_back_sprite
+                .render(used_mods, image_cache, &options.into()),
+            self.door_front_sprite
+                .render(used_mods, image_cache, &options.into()),
+            self.base_day_sprite
+                .render(used_mods, image_cache, &options.into()),
+            self.arm_01_back_animation
+                .render(used_mods, image_cache, &options.into()),
+            self.arm_02_right_animation
+                .render(used_mods, image_cache, &options.into()),
+            self.arm_03_front_animation
+                .render(used_mods, image_cache, &options.into()),
         ])
     }
 }

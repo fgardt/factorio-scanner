@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 
 use super::EntityWithOwnerPrototype;
+use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/CombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/CombinatorPrototype.html)
@@ -56,16 +57,12 @@ impl<T: super::Renderable> super::Renderable for CombinatorPrototype<T> {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.sprites.as_ref().and_then(|s| {
-            s.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            )
-        })
+        self.sprites
+            .as_ref()
+            .and_then(|s| s.render(used_mods, image_cache, &options.into()))
     }
 }
 
@@ -77,11 +74,12 @@ impl super::Renderable for ArithmeticCombinatorPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         merge_renders(&[
-            self.0.render(options, image_cache),
-            self.0.child.render(options, image_cache),
+            self.0.render(options, used_mods, image_cache),
+            self.0.child.render(options, used_mods, image_cache),
         ])
     }
 }
@@ -106,6 +104,7 @@ impl super::Renderable for ArithmeticCombinatorData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         options.arithmetic_operation.as_ref().and_then(|op| {
@@ -122,14 +121,7 @@ impl super::Renderable for ArithmeticCombinatorData {
                 ArithmeticOperation::BitwiseOr => self.or_symbol_sprites.as_ref(),
                 ArithmeticOperation::BitwiseXor => self.xor_symbol_sprites.as_ref(),
             }
-            .and_then(|s| {
-                s.render(
-                    options.factorio_dir,
-                    &options.used_mods,
-                    image_cache,
-                    &options.into(),
-                )
-            })
+            .and_then(|s| s.render(used_mods, image_cache, &options.into()))
         })
     }
 }
@@ -142,11 +134,12 @@ impl super::Renderable for DeciderCombinatorPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         merge_renders(&[
-            self.0.render(options, image_cache),
-            self.0.child.render(options, image_cache),
+            self.0.render(options, used_mods, image_cache),
+            self.0.child.render(options, used_mods, image_cache),
         ])
     }
 }
@@ -166,6 +159,7 @@ impl super::Renderable for DeciderCombinatorData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         options.decider_operation.as_ref().and_then(|op| {
@@ -177,14 +171,7 @@ impl super::Renderable for DeciderCombinatorData {
                 Comparator::GreaterOrEqual => self.greater_or_equal_symbol_sprites.as_ref(),
                 Comparator::LessOrEqual => self.less_or_equal_symbol_sprites.as_ref(),
             }
-            .and_then(|s| {
-                s.render(
-                    options.factorio_dir,
-                    &options.used_mods,
-                    image_cache,
-                    &options.into(),
-                )
-            })
+            .and_then(|s| s.render(used_mods, image_cache, &options.into()))
         })
     }
 }
@@ -197,9 +184,10 @@ impl super::Renderable for ConstantCombinatorPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -235,15 +223,11 @@ impl super::Renderable for ConstantCombinatorData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.sprites.as_ref().and_then(|s| {
-            s.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            )
-        })
+        self.sprites
+            .as_ref()
+            .and_then(|s| s.render(used_mods, image_cache, &options.into()))
     }
 }

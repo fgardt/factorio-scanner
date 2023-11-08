@@ -21,6 +21,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 //use types::{Animation, BoxSpecification, GraphicsOutput, LocalisedString, Order, Sprite};
+use mod_util::UsedMods;
 use types::*;
 
 mod entity;
@@ -912,10 +913,11 @@ impl DataUtil {
         &self,
         entity_name: &str,
         render_opts: &RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         self.get_entity(entity_name)?
-            .render(render_opts, image_cache)
+            .render(render_opts, used_mods, image_cache)
     }
 }
 

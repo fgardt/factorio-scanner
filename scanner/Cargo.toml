@@ -14,7 +14,6 @@ factorio_api = { workspace = true, features = ["blocking"] }
 image.workspace = true
 locale.workspace = true
 mod_util = { workspace = true, features = ["bp_meta_info"] }
-petgraph = "0.6.4"
 prototypes.workspace = true
 serde.workspace = true
 serde_json.workspace = true

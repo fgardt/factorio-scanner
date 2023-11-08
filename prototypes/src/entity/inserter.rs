@@ -6,6 +6,7 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 
 use super::EntityWithOwnerPrototype;
+use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/InserterPrototype`](https://lua-api.factorio.com/latest/prototypes/InserterPrototype.html)
@@ -16,9 +17,10 @@ impl super::Renderable for InserterPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -114,6 +116,7 @@ impl super::Renderable for InserterData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         const TILE_RES: f64 = 32.0;
@@ -122,12 +125,7 @@ impl super::Renderable for InserterData {
 
         let hand = self
             .hand_open_picture
-            .render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            )
+            .render(used_mods, image_cache, &options.into())
             .map(|(img, scale, shift)| {
                 let raw_pickup_pos = options.pickup_position.unwrap_or(self.pickup_position);
                 let pickup_pos = direction.rotate_vector(raw_pickup_pos);
@@ -174,12 +172,8 @@ impl super::Renderable for InserterData {
         };
 
         merge_renders(&[
-            self.platform_picture.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &platform_options.into(),
-            ),
+            self.platform_picture
+                .render(used_mods, image_cache, &platform_options.into()),
             hand,
         ])
     }

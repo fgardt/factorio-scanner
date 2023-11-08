@@ -4,6 +4,7 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 
 use super::EntityWithOwnerPrototype;
+use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/GeneratorPrototype`](https://lua-api.factorio.com/latest/prototypes/GeneratorPrototype.html)
@@ -14,9 +15,10 @@ impl super::Renderable for GeneratorPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -65,6 +67,7 @@ impl super::Renderable for GeneratorData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         match options.direction {
@@ -73,13 +76,6 @@ impl super::Renderable for GeneratorData {
             _ => panic!("Invalid direction, generators only support cardinal directions"),
         }
         .as_ref()
-        .and_then(|a| {
-            a.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            )
-        })
+        .and_then(|a| a.render(used_mods, image_cache, &options.into()))
     }
 }
