@@ -4,6 +4,7 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 
 use super::EntityWithOwnerPrototype;
+use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/MiningDrillPrototype`](https://lua-api.factorio.com/latest/prototypes/MiningDrillPrototype.html)
@@ -14,9 +15,10 @@ impl super::Renderable for MiningDrillPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -79,33 +81,19 @@ impl super::Renderable for MiningDrillData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         if let Some(set) = self.graphics_set.as_ref() {
-            set.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            )
+            set.render(used_mods, image_cache, &options.into())
         } else {
             merge_renders(&[
-                self.base_picture.as_ref().and_then(|s| {
-                    s.render(
-                        options.factorio_dir,
-                        &options.used_mods,
-                        image_cache,
-                        &options.into(),
-                    )
-                }),
-                self.animations.as_ref().and_then(|s| {
-                    s.render(
-                        options.factorio_dir,
-                        &options.used_mods,
-                        image_cache,
-                        &options.into(),
-                    )
-                }),
+                self.base_picture
+                    .as_ref()
+                    .and_then(|s| s.render(used_mods, image_cache, &options.into())),
+                self.animations
+                    .as_ref()
+                    .and_then(|s| s.render(used_mods, image_cache, &options.into())),
             ])
         }
     }

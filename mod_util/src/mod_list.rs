@@ -7,10 +7,15 @@ use std::{
 
 use anyhow::Result;
 
+use petgraph::prelude::DiGraph;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use crate::mod_info::Version;
+use crate::{
+    mod_info::{Dependency, DependencyExt, DependencyUtil, Version},
+    mod_loader::Mod,
+    UsedMods, UsedVersions,
+};
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
@@ -34,16 +39,17 @@ impl ModListFormat {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Entry {
     pub enabled: bool,
-    pub versions: HashMap<Version, String>,
     pub active_version: Option<Version>,
+    pub versions: HashMap<Version, String>,
+    pub known_dependencies: HashMap<Version, Vec<Dependency>>,
 }
 
 #[derive(Debug, Clone)]
 pub struct ModList<'a> {
-    mods_folder: &'a Path,
+    factorio_dir: &'a Path,
     list: HashMap<String, Entry>,
 }
 
@@ -52,6 +58,11 @@ impl<'a> From<&ModList<'a>> for ModListFormat {
         let mut mods = Vec::new();
 
         for (name, entry) in &list.list {
+            // core is very special and should not be in the mod list since its always enabled
+            if name == "core" {
+                continue;
+            }
+
             mods.push(ModEntry {
                 name: name.clone(),
                 enabled: entry.enabled,
@@ -71,46 +82,60 @@ impl<'a> From<ModList<'a>> for ModListFormat {
 
 impl<'a> ModList<'a> {
     #[must_use]
-    pub fn load(mods_folder: &'a Path) -> Option<Self> {
-        let Some(tmp) = ModListFormat::load(&mods_folder.join("mod-list.json")) else {
-            return Self::generate(mods_folder).ok();
+    pub fn load(factorio_dir: &'a Path) -> Option<Self> {
+        let mut res = Self::generate(factorio_dir).ok()?;
+
+        if let Some(tmp) = ModListFormat::load(&factorio_dir.join("mods/mod-list.json")) {
+            // enable mods (and set active version) if they were found in the folder
+            for entry in tmp.mods {
+                res.list.entry(entry.name).and_modify(|e| {
+                    if let Some(entry_v) = entry.version {
+                        if !e.versions.contains_key(&entry_v) {
+                            return;
+                        }
+
+                        e.active_version = Some(entry_v);
+                    }
+
+                    e.enabled = entry.enabled;
+                });
+            }
         };
 
-        let mut list = HashMap::new();
-        for entry in tmp.mods {
-            let versions = entry
-                .version
-                .as_ref()
-                .map_or_else(Vec::new, |v| vec![(*v, String::new())]); // the filename is just "" since we cant know it here :/
-
-            list.insert(
-                entry.name.clone(),
-                Entry {
-                    enabled: entry.enabled,
-                    versions: versions.iter().cloned().collect(),
-                    active_version: entry.version,
-                },
-            );
-        }
-
-        Some(Self { mods_folder, list })
+        Some(res)
     }
 
-    pub fn generate(mods_folder: &'a Path) -> Result<Self> {
+    pub fn generate(factorio_dir: &'a Path) -> Result<Self> {
         let filename_extractor = regex::Regex::new(r"^(.+?)(?:_(\d+\.\d+\.\d+)(?:\.zip)?)?$")?;
 
         let mut list = HashMap::new();
 
-        list.insert(
-            "base".to_string(),
-            Entry {
-                enabled: true,
-                versions: HashMap::new(),
-                active_version: None,
-            },
-        );
+        // add wube mods
+        for w_mod in Mod::wube_mods() {
+            match Mod::load(factorio_dir, w_mod) {
+                Ok(m) => {
+                    list.insert(
+                        w_mod.to_string(),
+                        Entry {
+                            enabled: w_mod == "core",
+                            active_version: None,
+                            versions: std::iter::once((m.info.version, w_mod.into())).collect(),
+                            known_dependencies: std::iter::once((
+                                m.info.version,
+                                m.info.dependencies,
+                            ))
+                            .collect(),
+                        },
+                    );
+                }
+                Err(e) => {
+                    println!("Failed to load wube mod {w_mod}: {e}");
+                }
+            }
+        }
 
-        let paths = fs::read_dir(mods_folder)?;
+        // add mods from mods folder
+        let paths = fs::read_dir(factorio_dir.join("mods"))?;
         for path in paths {
             let Ok(path) = path else {
                 continue;
@@ -123,88 +148,51 @@ impl<'a> ModList<'a> {
 
             let path = path.path();
             let Some(extracted) = filename_extractor.captures(filename) else {
+                println!("skipping invalid match: {path:?}");
                 continue;
             };
             let Some(name) = extracted.get(1).map(|n| n.as_str().to_owned()) else {
+                println!("skipping invalid name: {path:?}");
                 continue;
             };
-            let version = extracted.get(2).map(|v| v.as_str().to_owned());
+            let path_version = extracted
+                .get(2)
+                .map_or_else(String::new, |v| v.as_str().to_owned());
 
-            let version: Version = if path.is_file() && filename.to_lowercase().ends_with(".zip")
-                || version.is_some()
-            {
-                match version {
-                    Some(version) => match version.try_into() {
-                        Ok(version) => version,
-                        Err(e) => {
-                            println!(
-                                "Failed to parse version for mod {name} at {}: {e}",
-                                path.to_string_lossy()
-                            );
-                            continue;
-                        }
-                    },
-                    None => continue, // should not happen
-                }
-            } else if path.is_dir() {
-                let Ok(info_file) = fs::read_to_string(path.join("info.json")) else {
+            let m = match Mod::load(factorio_dir, filename) {
+                Ok(m) => m,
+                Err(e) => {
+                    println!("Failed to load mod {name} at {path:?}: {e}");
+                    // make sure the mod is disabled if its the only version
+                    list.entry(name).or_default();
                     continue;
-                };
-
-                match serde_json::from_str::<crate::mod_info::ModInfo>(&info_file) {
-                    Ok(info) => info.version,
-                    Err(e) => {
-                        println!(
-                            "Failed to parse info.json for mod {name} at {}: {e}",
-                            path.to_string_lossy()
-                        );
-
-                        // make sure the mod is disabled if its the only version
-                        if !list.contains_key(&name) {
-                            list.insert(
-                                name.clone(),
-                                Entry {
-                                    enabled: false,
-                                    versions: HashMap::new(),
-                                    active_version: None,
-                                },
-                            );
-                        }
-
-                        continue;
-                    }
                 }
-            } else {
-                continue;
             };
 
-            if list.contains_key(&name) {
-                let Some(entry) = list.get_mut(&name) else {
+            if let Ok(path_version) = path_version.try_into() {
+                if m.info.version != path_version {
+                    println!(
+                        "Version mismatch for mod {name} at {path:?}: {path_version} != {}",
+                        m.info.version
+                    );
                     continue;
-                };
-                let entry: &mut Entry = entry;
-                entry.versions.insert(version, filename.to_owned());
-            } else {
-                list.insert(
-                    name.clone(),
-                    Entry {
-                        enabled: false,
-                        versions: std::iter::once(&(version, filename.to_owned()))
-                            .cloned()
-                            .collect(),
-                        active_version: None,
-                    },
-                );
+                }
             }
+
+            let entry = list.entry(name).or_default();
+            entry.versions.insert(m.info.version, filename.into());
+            entry
+                .known_dependencies
+                .insert(m.info.version, m.info.dependencies);
         }
 
-        Ok(Self { mods_folder, list })
+        Ok(Self { factorio_dir, list })
     }
 
     pub fn save(&self) -> Result<()> {
         let format: ModListFormat = self.into();
         let bytes = serde_json::to_vec_pretty(&format)?;
-        std::fs::write(self.mods_folder.join("mod-list.json"), bytes)?;
+        std::fs::write(self.factorio_dir.join("mods/mod-list.json"), bytes)?;
 
         Ok(())
     }
@@ -215,45 +203,210 @@ impl<'a> ModList<'a> {
     }
 
     #[must_use]
-    pub fn get(&self, name: &str) -> Option<&Entry> {
-        self.list.get(name)
-    }
-
-    pub fn get_mut(&mut self, name: &str) -> Option<&mut Entry> {
-        self.list.get_mut(name)
+    pub const fn as_list(&self) -> &HashMap<String, Entry> {
+        &self.list
     }
 
     #[must_use]
-    pub fn enable_used_mods(&mut self, used_mods: &crate::UsedMods) -> Vec<(String, Version)> {
-        let mut missing = Vec::new();
+    pub fn as_list_mut(&mut self) -> &mut HashMap<String, Entry> {
+        &mut self.list
+    }
 
-        for (name, version) in used_mods {
-            // skip wube mods
-            if name == "base" || name == "core" {
-                continue;
-            }
+    /// Marks the given mods as enabled and sets the active version to the given one.
+    ///
+    /// Returns a list of mods that were not found in the mod list but got added.
+    pub fn enable_mods(&mut self, mods: &UsedVersions) -> UsedVersions {
+        let mut missing = HashMap::new();
 
-            if let Some(entry) = self.list.get_mut(name) {
-                entry.enabled = true;
-                entry.active_version = Some(*version);
+        for (name, version) in mods {
+            self.list
+                .entry(name.clone())
+                .and_modify(|e| {
+                    e.enabled = true;
+                    e.active_version = Some(*version);
 
-                if !entry.versions.contains_key(version) {
-                    missing.push((name.clone(), *version));
-                }
-            } else {
-                self.list.insert(
-                    name.clone(),
+                    if !e.versions.contains_key(version) {
+                        missing.insert(name.clone(), *version);
+                    }
+                })
+                .or_insert_with(|| {
+                    missing.insert(name.clone(), *version);
+
                     Entry {
                         enabled: true,
-                        versions: HashMap::new(),
-                        active_version: None,
-                    },
-                );
-
-                missing.push((name.clone(), *version));
-            }
+                        ..Entry::default()
+                    }
+                });
         }
 
         missing
+    }
+
+    #[must_use]
+    pub fn active_mods(&self) -> UsedMods {
+        self.list
+            .iter()
+            .filter_map(|(name, entry)| {
+                if entry.enabled {
+                    let file = if let Some(version) = entry.active_version {
+                        entry.versions.get(&version).cloned()?
+                    } else {
+                        entry.versions.values().next().cloned()?
+                    };
+
+                    let Ok(m) = Mod::load(self.factorio_dir, &file) else {
+                        //println!("Failed to load mod {name} at {file}");
+
+                        return None;
+                    };
+                    Some((name.clone(), m))
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
+    pub fn set_dependency_info(
+        &mut self,
+        name: &String,
+        known_dependencies: HashMap<Version, Vec<Dependency>>,
+    ) {
+        match self.list.get_mut(name) {
+            Some(e) => e.known_dependencies = known_dependencies,
+            None => {
+                self.list.insert(
+                    name.clone(),
+                    Entry {
+                        known_dependencies,
+                        ..Entry::default()
+                    },
+                );
+            }
+        }
+    }
+
+    pub fn solve_dependencies(&self, required: &UsedVersions) -> Result<UsedVersions> {
+        if required.is_empty() {
+            return Ok(UsedVersions::default());
+        }
+
+        // TODO: actually solve the constraints and not just check if the latest versions work
+        let mut dep_graph = DiGraph::<(&str, Version), &Dependency>::new();
+
+        let all_deps = self
+            .list
+            .iter()
+            .map(|(name, entry)| (name.as_str(), &entry.known_dependencies))
+            .collect::<HashMap<_, _>>();
+        let mut reqs = required
+            .iter()
+            .map(|(name, version)| (name.as_str(), *version))
+            .collect::<Vec<_>>();
+
+        // build all required mod nodes
+        let mut node_map = HashMap::new();
+        while let Some((name, version)) = reqs.pop() {
+            if node_map.contains_key(&name) {
+                continue;
+            }
+
+            node_map.insert(name, dep_graph.add_node((name, version)));
+
+            let Some(info) = all_deps.get(name) else {
+                anyhow::bail!("Dependency solver could not find info about {name}");
+            };
+
+            let Some(node_reqs) = info.get(&version) else {
+                anyhow::bail!(
+                    "Dependency solver could not find dependencies for {name} v{version}"
+                );
+            };
+
+            // add required dependencies to the reqs queue
+            for dep in node_reqs {
+                if !dep.is_required() {
+                    continue;
+                }
+
+                let dep_name = dep.name().as_str();
+                let dep_version = dep.version();
+
+                let Some(info) = all_deps.get(dep_name) else {
+                    anyhow::bail!("Dependency solver could not find info about dep {dep_name}");
+                };
+
+                let mut dep_versions = info
+                    .keys()
+                    .filter(|v| dep.allows(dep_name, **v))
+                    .collect::<Vec<_>>();
+                dep_versions.sort();
+
+                let Some(dep_version) = dep_versions.last() else {
+                    // no more versions to try, fail?
+                    anyhow::bail!(
+                            "Dependency solver could not find a version for {dep_name} that satisfies {dep_version}"
+                        );
+                };
+
+                reqs.push((dep_name, **dep_version));
+            }
+        }
+
+        // add all dependency edges
+        for node in dep_graph.node_indices() {
+            let (name, version) = &dep_graph[node];
+            let Some(info) = all_deps.get(name) else {
+                anyhow::bail!(
+                    "Dependency solver could not find info about {name} while building edges"
+                );
+            };
+
+            let Some(deps) = info.get(version) else {
+                anyhow::bail!("Dependency solver could not find dependencies for {name} v{version} while building edges");
+            };
+
+            for dep in deps {
+                let dep_name = dep.name().as_str();
+
+                match node_map.get(dep_name) {
+                    Some(dep_node) => {
+                        dep_graph.add_edge(node, *dep_node, dep);
+                    }
+                    None => {
+                        // optional / incompatible dependencies are allowed to be missing
+                        if dep.is_required() {
+                            anyhow::bail!(
+                                    "Dependency solver could not find required node for {dep_name} while building edges"
+                                );
+                        }
+                    }
+                }
+            }
+        }
+
+        // check if all requirements are satisfied
+        for node in dep_graph.node_indices() {
+            let (name, version) = &dep_graph[node];
+
+            let conflicts = dep_graph
+                .edges_directed(node, petgraph::Direction::Incoming)
+                .map(|e| *e.weight())
+                .collect_conflicts::<Vec<_>>(name, *version);
+
+            if !conflicts.is_empty() {
+                anyhow::bail!(
+                    "Dependency solver found conflicts for {name} v{version}: {conflicts:?}"
+                );
+            }
+        }
+
+        // dependencies are satisfied, hurray!
+        // collect all used mods + versions
+        Ok(dep_graph
+            .raw_nodes()
+            .iter()
+            .map(|n| (n.weight.0.to_string(), n.weight.1))
+            .collect())
     }
 }

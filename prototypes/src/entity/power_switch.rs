@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 
 use super::EntityWithOwnerPrototype;
+use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/PowerSwitchPrototype`](https://lua-api.factorio.com/latest/prototypes/PowerSwitchPrototype.html)
@@ -13,9 +14,10 @@ impl super::Renderable for PowerSwitchPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -49,14 +51,11 @@ impl super::Renderable for PowerSwitchData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.power_on_animation.render(
-            options.factorio_dir,
-            &options.used_mods,
-            image_cache,
-            &options.into(),
-        )
+        self.power_on_animation
+            .render(used_mods, image_cache, &options.into())
 
         // TODO: render open / closed depending on render option flag
     }

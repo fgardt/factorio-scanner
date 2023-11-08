@@ -4,6 +4,7 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 
 use super::EntityWithOwnerPrototype;
+use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/ContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/ContainerPrototype.html)
@@ -14,9 +15,10 @@ impl super::Renderable for ContainerPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -60,16 +62,12 @@ impl super::Renderable for ContainerData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.picture.as_ref().and_then(|picture| {
-            picture.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            )
-        })
+        self.picture
+            .as_ref()
+            .and_then(|picture| picture.render(used_mods, image_cache, &options.into()))
     }
 }
 
@@ -89,9 +87,10 @@ impl super::Renderable for LogisticContainerPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -134,14 +133,12 @@ impl super::Renderable for LogisticContainerData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.animation.as_ref()?.render(
-            options.factorio_dir,
-            &options.used_mods,
-            image_cache,
-            &options.into(),
-        )
+        self.animation
+            .as_ref()?
+            .render(used_mods, image_cache, &options.into())
     }
 }
 
@@ -163,9 +160,10 @@ impl super::Renderable for InfinityContainerPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -186,9 +184,10 @@ impl super::Renderable for InfinityContainerData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.parent.parent.render(options, image_cache)
+        self.parent.parent.render(options, used_mods, image_cache)
     }
 }
 
@@ -200,9 +199,10 @@ impl super::Renderable for LinkedContainerPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -243,15 +243,11 @@ impl super::Renderable for LinkedContainerData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.picture.as_ref().and_then(|picture| {
-            picture.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            )
-        })
+        self.picture
+            .as_ref()
+            .and_then(|picture| picture.render(used_mods, image_cache, &options.into()))
     }
 }

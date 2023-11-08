@@ -1,12 +1,12 @@
-use std::{collections::HashMap, ops::Deref, path::Path};
+use std::{collections::HashMap, ops::Deref};
 
-use image::DynamicImage;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
 use super::BasePrototype;
+use mod_util::UsedMods;
 use types::*;
 
 mod accumulator;
@@ -88,10 +88,7 @@ pub use vehicles::*;
 pub use wall::*;
 
 #[derive(Debug, Clone)]
-pub struct RenderOpts<'a> {
-    pub factorio_dir: &'a Path,
-    pub used_mods: mod_util::UsedMods,
-
+pub struct RenderOpts {
     pub direction: Direction,
     pub orientation: Option<RealOrientation>,
 
@@ -110,11 +107,9 @@ pub struct RenderOpts<'a> {
     pub runtime_tint: Option<Color>,
 }
 
-impl<'a> Default for RenderOpts<'a> {
+impl Default for RenderOpts {
     fn default() -> Self {
         Self {
-            factorio_dir: Path::new(""),
-            used_mods: HashMap::default(),
             direction: Direction::default(),
             orientation: Option::default(),
             pickup_position: Option::default(),
@@ -130,15 +125,15 @@ impl<'a> Default for RenderOpts<'a> {
 }
 
 // From impls for RenderOpts variants from types
-impl<'a> From<&'a RenderOpts<'a>> for SimpleGraphicsRenderOpts {
-    fn from(opts: &'a RenderOpts<'a>) -> Self {
+impl<'a> From<&'a RenderOpts> for SimpleGraphicsRenderOpts {
+    fn from(opts: &'a RenderOpts) -> Self {
         Self {
             runtime_tint: opts.runtime_tint,
         }
     }
 }
 
-impl<'a> From<&'a RenderOpts<'a>> for RotatedSpriteRenderOpts {
+impl<'a> From<&'a RenderOpts> for RotatedSpriteRenderOpts {
     fn from(value: &'a RenderOpts) -> Self {
         Self {
             orientation: value.clone().orientation.unwrap_or_default(),
@@ -147,8 +142,8 @@ impl<'a> From<&'a RenderOpts<'a>> for RotatedSpriteRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts<'a>> for SpriteNWayRenderOpts {
-    fn from(opts: &'a RenderOpts<'a>) -> Self {
+impl<'a> From<&'a RenderOpts> for SpriteNWayRenderOpts {
+    fn from(opts: &'a RenderOpts) -> Self {
         Self {
             direction: opts.direction,
             runtime_tint: opts.runtime_tint,
@@ -156,7 +151,7 @@ impl<'a> From<&'a RenderOpts<'a>> for SpriteNWayRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts<'a>> for SpriteVariationsRenderOpts {
+impl<'a> From<&'a RenderOpts> for SpriteVariationsRenderOpts {
     fn from(opts: &'a RenderOpts) -> Self {
         Self {
             variation: 0,
@@ -165,8 +160,8 @@ impl<'a> From<&'a RenderOpts<'a>> for SpriteVariationsRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts<'a>> for AnimationRenderOpts {
-    fn from(value: &'a RenderOpts<'a>) -> Self {
+impl<'a> From<&'a RenderOpts> for AnimationRenderOpts {
+    fn from(value: &'a RenderOpts) -> Self {
         Self {
             progress: 0.0,
             runtime_tint: value.runtime_tint,
@@ -174,7 +169,7 @@ impl<'a> From<&'a RenderOpts<'a>> for AnimationRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts<'a>> for Animation4WayRenderOpts {
+impl<'a> From<&'a RenderOpts> for Animation4WayRenderOpts {
     fn from(value: &'a RenderOpts) -> Self {
         Self {
             direction: value.direction,
@@ -184,7 +179,7 @@ impl<'a> From<&'a RenderOpts<'a>> for Animation4WayRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts<'a>> for AnimationVariationsRenderOpts {
+impl<'a> From<&'a RenderOpts> for AnimationVariationsRenderOpts {
     fn from(value: &'a RenderOpts) -> Self {
         Self {
             variation: 0,
@@ -194,8 +189,8 @@ impl<'a> From<&'a RenderOpts<'a>> for AnimationVariationsRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts<'a>> for RotatedAnimationRenderOpts {
-    fn from(value: &'a RenderOpts<'a>) -> Self {
+impl<'a> From<&'a RenderOpts> for RotatedAnimationRenderOpts {
+    fn from(value: &'a RenderOpts) -> Self {
         Self {
             orientation: value.orientation.unwrap_or_default(),
             progress: 0.0,
@@ -205,8 +200,8 @@ impl<'a> From<&'a RenderOpts<'a>> for RotatedAnimationRenderOpts {
     }
 }
 
-impl<'a> From<&RenderOpts<'a>> for RotatedAnimation4WayRenderOpts {
-    fn from(value: &RenderOpts<'a>) -> Self {
+impl<'a> From<&RenderOpts> for RotatedAnimation4WayRenderOpts {
+    fn from(value: &RenderOpts) -> Self {
         Self {
             direction: value.direction,
             orientation: value.orientation.unwrap_or_default(),
@@ -216,7 +211,7 @@ impl<'a> From<&RenderOpts<'a>> for RotatedAnimation4WayRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts<'a>> for BeaconGraphicsSetRenderOpts {
+impl<'a> From<&'a RenderOpts> for BeaconGraphicsSetRenderOpts {
     fn from(value: &'a RenderOpts) -> Self {
         Self {
             runtime_tint: value.runtime_tint,
@@ -224,7 +219,7 @@ impl<'a> From<&'a RenderOpts<'a>> for BeaconGraphicsSetRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts<'a>> for TransportBeltAnimationSetRenderOpts {
+impl<'a> From<&'a RenderOpts> for TransportBeltAnimationSetRenderOpts {
     fn from(opts: &'a RenderOpts) -> Self {
         Self {
             direction: opts.direction,
@@ -237,8 +232,8 @@ impl<'a> From<&'a RenderOpts<'a>> for TransportBeltAnimationSetRenderOpts {
     }
 }
 
-impl<'a> From<&'a RenderOpts<'a>> for MiningDrillGraphicsRenderOpts {
-    fn from(value: &'a RenderOpts<'a>) -> Self {
+impl<'a> From<&'a RenderOpts> for MiningDrillGraphicsRenderOpts {
+    fn from(value: &'a RenderOpts) -> Self {
         Self {
             direction: value.direction,
             runtime_tint: value.runtime_tint,
@@ -250,8 +245,9 @@ pub trait Renderable {
     fn render(
         &self,
         options: &RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
-    ) -> Option<(DynamicImage, f64, Vector)>;
+    ) -> Option<GraphicsOutput>;
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -273,9 +269,10 @@ impl<T: Renderable> Renderable for EntityPrototype<T> {
     fn render(
         &self,
         options: &RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
-    ) -> Option<(DynamicImage, f64, Vector)> {
-        self.0.child.render(options, image_cache)
+    ) -> Option<GraphicsOutput> {
+        self.0.child.render(options, used_mods, image_cache)
     }
 }
 
@@ -393,9 +390,10 @@ impl<T: Renderable> Renderable for EntityData<T> {
     fn render(
         &self,
         options: &RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
-    ) -> Option<(DynamicImage, f64, Vector)> {
-        self.child.render(options, image_cache)
+    ) -> Option<GraphicsOutput> {
+        self.child.render(options, used_mods, image_cache)
     }
 }
 
@@ -416,9 +414,10 @@ impl<T: Renderable> Renderable for EntityWithHealthPrototype<T> {
     fn render(
         &self,
         options: &RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
-    ) -> Option<(DynamicImage, f64, Vector)> {
-        self.0.render(options, image_cache)
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -468,9 +467,10 @@ impl<T: Renderable> Renderable for EntityWithHealthData<T> {
     fn render(
         &self,
         options: &RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
-    ) -> Option<(DynamicImage, f64, Vector)> {
-        self.child.render(options, image_cache)
+    ) -> Option<GraphicsOutput> {
+        self.child.render(options, used_mods, image_cache)
     }
 }
 
@@ -484,9 +484,10 @@ impl<T: Renderable> Renderable for EntityWithOwnerPrototype<T> {
     fn render(
         &self,
         options: &RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
-    ) -> Option<(DynamicImage, f64, Vector)> {
-        self.0.render(options, image_cache)
+    ) -> Option<GraphicsOutput> {
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -507,8 +508,9 @@ impl<T: Renderable> Renderable for EntityWithOwnerData<T> {
     fn render(
         &self,
         options: &RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
-    ) -> Option<(DynamicImage, f64, Vector)> {
-        self.child.render(options, image_cache)
+    ) -> Option<GraphicsOutput> {
+        self.child.render(options, used_mods, image_cache)
     }
 }

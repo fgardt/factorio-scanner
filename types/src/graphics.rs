@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use image::{
     imageops::{self, FilterType},
     DynamicImage, GenericImageView, Rgba,
@@ -163,7 +161,7 @@ pub enum SpriteSizeParam {
 pub trait FetchSprite {
     fn fetch(
         &self,
-        factorio_dir: &Path,
+
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
@@ -172,7 +170,7 @@ pub trait FetchSprite {
 
     fn fetch_offset(
         &self,
-        factorio_dir: &Path,
+
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
@@ -182,7 +180,7 @@ pub trait FetchSprite {
 
     fn fetch_offset_by_pixels(
         &self,
-        factorio_dir: &Path,
+
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
@@ -200,7 +198,7 @@ pub trait RenderableGraphics {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -209,14 +207,14 @@ pub trait RenderableGraphics {
 
 pub fn merge_layers<O, T: RenderableGraphics<RenderOpts = O>>(
     layers: &[T],
-    factorio_dir: &Path,
+
     used_mods: &UsedMods,
     image_cache: &mut ImageCache,
     opts: &O,
 ) -> Option<GraphicsOutput> {
     let layers = layers
         .iter()
-        .map(|layer| layer.render(factorio_dir, used_mods, image_cache, opts))
+        .map(|layer| layer.render(used_mods, image_cache, opts))
         .collect::<Vec<_>>();
 
     merge_renders(layers.as_slice())
@@ -364,25 +362,18 @@ pub struct SpriteParams {
 impl FetchSprite for SpriteParams {
     fn fetch(
         &self,
-        factorio_dir: &Path,
+
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
     ) -> Option<GraphicsOutput> {
-        self.fetch_offset_by_pixels(
-            factorio_dir,
-            filename,
-            used_mods,
-            image_cache,
-            runtime_tint,
-            (0, 0),
-        )
+        self.fetch_offset_by_pixels(filename, used_mods, image_cache, runtime_tint, (0, 0))
     }
 
     fn fetch_offset(
         &self,
-        factorio_dir: &Path,
+
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
@@ -391,7 +382,6 @@ impl FetchSprite for SpriteParams {
     ) -> Option<GraphicsOutput> {
         let (width, height) = self.get_size();
         self.fetch_offset_by_pixels(
-            factorio_dir,
             filename,
             used_mods,
             image_cache,
@@ -402,7 +392,7 @@ impl FetchSprite for SpriteParams {
 
     fn fetch_offset_by_pixels(
         &self,
-        factorio_dir: &Path,
+
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
@@ -422,14 +412,12 @@ impl FetchSprite for SpriteParams {
         let (offset_x, offset_y) = offset;
         let (width, height) = self.get_size();
 
-        let mut img = filename
-            .load(factorio_dir, used_mods, image_cache)?
-            .crop_imm(
-                (x + offset_x) as u32,
-                (y + offset_y) as u32,
-                width as u32,
-                height as u32,
-            );
+        let mut img = filename.load(used_mods, image_cache)?.crop_imm(
+            (x + offset_x) as u32,
+            (y + offset_y) as u32,
+            width as u32,
+            height as u32,
+        );
 
         // apply tint if applicable
         let tint = if self.apply_runtime_tint {
@@ -506,15 +494,13 @@ impl<T: FetchSprite> RenderableGraphics for SimpleGraphics<T> {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match &self {
-            Self::Layered { layers } => {
-                merge_layers(layers, factorio_dir, used_mods, image_cache, opts)
-            }
+            Self::Layered { layers } => merge_layers(layers, used_mods, image_cache, opts),
             Self::Simple {
                 filename,
                 data,
@@ -523,15 +509,9 @@ impl<T: FetchSprite> RenderableGraphics for SimpleGraphics<T> {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(factorio_dir, used_mods, image_cache, opts)
+                    hr_version.render(used_mods, image_cache, opts)
                 } else {
-                    data.fetch(
-                        factorio_dir,
-                        filename,
-                        used_mods,
-                        image_cache,
-                        opts.runtime_tint,
-                    )
+                    data.fetch(filename, used_mods, image_cache, opts.runtime_tint)
                 }
             }
         }
@@ -570,31 +550,29 @@ where
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Layered { layers } => {
-                merge_layers(layers, factorio_dir, used_mods, image_cache, opts)
-            }
+            Self::Layered { layers } => merge_layers(layers, used_mods, image_cache, opts),
             Self::Simple { data, hr_version } => {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(factorio_dir, used_mods, image_cache, opts)
+                    hr_version.render(used_mods, image_cache, opts)
                 } else {
-                    data.render(factorio_dir, used_mods, image_cache, opts)
+                    data.render(used_mods, image_cache, opts)
                 }
             }
             Self::MultiFile { data, hr_version } => {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(factorio_dir, used_mods, image_cache, opts)
+                    hr_version.render(used_mods, image_cache, opts)
                 } else {
-                    data.render(factorio_dir, used_mods, image_cache, opts)
+                    data.render(used_mods, image_cache, opts)
                 }
             }
         }
@@ -610,12 +588,12 @@ impl RenderableGraphics for Sprite {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
-        self.0.render(factorio_dir, used_mods, image_cache, opts)
+        self.0.render(used_mods, image_cache, opts)
     }
 }
 
@@ -674,7 +652,7 @@ impl RenderableGraphics for RotatedSpriteParams {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -696,7 +674,6 @@ impl RenderableGraphics for RotatedSpriteParams {
         let column = index % line_length;
 
         self.sprite_params.fetch_offset(
-            factorio_dir,
             &self.filename,
             used_mods,
             image_cache,
@@ -747,7 +724,7 @@ impl RenderableGraphics for RotatedSpriteParamsMultiFile {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -774,7 +751,6 @@ impl RenderableGraphics for RotatedSpriteParamsMultiFile {
         let column = index % line_length;
 
         self.sprite_params.fetch_offset(
-            factorio_dir,
             self.filenames.get(file_index as usize)?,
             used_mods,
             image_cache,
@@ -793,12 +769,12 @@ impl RenderableGraphics for RotatedSprite {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
-        self.0.render(factorio_dir, used_mods, image_cache, opts)
+        self.0.render(used_mods, image_cache, opts)
     }
 }
 
@@ -840,7 +816,7 @@ impl RenderableGraphics for Sprite4WaySheet {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -848,7 +824,7 @@ impl RenderableGraphics for Sprite4WaySheet {
         // TODO: option to enable/disable HR mode
         #[allow(clippy::option_if_let_else)]
         if let Some(hr_version) = &self.hr_version {
-            hr_version.render(factorio_dir, used_mods, image_cache, opts)
+            hr_version.render(used_mods, image_cache, opts)
         } else {
             let direction = match opts.direction {
                 Direction::North => 0,
@@ -859,7 +835,6 @@ impl RenderableGraphics for Sprite4WaySheet {
             } % self.frames;
 
             self.sprite_params.fetch_offset(
-                factorio_dir,
                 &self.filename,
                 used_mods,
                 image_cache,
@@ -894,7 +869,7 @@ impl RenderableGraphics for Sprite8WaySheet {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -902,13 +877,12 @@ impl RenderableGraphics for Sprite8WaySheet {
         // TODO: option to enable/disable HR mode
         #[allow(clippy::option_if_let_else)]
         if let Some(hr_version) = &self.hr_version {
-            hr_version.render(factorio_dir, used_mods, image_cache, opts)
+            hr_version.render(used_mods, image_cache, opts)
         } else {
             let direction = opts.direction as u32 % self.frames;
 
             let (width, _) = self.sprite_params.get_size();
             self.sprite_params.fetch_offset(
-                factorio_dir,
                 &self.filename,
                 used_mods,
                 image_cache,
@@ -943,21 +917,15 @@ impl RenderableGraphics for Sprite4Way {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Sprite(sprite) => {
-                sprite
-                    .0
-                    .render(factorio_dir, used_mods, image_cache, &opts.into())
-            }
-            Self::Sheet { sheet } => sheet.render(factorio_dir, used_mods, image_cache, opts),
-            Self::Sheets { sheets } => {
-                merge_layers(sheets, factorio_dir, used_mods, image_cache, opts)
-            }
+            Self::Sprite(sprite) => sprite.0.render(used_mods, image_cache, &opts.into()),
+            Self::Sheet { sheet } => sheet.render(used_mods, image_cache, opts),
+            Self::Sheets { sheets } => merge_layers(sheets, used_mods, image_cache, opts),
             Self::Directions {
                 north,
                 east,
@@ -973,7 +941,7 @@ impl RenderableGraphics for Sprite4Way {
                 }
             }
             .0
-            .render(factorio_dir, used_mods, image_cache, &opts.into()),
+            .render(used_mods, image_cache, &opts.into()),
         }
     }
 }
@@ -1005,15 +973,13 @@ impl RenderableGraphics for Sprite8Way {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Sheets { sheets } => {
-                merge_layers(sheets, factorio_dir, used_mods, image_cache, opts)
-            }
+            Self::Sheets { sheets } => merge_layers(sheets, used_mods, image_cache, opts),
             Self::Sheet { sheet } => todo!(),
             Self::Directions {
                 north,
@@ -1035,7 +1001,7 @@ impl RenderableGraphics for Sprite8Way {
                 Direction::NorthWest => north_west,
             }
             .0
-            .render(factorio_dir, used_mods, image_cache, &opts.into()),
+            .render(used_mods, image_cache, &opts.into()),
         }
     }
 }
@@ -1067,38 +1033,32 @@ pub struct SpriteSheetParams {
 impl FetchSprite for SpriteSheetParams {
     fn fetch(
         &self,
-        factorio_dir: &Path,
+
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
     ) -> Option<GraphicsOutput> {
         self.sprite_params
-            .fetch(factorio_dir, filename, used_mods, image_cache, runtime_tint)
+            .fetch(filename, used_mods, image_cache, runtime_tint)
     }
 
     fn fetch_offset(
         &self,
-        factorio_dir: &Path,
+
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
-        self.sprite_params.fetch_offset(
-            factorio_dir,
-            filename,
-            used_mods,
-            image_cache,
-            runtime_tint,
-            offset,
-        )
+        self.sprite_params
+            .fetch_offset(filename, used_mods, image_cache, runtime_tint, offset)
     }
 
     fn fetch_offset_by_pixels(
         &self,
-        factorio_dir: &Path,
+
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
@@ -1106,7 +1066,6 @@ impl FetchSprite for SpriteSheetParams {
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
         self.sprite_params.fetch_offset_by_pixels(
-            factorio_dir,
             filename,
             used_mods,
             image_cache,
@@ -1155,19 +1114,19 @@ impl RenderableGraphics for SpriteVariations {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
             Self::Struct { sheet } | Self::SpriteSheet(sheet) => {
-                sheet.render(factorio_dir, used_mods, image_cache, &opts.into())
+                sheet.render(used_mods, image_cache, &opts.into())
             }
             Self::Array(variations) => {
                 variations
                     .get(0)?
-                    .render(factorio_dir, used_mods, image_cache, &opts.into())
+                    .render(used_mods, image_cache, &opts.into())
             }
         }
     }
@@ -1371,38 +1330,32 @@ pub struct AnimationParams {
 impl FetchSprite for AnimationParams {
     fn fetch(
         &self,
-        factorio_dir: &Path,
+
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
     ) -> Option<GraphicsOutput> {
         self.sprite_params
-            .fetch(factorio_dir, filename, used_mods, image_cache, runtime_tint)
+            .fetch(filename, used_mods, image_cache, runtime_tint)
     }
 
     fn fetch_offset(
         &self,
-        factorio_dir: &Path,
+
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
-        self.sprite_params.fetch_offset(
-            factorio_dir,
-            filename,
-            used_mods,
-            image_cache,
-            runtime_tint,
-            offset,
-        )
+        self.sprite_params
+            .fetch_offset(filename, used_mods, image_cache, runtime_tint, offset)
     }
 
     fn fetch_offset_by_pixels(
         &self,
-        factorio_dir: &Path,
+
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
@@ -1410,7 +1363,6 @@ impl FetchSprite for AnimationParams {
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
         self.sprite_params.fetch_offset_by_pixels(
-            factorio_dir,
             filename,
             used_mods,
             image_cache,
@@ -1523,15 +1475,13 @@ impl RenderableGraphics for Animation {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match &self {
-            Self::Layered { layers } => {
-                merge_layers(layers, factorio_dir, used_mods, image_cache, opts)
-            }
+            Self::Layered { layers } => merge_layers(layers, used_mods, image_cache, opts),
             Self::Striped {
                 stripes,
                 data,
@@ -1540,7 +1490,7 @@ impl RenderableGraphics for Animation {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(factorio_dir, used_mods, image_cache, opts)
+                    hr_version.render(used_mods, image_cache, opts)
                 } else {
                     // TODO: add extra output for shadows
                     // rendering shadows / glow / light is not supported
@@ -1574,7 +1524,6 @@ impl RenderableGraphics for Animation {
                         let column = stripe_index % stripe.width_in_frames;
 
                         return data.fetch_offset(
-                            factorio_dir,
                             &stripe.filename,
                             used_mods,
                             image_cache,
@@ -1594,7 +1543,7 @@ impl RenderableGraphics for Animation {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(factorio_dir, used_mods, image_cache, opts)
+                    hr_version.render(used_mods, image_cache, opts)
                 } else {
                     // line_length = 0 means all frames are in a single line
                     let line_length = if data.line_length.unwrap_or(0) == 0 {
@@ -1613,7 +1562,6 @@ impl RenderableGraphics for Animation {
                     let column = index % line_length;
 
                     data.fetch_offset(
-                        factorio_dir,
                         filename,
                         used_mods,
                         image_cache,
@@ -1661,15 +1609,13 @@ impl RenderableGraphics for Animation4Way {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Animation(animation) => {
-                animation.render(factorio_dir, used_mods, image_cache, &opts.into())
-            }
+            Self::Animation(animation) => animation.render(used_mods, image_cache, &opts.into()),
             Self::Struct {
                 north,
                 east,
@@ -1695,7 +1641,7 @@ impl RenderableGraphics for Animation4Way {
                     unimplemented!("Animation4Way does not support diagonals")
                 }
             }
-            .render(factorio_dir, used_mods, image_cache, &opts.into()),
+            .render(used_mods, image_cache, &opts.into()),
         }
     }
 }
@@ -1733,7 +1679,7 @@ impl RenderableGraphics for AnimationElement {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1744,7 +1690,7 @@ impl RenderableGraphics for AnimationElement {
 
         self.animation
             .as_ref()
-            .and_then(|animation| animation.render(factorio_dir, used_mods, image_cache, opts))
+            .and_then(|animation| animation.render(used_mods, image_cache, opts))
     }
 }
 
@@ -1797,22 +1743,19 @@ impl RenderableGraphics for AnimationVariations {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Animation(animation) => {
-                animation.render(factorio_dir, used_mods, image_cache, &opts.into())
-            }
+            Self::Animation(animation) => animation.render(used_mods, image_cache, &opts.into()),
             Self::Array(animations) => animations.get(opts.variation as usize)?.render(
-                factorio_dir,
                 used_mods,
                 image_cache,
                 &opts.into(),
             ),
-            Self::Sheets { sheets } => todo!(), //merge_layers(sheets, factorio_dir, used_mods, image_cache, opts),
+            Self::Sheets { sheets } => todo!(), //merge_layers(sheets,  used_mods, image_cache, opts),
             Self::Sheet { sheet } => todo!(),
         }
     }
@@ -1879,38 +1822,32 @@ pub struct RotatedAnimationParams {
 impl FetchSprite for RotatedAnimationParams {
     fn fetch(
         &self,
-        factorio_dir: &Path,
+
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
     ) -> Option<GraphicsOutput> {
         self.animation_params
-            .fetch(factorio_dir, filename, used_mods, image_cache, runtime_tint)
+            .fetch(filename, used_mods, image_cache, runtime_tint)
     }
 
     fn fetch_offset(
         &self,
-        factorio_dir: &Path,
+
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
-        self.animation_params.fetch_offset(
-            factorio_dir,
-            filename,
-            used_mods,
-            image_cache,
-            runtime_tint,
-            offset,
-        )
+        self.animation_params
+            .fetch_offset(filename, used_mods, image_cache, runtime_tint, offset)
     }
 
     fn fetch_offset_by_pixels(
         &self,
-        factorio_dir: &Path,
+
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
@@ -1918,7 +1855,6 @@ impl FetchSprite for RotatedAnimationParams {
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
         self.animation_params.fetch_offset_by_pixels(
-            factorio_dir,
             filename,
             used_mods,
             image_cache,
@@ -2007,15 +1943,13 @@ impl RenderableGraphics for RotatedAnimation {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Layered { layers } => {
-                merge_layers(layers, factorio_dir, used_mods, image_cache, opts)
-            }
+            Self::Layered { layers } => merge_layers(layers, used_mods, image_cache, opts),
             Self::Striped {
                 stripes,
                 data,
@@ -2024,7 +1958,7 @@ impl RenderableGraphics for RotatedAnimation {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(factorio_dir, used_mods, image_cache, opts)
+                    hr_version.render(used_mods, image_cache, opts)
                 } else {
                     // TODO: support stripes
                     None
@@ -2038,7 +1972,7 @@ impl RenderableGraphics for RotatedAnimation {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(factorio_dir, used_mods, image_cache, opts)
+                    hr_version.render(used_mods, image_cache, opts)
                 } else {
                     let orientation_index = match opts.override_index {
                         Some(index) => u32::from(index),
@@ -2052,7 +1986,6 @@ impl RenderableGraphics for RotatedAnimation {
                     let row = frame_index / line_length;
 
                     data.fetch_offset(
-                        factorio_dir,
                         filenames.get(file_index as usize)?,
                         used_mods,
                         image_cache,
@@ -2069,7 +2002,7 @@ impl RenderableGraphics for RotatedAnimation {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(factorio_dir, used_mods, image_cache, opts)
+                    hr_version.render(used_mods, image_cache, opts)
                 } else {
                     let orientation_index = match opts.override_index {
                         Some(index) => u32::from(index),
@@ -2082,7 +2015,6 @@ impl RenderableGraphics for RotatedAnimation {
                     let row = frame_index / line_length;
 
                     data.fetch_offset(
-                        factorio_dir,
                         filename,
                         used_mods,
                         image_cache,
@@ -2133,14 +2065,14 @@ impl RenderableGraphics for RotatedAnimation4Way {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
             Self::RotatedAnimation(animation) => {
-                animation.render(factorio_dir, used_mods, image_cache, &opts.into())
+                animation.render(used_mods, image_cache, &opts.into())
             }
             Self::Struct {
                 north,
@@ -2158,7 +2090,7 @@ impl RenderableGraphics for RotatedAnimation4Way {
                     unimplemented!("RotatedAnimation4Way does not support diagonals")
                 }
             }
-            .render(factorio_dir, used_mods, image_cache, &opts.into()),
+            .render(used_mods, image_cache, &opts.into()),
         }
     }
 }

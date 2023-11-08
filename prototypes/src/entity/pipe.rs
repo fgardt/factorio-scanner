@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::EntityWithOwnerPrototype;
+use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/PipePrototype`](https://lua-api.factorio.com/latest/prototypes/PipePrototype.html)
@@ -11,9 +12,10 @@ impl super::Renderable for PipePrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -30,6 +32,7 @@ impl super::Renderable for PipeData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         match options.connections.unwrap_or_default() {
@@ -50,12 +53,7 @@ impl super::Renderable for PipeData {
             super::ConnectedDirections::DownLeftRight => &self.pictures.t_down,
             super::ConnectedDirections::All => &self.pictures.cross,
         }
-        .render(
-            options.factorio_dir,
-            &options.used_mods,
-            image_cache,
-            &options.into(),
-        )
+        .render(used_mods, image_cache, &options.into())
     }
 }
 
@@ -96,9 +94,10 @@ impl super::Renderable for InfinityPipePrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -116,9 +115,10 @@ impl super::Renderable for InfinityPipeData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.parent.render(options, image_cache)
+        self.parent.render(options, used_mods, image_cache)
     }
 }
 
@@ -130,9 +130,10 @@ impl super::Renderable for PipeToGroundPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -150,6 +151,7 @@ impl super::Renderable for PipeToGroundData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         match options.direction {
@@ -159,12 +161,7 @@ impl super::Renderable for PipeToGroundData {
             Direction::West => &self.pictures.left,
             _ => unimplemented!("PipeToGround only supports cardinal directions"),
         }
-        .render(
-            options.factorio_dir,
-            &options.used_mods,
-            image_cache,
-            &options.into(),
-        )
+        .render(used_mods, image_cache, &options.into())
     }
 }
 

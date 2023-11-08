@@ -12,7 +12,7 @@
     clippy::module_name_repetitions
 )]
 
-use std::{collections::HashMap, fmt, path::Path};
+use std::{collections::HashMap, fmt};
 
 use konst::{primitive::parse_u16, result::unwrap_ctx};
 
@@ -230,21 +230,14 @@ pub struct FileName(String);
 pub type ImageCache = HashMap<String, Option<image::DynamicImage>>;
 
 impl FileName {
-    #[must_use]
-    pub fn get(&self) -> &str {
-        self.0.as_str()
-    }
-
     pub fn load<'a>(
         &self,
-        factorio_dir: &Path,
         used_mods: &UsedMods,
         image_cache: &'a mut ImageCache,
     ) -> Option<&'a image::DynamicImage> {
-        const VANILLA_MODS: [&str; 2] = ["core", "base"];
-        let filename = self.get();
+        let filename = &self.0;
 
-        if image_cache.contains_key(&filename.to_owned()) {
+        if image_cache.contains_key(filename) {
             return image_cache.get(filename)?.as_ref();
         }
 
@@ -252,51 +245,27 @@ impl FileName {
         let mod_name = re.captures(filename)?.get(1)?.as_str();
         let sprite_path = &filename[(2 + mod_name.len() + 2 + 1)..]; // +1 to include the slash to prevent joining to interpret it as a absolute path
 
-        let img = if VANILLA_MODS.contains(&mod_name) {
-            let location = factorio_dir.join("data").join(mod_name).join(sprite_path);
-
-            image::open(location).ok()
-        } else {
-            // TODO: support unzipped mods?
-
-            let mod_version = used_mods.get(mod_name)?;
-            let mod_zip_path = factorio_dir
-                .join("mods")
-                .join(format!("{mod_name}_{mod_version}.zip"));
-
-            let mod_zip_file = std::fs::File::open(mod_zip_path).ok()?;
-            let mut zip = zip::ZipArchive::new(mod_zip_file).ok()?;
-
-            if zip.is_empty() {
-                return None;
-            }
-
-            // TODO: this could break if there are files in the root of the zip alongside the mod folder
-            let internal_mod_folder;
-            {
-                let extractor_file = &zip.by_index(0).ok()?;
-                let re = regex::Regex::new(r"^([^/]+)/").ok()?;
-                internal_mod_folder = re
-                    .captures(extractor_file.name())?
-                    .get(1)?
-                    .as_str()
-                    .to_owned();
-            }
-
-            let location = filename.replace(
-                format!("__{mod_name}__").as_str(),
-                internal_mod_folder.as_str(),
-            );
-            let mut file = zip.by_name(location.as_str()).ok()?;
-
-            let mut file_buff = Vec::new();
-            std::io::Read::read_to_end(&mut file, &mut file_buff).ok()?;
-
-            image::load_from_memory(&file_buff).ok()
+        let Some(m) = used_mods.get(mod_name) else {
+            println!("Mod {mod_name} not found");
+            return None;
         };
 
-        image_cache.insert(filename.to_owned(), img);
-        image_cache.get(&filename.to_owned())?.as_ref()
+        let file_data = match m.get_file(sprite_path) {
+            Ok(d) => d,
+            Err(e) => {
+                println!("Error loading {filename}: {e}");
+                return None;
+            }
+        };
+
+        let img = image::load_from_memory_with_format(
+            &used_mods.get(mod_name)?.get_file(sprite_path).ok()?,
+            image::ImageFormat::Png,
+        )
+        .ok();
+
+        image_cache.insert(filename.clone(), img);
+        image_cache.get(filename)?.as_ref()
     }
 }
 
@@ -1073,19 +1042,13 @@ impl RenderableGraphics for BeaconGraphicsSet {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         // TODO: render module visualisations
-        merge_layers(
-            &self.animation_list,
-            factorio_dir,
-            used_mods,
-            image_cache,
-            &opts.into(),
-        )
+        merge_layers(&self.animation_list, used_mods, image_cache, &opts.into())
     }
 }
 
@@ -1237,7 +1200,7 @@ impl RenderableGraphics for TransportBeltAnimationSet {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1257,7 +1220,7 @@ impl RenderableGraphics for TransportBeltAnimationSet {
         };
 
         self.animation_set
-            .render(factorio_dir, used_mods, image_cache, &index_options.into())
+            .render(used_mods, image_cache, &index_options.into())
     }
 }
 
@@ -1322,7 +1285,7 @@ impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1367,12 +1330,9 @@ impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
             ..*opts
         };
 
-        self.animation_set.animation_set.render(
-            factorio_dir,
-            used_mods,
-            image_cache,
-            &index_options.into(),
-        )
+        self.animation_set
+            .animation_set
+            .render(used_mods, image_cache, &index_options.into())
     }
 }
 
@@ -1482,7 +1442,7 @@ impl RenderableGraphics for WorkingVisualisation {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1493,7 +1453,7 @@ impl RenderableGraphics for WorkingVisualisation {
 
         self.animation
             .as_ref()?
-            .render(factorio_dir, used_mods, image_cache, opts)
+            .render(used_mods, image_cache, opts)
     }
 }
 
@@ -1544,15 +1504,13 @@ impl RenderableGraphics for WorkingVisualisationAnimation {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Single { animation } => {
-                animation.render(factorio_dir, used_mods, image_cache, &opts.into())
-            }
+            Self::Single { animation } => animation.render(used_mods, image_cache, &opts.into()),
             Self::Cardinal {
                 north_animation,
                 east_animation,
@@ -1565,7 +1523,7 @@ impl RenderableGraphics for WorkingVisualisationAnimation {
                 Direction::West => west_animation.as_ref(),
                 _ => return None,
             }
-            .and_then(|a| a.render(factorio_dir, used_mods, image_cache, &opts.into())),
+            .and_then(|a| a.render(used_mods, image_cache, &opts.into())),
         }
     }
 }
@@ -1907,7 +1865,7 @@ impl RenderableGraphics for MiningDrillGraphicsSet {
 
     fn render(
         &self,
-        factorio_dir: &Path,
+
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1917,12 +1875,12 @@ impl RenderableGraphics for MiningDrillGraphicsSet {
             .idle_animation
             .as_ref()
             .or(self.animation.as_ref())
-            .and_then(|a| a.render(factorio_dir, used_mods, image_cache, &opts.into()))];
+            .and_then(|a| a.render(used_mods, image_cache, &opts.into()))];
 
         renders.extend(
             self.working_visualisations
                 .iter()
-                .map(|wv| wv.render(factorio_dir, used_mods, image_cache, &opts.into())),
+                .map(|wv| wv.render(used_mods, image_cache, &opts.into())),
         );
 
         merge_renders(&renders)
@@ -2032,7 +1990,7 @@ pub struct TrainStopLight {
 }
 
 // Comparator variants
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
 pub enum Comparator {
     #[serde(rename = "<")]
     Less,
@@ -2049,7 +2007,7 @@ pub enum Comparator {
 }
 
 // https://lua-api.factorio.com/latest/concepts.html#ArithmeticCombinatorParameters
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
 pub enum ArithmeticOperation {
     #[serde(rename = "*")]
     Multiply,

@@ -1,5 +1,5 @@
 use clap::builder::PossibleValue;
-use mod_util::{mod_info::Version, UsedMods};
+use mod_util::{mod_info::Version, UsedVersions};
 
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -10,7 +10,7 @@ pub enum Preset {
 }
 
 impl Preset {
-    pub fn used_mods(self) -> UsedMods {
+    pub fn used_mods(self) -> UsedVersions {
         match self {
             Self::K2 => vec![("Krastorio2".to_owned(), Version::new(1, 3, 23))],
             Self::SE => vec![("space-exploration".to_owned(), Version::new(0, 6, 119))],

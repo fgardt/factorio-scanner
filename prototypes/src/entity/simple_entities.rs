@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use super::{helper, EntityWithHealthPrototype, EntityWithOwnerPrototype};
+use mod_util::UsedMods;
 use types::*;
 
 // TODO: implement rendering for simple entities
@@ -14,6 +15,7 @@ impl super::Renderable for SimpleEntityPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -50,6 +52,7 @@ impl super::Renderable for SimpleEntityData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -72,6 +75,7 @@ impl super::Renderable for SimpleEntityWithOwnerPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -112,6 +116,7 @@ impl super::Renderable for SimpleEntityWithOwnerData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -128,6 +133,7 @@ impl super::Renderable for SimpleEntityWithForcePrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None

@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use mod_util::{AnyBasic, UsedMods};
+use mod_util::{AnyBasic, UsedVersions};
 
 #[must_use]
-pub fn get_used_mods(bp: &blueprint::Blueprint) -> Option<UsedMods> {
+pub fn get_used_versions(bp: &blueprint::Blueprint) -> Option<UsedVersions> {
     for entity in &bp.entities {
         if entity.tags.contains_key("bp_meta_info") {
             let info = entity.tags.get("bp_meta_info")?;
