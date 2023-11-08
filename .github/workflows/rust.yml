@@ -49,7 +49,10 @@ jobs:
 
     build:
         name: Build
-        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                os: [ubuntu-latest, macos-latest, windows-latest]
+        runs-on: ${{ matrix.os }}
         if: ${{ github.event_name == 'push' || !github.event.pull_request.draft }}
         steps:
             - name: Checkout
