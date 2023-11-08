@@ -601,11 +601,19 @@ pub struct ItemFilter {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct InfinitySettings {
-    pub remove_unfiltered_items: bool,
-    pub filters: Option<Vec<InfinityFilter>>,
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(deny_unknown_fields, untagged)]
+pub enum InfinitySettings {
+    Pipe {
+        name: Option<String>,             // infinity pipes?
+        percentage: Option<f64>,          // infinity pipes?
+        temperature: Option<f64>,         // infinity pipes?
+        mode: Option<InfinityFilterMode>, // infinity pipes?
+    },
+    Chest {
+        remove_unfiltered_items: bool,
+        filters: Option<Vec<InfinityFilter>>,
+    },
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
