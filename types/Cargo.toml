@@ -7,6 +7,7 @@ edition.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow.workspace = true
 image.workspace = true
 konst.workspace = true
 mod_util.workspace = true
@@ -15,4 +16,3 @@ serde.workspace = true
 serde_helper.workspace = true
 serde_repr.workspace = true
 serde_with.workspace = true
-zip = "0.6.6"

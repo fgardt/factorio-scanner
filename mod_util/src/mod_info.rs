@@ -7,7 +7,7 @@ use serde::{
 use serde_with::skip_serializing_none;
 
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModInfo {
     pub name: String,
     pub version: Version,
@@ -20,6 +20,7 @@ pub struct ModInfo {
 
     pub factorio_version: Option<String>,
 
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dependencies: Vec<Dependency>,
 }
 

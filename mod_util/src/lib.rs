@@ -14,7 +14,11 @@ pub use any_basic::*;
 
 pub mod mod_info;
 pub mod mod_list;
+pub mod mod_loader;
 pub mod mod_settings;
 pub mod property_tree;
 
-pub type UsedMods = HashMap<String, mod_info::Version>;
+use mod_info::Version;
+use mod_loader::Mod;
+pub type UsedMods = HashMap<String, Mod>;
+pub type UsedVersions = HashMap<String, Version>;

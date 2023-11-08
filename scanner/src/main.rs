@@ -8,7 +8,7 @@
 #![allow(dead_code, clippy::upper_case_acronyms, unused_variables)]
 
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs::{self},
     io::{Read, Write},
     path::{Path, PathBuf},
@@ -17,15 +17,11 @@ use std::{
 
 use clap::Parser;
 use image::GenericImageView;
-use petgraph::prelude::DiGraph;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use mod_util::{
-    mod_info::{self, Dependency, DependencyVersion, Version},
-    mod_list::ModList,
-    mod_settings::SettingsDat,
-    UsedMods,
+    mod_list::ModList, mod_loader::Mod, mod_settings::SettingsDat, UsedMods, UsedVersions,
 };
 use prototypes::{DataRaw, DataUtil, EntityRenderOpts, EntityType, RenderableEntity};
 use types::{merge_renders, ConnectedDirections, Direction, GraphicsOutput, ImageCache};
@@ -69,33 +65,32 @@ fn main() {
 
     println!("loaded BP");
 
-    let mods_path = cli.factorio.join("mods");
-    let old_mod_list = ModList::load(&mods_path).unwrap();
-
-    let mut mod_list = ModList::generate(&mods_path).unwrap();
+    let mut mod_list = ModList::generate(&cli.factorio).unwrap();
 
     // get used mods from preset or detect from BP meta info
-    let mut used_mods = cli
+    let required_mods = cli
         .preset
         .as_ref()
-        .map_or(bp_helper::get_used_mods(bp).unwrap_or_default(), |p| {
+        .map_or(bp_helper::get_used_versions(bp).unwrap_or_default(), |p| {
             p.used_mods()
         });
 
-    if !used_mods.is_empty() {
-        println!("used mods: {used_mods:?}");
+    if !required_mods.is_empty() {
         println!("checking mod dependencies");
-        used_mods = resolve_mod_dependencies(&used_mods).unwrap();
-    }
 
-    let missing = mod_list.enable_used_mods(&used_mods);
+        let used_mods = match resolve_mod_dependencies(&required_mods, &mut mod_list) {
+            Ok(res) => res,
+            Err(e) => panic!("{e}"),
+        };
 
-    if !missing.is_empty() {
-        // fetch missing mods from portal
-        println!("downloading missing mods from mod portal");
-        download_missing_mods(&missing, &cli.factorio).unwrap();
-    } else if !used_mods.is_empty() {
-        println!("all mods are already installed");
+        let missing = mod_list.enable_mods(&used_mods);
+
+        if missing.is_empty() {
+            println!("all mods are already installed");
+        } else {
+            println!("downloading missing mods from mod portal");
+            download_mods(missing, &cli.factorio).unwrap();
+        }
     }
 
     let data_raw = if let Some(path) = cli.prototype_dump {
@@ -104,45 +99,42 @@ fn main() {
         mod_list.save().unwrap();
         println!("updated mod-list.json");
 
-        let settings_path = mods_path.join("mod-settings.dat");
-        let old_settings = SettingsDat::load(&settings_path).unwrap();
-
         // set settings used in BP
         let empty_settings = &HashMap::new();
         let settings =
             bp_helper::get_used_startup_settings(bp).map_or(empty_settings, |settings| settings);
-        SettingsDat::load_bp_settings(settings, bp.info.version, &settings_path)
-            .unwrap()
-            .save()
-            .unwrap();
+        SettingsDat::load_bp_settings(
+            settings,
+            bp.info.version,
+            &cli.factorio.join("mods/mod-settings.dat"),
+        )
+        .unwrap()
+        .save()
+        .unwrap();
 
         println!("updated mod-settings.dat");
 
         // execute factorio to dump prototypes
-        print!("dumping prototypes: ");
+        print!("dumping prototypes");
         std::io::stdout().flush().unwrap();
         let binary_path = cli.factorio.join("bin/x64/run");
         let dump_out = Command::new(cli.factorio_bin.unwrap_or(binary_path))
             .arg("--dump-data")
-            .output()
-            .expect("failed to execute process");
+            .spawn()
+            .expect("failed to execute process")
+            .wait_with_output()
+            .expect("failed to wait for process");
 
         if dump_out.status.success() {
             println!("success");
         } else {
             println!("failed!");
-            println!("{}", String::from_utf8_lossy(&dump_out.stderr));
+            //println!("{}", String::from_utf8_lossy(&dump_out.stderr));
             panic!();
         }
 
         let dump_path = cli.factorio.join("script-output/data-raw-dump.json");
-        let dump = DataRaw::load(&dump_path).unwrap();
-
-        // restore previous modlist & settings
-        old_mod_list.save().unwrap();
-        old_settings.save().unwrap();
-
-        dump
+        DataRaw::load(&dump_path).unwrap()
     };
 
     println!("loaded prototype data");
@@ -166,7 +158,15 @@ fn main() {
     //     );
     // }
 
-    match render_bp(bp, &data, &cli.factorio, &used_mods, &mut ImageCache::new()) {
+    let active_mods = mod_list.active_mods();
+
+    println!(
+        "mods active: {}\n{:?}",
+        active_mods.len(),
+        active_mods.keys().collect::<Vec<_>>()
+    );
+
+    match render_bp(bp, &data, &active_mods, &mut ImageCache::new()) {
         Some((img, scale, shift)) => {
             println!("render done");
 
@@ -191,9 +191,10 @@ fn render_entity(
     name: &str,
     entity: &dyn RenderableEntity,
     render_opts: &EntityRenderOpts,
+    used_mods: &UsedMods,
     image_cache: &mut ImageCache,
 ) {
-    match entity.render(render_opts, image_cache) {
+    match entity.render(render_opts, used_mods, image_cache) {
         Some((img, scale, shift)) => {
             // println!(
             //     "{name}: {}x{} x{scale} ({shift_x}, {shift_y})",
@@ -213,9 +214,10 @@ fn render_by_name(
     name: &str,
     data: &prototypes::DataUtil,
     render_opts: &EntityRenderOpts,
+    used_mods: &UsedMods,
     image_cache: &mut ImageCache,
 ) {
-    match data.render_entity(name, render_opts, image_cache) {
+    match data.render_entity(name, render_opts, used_mods, image_cache) {
         Some((img, scale, shift)) => {
             println!(
                 "{name}: {}x{} x{scale} {shift}",
@@ -229,14 +231,8 @@ fn render_by_name(
     }
 }
 
-fn bp_entity2render_opts<'a>(
-    value: &blueprint::Entity,
-    factorio_dir: &'a Path,
-    used_mods: UsedMods,
-) -> prototypes::EntityRenderOpts<'a> {
+fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::EntityRenderOpts {
     prototypes::EntityRenderOpts {
-        factorio_dir,
-        used_mods,
         direction: value.direction,
         orientation: value.orientation.map(f64::from),
         pickup_position: value
@@ -268,7 +264,6 @@ fn bp_entity2render_opts<'a>(
 fn render_bp(
     bp: &blueprint::Blueprint,
     data: &prototypes::DataUtil,
-    factorio_dir: &Path,
     used_mods: &UsedMods,
     image_cache: &mut ImageCache,
 ) -> Option<GraphicsOutput> {
@@ -413,12 +408,12 @@ fn render_bp(
                 }
             });
 
-            let mut render_opts = bp_entity2render_opts(e, factorio_dir, used_mods.clone());
+            let mut render_opts = bp_entity2render_opts(e);
             render_opts.connections = connections;
             render_opts.connected_gates = connected_gates;
             render_opts.draw_gate_patch = draw_gate_patch;
 
-            data.render_entity(&e.name, &render_opts, image_cache)
+            data.render_entity(&e.name, &render_opts, used_mods, image_cache)
                 .map(|(img, scale, shift)| {
                     let (shift_x, shift_y) = shift.as_tuple();
                     Some((
@@ -457,186 +452,23 @@ impl PlayerData {
     }
 }
 
-type DependencySolverInternal<'a> =
-    HashMap<String, (DependencyVersion, HashMap<Version, Vec<Dependency>>)>;
-struct DependencySolver<'a> {
-    all_deps: &'a DependencySolverInternal<'a>,
-}
-
-use mod_info::DependencyExt;
-
-impl<'a> DependencySolver<'a> {
-    pub const fn new(deps: &'a DependencySolverInternal<'a>) -> Self {
-        Self { all_deps: deps }
+fn resolve_mod_dependencies(
+    required: &UsedVersions,
+    mod_list: &mut ModList,
+) -> anyhow::Result<UsedVersions> {
+    if let Ok(res) = mod_list.solve_dependencies(required) {
+        return Ok(res);
     }
 
-    fn get_required_deps(&self) -> Vec<(&str, &Version)> {
-        self.all_deps
-            .iter()
-            .filter_map(|(n, (v, _))| {
-                if v.is_exact() {
-                    #[allow(clippy::unwrap_used)] // we know it's exact and thus contains a version
-                    Some((n.as_str(), v.version().unwrap()))
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>()
-    }
-
-    pub fn solve(&self) -> Option<UsedMods> {
-        let mut reqs = self.get_required_deps();
-
-        if reqs.is_empty() {
-            return Some(HashMap::default());
-        }
-
-        // TODO: actually solve the constraints and not just check if the latest versions work
-        let mut dep_graph = DiGraph::<(&str, Version), &Dependency>::new();
-
-        // build all required mod nodes
-        let mut node_map = HashMap::new();
-        while let Some(req) = reqs.pop() {
-            let name = req.0;
-            let version = req.1;
-
-            if node_map.contains_key(name) {
-                continue;
-            }
-
-            node_map.insert(name, dep_graph.add_node((name, *version)));
-
-            let Some((_, info)) = self.all_deps.get(name) else {
-                println!("Dependency solver could not find info about {name}");
-                return None;
-            };
-
-            let Some(node_reqs) = info.get(version) else {
-                println!("Dependency solver could not find dependencies for {name} v{version}");
-                return None;
-            };
-
-            // add required dependencies to the reqs queue
-            for dep in node_reqs {
-                if !dep.is_required() {
-                    continue;
-                }
-
-                let dep_name = dep.name();
-                let dep_version = dep.version();
-
-                let Some((_, info)) = self.all_deps.get(dep_name) else {
-                    println!("Dependency solver could not find info about dep {dep_name}");
-                    return None;
-                };
-
-                //let skip_versions = already_tested.entry(dep_name).or_default();
-                let mut dep_versions = info
-                    .keys()
-                    //.filter(|v| skip_versions.contains(v))
-                    .collect::<Vec<_>>();
-                dep_versions.sort();
-
-                let Some(dep_version) = dep_versions.last() else {
-                    // no more versions to try, fail?
-                    println!(
-                            "Dependency solver could not find a version for {dep_name} that satisfies {dep_version}"
-                        );
-                    return None;
-                };
-
-                reqs.push((dep_name, *dep_version));
-            }
-        }
-
-        // add all dependency edges
-        for node in dep_graph.node_indices() {
-            let (name, version) = dep_graph[node];
-            let Some((_, info)) = self.all_deps.get(name) else {
-                println!("Dependency solver could not find info about {name} while building edges");
-                return None;
-            };
-
-            let Some(deps) = info.get(&version) else {
-                println!("Dependency solver could not find dependencies for {name} v{version} while building edges");
-                return None;
-            };
-
-            for dep in deps {
-                let dep_name = dep.name().as_str();
-                let dep_version = dep.version();
-
-                let dep_node = node_map.get(dep_name);
-                if dep_node.is_none() && !dep.is_required() {
-                    // optional / incompatible dependencies are allowed to be missing
-                    continue;
-                }
-
-                let Some(dep_node) = dep_node else {
-                    println!(
-                        "Dependency solver could not find node for {dep_name} while building edges"
-                    );
-                    return None;
-                };
-
-                dep_graph.add_edge(node, *dep_node, dep);
-            }
-        }
-
-        // check if all requirements are satisfied
-        for node in dep_graph.node_indices() {
-            let (name, version) = dep_graph[node];
-
-            let conflicts = dep_graph
-                .edges_directed(node, petgraph::Direction::Incoming)
-                .map(|e| *e.weight())
-                .collect_conflicts::<Vec<_>>(name, version);
-
-            if !conflicts.is_empty() {
-                println!("Dependency solver found the following conflicts for {name} v{version}:");
-
-                // TODO: find the dependency source aswell
-                for conflict in conflicts {
-                    println!("  - {conflict}");
-                }
-
-                return None;
-            }
-        }
-
-        // dependencies are satisfied, hurray!
-        // collect all used mods + versions
-        Some(
-            dep_graph
-                .raw_nodes()
-                .iter()
-                .map(|n| (n.weight.0.to_owned(), n.weight.1))
-                .collect(),
-        )
-    }
-}
-
-fn resolve_mod_dependencies(mods: &UsedMods) -> Option<UsedMods> {
-    let mut process_queue: Vec<(String, DependencyVersion)> = mods
-        .iter()
-        .map(|(n, v)| ((*n).to_string(), (*v).into()))
-        .collect::<Vec<_>>();
-    let mut fetched_deps = HashMap::new();
-
-    // add base mod, TODO: figure out how to handle SA-DLC mods..
-    fetched_deps.insert(
-        "base".to_string(),
-        (
-            DependencyVersion::Any,
-            std::iter::once(&(prototypes::targeted_engine_version(), Vec::new()))
-                .cloned()
-                .collect::<HashMap<_, _>>(),
-        ),
+    println!(
+        "Could not resolve dependencies with local mods, fetching dependency info from mod portal"
     );
 
-    // fetch dependencies of all (transitively) required mods
-    while let Some((name, version)) = process_queue.pop() {
-        if fetched_deps.contains_key(&name) {
+    let mut process_queue = required.keys().cloned().collect::<Vec<_>>();
+    let mut fetched_deps = Vec::new();
+
+    while let Some(name) = process_queue.pop() {
+        if fetched_deps.contains(&name) {
             continue;
         }
 
@@ -644,40 +476,32 @@ fn resolve_mod_dependencies(mods: &UsedMods) -> Option<UsedMods> {
         std::io::stdout().flush().unwrap();
         let Some(info) = factorio_api::blocking::full_info(&name) else {
             println!("failed");
-            panic!("WIP");
-            //continue;
+            continue;
         };
         println!("done");
 
-        let v_deps = info
+        let deps_info = info
             .releases
-            .iter()
-            .map(|r| (r.version, r.info_json.dependencies.clone()))
+            .into_iter()
+            .map(|r| (r.version, r.info_json.dependencies))
             .collect::<HashMap<_, _>>();
 
-        let queue_add = v_deps
-            .values()
-            .flat_map(|v| {
-                v.iter().filter_map(|d| {
-                    if !d.is_required() {
-                        return None;
-                    }
+        mod_list.set_dependency_info(&name, deps_info.clone());
 
-                    Some((d.name().clone(), DependencyVersion::Any))
-                })
-            })
-            .collect::<Vec<_>>();
+        let queue_add = deps_info
+            .values()
+            .flatten()
+            .map(|d| d.name().clone())
+            .collect::<HashSet<_>>();
 
         process_queue.extend(queue_add);
-        fetched_deps.insert(name, (version, v_deps));
+        fetched_deps.push(name);
     }
 
-    // solve dependency constraints
-    println!("solving dependency constraints");
-    DependencySolver::new(&fetched_deps).solve()
+    mod_list.solve_dependencies(required)
 }
 
-fn download_missing_mods(missing: &[(String, Version)], factorio_dir: &Path) -> anyhow::Result<()> {
+fn download_mods(missing: UsedVersions, factorio_dir: &Path) -> anyhow::Result<()> {
     let mods_path = factorio_dir.join("mods");
     let Some(player_data) = PlayerData::load(&factorio_dir.join("player-data.json")) else {
         panic!("You need to login inside factorio first!");
@@ -692,9 +516,15 @@ fn download_missing_mods(missing: &[(String, Version)], factorio_dir: &Path) -> 
     };
 
     for (name, version) in missing {
+        if Mod::wube_mods().contains(&name.as_str()) {
+            return Err(anyhow::anyhow!(
+                "Tried to download {name} v{version}, a wube mod! You need to install it manually!"
+            ));
+        }
+
         print!("downloading {name} v{version}: ");
         std::io::stdout().flush().unwrap();
-        let Some(dl) = factorio_api::blocking::fetch_mod(name, version, &username, &token) else {
+        let Some(dl) = factorio_api::blocking::fetch_mod(&name, &version, &username, &token) else {
             println!("failed");
             return Err(anyhow::anyhow!("failed to download mod"));
         };

@@ -4,6 +4,7 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 
 use super::EntityWithOwnerPrototype;
+use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/OffshorePumpPrototype`](https://lua-api.factorio.com/latest/prototypes/OffshorePumpPrototype.html)
@@ -14,9 +15,10 @@ impl super::Renderable for OffshorePumpPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -78,9 +80,10 @@ impl super::Renderable for OffshorePumpData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.graphics.render(options, image_cache)
+        self.graphics.render(options, used_mods, image_cache)
     }
 }
 
@@ -99,17 +102,15 @@ pub enum OffshorePumpGraphicsVariant {
 impl super::Renderable for OffshorePumpGraphicsVariant {
     fn render(
         &self,
-        options: &crate::RenderOpts,
+        options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
-    ) -> Option<(image::DynamicImage, f64, Vector)> {
+    ) -> Option<GraphicsOutput> {
         match self {
-            Self::GraphicsSet { graphics_set } => graphics_set.render(options, image_cache),
-            Self::Deprecated { picture } => picture.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
+            Self::GraphicsSet { graphics_set } => {
+                graphics_set.render(options, used_mods, image_cache)
+            }
+            Self::Deprecated { picture } => picture.render(used_mods, image_cache, &options.into()),
         }
     }
 }
@@ -138,32 +139,19 @@ pub struct OffshorePumpGraphicsSet {
 impl super::Renderable for OffshorePumpGraphicsSet {
     fn render(
         &self,
-        options: &crate::RenderOpts,
+        options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
-    ) -> Option<(image::DynamicImage, f64, Vector)> {
+    ) -> Option<GraphicsOutput> {
         merge_renders(&[
-            self.base_pictures.as_ref().and_then(|b| {
-                b.render(
-                    options.factorio_dir,
-                    &options.used_mods,
-                    image_cache,
-                    &options.into(),
-                )
-            }),
-            self.animation.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
-            self.glass_pictures.as_ref().and_then(|g| {
-                g.render(
-                    options.factorio_dir,
-                    &options.used_mods,
-                    image_cache,
-                    &options.into(),
-                )
-            }),
+            self.base_pictures
+                .as_ref()
+                .and_then(|b| b.render(used_mods, image_cache, &options.into())),
+            self.animation
+                .render(used_mods, image_cache, &options.into()),
+            self.glass_pictures
+                .as_ref()
+                .and_then(|g| g.render(used_mods, image_cache, &options.into())),
         ])
     }
 }

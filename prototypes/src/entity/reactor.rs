@@ -4,6 +4,7 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 
 use super::EntityWithOwnerPrototype;
+use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/ReactorPrototype`](https://lua-api.factorio.com/latest/prototypes/ReactorPrototype.html)
@@ -14,9 +15,10 @@ impl super::Renderable for ReactorPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -57,25 +59,16 @@ impl super::Renderable for ReactorData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         merge_renders(&[
-            self.lower_layer_picture.as_ref().and_then(|s| {
-                s.render(
-                    options.factorio_dir,
-                    &options.used_mods,
-                    image_cache,
-                    &options.into(),
-                )
-            }),
-            self.picture.as_ref().and_then(|s| {
-                s.render(
-                    options.factorio_dir,
-                    &options.used_mods,
-                    image_cache,
-                    &options.into(),
-                )
-            }),
+            self.lower_layer_picture
+                .as_ref()
+                .and_then(|s| s.render(used_mods, image_cache, &options.into())),
+            self.picture
+                .as_ref()
+                .and_then(|s| s.render(used_mods, image_cache, &options.into())),
         ])
 
         // TODO: include heatpipes (and maybe glow?)

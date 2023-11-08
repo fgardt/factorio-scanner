@@ -1044,11 +1044,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "byteorder",
+ "petgraph",
  "regex",
  "serde",
  "serde_helper",
  "serde_json",
  "serde_with",
+ "zip",
 ]
 
 [[package]]
@@ -1537,7 +1539,6 @@ dependencies = [
  "image",
  "locale",
  "mod_util",
- "petgraph",
  "prototypes",
  "serde",
  "serde_json",
@@ -1927,6 +1928,7 @@ checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
 name = "types"
 version = "1.1.94"
 dependencies = [
+ "anyhow",
  "image",
  "konst",
  "mod_util",
@@ -1935,7 +1937,6 @@ dependencies = [
  "serde_helper",
  "serde_repr",
  "serde_with",
- "zip",
 ]
 
 [[package]]

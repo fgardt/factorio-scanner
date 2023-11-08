@@ -4,6 +4,7 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 
 use super::EntityWithOwnerPrototype;
+use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/StorageTankPrototype`](https://lua-api.factorio.com/latest/prototypes/StorageTankPrototype.html)
@@ -14,9 +15,10 @@ impl super::Renderable for StorageTankPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -64,17 +66,13 @@ impl super::Renderable for StorageTankData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         let background = self
             .pictures
             .window_background
-            .render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            )
+            .render(used_mods, image_cache, &options.into())
             .map(|(img, scale, shift)| {
                 let (shift_x, shift_y) = shift.as_tuple();
                 let (tl_x, tl_y) = self.window_bounding_box.0.as_tuple();
@@ -93,12 +91,9 @@ impl super::Renderable for StorageTankData {
 
         merge_renders(&[
             background,
-            self.pictures.picture.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
+            self.pictures
+                .picture
+                .render(used_mods, image_cache, &options.into()),
         ])
     }
 }

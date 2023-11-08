@@ -4,6 +4,7 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 
 use super::EntityWithOwnerPrototype;
+use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/RoboportPrototype`](https://lua-api.factorio.com/latest/prototypes/RoboportPrototype.html)
@@ -14,9 +15,10 @@ impl super::Renderable for RoboportPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -126,33 +128,17 @@ impl super::Renderable for RoboportData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         merge_renders(&[
-            self.base.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
-            self.base_animation.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
-            self.door_animation_up.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
-            self.door_animation_down.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
+            self.base.render(used_mods, image_cache, &options.into()),
+            self.base_animation
+                .render(used_mods, image_cache, &options.into()),
+            self.door_animation_up
+                .render(used_mods, image_cache, &options.into()),
+            self.door_animation_down
+                .render(used_mods, image_cache, &options.into()),
         ])
 
         // TODO: include base_animation & doors

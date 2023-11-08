@@ -4,6 +4,7 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 
 use super::EntityWithOwnerPrototype;
+use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/TurretPrototype`](https://lua-api.factorio.com/latest/prototypes/TurretPrototype.html)
@@ -14,9 +15,10 @@ impl super::Renderable for TurretPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -146,25 +148,16 @@ impl super::Renderable for TurretData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         merge_renders(&[
-            self.base_picture.as_ref().and_then(|a| {
-                a.render(
-                    options.factorio_dir,
-                    &options.used_mods,
-                    image_cache,
-                    &options.into(),
-                )
-            }),
-            self.folding_animation.as_ref().and_then(|a| {
-                a.render(
-                    options.factorio_dir,
-                    &options.used_mods,
-                    image_cache,
-                    &options.into(),
-                )
-            }),
+            self.base_picture
+                .as_ref()
+                .and_then(|a| a.render(used_mods, image_cache, &options.into())),
+            self.folding_animation
+                .as_ref()
+                .and_then(|a| a.render(used_mods, image_cache, &options.into())),
         ])
     }
 }
@@ -177,9 +170,10 @@ impl super::Renderable for AmmoTurretPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -203,9 +197,10 @@ impl super::Renderable for AmmoTurretData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.parent.render(options, image_cache)
+        self.parent.render(options, used_mods, image_cache)
     }
 }
 
@@ -217,9 +212,10 @@ impl super::Renderable for ElectricTurretPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -237,9 +233,10 @@ impl super::Renderable for ElectricTurretData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.parent.render(options, image_cache)
+        self.parent.render(options, used_mods, image_cache)
     }
 }
 
@@ -251,9 +248,10 @@ impl super::Renderable for FluidTurretPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -280,9 +278,10 @@ impl super::Renderable for FluidTurretData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.parent.render(options, image_cache)
+        self.parent.render(options, used_mods, image_cache)
     }
 }
 

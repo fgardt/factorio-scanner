@@ -3,6 +3,7 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
 
 use super::{helper, ArtilleryTurretCannonBarrelShiftings, EntityWithOwnerPrototype};
+use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/VehiclePrototype`](https://lua-api.factorio.com/latest/prototypes/VehiclePrototype.html)
@@ -13,6 +14,7 @@ impl<T: super::Renderable> super::Renderable for VehiclePrototype<T> {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -66,6 +68,7 @@ impl<T: super::Renderable> super::Renderable for VehicleData<T> {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -94,6 +97,7 @@ impl super::Renderable for CarPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -166,6 +170,7 @@ impl super::Renderable for CarData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -187,6 +192,7 @@ impl<T: super::Renderable> super::Renderable for RollingStockPrototype<T> {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -230,6 +236,7 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -244,6 +251,7 @@ impl super::Renderable for ArtilleryWagonPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -300,6 +308,7 @@ impl super::Renderable for ArtilleryWagonData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -314,6 +323,7 @@ impl super::Renderable for CargoWagonPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -331,6 +341,7 @@ impl super::Renderable for CargoWagonData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -345,6 +356,7 @@ impl super::Renderable for FluidWagonPrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -365,6 +377,7 @@ impl super::Renderable for FluidWagonData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -388,6 +401,7 @@ impl super::Renderable for LocomotivePrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -420,6 +434,7 @@ impl super::Renderable for LocomotiveData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None

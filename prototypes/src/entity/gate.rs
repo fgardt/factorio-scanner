@@ -4,6 +4,7 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 
 use super::EntityWithOwnerPrototype;
+use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/GatePrototype`](https://lua-api.factorio.com/latest/prototypes/GatePrototype.html)
@@ -14,9 +15,10 @@ impl super::Renderable for GatePrototype {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.render(options, image_cache)
+        self.0.render(options, used_mods, image_cache)
     }
 }
 
@@ -57,44 +59,31 @@ impl super::Renderable for GateData {
     fn render(
         &self,
         options: &super::RenderOpts,
+        used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         match options.direction {
             Direction::North | Direction::South => {
                 let renders = if options.draw_gate_patch {
                     [
-                        self.vertical_animation.render(
-                            options.factorio_dir,
-                            &options.used_mods,
-                            image_cache,
-                            &options.into(),
-                        ),
-                        self.wall_patch.render(
-                            options.factorio_dir,
-                            &options.used_mods,
-                            image_cache,
-                            &options.into(),
-                        ),
+                        self.vertical_animation
+                            .render(used_mods, image_cache, &options.into()),
+                        self.wall_patch
+                            .render(used_mods, image_cache, &options.into()),
                     ]
                 } else {
                     [
-                        self.vertical_animation.render(
-                            options.factorio_dir,
-                            &options.used_mods,
-                            image_cache,
-                            &options.into(),
-                        ),
+                        self.vertical_animation
+                            .render(used_mods, image_cache, &options.into()),
                         None,
                     ]
                 };
                 merge_renders(&renders)
             }
-            Direction::West | Direction::East => self.horizontal_animation.render(
-                options.factorio_dir,
-                &options.used_mods,
-                image_cache,
-                &options.into(),
-            ),
+            Direction::West | Direction::East => {
+                self.horizontal_animation
+                    .render(used_mods, image_cache, &options.into())
+            }
             _ => None,
         }
     }
