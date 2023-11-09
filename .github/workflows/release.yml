@@ -22,7 +22,7 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
-  build_and_upload:
+  release_build:
     name: Build ${{ matrix.platform.os_name }}}
     needs: create_release
     runs-on: ${{ matrix.platform.os }}
@@ -52,6 +52,9 @@ jobs:
         run: rustup toolchain install stable --profile minimal
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: "rust-stable"
+          shared-key: "release_build-${{ matrix.platform.target }}"
       - name: Build
         run: cargo build --target ${{ matrix.platform.target }} --release --package scanner
       - name: Upload release asset
