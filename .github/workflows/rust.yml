@@ -56,7 +56,7 @@ jobs:
           platform:
             - os_name: Windows-x86_64
               os: windows-latest
-              target: x86_64-pc-windows-msvc
+              target: x86_64-pc-windows-gnu
             - os_name: Linux-x86_64
               os: ubuntu-latest
               target: x86_64-unknown-linux-gnu
