@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,6 +12,20 @@ use types::*;
 /// [`Prototypes/ArtilleryTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/ArtilleryTurretPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ArtilleryTurretPrototype(EntityWithOwnerPrototype<ArtilleryTurretData>);
+
+impl Deref for ArtilleryTurretPrototype {
+    type Target = EntityWithOwnerPrototype<ArtilleryTurretData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for ArtilleryTurretPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for ArtilleryTurretPrototype {
     fn render(

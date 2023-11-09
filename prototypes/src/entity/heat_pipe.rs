@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 
 use super::EntityWithOwnerPrototype;
@@ -7,6 +9,20 @@ use types::*;
 /// [`Prototypes/HeatPipePrototype`](https://lua-api.factorio.com/latest/prototypes/HeatPipePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct HeatPipePrototype(EntityWithOwnerPrototype<HeatPipeData>);
+
+impl Deref for HeatPipePrototype {
+    type Target = EntityWithOwnerPrototype<HeatPipeData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for HeatPipePrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for HeatPipePrototype {
     fn render(

@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,6 +12,20 @@ use types::*;
 /// [`Prototypes/RoboportPrototype`](https://lua-api.factorio.com/latest/prototypes/RoboportPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RoboportPrototype(EntityWithOwnerPrototype<RoboportData>);
+
+impl Deref for RoboportPrototype {
+    type Target = EntityWithOwnerPrototype<RoboportData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for RoboportPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for RoboportPrototype {
     fn render(

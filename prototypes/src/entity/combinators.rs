@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 
 use serde_helper as helper;
@@ -70,6 +72,20 @@ impl<T: super::Renderable> super::Renderable for CombinatorPrototype<T> {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ArithmeticCombinatorPrototype(CombinatorPrototype<ArithmeticCombinatorData>);
 
+impl Deref for ArithmeticCombinatorPrototype {
+    type Target = CombinatorPrototype<ArithmeticCombinatorData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for ArithmeticCombinatorPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl super::Renderable for ArithmeticCombinatorPrototype {
     fn render(
         &self,
@@ -130,6 +146,20 @@ impl super::Renderable for ArithmeticCombinatorData {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DeciderCombinatorPrototype(CombinatorPrototype<DeciderCombinatorData>);
 
+impl Deref for DeciderCombinatorPrototype {
+    type Target = CombinatorPrototype<DeciderCombinatorData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for DeciderCombinatorPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl super::Renderable for DeciderCombinatorPrototype {
     fn render(
         &self,
@@ -179,6 +209,20 @@ impl super::Renderable for DeciderCombinatorData {
 /// [`Prototypes/ConstantCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/ConstantCombinatorPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ConstantCombinatorPrototype(EntityWithOwnerPrototype<ConstantCombinatorData>);
+
+impl Deref for ConstantCombinatorPrototype {
+    type Target = EntityWithOwnerPrototype<ConstantCombinatorData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for ConstantCombinatorPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for ConstantCombinatorPrototype {
     fn render(

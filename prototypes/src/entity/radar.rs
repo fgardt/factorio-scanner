@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,6 +12,20 @@ use types::*;
 /// [`Prototypes/RadarPrototype`](https://lua-api.factorio.com/latest/prototypes/RadarPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RadarPrototype(EntityWithOwnerPrototype<RadarData>);
+
+impl Deref for RadarPrototype {
+    type Target = EntityWithOwnerPrototype<RadarData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for RadarPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for RadarPrototype {
     fn render(

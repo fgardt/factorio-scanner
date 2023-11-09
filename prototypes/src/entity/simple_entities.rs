@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,6 +12,20 @@ use types::*;
 /// [`Prototypes/SimpleEntityPrototype`](https://lua-api.factorio.com/latest/prototypes/SimpleEntityPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SimpleEntityPrototype(EntityWithHealthPrototype<SimpleEntityData>);
+
+impl Deref for SimpleEntityPrototype {
+    type Target = EntityWithHealthPrototype<SimpleEntityData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for SimpleEntityPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for SimpleEntityPrototype {
     fn render(
@@ -71,6 +87,20 @@ pub enum SimpleEntityGraphics {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SimpleEntityWithOwnerPrototype(EntityWithOwnerPrototype<SimpleEntityWithOwnerData>);
 
+impl Deref for SimpleEntityWithOwnerPrototype {
+    type Target = EntityWithOwnerPrototype<SimpleEntityWithOwnerData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for SimpleEntityWithOwnerPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl super::Renderable for SimpleEntityWithOwnerPrototype {
     fn render(
         &self,
@@ -128,6 +158,20 @@ impl super::Renderable for SimpleEntityWithOwnerData {
 /// The only difference to `SimpleEntityWithOwnerPrototype` is that `is_military_target` defaults to `true` which is not relevant -> difference is not implemented.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SimpleEntityWithForcePrototype(SimpleEntityWithOwnerPrototype);
+
+impl Deref for SimpleEntityWithForcePrototype {
+    type Target = SimpleEntityWithOwnerPrototype;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for SimpleEntityWithForcePrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for SimpleEntityWithForcePrototype {
     fn render(

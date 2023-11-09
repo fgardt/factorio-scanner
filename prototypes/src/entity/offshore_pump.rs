@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,6 +12,20 @@ use types::*;
 /// [`Prototypes/OffshorePumpPrototype`](https://lua-api.factorio.com/latest/prototypes/OffshorePumpPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct OffshorePumpPrototype(EntityWithOwnerPrototype<OffshorePumpData>);
+
+impl Deref for OffshorePumpPrototype {
+    type Target = EntityWithOwnerPrototype<OffshorePumpData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for OffshorePumpPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for OffshorePumpPrototype {
     fn render(
