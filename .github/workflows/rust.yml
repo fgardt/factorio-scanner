@@ -36,6 +36,9 @@ jobs:
         run: rustup component add clippy
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: "rust-stable"
+          shared-key: "clippy"
       - name: Install cargo-binstall
         run: wget https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-gnu.tgz -O - | tar -xz -C $HOME/.cargo/bin  
       - name: Install sarif-fmt & clippy-sarif
@@ -75,5 +78,8 @@ jobs:
           run: rustup toolchain install ${{ matrix.toolchain }} --target ${{ matrix.platform.target }} --profile minimal
         - name: Rust cache
           uses: Swatinem/rust-cache@v2
+          with:
+            prefix-key: "rust-${{ matrix.toolchain }}"
+            shared-key: "build-${{ matrix.platform.target }}"
         - name: Build
           run: cargo build --target ${{ matrix.platform.target }}
