@@ -23,7 +23,7 @@ jobs:
           draft: false
           prerelease: false
   release_build:
-    name: Build ${{ matrix.platform.os_name }}}
+    name: Build ${{ matrix.platform.os_name }}
     needs: create_release
     runs-on: ${{ matrix.platform.os }}
     strategy:
@@ -49,7 +49,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Stable rust toolchain
-        run: rustup toolchain install stable --profile minimal
+        run: rustup toolchain install stable --target ${{ matrix.platform.target }} --profile minimal
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
