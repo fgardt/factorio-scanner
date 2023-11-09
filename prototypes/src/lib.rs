@@ -184,7 +184,7 @@ impl DataRaw {
     pub fn load(dump_path: &Path) -> Option<Self> {
         let mut bytes = Vec::new();
         File::open(dump_path).ok()?.read_to_end(&mut bytes).ok()?;
-        Some(serde_json::from_slice(&bytes).unwrap()) // TODO: something with Sprite4Way is wrong (crashes when all folder mods are active, flamethrower wagons?)
+        Some(serde_json::from_slice(&bytes).unwrap())
     }
 }
 

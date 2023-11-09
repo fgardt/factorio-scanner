@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,6 +12,20 @@ use types::*;
 /// [`Prototypes/ElectricPolePrototype`](https://lua-api.factorio.com/latest/prototypes/ElectricPolePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ElectricPolePrototype(EntityWithOwnerPrototype<ElectricPoleData>);
+
+impl Deref for ElectricPolePrototype {
+    type Target = EntityWithOwnerPrototype<ElectricPoleData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for ElectricPolePrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for ElectricPolePrototype {
     fn render(

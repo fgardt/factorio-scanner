@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -8,6 +10,20 @@ use types::*;
 /// [`Prototypes/BeaconPrototype`](https://lua-api.factorio.com/latest/prototypes/BeaconPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BeaconPrototype(EntityWithOwnerPrototype<BeaconData>);
+
+impl Deref for BeaconPrototype {
+    type Target = EntityWithOwnerPrototype<BeaconData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for BeaconPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for BeaconPrototype {
     fn render(

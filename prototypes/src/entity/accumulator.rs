@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,6 +12,20 @@ use types::*;
 /// [`Prototypes/AccumulatorPrototype`](https://lua-api.factorio.com/latest/prototypes/AccumulatorPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AccumulatorPrototype(EntityWithOwnerPrototype<AccumulatorData>);
+
+impl Deref for AccumulatorPrototype {
+    type Target = EntityWithOwnerPrototype<AccumulatorData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for AccumulatorPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for AccumulatorPrototype {
     fn render(

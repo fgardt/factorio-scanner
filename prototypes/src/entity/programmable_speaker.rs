@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,6 +12,20 @@ use types::*;
 /// [`Prototypes/ProgrammableSpeakerPrototype`](https://lua-api.factorio.com/latest/prototypes/ProgrammableSpeakerPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ProgrammableSpeakerPrototype(EntityWithOwnerPrototype<ProgrammableSpeakerData>);
+
+impl Deref for ProgrammableSpeakerPrototype {
+    type Target = EntityWithOwnerPrototype<ProgrammableSpeakerData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for ProgrammableSpeakerPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for ProgrammableSpeakerPrototype {
     fn render(

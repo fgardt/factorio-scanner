@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
@@ -14,6 +16,20 @@ use types::*;
 pub struct CraftingMachinePrototype<T: super::Renderable>(
     EntityWithOwnerPrototype<CraftingMachineData<T>>,
 );
+
+impl<T: super::Renderable> Deref for CraftingMachinePrototype<T> {
+    type Target = EntityWithOwnerPrototype<CraftingMachineData<T>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T: super::Renderable> DerefMut for CraftingMachinePrototype<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl<T: super::Renderable> super::Renderable for CraftingMachinePrototype<T> {
     fn render(
@@ -131,6 +147,20 @@ pub enum CraftingMachineFluidBoxCursedType {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct FurnacePrototype(CraftingMachinePrototype<FurnaceData>);
 
+impl Deref for FurnacePrototype {
+    type Target = CraftingMachinePrototype<FurnaceData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for FurnacePrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl super::Renderable for FurnacePrototype {
     fn render(
         &self,
@@ -170,6 +200,20 @@ impl super::Renderable for FurnaceData {
 /// [`Prototypes/AssemblingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/AssemblingMachinePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AssemblingMachinePrototype(CraftingMachinePrototype<AssemblingMachineData>);
+
+impl Deref for AssemblingMachinePrototype {
+    type Target = CraftingMachinePrototype<AssemblingMachineData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for AssemblingMachinePrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for AssemblingMachinePrototype {
     fn render(
@@ -215,6 +259,20 @@ impl super::Renderable for AssemblingMachineData {
 /// [`Prototypes/RocketSiloPrototype`](https://lua-api.factorio.com/latest/prototypes/RocketSiloPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RocketSiloPrototype(CraftingMachinePrototype<RocketSiloData>);
+
+impl Deref for RocketSiloPrototype {
+    type Target = CraftingMachinePrototype<RocketSiloData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for RocketSiloPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for RocketSiloPrototype {
     fn render(

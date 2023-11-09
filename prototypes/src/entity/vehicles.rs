@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
@@ -9,6 +11,20 @@ use types::*;
 /// [`Prototypes/VehiclePrototype`](https://lua-api.factorio.com/latest/prototypes/VehiclePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct VehiclePrototype<T: super::Renderable>(EntityWithOwnerPrototype<VehicleData<T>>);
+
+impl<T: super::Renderable> Deref for VehiclePrototype<T> {
+    type Target = EntityWithOwnerPrototype<VehicleData<T>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T: super::Renderable> DerefMut for VehiclePrototype<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl<T: super::Renderable> super::Renderable for VehiclePrototype<T> {
     fn render(
@@ -92,6 +108,20 @@ pub enum FrictionVariant {
 /// [`Prototypes/CarPrototype`](https://lua-api.factorio.com/latest/prototypes/CarPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CarPrototype(VehiclePrototype<CarData>);
+
+impl Deref for CarPrototype {
+    type Target = VehiclePrototype<CarData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for CarPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for CarPrototype {
     fn render(
@@ -188,6 +218,20 @@ pub enum BurnerOrVoidEnergySource {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RollingStockPrototype<T: super::Renderable>(VehiclePrototype<RollingStockData<T>>);
 
+impl<T: super::Renderable> Deref for RollingStockPrototype<T> {
+    type Target = VehiclePrototype<RollingStockData<T>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T: super::Renderable> DerefMut for RollingStockPrototype<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl<T: super::Renderable> super::Renderable for RollingStockPrototype<T> {
     fn render(
         &self,
@@ -246,6 +290,20 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
 /// [`Prototypes/ArtilleryWagonPrototype`](https://lua-api.factorio.com/latest/prototypes/ArtilleryWagonPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ArtilleryWagonPrototype(RollingStockPrototype<ArtilleryWagonData>);
+
+impl Deref for ArtilleryWagonPrototype {
+    type Target = RollingStockPrototype<ArtilleryWagonData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for ArtilleryWagonPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for ArtilleryWagonPrototype {
     fn render(
@@ -319,6 +377,20 @@ impl super::Renderable for ArtilleryWagonData {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CargoWagonPrototype(RollingStockPrototype<CargoWagonData>);
 
+impl Deref for CargoWagonPrototype {
+    type Target = RollingStockPrototype<CargoWagonData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for CargoWagonPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl super::Renderable for CargoWagonPrototype {
     fn render(
         &self,
@@ -351,6 +423,20 @@ impl super::Renderable for CargoWagonData {
 /// [`Prototypes/FluidWagonPrototype`](https://lua-api.factorio.com/latest/prototypes/FluidWagonPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct FluidWagonPrototype(RollingStockPrototype<FluidWagonData>);
+
+impl Deref for FluidWagonPrototype {
+    type Target = RollingStockPrototype<FluidWagonData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for FluidWagonPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for FluidWagonPrototype {
     fn render(
@@ -396,6 +482,20 @@ pub enum FluidWagonTankCount {
 /// [`Prototypes/LocomotivePrototype`](https://lua-api.factorio.com/latest/prototypes/LocomotivePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LocomotivePrototype(RollingStockPrototype<LocomotiveData>);
+
+impl Deref for LocomotivePrototype {
+    type Target = RollingStockPrototype<LocomotiveData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for LocomotivePrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for LocomotivePrototype {
     fn render(
