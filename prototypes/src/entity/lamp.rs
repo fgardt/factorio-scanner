@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,6 +12,20 @@ use types::*;
 /// [`Prototypes/LampPrototype`](https://lua-api.factorio.com/latest/prototypes/LampPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LampPrototype(EntityWithOwnerPrototype<LampData>);
+
+impl Deref for LampPrototype {
+    type Target = EntityWithOwnerPrototype<LampData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for LampPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for LampPrototype {
     fn render(

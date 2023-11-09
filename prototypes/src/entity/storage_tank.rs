@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,6 +12,20 @@ use types::*;
 /// [`Prototypes/StorageTankPrototype`](https://lua-api.factorio.com/latest/prototypes/StorageTankPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct StorageTankPrototype(EntityWithOwnerPrototype<StorageTankData>);
+
+impl Deref for StorageTankPrototype {
+    type Target = EntityWithOwnerPrototype<StorageTankData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for StorageTankPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for StorageTankPrototype {
     fn render(

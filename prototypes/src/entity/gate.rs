@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,6 +12,20 @@ use types::*;
 /// [`Prototypes/GatePrototype`](https://lua-api.factorio.com/latest/prototypes/GatePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GatePrototype(EntityWithOwnerPrototype<GateData>);
+
+impl Deref for GatePrototype {
+    type Target = EntityWithOwnerPrototype<GateData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for GatePrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for GatePrototype {
     fn render(

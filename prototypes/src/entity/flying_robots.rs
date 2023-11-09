@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,6 +12,20 @@ use types::*;
 /// [`Prototypes/FlyingRobotPrototype`](https://lua-api.factorio.com/latest/prototypes/FlyingRobotPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct FlyingRobotPrototype<T: super::Renderable>(EntityWithOwnerPrototype<FlyingRobotData<T>>);
+
+impl<T: super::Renderable> Deref for FlyingRobotPrototype<T> {
+    type Target = EntityWithOwnerPrototype<FlyingRobotData<T>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T: super::Renderable> DerefMut for FlyingRobotPrototype<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl<T: super::Renderable> super::Renderable for FlyingRobotPrototype<T> {
     fn render(
@@ -70,6 +86,20 @@ impl<T: super::Renderable> super::Renderable for FlyingRobotData<T> {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CombatRobotPrototype(FlyingRobotPrototype<CombatRobotData>);
 
+impl Deref for CombatRobotPrototype {
+    type Target = FlyingRobotPrototype<CombatRobotData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for CombatRobotPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl super::Renderable for CombatRobotPrototype {
     fn render(
         &self,
@@ -124,6 +154,20 @@ pub struct RobotWithLogisticInterfacePrototype<T: super::Renderable>(
     FlyingRobotPrototype<RobotWithLogisticInterfaceData<T>>,
 );
 
+impl<T: super::Renderable> Deref for RobotWithLogisticInterfacePrototype<T> {
+    type Target = FlyingRobotPrototype<RobotWithLogisticInterfaceData<T>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T: super::Renderable> DerefMut for RobotWithLogisticInterfacePrototype<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl<T: super::Renderable> super::Renderable for RobotWithLogisticInterfacePrototype<T> {
     fn render(
         &self,
@@ -173,6 +217,20 @@ impl<T: super::Renderable> super::Renderable for RobotWithLogisticInterfaceData<
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ConstructionRobotPrototype(RobotWithLogisticInterfacePrototype<ConstructionRobotData>);
 
+impl Deref for ConstructionRobotPrototype {
+    type Target = RobotWithLogisticInterfacePrototype<ConstructionRobotData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for ConstructionRobotPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl super::Renderable for ConstructionRobotPrototype {
     fn render(
         &self,
@@ -212,6 +270,20 @@ impl super::Renderable for ConstructionRobotData {
 /// [`Prototypes/LogisticRobotPrototype`](https://lua-api.factorio.com/latest/prototypes/LogisticRobotPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LogisticRobotPrototype(RobotWithLogisticInterfacePrototype<LogisticRobotData>);
+
+impl Deref for LogisticRobotPrototype {
+    type Target = RobotWithLogisticInterfacePrototype<LogisticRobotData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for LogisticRobotPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for LogisticRobotPrototype {
     fn render(

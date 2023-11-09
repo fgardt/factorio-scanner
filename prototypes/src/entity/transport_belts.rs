@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -12,6 +14,28 @@ use types::*;
 pub struct TransportBeltConnectablePrototype<G: super::Renderable, T: super::Renderable>(
     EntityWithOwnerPrototype<TransportBeltConnectableData<G, T>>,
 );
+
+impl<G, T> Deref for TransportBeltConnectablePrototype<G, T>
+where
+    G: super::Renderable,
+    T: super::Renderable,
+{
+    type Target = EntityWithOwnerPrototype<TransportBeltConnectableData<G, T>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<G, T> DerefMut for TransportBeltConnectablePrototype<G, T>
+where
+    G: super::Renderable,
+    T: super::Renderable,
+{
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl<G, T> super::Renderable for TransportBeltConnectablePrototype<G, T>
 where
@@ -107,6 +131,20 @@ impl super::Renderable for BeltGraphics {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LinkedBeltPrototype(TransportBeltConnectablePrototype<BeltGraphics, LinkedBeltData>);
 
+impl Deref for LinkedBeltPrototype {
+    type Target = TransportBeltConnectablePrototype<BeltGraphics, LinkedBeltData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for LinkedBeltPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl super::Renderable for LinkedBeltPrototype {
     fn render(
         &self,
@@ -179,6 +217,20 @@ pub struct LoaderPrototype<T: super::Renderable>(
     TransportBeltConnectablePrototype<BeltGraphics, LoaderData<T>>,
 );
 
+impl<T: super::Renderable> Deref for LoaderPrototype<T> {
+    type Target = TransportBeltConnectablePrototype<BeltGraphics, LoaderData<T>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T: super::Renderable> DerefMut for LoaderPrototype<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl<T: super::Renderable> super::Renderable for LoaderPrototype<T> {
     fn render(
         &self,
@@ -248,6 +300,20 @@ pub struct LoaderStructure {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Loader1x1Prototype(LoaderPrototype<Loader1x1Data>);
 
+impl Deref for Loader1x1Prototype {
+    type Target = LoaderPrototype<Loader1x1Data>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Loader1x1Prototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl super::Renderable for Loader1x1Prototype {
     fn render(
         &self,
@@ -283,6 +349,20 @@ impl super::Renderable for Loader1x1Data {
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Loader1x2Prototype(LoaderPrototype<Loader1x2Data>);
+
+impl Deref for Loader1x2Prototype {
+    type Target = LoaderPrototype<Loader1x2Data>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Loader1x2Prototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for Loader1x2Prototype {
     fn render(
@@ -320,6 +400,20 @@ impl super::Renderable for Loader1x2Data {
 /// [`Prototypes/SplitterPrototype`](https://lua-api.factorio.com/latest/prototypes/SplitterPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SplitterPrototype(TransportBeltConnectablePrototype<BeltGraphics, SplitterData>);
+
+impl Deref for SplitterPrototype {
+    type Target = TransportBeltConnectablePrototype<BeltGraphics, SplitterData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for SplitterPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for SplitterPrototype {
     fn render(
@@ -370,6 +464,20 @@ impl super::Renderable for SplitterData {
 pub struct TransportBeltPrototype(
     TransportBeltConnectablePrototype<BeltGraphicsWithCorners, TransportBeltData>,
 );
+
+impl Deref for TransportBeltPrototype {
+    type Target = TransportBeltConnectablePrototype<BeltGraphicsWithCorners, TransportBeltData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for TransportBeltPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for TransportBeltPrototype {
     fn render(
@@ -449,6 +557,20 @@ impl super::Renderable for BeltGraphicsWithCorners {
 pub struct UndergroundBeltPrototype(
     TransportBeltConnectablePrototype<BeltGraphics, UndergroundBeltData>,
 );
+
+impl Deref for UndergroundBeltPrototype {
+    type Target = TransportBeltConnectablePrototype<BeltGraphics, UndergroundBeltData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for UndergroundBeltPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for UndergroundBeltPrototype {
     fn render(

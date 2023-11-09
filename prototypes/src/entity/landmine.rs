@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,6 +12,20 @@ use types::*;
 /// [`Prototypes/LandMinePrototype`](https://lua-api.factorio.com/latest/prototypes/LandMinePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LandMinePrototype(EntityWithOwnerPrototype<LandMineData>);
+
+impl Deref for LandMinePrototype {
+    type Target = EntityWithOwnerPrototype<LandMineData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for LandMinePrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for LandMinePrototype {
     fn render(

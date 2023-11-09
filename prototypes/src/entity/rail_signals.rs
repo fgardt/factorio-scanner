@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -12,6 +14,20 @@ use types::*;
 pub struct RailSignalBasePrototype<T: super::Renderable>(
     EntityWithOwnerPrototype<RailSignalBaseData<T>>,
 );
+
+impl<T: super::Renderable> Deref for RailSignalBasePrototype<T> {
+    type Target = EntityWithOwnerPrototype<RailSignalBaseData<T>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T: super::Renderable> DerefMut for RailSignalBasePrototype<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl<T: super::Renderable> super::Renderable for RailSignalBasePrototype<T> {
     fn render(
@@ -71,6 +87,20 @@ impl<T: super::Renderable> super::Renderable for RailSignalBaseData<T> {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RailChainSignalPrototype(RailSignalBasePrototype<RailChainSignalData>);
 
+impl Deref for RailChainSignalPrototype {
+    type Target = RailSignalBasePrototype<RailChainSignalData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for RailChainSignalPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl super::Renderable for RailChainSignalPrototype {
     fn render(
         &self,
@@ -104,7 +134,21 @@ impl super::Renderable for RailChainSignalData {
 
 /// [`Prototypes/RailSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
-pub struct RailSignalPrototype(EntityWithOwnerPrototype<RailSignalData>);
+pub struct RailSignalPrototype(RailSignalBasePrototype<RailSignalData>);
+
+impl Deref for RailSignalPrototype {
+    type Target = RailSignalBasePrototype<RailSignalData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for RailSignalPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for RailSignalPrototype {
     fn render(

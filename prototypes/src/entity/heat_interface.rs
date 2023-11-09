@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -8,6 +10,20 @@ use types::*;
 /// [`Prototypes/HeatInterfacePrototype`](https://lua-api.factorio.com/latest/prototypes/HeatInterfacePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct HeatInterfacePrototype(EntityWithOwnerPrototype<HeatInterfaceData>);
+
+impl Deref for HeatInterfacePrototype {
+    type Target = EntityWithOwnerPrototype<HeatInterfaceData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for HeatInterfacePrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for HeatInterfacePrototype {
     fn render(

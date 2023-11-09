@@ -1,4 +1,7 @@
-use std::{collections::HashMap, ops::Deref};
+use std::{
+    collections::HashMap,
+    ops::{Deref, DerefMut},
+};
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -244,9 +247,29 @@ impl<T: Renderable> Deref for EntityPrototypeMap<T> {
     }
 }
 
+impl<T: Renderable> DerefMut for EntityPrototypeMap<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 /// [`Prototypes/EntityPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EntityPrototype<T: Renderable>(BasePrototype<EntityData<T>>);
+
+impl<T: Renderable> Deref for EntityPrototype<T> {
+    type Target = BasePrototype<EntityData<T>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T: Renderable> DerefMut for EntityPrototype<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl<T: Renderable> Renderable for EntityPrototype<T> {
     fn render(
@@ -393,6 +416,20 @@ pub enum DecorativeRemoveMode {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EntityWithHealthPrototype<T: Renderable>(EntityData<EntityWithHealthData<T>>);
 
+impl<T: Renderable> Deref for EntityWithHealthPrototype<T> {
+    type Target = EntityData<EntityWithHealthData<T>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T: Renderable> DerefMut for EntityWithHealthPrototype<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl<T: Renderable> Renderable for EntityWithHealthPrototype<T> {
     fn render(
         &self,
@@ -462,6 +499,20 @@ impl<T: Renderable> Renderable for EntityWithHealthData<T> {
 pub struct EntityWithOwnerPrototype<T: Renderable>(
     EntityWithHealthPrototype<EntityWithOwnerData<T>>,
 );
+
+impl<T: Renderable> Deref for EntityWithOwnerPrototype<T> {
+    type Target = EntityWithHealthPrototype<EntityWithOwnerData<T>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T: Renderable> DerefMut for EntityWithOwnerPrototype<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl<T: Renderable> Renderable for EntityWithOwnerPrototype<T> {
     fn render(

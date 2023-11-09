@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,6 +12,20 @@ use types::*;
 /// [`Prototypes/TurretPrototype`](https://lua-api.factorio.com/latest/prototypes/TurretPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TurretPrototype(EntityWithOwnerPrototype<TurretData>);
+
+impl Deref for TurretPrototype {
+    type Target = EntityWithOwnerPrototype<TurretData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for TurretPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for TurretPrototype {
     fn render(
@@ -166,6 +182,20 @@ impl super::Renderable for TurretData {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AmmoTurretPrototype(EntityWithOwnerPrototype<AmmoTurretData>);
 
+impl Deref for AmmoTurretPrototype {
+    type Target = EntityWithOwnerPrototype<AmmoTurretData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for AmmoTurretPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl super::Renderable for AmmoTurretPrototype {
     fn render(
         &self,
@@ -208,6 +238,20 @@ impl super::Renderable for AmmoTurretData {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ElectricTurretPrototype(EntityWithOwnerPrototype<ElectricTurretData>);
 
+impl Deref for ElectricTurretPrototype {
+    type Target = EntityWithOwnerPrototype<ElectricTurretData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for ElectricTurretPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl super::Renderable for ElectricTurretPrototype {
     fn render(
         &self,
@@ -243,6 +287,20 @@ impl super::Renderable for ElectricTurretData {
 /// [`Prototypes/FluidTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/FluidTurretPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct FluidTurretPrototype(EntityWithOwnerPrototype<FluidTurretData>);
+
+impl Deref for FluidTurretPrototype {
+    type Target = EntityWithOwnerPrototype<FluidTurretData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for FluidTurretPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for FluidTurretPrototype {
     fn render(

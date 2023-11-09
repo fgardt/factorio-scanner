@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 
 use serde_helper as helper;
@@ -9,6 +11,20 @@ use types::*;
 /// [`Prototypes/PowerSwitchPrototype`](https://lua-api.factorio.com/latest/prototypes/PowerSwitchPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PowerSwitchPrototype(EntityWithOwnerPrototype<PowerSwitchData>);
+
+impl Deref for PowerSwitchPrototype {
+    type Target = EntityWithOwnerPrototype<PowerSwitchData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for PowerSwitchPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for PowerSwitchPrototype {
     fn render(

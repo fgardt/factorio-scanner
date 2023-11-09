@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,6 +12,20 @@ use types::*;
 /// [`Prototypes/ReactorPrototype`](https://lua-api.factorio.com/latest/prototypes/ReactorPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ReactorPrototype(EntityWithOwnerPrototype<ReactorData>);
+
+impl Deref for ReactorPrototype {
+    type Target = EntityWithOwnerPrototype<ReactorData>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for ReactorPrototype {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl super::Renderable for ReactorPrototype {
     fn render(
