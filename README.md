@@ -25,3 +25,7 @@ Building additional tools might also happen along the way (cli tool to edit `mod
 The versions of the [`types`](/types/) and [`prototypes`](/prototypes/) crates matches their corresponding factorio version.
 
 Since the other crates are either only documented on the wiki (for example [blueprint string format](https://wiki.factorio.com/Blueprint_string_format) and [mod settings](https://wiki.factorio.com/Tutorial:Mod_settings) [file format](https://wiki.factorio.com/Mod_settings_file_format)) or not explicitly documented at all there is no factorio engine version to use for these crates.
+
+## Scanner
+
+See [`scanner's readme`](/scanner/README.md) for more information.
