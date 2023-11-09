@@ -6,25 +6,8 @@ on:
        - '[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
-  # create_release:
-  #   name: Create release
-  #   runs-on: ubuntu-latest
-  #   outputs:
-  #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-  #   steps:
-  #     - name: Create release
-  #       id: create_release
-  #       uses: actions/create-release@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         tag_name: ${{ github.ref }}
-  #         release_name: Release ${{ github.ref }}
-  #         draft: false
-  #         prerelease: false
   release_build:
     name: Build ${{ matrix.platform.os_name }}
-    # needs: create_release
     runs-on: ${{ matrix.platform.os }}
     strategy:
       matrix:
@@ -65,15 +48,6 @@ jobs:
           shared-key: "release_build-${{ matrix.platform.target }}"
       - name: Build
         run: cargo build --target ${{ matrix.platform.target }} --release --package scanner
-      # - name: Upload release asset
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ needs.create_release.outputs.upload_url }}
-      #     asset_path: ./target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}
-      #     asset_name: scanner_${{ matrix.platform.target }}
-      #     asset_content_type: application/octet-stream
       - name: Archive the built binary
         uses: TheDoctor0/zip-release@0.7.6
         with:
@@ -82,7 +56,7 @@ jobs:
           directory: ./target/${{ matrix.platform.target }}/release
           path: ${{ matrix.platform.bin }}
       - name: Upload release artifact for release job
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ./target/${{ matrix.platform.target }}/release/scanner_${{ matrix.platform.target }}.${{ matrix.platform.archive_type }}
   create_release:
@@ -91,11 +65,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download release artifacts from build job
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: ~/build_artifacts
       - name: Create release
         id: create_release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: ~/build_artifacts/*
+          artifacts: ~/build_artifacts/artifacts/*
