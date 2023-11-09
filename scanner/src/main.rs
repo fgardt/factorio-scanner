@@ -84,7 +84,6 @@ fn main() {
         };
 
         let missing = mod_list.enable_mods(&used_mods);
-
         if missing.is_empty() {
             println!("all mods are already installed");
         } else {
@@ -92,6 +91,8 @@ fn main() {
             download_mods(missing, &cli.factorio).unwrap();
         }
     }
+
+    let used_mods = mod_list.active_mods();
 
     let data_raw = if let Some(path) = cli.prototype_dump {
         DataRaw::load(&path).unwrap()
@@ -115,22 +116,20 @@ fn main() {
         println!("updated mod-settings.dat");
 
         // execute factorio to dump prototypes
-        print!("dumping prototypes");
+        print!("dumping prototypes ");
         std::io::stdout().flush().unwrap();
         let binary_path = cli.factorio.join("bin/x64/run");
         let dump_out = Command::new(cli.factorio_bin.unwrap_or(binary_path))
             .arg("--dump-data")
-            .spawn()
-            .expect("failed to execute process")
-            .wait_with_output()
-            .expect("failed to wait for process");
+            .output()
+            .expect("failed to execute process");
 
         if dump_out.status.success() {
             println!("success");
         } else {
             println!("failed!");
-            //println!("{}", String::from_utf8_lossy(&dump_out.stderr));
-            panic!();
+            println!("{}", String::from_utf8_lossy(&dump_out.stderr));
+            panic!("failed to dump prototypes");
         }
 
         let dump_path = cli.factorio.join("script-output/data-raw-dump.json");
@@ -161,7 +160,7 @@ fn main() {
     let active_mods = mod_list.active_mods();
 
     println!(
-        "mods active: {}\n{:?}",
+        "{} mods active: {:?}",
         active_mods.len(),
         active_mods.keys().collect::<Vec<_>>()
     );
@@ -170,18 +169,21 @@ fn main() {
         Some((img, scale, shift)) => {
             println!("render done");
 
+            let shrink_factor = (1.0 / scale).round() as u32;
+
             let img = img.resize(
-                img.dimensions().0 / 4,
-                img.dimensions().1 / 4,
+                img.dimensions().0 / shrink_factor,
+                img.dimensions().1 / shrink_factor,
                 image::imageops::FilterType::CatmullRom,
             );
-            println!(
-                "BP: {}x{} x{scale} {shift}",
-                img.dimensions().0,
-                img.dimensions().1,
-            );
+            // println!(
+            //     "{}x{} x{scale} {shift}",
+            //     img.dimensions().0,
+            //     img.dimensions().1,
+            // );
 
-            img.save(cli.out).unwrap();
+            img.save(&cli.out).unwrap();
+            println!("saved to {:?}", cli.out);
         }
         None => println!("EMPTY BP!"),
     }
@@ -466,6 +468,7 @@ fn resolve_mod_dependencies(
 
     let mut process_queue = required.keys().cloned().collect::<Vec<_>>();
     let mut fetched_deps = Vec::new();
+    fetched_deps.extend(Mod::wube_mods().map(std::string::ToString::to_string));
 
     while let Some(name) = process_queue.pop() {
         if fetched_deps.contains(&name) {
@@ -491,7 +494,13 @@ fn resolve_mod_dependencies(
         let queue_add = deps_info
             .values()
             .flatten()
-            .map(|d| d.name().clone())
+            .filter_map(|d| {
+                if d.is_required() {
+                    Some(d.name().clone())
+                } else {
+                    None
+                }
+            })
             .collect::<HashSet<_>>();
 
         process_queue.extend(queue_add);

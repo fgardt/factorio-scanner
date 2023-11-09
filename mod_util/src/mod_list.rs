@@ -129,7 +129,11 @@ impl<'a> ModList<'a> {
                     );
                 }
                 Err(e) => {
-                    println!("Failed to load wube mod {w_mod}: {e}");
+                    if w_mod == "core" || w_mod == "base" {
+                        anyhow::bail!("Failed to load wube mod {w_mod}: {e}");
+                    }
+
+                    //println!("Failed to load wube mod {w_mod}: {e}");
                 }
             }
         }
@@ -147,12 +151,17 @@ impl<'a> ModList<'a> {
             };
 
             let path = path.path();
+            if path.is_file() && path.extension() != Some("zip".as_ref()) {
+                //println!("skipping {path:?}");
+                continue;
+            }
+
             let Some(extracted) = filename_extractor.captures(filename) else {
-                println!("skipping invalid match: {path:?}");
+                //println!("skipping invalid match: {path:?}");
                 continue;
             };
             let Some(name) = extracted.get(1).map(|n| n.as_str().to_owned()) else {
-                println!("skipping invalid name: {path:?}");
+                //println!("skipping invalid name: {path:?}");
                 continue;
             };
             let path_version = extracted
@@ -234,6 +243,7 @@ impl<'a> ModList<'a> {
 
                     Entry {
                         enabled: true,
+                        active_version: Some(*version),
                         ..Entry::default()
                     }
                 });
@@ -244,18 +254,28 @@ impl<'a> ModList<'a> {
 
     #[must_use]
     pub fn active_mods(&self) -> UsedMods {
+        let mods = self.factorio_dir.join("mods");
         self.list
             .iter()
             .filter_map(|(name, entry)| {
                 if entry.enabled {
                     let file = if let Some(version) = entry.active_version {
-                        entry.versions.get(&version).cloned()?
+                        entry.versions.get(&version).cloned().unwrap_or_else(|| {
+                            let versioned = format!("{name}_{version}");
+                            if mods.join(versioned.clone() + ".zip").exists() {
+                                versioned + ".zip"
+                            } else if mods.join(versioned.clone()).exists() {
+                                versioned
+                            } else {
+                                name.clone()
+                            }
+                        })
                     } else {
                         entry.versions.values().next().cloned()?
                     };
 
                     let Ok(m) = Mod::load(self.factorio_dir, &file) else {
-                        //println!("Failed to load mod {name} at {file}");
+                        println!("Failed to load mod {name} at {file}");
 
                         return None;
                     };
