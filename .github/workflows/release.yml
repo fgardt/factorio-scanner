@@ -72,4 +72,4 @@ jobs:
         id: create_release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: ~/build_artifacts/artifacts/*
+          artifacts: ~/build_artifacts/artifact/*
