@@ -267,27 +267,29 @@ impl<T: Renderable> Renderable for EntityPrototype<T> {
     }
 }
 
-pub trait RenderableEntity<'a>: Renderable {
-    fn collision_box(&'a self) -> &'a Option<BoundingBox>;
-    fn selection_box(&'a self) -> &'a Option<BoundingBox>;
-    fn drawing_box(&'a self) -> &'a Option<BoundingBox>;
+pub trait RenderableEntity: Renderable {
+    fn collision_box(&self) -> BoundingBox;
+    fn selection_box(&self) -> BoundingBox;
+    fn drawing_box(&self) -> BoundingBox;
 }
 
-impl<'a, R, T> RenderableEntity<'a> for T
+impl<R, T> RenderableEntity for T
 where
-    R: Renderable + 'a,
+    R: Renderable,
     T: Renderable + Deref<Target = BasePrototype<EntityData<R>>>,
 {
-    fn collision_box(&'a self) -> &'a Option<BoundingBox> {
-        &self.collision_box
+    fn collision_box(&self) -> BoundingBox {
+        self.collision_box.clone().unwrap_or_default()
     }
 
-    fn selection_box(&'a self) -> &'a Option<BoundingBox> {
-        &self.selection_box
+    fn selection_box(&self) -> BoundingBox {
+        self.selection_box.clone().unwrap_or_default()
     }
 
-    fn drawing_box(&'a self) -> &'a Option<BoundingBox> {
-        &self.drawing_box
+    fn drawing_box(&self) -> BoundingBox {
+        self.drawing_box
+            .clone()
+            .unwrap_or_else(|| self.selection_box())
     }
 }
 

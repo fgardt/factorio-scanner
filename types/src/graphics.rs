@@ -183,6 +183,14 @@ impl InternalRenderLayer {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct TargetSize {
+    pub width: u32,
+    pub height: u32,
+    pub scale: f64,
+    pub top_left: crate::MapPosition,
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum SpriteSizeParam {

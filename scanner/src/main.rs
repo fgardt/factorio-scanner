@@ -25,7 +25,8 @@ use mod_util::{
 };
 use prototypes::{DataRaw, DataUtil, EntityRenderOpts, EntityType, RenderableEntity};
 use types::{
-    merge_renders, ConnectedDirections, Direction, GraphicsOutput, ImageCache, InternalRenderLayer,
+    merge_renders, ConnectedDirections, Direction, GraphicsOutput, ImageCache, MapPosition,
+    TargetSize,
 };
 
 mod bp_helper;
@@ -167,6 +168,9 @@ fn main() {
         active_mods.keys().collect::<Vec<_>>()
     );
 
+    let size = calculate_target_size(&bp, &data, 2048.0, 0.5).unwrap();
+    println!("target size: {size:?}");
+
     match render_bp(bp, &data, &active_mods, &mut ImageCache::new()) {
         Some((img, scale, shift)) => {
             println!("render done");
@@ -191,15 +195,81 @@ fn main() {
     }
 }
 
-fn calculate_target_size(bp: &blueprint::Blueprint, data: &DataUtil) -> ((u32, u32), (u32, u32)) {
+fn calculate_target_size(
+    bp: &blueprint::Blueprint,
+    data: &DataUtil,
+    target_res: f64,
+    min_scale: f64,
+) -> Option<TargetSize> {
+    const TILE_RES: f64 = 32.0;
+
+    let mut min_x = f64::MAX;
+    let mut min_y = f64::MAX;
+    let mut max_x = f64::MIN;
+    let mut max_y = f64::MIN;
+
+    let mut unknown = HashSet::new();
+
     for entity in &bp.entities {
         let Some(e_proto) = data.get_entity(&entity.name) else {
-            println!("unknown entity in blueprint: {}", entity.name);
+            unknown.insert(entity.name.as_str());
             continue;
         };
+
+        let e_pos: MapPosition = (&entity.position).into();
+        let c_box = e_proto.collision_box();
+
+        let tl = &e_pos + c_box.top_left();
+        let br = &e_pos + c_box.bottom_right();
+
+        if tl.x() < min_x {
+            min_x = tl.x();
+        }
+
+        if tl.y() < min_y {
+            min_y = tl.y();
+        }
+
+        if br.x() > max_x {
+            max_x = br.x();
+        }
+
+        if br.y() > max_y {
+            max_y = br.y();
+        }
     }
 
-    ((0, 0), (0, 0))
+    // for tile in &bp.tiles {
+    //     let Some(t_proto) = data.get_tile(&tile.name) else {
+    //         unknown.insert(tile.name.as_str());
+    //         continue;
+    //     };
+    // }
+
+    if !unknown.is_empty() {
+        println!("unknown entities: {unknown:?}");
+    }
+
+    let width = (max_x - min_x).ceil();
+    let height = (max_y - min_y).ceil();
+
+    if width == 0.0 || height == 0.0 {
+        return None;
+    }
+
+    // let scale = (f64::from(target_res) / (width * height * TILE_RES))
+    //     .sqrt()
+    //     .max(min_scale);
+
+    let scale = ((TILE_RES * width.sqrt() * height.sqrt()) / target_res).max(min_scale);
+    let scale = (scale * 4.0).ceil() / 4.0;
+
+    Some(TargetSize {
+        width: (width * TILE_RES / scale).ceil() as u32,
+        height: (height * TILE_RES / scale).ceil() as u32,
+        scale,
+        top_left: MapPosition::XY { x: min_x, y: min_y },
+    })
 }
 
 fn render_entity(
