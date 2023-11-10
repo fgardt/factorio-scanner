@@ -1,5 +1,3 @@
-use std::ops::{Deref, DerefMut};
-
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -8,33 +6,7 @@ use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/SolarPanelPrototype`](https://lua-api.factorio.com/latest/prototypes/SolarPanelPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct SolarPanelPrototype(EntityWithOwnerPrototype<SolarPanelData>);
-
-impl Deref for SolarPanelPrototype {
-    type Target = EntityWithOwnerPrototype<SolarPanelData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for SolarPanelPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for SolarPanelPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type SolarPanelPrototype = EntityWithOwnerPrototype<SolarPanelData>;
 
 /// [`Prototypes/SolarPanelPrototype`](https://lua-api.factorio.com/latest/prototypes/SolarPanelPrototype.html)
 #[skip_serializing_none]

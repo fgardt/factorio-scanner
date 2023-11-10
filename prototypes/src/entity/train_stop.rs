@@ -1,5 +1,3 @@
-use std::ops::{Deref, DerefMut};
-
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,33 +8,7 @@ use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/TrainStopPrototype`](https://lua-api.factorio.com/latest/prototypes/TrainStopPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct TrainStopPrototype(EntityWithOwnerPrototype<TrainStopData>);
-
-impl Deref for TrainStopPrototype {
-    type Target = EntityWithOwnerPrototype<TrainStopData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for TrainStopPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for TrainStopPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        None
-    }
-}
+pub type TrainStopPrototype = EntityWithOwnerPrototype<TrainStopData>;
 
 /// [`Prototypes/TrainStopPrototype`](https://lua-api.factorio.com/latest/prototypes/TrainStopPrototype.html)
 #[skip_serializing_none]

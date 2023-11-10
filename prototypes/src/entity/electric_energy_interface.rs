@@ -1,5 +1,3 @@
-use std::ops::{Deref, DerefMut};
-
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -8,33 +6,7 @@ use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/ElectricEnergyInterfacePrototype`](https://lua-api.factorio.com/latest/prototypes/ElectricEnergyInterfacePrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ElectricEnergyInterfacePrototype(EntityWithOwnerPrototype<ElectricEnergyInterfaceData>);
-
-impl Deref for ElectricEnergyInterfacePrototype {
-    type Target = EntityWithOwnerPrototype<ElectricEnergyInterfaceData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for ElectricEnergyInterfacePrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for ElectricEnergyInterfacePrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type ElectricEnergyInterfacePrototype = EntityWithOwnerPrototype<ElectricEnergyInterfaceData>;
 
 /// [`Prototypes/ElectricEnergyInterfacePrototype`](https://lua-api.factorio.com/latest/prototypes/ElectricEnergyInterfacePrototype.html)
 #[skip_serializing_none]

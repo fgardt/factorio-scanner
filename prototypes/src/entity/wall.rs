@@ -1,5 +1,3 @@
-use std::ops::{Deref, DerefMut};
-
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,33 +8,7 @@ use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/WallPrototype`](https://lua-api.factorio.com/latest/prototypes/WallPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct WallPrototype(EntityWithOwnerPrototype<WallData>);
-
-impl Deref for WallPrototype {
-    type Target = EntityWithOwnerPrototype<WallData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for WallPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for WallPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type WallPrototype = EntityWithOwnerPrototype<WallData>;
 
 /// [`Prototypes/WallPrototype`](https://lua-api.factorio.com/latest/prototypes/WallPrototype.html)
 #[skip_serializing_none]

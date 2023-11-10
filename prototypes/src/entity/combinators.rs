@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 use serde::{Deserialize, Serialize};
 
@@ -9,8 +9,11 @@ use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/CombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/CombinatorPrototype.html)
+pub type CombinatorPrototype<T> = EntityWithOwnerPrototype<CombinatorData<T>>;
+
+/// [`Prototypes/CombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/CombinatorPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
-pub struct CombinatorPrototype<T> {
+pub struct CombinatorData<T: super::Renderable> {
     pub energy_source: AnyEnergySource, // theoretically only electric and void are valid
     pub active_energy_usage: Energy,
     pub sprites: Option<Sprite4Way>,
@@ -52,10 +55,18 @@ pub struct CombinatorPrototype<T> {
     pub draw_circuit_wires: bool,
 
     #[serde(flatten)]
-    pub child: T,
+    child: T,
 }
 
-impl<T: super::Renderable> super::Renderable for CombinatorPrototype<T> {
+impl<T: super::Renderable> Deref for CombinatorData<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.child
+    }
+}
+
+impl<T: super::Renderable> super::Renderable for CombinatorData<T> {
     fn render(
         &self,
         options: &super::RenderOpts,
@@ -69,36 +80,7 @@ impl<T: super::Renderable> super::Renderable for CombinatorPrototype<T> {
 }
 
 /// [`Prototypes/ArithmeticCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/ArithmeticCombinatorPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ArithmeticCombinatorPrototype(CombinatorPrototype<ArithmeticCombinatorData>);
-
-impl Deref for ArithmeticCombinatorPrototype {
-    type Target = CombinatorPrototype<ArithmeticCombinatorData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for ArithmeticCombinatorPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for ArithmeticCombinatorPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        merge_renders(&[
-            self.0.render(options, used_mods, image_cache),
-            self.0.child.render(options, used_mods, image_cache),
-        ])
-    }
-}
+pub type ArithmeticCombinatorPrototype = CombinatorPrototype<ArithmeticCombinatorData>;
 
 /// [`Prototypes/ArithmeticCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/ArithmeticCombinatorPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -143,36 +125,7 @@ impl super::Renderable for ArithmeticCombinatorData {
 }
 
 /// [`Prototypes/DeciderCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/DeciderCombinatorPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct DeciderCombinatorPrototype(CombinatorPrototype<DeciderCombinatorData>);
-
-impl Deref for DeciderCombinatorPrototype {
-    type Target = CombinatorPrototype<DeciderCombinatorData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for DeciderCombinatorPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for DeciderCombinatorPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        merge_renders(&[
-            self.0.render(options, used_mods, image_cache),
-            self.0.child.render(options, used_mods, image_cache),
-        ])
-    }
-}
+pub type DeciderCombinatorPrototype = CombinatorPrototype<DeciderCombinatorData>;
 
 /// [`Prototypes/DeciderCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/DeciderCombinatorPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -207,33 +160,7 @@ impl super::Renderable for DeciderCombinatorData {
 }
 
 /// [`Prototypes/ConstantCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/ConstantCombinatorPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ConstantCombinatorPrototype(EntityWithOwnerPrototype<ConstantCombinatorData>);
-
-impl Deref for ConstantCombinatorPrototype {
-    type Target = EntityWithOwnerPrototype<ConstantCombinatorData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for ConstantCombinatorPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for ConstantCombinatorPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type ConstantCombinatorPrototype = EntityWithOwnerPrototype<ConstantCombinatorData>;
 
 /// [`Prototypes/ConstantCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/ConstantCombinatorPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]

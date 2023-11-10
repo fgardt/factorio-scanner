@@ -1,5 +1,3 @@
-use std::ops::{Deref, DerefMut};
-
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,33 +8,7 @@ use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/GeneratorPrototype`](https://lua-api.factorio.com/latest/prototypes/GeneratorPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct GeneratorPrototype(EntityWithOwnerPrototype<GeneratorData>);
-
-impl Deref for GeneratorPrototype {
-    type Target = EntityWithOwnerPrototype<GeneratorData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for GeneratorPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for GeneratorPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type GeneratorPrototype = EntityWithOwnerPrototype<GeneratorData>;
 
 /// [`Prototypes/GeneratorPrototype`](https://lua-api.factorio.com/latest/prototypes/GeneratorPrototype.html)
 #[skip_serializing_none]

@@ -1,5 +1,3 @@
-use std::ops::{Deref, DerefMut};
-
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,33 +8,7 @@ use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/BoilerPrototype`](https://lua-api.factorio.com/latest/prototypes/BoilerPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct BoilerPrototype(EntityWithOwnerPrototype<BoilerData>);
-
-impl Deref for BoilerPrototype {
-    type Target = EntityWithOwnerPrototype<BoilerData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for BoilerPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for BoilerPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type BoilerPrototype = EntityWithOwnerPrototype<BoilerData>;
 
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]

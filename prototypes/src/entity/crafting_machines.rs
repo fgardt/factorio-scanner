@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 use std::collections::HashMap;
 
@@ -12,35 +12,7 @@ use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/CraftingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/CraftingMachinePrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct CraftingMachinePrototype<T: super::Renderable>(
-    EntityWithOwnerPrototype<CraftingMachineData<T>>,
-);
-
-impl<T: super::Renderable> Deref for CraftingMachinePrototype<T> {
-    type Target = EntityWithOwnerPrototype<CraftingMachineData<T>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T: super::Renderable> DerefMut for CraftingMachinePrototype<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl<T: super::Renderable> super::Renderable for CraftingMachinePrototype<T> {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type CraftingMachinePrototype<T> = EntityWithOwnerPrototype<CraftingMachineData<T>>;
 
 /// [`Prototypes/CraftingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/CraftingMachinePrototype.html)
 #[skip_serializing_none]
@@ -107,7 +79,15 @@ pub struct CraftingMachineData<T: super::Renderable> {
     pub working_visualisations: FactorioArray<WorkingVisualisation>,
 
     #[serde(flatten)]
-    pub child: T,
+    child: T,
+}
+
+impl<T: super::Renderable> Deref for CraftingMachineData<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.child
+    }
 }
 
 impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
@@ -144,33 +124,7 @@ pub enum CraftingMachineFluidBoxCursedType {
 }
 
 /// [`Prototypes/FurnacePrototype`](https://lua-api.factorio.com/latest/prototypes/FurnacePrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct FurnacePrototype(CraftingMachinePrototype<FurnaceData>);
-
-impl Deref for FurnacePrototype {
-    type Target = CraftingMachinePrototype<FurnaceData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for FurnacePrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for FurnacePrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type FurnacePrototype = CraftingMachinePrototype<FurnaceData>;
 
 /// [`Prototypes/FurnacePrototype`](https://lua-api.factorio.com/latest/prototypes/FurnacePrototype.html)
 #[skip_serializing_none]
@@ -198,33 +152,7 @@ impl super::Renderable for FurnaceData {
 }
 
 /// [`Prototypes/AssemblingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/AssemblingMachinePrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct AssemblingMachinePrototype(CraftingMachinePrototype<AssemblingMachineData>);
-
-impl Deref for AssemblingMachinePrototype {
-    type Target = CraftingMachinePrototype<AssemblingMachineData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for AssemblingMachinePrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for AssemblingMachinePrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type AssemblingMachinePrototype = CraftingMachinePrototype<AssemblingMachineData>;
 
 /// [`Prototypes/AssemblingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/AssemblingMachinePrototype.html)
 #[skip_serializing_none]
@@ -257,33 +185,7 @@ impl super::Renderable for AssemblingMachineData {
 }
 
 /// [`Prototypes/RocketSiloPrototype`](https://lua-api.factorio.com/latest/prototypes/RocketSiloPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct RocketSiloPrototype(CraftingMachinePrototype<RocketSiloData>);
-
-impl Deref for RocketSiloPrototype {
-    type Target = CraftingMachinePrototype<RocketSiloData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for RocketSiloPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for RocketSiloPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type RocketSiloPrototype = CraftingMachinePrototype<RocketSiloData>;
 
 /// [`Prototypes/RocketSiloPrototype`](https://lua-api.factorio.com/latest/prototypes/RocketSiloPrototype.html)
 #[skip_serializing_none]
@@ -350,7 +252,7 @@ pub struct RocketSiloData {
     pub rocket_result_inventory_size: ItemStackIndex,
 
     #[serde(flatten)]
-    pub assembler_data: AssemblingMachineData,
+    assembler_data: AssemblingMachineData,
     // not implemented
     // pub alarm_trigger: Option<TriggerEffect>,
     // pub clamps_on_trigger: Option<TriggerEffect>,
@@ -363,6 +265,14 @@ pub struct RocketSiloData {
     // pub doors_sound: Option<Sound>,
     // pub raise_rocket_sound: Option<Sound>,
     // pub flying_sound: Option<Sound>,
+}
+
+impl Deref for RocketSiloData {
+    type Target = AssemblingMachineData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.assembler_data
+    }
 }
 
 impl super::Renderable for RocketSiloData {
