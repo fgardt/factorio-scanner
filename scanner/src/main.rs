@@ -24,7 +24,9 @@ use mod_util::{
     mod_list::ModList, mod_loader::Mod, mod_settings::SettingsDat, UsedMods, UsedVersions,
 };
 use prototypes::{DataRaw, DataUtil, EntityRenderOpts, EntityType, RenderableEntity};
-use types::{merge_renders, ConnectedDirections, Direction, GraphicsOutput, ImageCache};
+use types::{
+    merge_renders, ConnectedDirections, Direction, GraphicsOutput, ImageCache, InternalRenderLayer,
+};
 
 mod bp_helper;
 mod preset;
@@ -187,6 +189,17 @@ fn main() {
         }
         None => println!("EMPTY BP!"),
     }
+}
+
+fn calculate_target_size(bp: &blueprint::Blueprint, data: &DataUtil) -> ((u32, u32), (u32, u32)) {
+    for entity in &bp.entities {
+        let Some(e_proto) = data.get_entity(&entity.name) else {
+            println!("unknown entity in blueprint: {}", entity.name);
+            continue;
+        };
+    }
+
+    ((0, 0), (0, 0))
 }
 
 fn render_entity(

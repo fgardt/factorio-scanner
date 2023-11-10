@@ -138,6 +138,51 @@ pub enum RenderLayer {
     Cursor,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum InternalRenderLayer {
+    Background,
+
+    Ground,
+    GroundPatch,
+
+    RailStonePathBackground,
+    RailStonePath,
+    RailTies,
+    RailBackplate,
+    RailMetal,
+
+    Shadow,
+    Entity,
+    InserterHand,
+
+    Wire,
+
+    DirectionOverlay,
+    RecipeOverlay,
+}
+
+impl InternalRenderLayer {
+    #[must_use]
+    pub const fn all() -> [Self; 14] {
+        [
+            Self::Background,
+            Self::Ground,
+            Self::GroundPatch,
+            Self::RailStonePathBackground,
+            Self::RailStonePath,
+            Self::RailTies,
+            Self::RailBackplate,
+            Self::RailMetal,
+            Self::Shadow,
+            Self::Entity,
+            Self::InserterHand,
+            Self::Wire,
+            Self::DirectionOverlay,
+            Self::RecipeOverlay,
+        ]
+    }
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum SpriteSizeParam {
