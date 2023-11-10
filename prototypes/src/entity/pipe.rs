@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 use serde::{Deserialize, Serialize};
 
@@ -7,33 +7,7 @@ use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/PipePrototype`](https://lua-api.factorio.com/latest/prototypes/PipePrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct PipePrototype(EntityWithOwnerPrototype<PipeData>);
-
-impl Deref for PipePrototype {
-    type Target = EntityWithOwnerPrototype<PipeData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for PipePrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for PipePrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type PipePrototype = EntityWithOwnerPrototype<PipeData>;
 
 /// [`Prototypes/PipePrototype`](https://lua-api.factorio.com/latest/prototypes/PipePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -103,33 +77,7 @@ pub struct PipePictures {
 }
 
 /// [`Prototypes/InfinityPipePrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityPipePrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct InfinityPipePrototype(EntityWithOwnerPrototype<InfinityPipeData>);
-
-impl Deref for InfinityPipePrototype {
-    type Target = EntityWithOwnerPrototype<InfinityPipeData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for InfinityPipePrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for InfinityPipePrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type InfinityPipePrototype = EntityWithOwnerPrototype<InfinityPipeData>;
 
 /// [`Prototypes/InfinityPipePrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityPipePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -139,6 +87,14 @@ pub struct InfinityPipeData {
 
     #[serde(flatten)]
     pub parent: PipeData,
+}
+
+impl Deref for InfinityPipeData {
+    type Target = PipeData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
 }
 
 impl super::Renderable for InfinityPipeData {
@@ -153,33 +109,7 @@ impl super::Renderable for InfinityPipeData {
 }
 
 /// [`Prototypes/PipeToGroundPrototype`](https://lua-api.factorio.com/latest/prototypes/PipeToGroundPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct PipeToGroundPrototype(EntityWithOwnerPrototype<PipeToGroundData>);
-
-impl Deref for PipeToGroundPrototype {
-    type Target = EntityWithOwnerPrototype<PipeToGroundData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for PipeToGroundPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for PipeToGroundPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type PipeToGroundPrototype = EntityWithOwnerPrototype<PipeToGroundData>;
 
 /// [`Prototypes/PipeToGroundPrototype`](https://lua-api.factorio.com/latest/prototypes/PipeToGroundPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]

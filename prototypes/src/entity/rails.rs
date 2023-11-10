@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -8,33 +8,7 @@ use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/RailPrototype`](https://lua-api.factorio.com/latest/prototypes/RailPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct RailPrototype<T: super::Renderable>(EntityWithOwnerPrototype<RailData<T>>);
-
-impl<T: super::Renderable> Deref for RailPrototype<T> {
-    type Target = EntityWithOwnerPrototype<RailData<T>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T: super::Renderable> DerefMut for RailPrototype<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl<T: super::Renderable> super::Renderable for RailPrototype<T> {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        None
-    }
-}
+pub type RailPrototype<T> = EntityWithOwnerPrototype<RailData<T>>;
 
 /// [`Prototypes/RailPrototype`](https://lua-api.factorio.com/latest/prototypes/RailPrototype.html)
 #[skip_serializing_none]
@@ -43,9 +17,17 @@ pub struct RailData<T: super::Renderable> {
     pub pictures: RailPictureSet,
 
     #[serde(flatten)]
-    pub child: T,
+    child: T,
     // not implemented
     // pub walking_sound: Option<Sound>,
+}
+
+impl<T: super::Renderable> Deref for RailData<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.child
+    }
 }
 
 impl<T: super::Renderable> super::Renderable for RailData<T> {
@@ -60,33 +42,7 @@ impl<T: super::Renderable> super::Renderable for RailData<T> {
 }
 
 /// [`Prototypes/CurvedRailPrototype`](https://lua-api.factorio.com/latest/prototypes/CurvedRailPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct CurvedRailPrototype(RailPrototype<CurvedRailData>);
-
-impl Deref for CurvedRailPrototype {
-    type Target = RailPrototype<CurvedRailData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for CurvedRailPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for CurvedRailPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        None
-    }
-}
+pub type CurvedRailPrototype = RailPrototype<CurvedRailData>;
 
 /// [`Prototypes/CurvedRailPrototype`](https://lua-api.factorio.com/latest/prototypes/CurvedRailPrototype.html)
 #[skip_serializing_none]
@@ -113,33 +69,7 @@ pub enum CurvedBendType {
 }
 
 /// [`Prototypes/StraightRailPrototype`](https://lua-api.factorio.com/latest/prototypes/StraightRailPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct StraightRailPrototype(RailPrototype<StraightRailData>);
-
-impl Deref for StraightRailPrototype {
-    type Target = RailPrototype<StraightRailData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for StraightRailPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for StraightRailPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        None
-    }
-}
+pub type StraightRailPrototype = RailPrototype<StraightRailData>;
 
 /// [`Prototypes/StraightRailPrototype`](https://lua-api.factorio.com/latest/prototypes/StraightRailPrototype.html)
 #[skip_serializing_none]

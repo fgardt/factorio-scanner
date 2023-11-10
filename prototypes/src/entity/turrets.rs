@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -10,33 +10,7 @@ use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/TurretPrototype`](https://lua-api.factorio.com/latest/prototypes/TurretPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct TurretPrototype(EntityWithOwnerPrototype<TurretData>);
-
-impl Deref for TurretPrototype {
-    type Target = EntityWithOwnerPrototype<TurretData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for TurretPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for TurretPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type TurretPrototype = EntityWithOwnerPrototype<TurretData>;
 
 /// [`Prototypes/TurretPrototype`](https://lua-api.factorio.com/latest/prototypes/TurretPrototype.html)
 #[skip_serializing_none]
@@ -179,33 +153,7 @@ impl super::Renderable for TurretData {
 }
 
 /// [`Prototypes/AmmoTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/AmmoTurretPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct AmmoTurretPrototype(EntityWithOwnerPrototype<AmmoTurretData>);
-
-impl Deref for AmmoTurretPrototype {
-    type Target = EntityWithOwnerPrototype<AmmoTurretData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for AmmoTurretPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for AmmoTurretPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type AmmoTurretPrototype = EntityWithOwnerPrototype<AmmoTurretData>;
 
 /// [`Prototypes/AmmoTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/AmmoTurretPrototype.html)
 #[skip_serializing_none]
@@ -223,6 +171,14 @@ pub struct AmmoTurretData {
     pub parent: TurretData,
 }
 
+impl Deref for AmmoTurretData {
+    type Target = TurretData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
+}
+
 impl super::Renderable for AmmoTurretData {
     fn render(
         &self,
@@ -235,33 +191,7 @@ impl super::Renderable for AmmoTurretData {
 }
 
 /// [`Prototypes/ElectricTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/ElectricTurretPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ElectricTurretPrototype(EntityWithOwnerPrototype<ElectricTurretData>);
-
-impl Deref for ElectricTurretPrototype {
-    type Target = EntityWithOwnerPrototype<ElectricTurretData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for ElectricTurretPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for ElectricTurretPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type ElectricTurretPrototype = EntityWithOwnerPrototype<ElectricTurretData>;
 
 /// [`Prototypes/ElectricTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/ElectricTurretPrototype.html)
 #[skip_serializing_none]
@@ -271,6 +201,14 @@ pub struct ElectricTurretData {
 
     #[serde(flatten)]
     pub parent: TurretData,
+}
+
+impl Deref for ElectricTurretData {
+    type Target = TurretData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
 }
 
 impl super::Renderable for ElectricTurretData {
@@ -285,33 +223,7 @@ impl super::Renderable for ElectricTurretData {
 }
 
 /// [`Prototypes/FluidTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/FluidTurretPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct FluidTurretPrototype(EntityWithOwnerPrototype<FluidTurretData>);
-
-impl Deref for FluidTurretPrototype {
-    type Target = EntityWithOwnerPrototype<FluidTurretData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for FluidTurretPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for FluidTurretPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type FluidTurretPrototype = EntityWithOwnerPrototype<FluidTurretData>;
 
 /// [`Prototypes/FluidTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/FluidTurretPrototype.html)
 #[skip_serializing_none]
@@ -330,6 +242,14 @@ pub struct FluidTurretData {
 
     #[serde(flatten)]
     pub parent: TurretData,
+}
+
+impl Deref for FluidTurretData {
+    type Target = TurretData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
 }
 
 impl super::Renderable for FluidTurretData {
