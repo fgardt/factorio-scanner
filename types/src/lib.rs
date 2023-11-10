@@ -275,6 +275,7 @@ impl FileName {
 pub enum LocalisedString {
     Bool(bool),
     String(String),
+    Number(f64),
     Array(FactorioArray<LocalisedString>),
 }
 
