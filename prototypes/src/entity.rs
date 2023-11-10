@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    ops::{Deref, DerefMut},
-};
+use std::{collections::HashMap, ops::Deref};
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -247,12 +244,6 @@ impl<T: Renderable> Deref for EntityPrototypeMap<T> {
     }
 }
 
-impl<T: Renderable> DerefMut for EntityPrototypeMap<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
 /// [`Prototypes/EntityPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EntityPrototype<T: Renderable>(BasePrototype<EntityData<T>>);
@@ -265,12 +256,6 @@ impl<T: Renderable> Deref for EntityPrototype<T> {
     }
 }
 
-impl<T: Renderable> DerefMut for EntityPrototype<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
 impl<T: Renderable> Renderable for EntityPrototype<T> {
     fn render(
         &self,
@@ -278,7 +263,31 @@ impl<T: Renderable> Renderable for EntityPrototype<T> {
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.0.child.render(options, used_mods, image_cache)
+        self.child.render(options, used_mods, image_cache)
+    }
+}
+
+pub trait RenderableEntity<'a>: Renderable {
+    fn collision_box(&'a self) -> &'a Option<BoundingBox>;
+    fn selection_box(&'a self) -> &'a Option<BoundingBox>;
+    fn drawing_box(&'a self) -> &'a Option<BoundingBox>;
+}
+
+impl<'a, R, T> RenderableEntity<'a> for T
+where
+    R: Renderable + 'a,
+    T: Renderable + Deref<Target = BasePrototype<EntityData<R>>>,
+{
+    fn collision_box(&'a self) -> &'a Option<BoundingBox> {
+        &self.collision_box
+    }
+
+    fn selection_box(&'a self) -> &'a Option<BoundingBox> {
+        &self.selection_box
+    }
+
+    fn drawing_box(&'a self) -> &'a Option<BoundingBox> {
+        &self.drawing_box
     }
 }
 
@@ -392,6 +401,14 @@ pub struct EntityData<T: Renderable> {
     pub child: T,
 }
 
+impl<T: Renderable> Deref for EntityData<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.child
+    }
+}
+
 impl<T: Renderable> Renderable for EntityData<T> {
     fn render(
         &self,
@@ -413,33 +430,7 @@ pub enum DecorativeRemoveMode {
 }
 
 /// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct EntityWithHealthPrototype<T: Renderable>(EntityData<EntityWithHealthData<T>>);
-
-impl<T: Renderable> Deref for EntityWithHealthPrototype<T> {
-    type Target = EntityData<EntityWithHealthData<T>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T: Renderable> DerefMut for EntityWithHealthPrototype<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl<T: Renderable> Renderable for EntityWithHealthPrototype<T> {
-    fn render(
-        &self,
-        options: &RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type EntityWithHealthPrototype<T> = EntityPrototype<EntityWithHealthData<T>>;
 
 /// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
 #[skip_serializing_none]
@@ -480,7 +471,15 @@ pub struct EntityWithHealthData<T: Renderable> {
     // pub repair_sound: Option<Sound>,
     // pub corpse: Option<Corpse>,
     #[serde(flatten)]
-    pub child: T,
+    child: T,
+}
+
+impl<T: Renderable> Deref for EntityWithHealthData<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.child
+    }
 }
 
 impl<T: Renderable> Renderable for EntityWithHealthData<T> {
@@ -495,35 +494,7 @@ impl<T: Renderable> Renderable for EntityWithHealthData<T> {
 }
 
 /// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct EntityWithOwnerPrototype<T: Renderable>(
-    EntityWithHealthPrototype<EntityWithOwnerData<T>>,
-);
-
-impl<T: Renderable> Deref for EntityWithOwnerPrototype<T> {
-    type Target = EntityWithHealthPrototype<EntityWithOwnerData<T>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T: Renderable> DerefMut for EntityWithOwnerPrototype<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl<T: Renderable> Renderable for EntityWithOwnerPrototype<T> {
-    fn render(
-        &self,
-        options: &RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type EntityWithOwnerPrototype<T> = EntityWithHealthPrototype<EntityWithOwnerData<T>>;
 
 /// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -535,7 +506,15 @@ pub struct EntityWithOwnerData<T: Renderable> {
     pub allow_run_time_change_of_is_military_target: bool,
 
     #[serde(flatten)]
-    pub child: T,
+    child: T,
+}
+
+impl<T: Renderable> Deref for EntityWithOwnerData<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.child
+    }
 }
 
 impl<T: Renderable> Renderable for EntityWithOwnerData<T> {

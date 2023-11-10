@@ -14,6 +14,7 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
+use std::ops::Deref;
 use std::path::Path;
 
 use mod_util::mod_info::Version;
@@ -26,7 +27,7 @@ use types::*;
 
 mod entity;
 pub use entity::RenderOpts as EntityRenderOpts;
-pub use entity::Renderable as RenderableEntity;
+//pub use entity::Renderable as RenderableEntity;
 pub use entity::*;
 
 /// [`Prototypes/PrototypeBase`](https://lua-api.factorio.com/latest/PrototypeBase.html)
@@ -47,6 +48,14 @@ pub struct BasePrototype<T> {
 
     #[serde(flatten)]
     pub child: T,
+}
+
+impl<T> Deref for BasePrototype<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.child
+    }
 }
 
 /// [`Prototypes/UtilitySprites/CursorBoxSpecification`](https://lua-api.factorio.com/latest/prototypes/UtilitySprites.html#cursor_box)

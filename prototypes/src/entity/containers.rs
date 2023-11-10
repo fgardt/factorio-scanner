@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -10,33 +10,7 @@ use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/ContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/ContainerPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ContainerPrototype(EntityWithOwnerPrototype<ContainerData>);
-
-impl Deref for ContainerPrototype {
-    type Target = EntityWithOwnerPrototype<ContainerData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for ContainerPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for ContainerPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type ContainerPrototype = EntityWithOwnerPrototype<ContainerData>;
 
 /// [`Prototypes/ContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/ContainerPrototype.html)
 #[skip_serializing_none]
@@ -96,33 +70,7 @@ pub enum InventoryType {
 }
 
 /// [`Prototypes/LogisticContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/LogisticContainerPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct LogisticContainerPrototype(EntityWithOwnerPrototype<LogisticContainerData>);
-
-impl Deref for LogisticContainerPrototype {
-    type Target = EntityWithOwnerPrototype<LogisticContainerData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for LogisticContainerPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for LogisticContainerPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type LogisticContainerPrototype = EntityWithOwnerPrototype<LogisticContainerData>;
 
 /// [`Prototypes/LogisticContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/LogisticContainerPrototype.html)
 #[skip_serializing_none]
@@ -159,6 +107,14 @@ pub struct LogisticContainerData {
     // pub animation_sound: Option<Sound>,
 }
 
+impl Deref for LogisticContainerData {
+    type Target = ContainerData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
+}
+
 impl super::Renderable for LogisticContainerData {
     fn render(
         &self,
@@ -183,33 +139,7 @@ pub enum LogisticMode {
 }
 
 /// [`Prototypes/InfinityContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityContainerPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct InfinityContainerPrototype(EntityWithOwnerPrototype<InfinityContainerData>);
-
-impl Deref for InfinityContainerPrototype {
-    type Target = EntityWithOwnerPrototype<InfinityContainerData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for InfinityContainerPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for InfinityContainerPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type InfinityContainerPrototype = EntityWithOwnerPrototype<InfinityContainerData>;
 
 /// [`Prototypes/InfinityContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityContainerPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -224,6 +154,14 @@ pub struct InfinityContainerData {
     pub parent: LogisticContainerData,
 }
 
+impl Deref for InfinityContainerData {
+    type Target = LogisticContainerData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
+}
+
 impl super::Renderable for InfinityContainerData {
     fn render(
         &self,
@@ -236,33 +174,7 @@ impl super::Renderable for InfinityContainerData {
 }
 
 /// [`Prototypes/LinkedContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/LinkedContainerPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct LinkedContainerPrototype(EntityWithOwnerPrototype<LinkedContainerData>);
-
-impl Deref for LinkedContainerPrototype {
-    type Target = EntityWithOwnerPrototype<LinkedContainerData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for LinkedContainerPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for LinkedContainerPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type LinkedContainerPrototype = EntityWithOwnerPrototype<LinkedContainerData>;
 
 /// [`Prototypes/LinkedContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/LinkedContainerPrototype.html)
 #[skip_serializing_none]

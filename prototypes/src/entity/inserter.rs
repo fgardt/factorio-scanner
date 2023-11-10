@@ -1,5 +1,3 @@
-use std::ops::{Deref, DerefMut};
-
 use image::{DynamicImage, GenericImageView};
 use imageproc::geometric_transformations::{self, rotate_about_center};
 use serde::{Deserialize, Serialize};
@@ -12,33 +10,7 @@ use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/InserterPrototype`](https://lua-api.factorio.com/latest/prototypes/InserterPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct InserterPrototype(EntityWithOwnerPrototype<InserterData>);
-
-impl Deref for InserterPrototype {
-    type Target = EntityWithOwnerPrototype<InserterData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for InserterPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for InserterPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type InserterPrototype = EntityWithOwnerPrototype<InserterData>;
 
 /// [`Prototypes/InserterPrototype`](https://lua-api.factorio.com/latest/prototypes/InserterPrototype.html)
 #[skip_serializing_none]

@@ -1,5 +1,3 @@
-use std::ops::{Deref, DerefMut};
-
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -10,33 +8,7 @@ use types::*;
 // TODO: implement rendering for simple entities
 
 /// [`Prototypes/SimpleEntityPrototype`](https://lua-api.factorio.com/latest/prototypes/SimpleEntityPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct SimpleEntityPrototype(EntityWithHealthPrototype<SimpleEntityData>);
-
-impl Deref for SimpleEntityPrototype {
-    type Target = EntityWithHealthPrototype<SimpleEntityData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for SimpleEntityPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for SimpleEntityPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        None
-    }
-}
+pub type SimpleEntityPrototype = EntityWithHealthPrototype<SimpleEntityData>;
 
 /// [`Prototypes/SimpleEntityPrototype`](https://lua-api.factorio.com/latest/prototypes/SimpleEntityPrototype.html)
 #[skip_serializing_none]
@@ -84,33 +56,7 @@ pub enum SimpleEntityGraphics {
 }
 
 /// [`Prototypes/SimpleEntityWithOwnerPrototype`](https://lua-api.factorio.com/latest/prototypes/SimpleEntityWithOwnerPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct SimpleEntityWithOwnerPrototype(EntityWithOwnerPrototype<SimpleEntityWithOwnerData>);
-
-impl Deref for SimpleEntityWithOwnerPrototype {
-    type Target = EntityWithOwnerPrototype<SimpleEntityWithOwnerData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for SimpleEntityWithOwnerPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for SimpleEntityWithOwnerPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        None
-    }
-}
+pub type SimpleEntityWithOwnerPrototype = EntityWithOwnerPrototype<SimpleEntityWithOwnerData>;
 
 /// [`Prototypes/SimpleEntityWithOwnerPrototype`](https://lua-api.factorio.com/latest/prototypes/SimpleEntityWithOwnerPrototype.html)
 #[skip_serializing_none]
@@ -156,30 +102,4 @@ impl super::Renderable for SimpleEntityWithOwnerData {
 /// [`Prototypes/SimpleEntityWithForcePrototype`](https://lua-api.factorio.com/latest/prototypes/SimpleEntityWithForcePrototype.html)
 ///
 /// The only difference to `SimpleEntityWithOwnerPrototype` is that `is_military_target` defaults to `true` which is not relevant -> difference is not implemented.
-#[derive(Debug, Deserialize, Serialize)]
-pub struct SimpleEntityWithForcePrototype(SimpleEntityWithOwnerPrototype);
-
-impl Deref for SimpleEntityWithForcePrototype {
-    type Target = SimpleEntityWithOwnerPrototype;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for SimpleEntityWithForcePrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for SimpleEntityWithForcePrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        None
-    }
-}
+pub type SimpleEntityWithForcePrototype = SimpleEntityWithOwnerPrototype;

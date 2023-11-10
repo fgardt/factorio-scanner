@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -10,35 +10,7 @@ use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/RailSignalBasePrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalBasePrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct RailSignalBasePrototype<T: super::Renderable>(
-    EntityWithOwnerPrototype<RailSignalBaseData<T>>,
-);
-
-impl<T: super::Renderable> Deref for RailSignalBasePrototype<T> {
-    type Target = EntityWithOwnerPrototype<RailSignalBaseData<T>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T: super::Renderable> DerefMut for RailSignalBasePrototype<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl<T: super::Renderable> super::Renderable for RailSignalBasePrototype<T> {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        None
-    }
-}
+pub type RailSignalBasePrototype<T> = EntityWithOwnerPrototype<RailSignalBaseData<T>>;
 
 /// [`Prototypes/RailSignalBasePrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalBasePrototype.html)
 #[skip_serializing_none]
@@ -69,7 +41,15 @@ pub struct RailSignalBaseData<T: super::Renderable> {
     pub circuit_connector_sprites: FactorioArray<CircuitConnectorSprites>,
 
     #[serde(flatten)]
-    pub child: T,
+    child: T,
+}
+
+impl<T: super::Renderable> Deref for RailSignalBaseData<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.child
+    }
 }
 
 impl<T: super::Renderable> super::Renderable for RailSignalBaseData<T> {
@@ -84,33 +64,7 @@ impl<T: super::Renderable> super::Renderable for RailSignalBaseData<T> {
 }
 
 /// [`Prototypes/RailChainSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailChainSignalPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct RailChainSignalPrototype(RailSignalBasePrototype<RailChainSignalData>);
-
-impl Deref for RailChainSignalPrototype {
-    type Target = RailSignalBasePrototype<RailChainSignalData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for RailChainSignalPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for RailChainSignalPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        None
-    }
-}
+pub type RailChainSignalPrototype = RailSignalBasePrototype<RailChainSignalData>;
 
 /// [`Prototypes/RailChainSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailChainSignalPrototype.html)
 #[skip_serializing_none]
@@ -133,33 +87,7 @@ impl super::Renderable for RailChainSignalData {
 }
 
 /// [`Prototypes/RailSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct RailSignalPrototype(RailSignalBasePrototype<RailSignalData>);
-
-impl Deref for RailSignalPrototype {
-    type Target = RailSignalBasePrototype<RailSignalData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for RailSignalPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for RailSignalPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        None
-    }
-}
+pub type RailSignalPrototype = RailSignalBasePrototype<RailSignalData>;
 
 /// [`Prototypes/RailSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalPrototype.html)
 #[derive(Debug, Serialize, Deserialize)]

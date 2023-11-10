@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -10,52 +10,17 @@ use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/TransportBeltConnectablePrototype`](https://lua-api.factorio.com/latest/prototypes/TransportBeltConnectablePrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct TransportBeltConnectablePrototype<G: super::Renderable, T: super::Renderable>(
-    EntityWithOwnerPrototype<TransportBeltConnectableData<G, T>>,
-);
-
-impl<G, T> Deref for TransportBeltConnectablePrototype<G, T>
-where
-    G: super::Renderable,
-    T: super::Renderable,
-{
-    type Target = EntityWithOwnerPrototype<TransportBeltConnectableData<G, T>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<G, T> DerefMut for TransportBeltConnectablePrototype<G, T>
-where
-    G: super::Renderable,
-    T: super::Renderable,
-{
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl<G, T> super::Renderable for TransportBeltConnectablePrototype<G, T>
-where
-    G: super::Renderable,
-    T: super::Renderable,
-{
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type TransportBeltConnectablePrototype<G, T> =
+    EntityWithOwnerPrototype<TransportBeltConnectableData<G, T>>;
 
 /// [`Prototypes/TransportBeltConnectablePrototype`](https://lua-api.factorio.com/latest/prototypes/TransportBeltConnectablePrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TransportBeltConnectableData<G, T> {
+pub struct TransportBeltConnectableData<G, T>
+where
+    G: super::Renderable,
+    T: super::Renderable,
+{
     pub speed: f64,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
@@ -65,7 +30,7 @@ pub struct TransportBeltConnectableData<G, T> {
     pub graphics_set: G,
 
     #[serde(flatten)]
-    pub child: T,
+    child: T,
 }
 
 impl<G, T> super::Renderable for TransportBeltConnectableData<G, T>
@@ -128,33 +93,7 @@ impl super::Renderable for BeltGraphics {
 }
 
 /// [`Prototypes/LinkedBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/LinkedBeltPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct LinkedBeltPrototype(TransportBeltConnectablePrototype<BeltGraphics, LinkedBeltData>);
-
-impl Deref for LinkedBeltPrototype {
-    type Target = TransportBeltConnectablePrototype<BeltGraphics, LinkedBeltData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for LinkedBeltPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for LinkedBeltPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type LinkedBeltPrototype = TransportBeltConnectablePrototype<BeltGraphics, LinkedBeltData>;
 
 /// [`Prototypes/LinkedBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/LinkedBeltPrototype.html)
 #[skip_serializing_none]
@@ -212,35 +151,7 @@ pub struct LinkedBeltStructure {
 }
 
 /// [`Prototypes/LoaderPrototype`](https://lua-api.factorio.com/latest/prototypes/LoaderPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct LoaderPrototype<T: super::Renderable>(
-    TransportBeltConnectablePrototype<BeltGraphics, LoaderData<T>>,
-);
-
-impl<T: super::Renderable> Deref for LoaderPrototype<T> {
-    type Target = TransportBeltConnectablePrototype<BeltGraphics, LoaderData<T>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T: super::Renderable> DerefMut for LoaderPrototype<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl<T: super::Renderable> super::Renderable for LoaderPrototype<T> {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type LoaderPrototype<T> = TransportBeltConnectablePrototype<BeltGraphics, LoaderData<T>>;
 
 /// [`Prototypes/LoaderPrototype`](https://lua-api.factorio.com/latest/prototypes/LoaderPrototype.html)
 #[skip_serializing_none]
@@ -271,7 +182,15 @@ pub struct LoaderData<T: super::Renderable> {
     pub energy_per_item: Option<Energy>,
 
     #[serde(flatten)]
-    pub child: T,
+    child: T,
+}
+
+impl<T: super::Renderable> Deref for LoaderData<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.child
+    }
 }
 
 impl<T: super::Renderable> super::Renderable for LoaderData<T> {
@@ -297,33 +216,7 @@ pub struct LoaderStructure {
 }
 
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Loader1x1Prototype(LoaderPrototype<Loader1x1Data>);
-
-impl Deref for Loader1x1Prototype {
-    type Target = LoaderPrototype<Loader1x1Data>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for Loader1x1Prototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for Loader1x1Prototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type Loader1x1Prototype = LoaderPrototype<Loader1x1Data>;
 
 // TODO: loaders `belt_length` is not actually hardcoded but defaults to a internal hardcoded value instead..
 
@@ -347,33 +240,7 @@ impl super::Renderable for Loader1x1Data {
 }
 
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Loader1x2Prototype(LoaderPrototype<Loader1x2Data>);
-
-impl Deref for Loader1x2Prototype {
-    type Target = LoaderPrototype<Loader1x2Data>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for Loader1x2Prototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for Loader1x2Prototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type Loader1x2Prototype = LoaderPrototype<Loader1x2Data>;
 
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -398,33 +265,7 @@ impl super::Renderable for Loader1x2Data {
 }
 
 /// [`Prototypes/SplitterPrototype`](https://lua-api.factorio.com/latest/prototypes/SplitterPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct SplitterPrototype(TransportBeltConnectablePrototype<BeltGraphics, SplitterData>);
-
-impl Deref for SplitterPrototype {
-    type Target = TransportBeltConnectablePrototype<BeltGraphics, SplitterData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for SplitterPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for SplitterPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type SplitterPrototype = TransportBeltConnectablePrototype<BeltGraphics, SplitterData>;
 
 /// [`Prototypes/SplitterPrototype`](https://lua-api.factorio.com/latest/prototypes/SplitterPrototype.html)
 #[skip_serializing_none]
@@ -460,35 +301,8 @@ impl super::Renderable for SplitterData {
 }
 
 /// [`Prototypes/TransportBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/TransportBeltPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct TransportBeltPrototype(
-    TransportBeltConnectablePrototype<BeltGraphicsWithCorners, TransportBeltData>,
-);
-
-impl Deref for TransportBeltPrototype {
-    type Target = TransportBeltConnectablePrototype<BeltGraphicsWithCorners, TransportBeltData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for TransportBeltPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for TransportBeltPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type TransportBeltPrototype =
+    TransportBeltConnectablePrototype<BeltGraphicsWithCorners, TransportBeltData>;
 
 /// [`Prototypes/TransportBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/TransportBeltPrototype.html)
 #[skip_serializing_none]
@@ -553,35 +367,8 @@ impl super::Renderable for BeltGraphicsWithCorners {
 }
 
 /// [`Prototypes/UndergroundBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/UndergroundBeltPrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct UndergroundBeltPrototype(
-    TransportBeltConnectablePrototype<BeltGraphics, UndergroundBeltData>,
-);
-
-impl Deref for UndergroundBeltPrototype {
-    type Target = TransportBeltConnectablePrototype<BeltGraphics, UndergroundBeltData>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for UndergroundBeltPrototype {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl super::Renderable for UndergroundBeltPrototype {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(options, used_mods, image_cache)
-    }
-}
+pub type UndergroundBeltPrototype =
+    TransportBeltConnectablePrototype<BeltGraphics, UndergroundBeltData>;
 
 /// [`Prototypes/UndergroundBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/UndergroundBeltPrototype.html)
 #[skip_serializing_none]
