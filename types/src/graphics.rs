@@ -440,8 +440,7 @@ impl FetchSprite for SpriteParams {
 
         // TODO: add extra output for shadows
         // rendering shadows / glow / light is not supported
-        if self.draw_as_shadow || self.draw_as_light {
-            //|| self.draw_as_glow
+        if self.draw_as_shadow || self.draw_as_light || self.draw_as_glow {
             return None;
         }
 
@@ -449,11 +448,17 @@ impl FetchSprite for SpriteParams {
         let (offset_x, offset_y) = offset;
         let (width, height) = self.get_size();
 
-        let mut img = filename.load(used_mods, image_cache)?.crop_imm(
+        let img = filename.load(used_mods, image_cache)?.crop_imm(
             (x + offset_x) as u32,
             (y + offset_y) as u32,
             width as u32,
             height as u32,
+        );
+
+        let mut img = img.resize(
+            (f64::from(img.width()) * self.scale / scale).round() as u32,
+            (f64::from(img.height()) * self.scale / scale).round() as u32,
+            image::imageops::FilterType::Nearest,
         );
 
         // apply tint if applicable
@@ -617,22 +622,7 @@ where
 }
 
 /// [`Types/Sprite`](https://lua-api.factorio.com/latest/types/Sprite.html)
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Sprite(SimpleGraphics<SpriteParams>);
-
-impl RenderableGraphics for Sprite {
-    type RenderOpts = SimpleGraphicsRenderOpts;
-
-    fn render(
-        &self,
-        scale: f64,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-        opts: &Self::RenderOpts,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(scale, used_mods, image_cache, opts)
-    }
-}
+pub type Sprite = SimpleGraphics<SpriteParams>;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RotatedSpriteParams {
@@ -964,7 +954,7 @@ impl RenderableGraphics for Sprite4Way {
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Sprite(sprite) => sprite.0.render(scale, used_mods, image_cache, &opts.into()),
+            Self::Sprite(sprite) => sprite.render(scale, used_mods, image_cache, &opts.into()),
             Self::Sheet { sheet } => sheet.render(scale, used_mods, image_cache, opts),
             Self::Sheets { sheets } => merge_layers(sheets, scale, used_mods, image_cache, opts),
             Self::Directions {
@@ -981,7 +971,6 @@ impl RenderableGraphics for Sprite4Way {
                     unimplemented!("Sprite4Way does not support diagonals")
                 }
             }
-            .0
             .render(scale, used_mods, image_cache, &opts.into()),
         }
     }
@@ -1041,7 +1030,6 @@ impl RenderableGraphics for Sprite8Way {
                 Direction::West => west,
                 Direction::NorthWest => north_west,
             }
-            .0
             .render(scale, used_mods, image_cache, &opts.into()),
         }
     }

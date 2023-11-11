@@ -977,8 +977,8 @@ impl TargetSize {
         let (shift_x, shift_y) = shift.as_tuple();
         let (tl_x, tl_y) = self.top_left.as_tuple();
 
-        let px = f64::from(width).mul_add(-0.5, (tl_x - x + shift_x) * self.tile_res);
-        let py = f64::from(height).mul_add(-0.5, (tl_y - y + shift_y) * self.tile_res);
+        let px = f64::from(width).mul_add(-0.5, (x + shift_x - tl_x) * self.tile_res);
+        let py = f64::from(height).mul_add(-0.5, (y + shift_y - tl_y) * self.tile_res);
 
         (px.round() as i64, py.round() as i64)
     }
@@ -1013,7 +1013,7 @@ impl RenderLayerBuffer {
             .target_size
             .get_pixel_pos(img.dimensions(), &shift, position);
 
-        imageops::overlay(layer, &img, 0, 0);
+        imageops::overlay(layer, &img, x, y);
     }
 
     pub fn add_entity(&mut self, input: (image::DynamicImage, Vector), position: &MapPosition) {

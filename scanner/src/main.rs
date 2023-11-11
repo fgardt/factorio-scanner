@@ -202,7 +202,7 @@ fn calculate_target_size(
         };
 
         let e_pos: MapPosition = (&entity.position).into();
-        let c_box = e_proto.collision_box();
+        let c_box = e_proto.drawing_box();
 
         let tl = &e_pos + c_box.top_left();
         let br = &e_pos + c_box.bottom_right();
