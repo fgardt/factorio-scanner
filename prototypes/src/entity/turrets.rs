@@ -139,16 +139,34 @@ impl super::Renderable for TurretData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        merge_renders(&[
-            self.base_picture
-                .as_ref()
-                .and_then(|a| a.render(used_mods, image_cache, &options.into())),
-            self.folding_animation
-                .as_ref()
-                .and_then(|a| a.render(used_mods, image_cache, &options.into())),
-        ])
+    ) -> crate::RenderOutput {
+        let res = merge_renders(
+            &[
+                self.base_picture.as_ref().and_then(|a| {
+                    a.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &options.into(),
+                    )
+                }),
+                self.folding_animation.as_ref().and_then(|a| {
+                    a.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &options.into(),
+                    )
+                }),
+            ],
+            render_layers.scale(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 
@@ -184,9 +202,11 @@ impl super::Renderable for AmmoTurretData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.parent.render(options, used_mods, image_cache)
+    ) -> crate::RenderOutput {
+        self.parent
+            .render(options, used_mods, render_layers, image_cache)
     }
 }
 
@@ -216,9 +236,11 @@ impl super::Renderable for ElectricTurretData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.parent.render(options, used_mods, image_cache)
+    ) -> crate::RenderOutput {
+        self.parent
+            .render(options, used_mods, render_layers, image_cache)
     }
 }
 
@@ -257,9 +279,11 @@ impl super::Renderable for FluidTurretData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.parent.render(options, used_mods, image_cache)
+    ) -> crate::RenderOutput {
+        self.parent
+            .render(options, used_mods, render_layers, image_cache)
     }
 }
 

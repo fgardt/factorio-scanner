@@ -69,9 +69,11 @@ impl super::Renderable for OffshorePumpData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.graphics.render(options, used_mods, image_cache)
+    ) -> crate::RenderOutput {
+        self.graphics
+            .render(options, used_mods, render_layers, image_cache)
     }
 }
 
@@ -92,13 +94,25 @@ impl super::Renderable for OffshorePumpGraphicsVariant {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         match self {
             Self::GraphicsSet { graphics_set } => {
-                graphics_set.render(options, used_mods, image_cache)
+                graphics_set.render(options, used_mods, render_layers, image_cache)
             }
-            Self::Deprecated { picture } => picture.render(used_mods, image_cache, &options.into()),
+            Self::Deprecated { picture } => {
+                let res = picture.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                )?;
+
+                render_layers.add_entity(res, &options.position);
+
+                Some(())
+            }
         }
     }
 }
@@ -129,17 +143,39 @@ impl super::Renderable for OffshorePumpGraphicsSet {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        merge_renders(&[
-            self.base_pictures
-                .as_ref()
-                .and_then(|b| b.render(used_mods, image_cache, &options.into())),
-            self.animation
-                .render(used_mods, image_cache, &options.into()),
-            self.glass_pictures
-                .as_ref()
-                .and_then(|g| g.render(used_mods, image_cache, &options.into())),
-        ])
+    ) -> crate::RenderOutput {
+        let res = merge_renders(
+            &[
+                self.base_pictures.as_ref().and_then(|b| {
+                    b.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &options.into(),
+                    )
+                }),
+                self.animation.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                ),
+                self.glass_pictures.as_ref().and_then(|g| {
+                    g.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &options.into(),
+                    )
+                }),
+            ],
+            render_layers.scale(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }

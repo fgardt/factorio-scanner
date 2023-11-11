@@ -42,12 +42,22 @@ where
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        merge_renders(&[
-            self.graphics_set.render(options, used_mods, image_cache),
-            self.child.render(options, used_mods, image_cache),
-        ])
+    ) -> crate::RenderOutput {
+        let a = self
+            .graphics_set
+            .render(options, used_mods, render_layers, image_cache);
+
+        let b = self
+            .child
+            .render(options, used_mods, render_layers, image_cache);
+
+        if a.is_none() && b.is_none() {
+            None
+        } else {
+            Some(())
+        }
     }
 }
 
@@ -81,14 +91,22 @@ impl super::Renderable for BeltGraphics {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        match self {
-            Self::BeltAnimationSet { belt_animation_set } => {
-                belt_animation_set.render(used_mods, image_cache, &options.into())
-            }
+    ) -> crate::RenderOutput {
+        let res = match self {
+            Self::BeltAnimationSet { belt_animation_set } => belt_animation_set.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            ),
             Self::Individual { .. } => None,
-        }
+        }?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 
@@ -119,21 +137,32 @@ impl super::Renderable for LinkedBeltData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        if options.underground_in.unwrap_or_default() {
-            self.structure
-                .direction_in
-                .render(used_mods, image_cache, &options.into())
+    ) -> crate::RenderOutput {
+        let res = if options.underground_in.unwrap_or_default() {
+            self.structure.direction_in.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
         } else {
             let flipped_opts = &super::RenderOpts {
                 direction: options.direction.flip(),
                 ..options.clone()
             };
-            self.structure
-                .direction_out
-                .render(used_mods, image_cache, &flipped_opts.into())
-        }
+            self.structure.direction_out.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &flipped_opts.into(),
+            )
+        }?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 
@@ -198,8 +227,9 @@ impl<T: super::Renderable> super::Renderable for LoaderData<T> {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -233,8 +263,9 @@ impl super::Renderable for Loader1x1Data {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -258,8 +289,9 @@ impl super::Renderable for Loader1x2Data {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -286,17 +318,34 @@ impl super::Renderable for SplitterData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         // TODO: figure out how to render the 2 belts below the splitter
 
-        merge_renders(&[
-            self.structure_patch
-                .as_ref()
-                .and_then(|a| a.render(used_mods, image_cache, &options.into())),
-            self.structure
-                .render(used_mods, image_cache, &options.into()),
-        ])
+        let res = merge_renders(
+            &[
+                self.structure_patch.as_ref().and_then(|a| {
+                    a.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &options.into(),
+                    )
+                }),
+                self.structure.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                ),
+            ],
+            render_layers.scale(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 
@@ -333,8 +382,9 @@ impl super::Renderable for TransportBeltData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -355,14 +405,22 @@ impl super::Renderable for BeltGraphicsWithCorners {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        match self {
-            Self::BeltAnimationSetWithCorners { belt_animation_set } => {
-                belt_animation_set.render(used_mods, image_cache, &options.into())
-            }
+    ) -> crate::RenderOutput {
+        let res = match self {
+            Self::BeltAnimationSetWithCorners { belt_animation_set } => belt_animation_set.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            ),
             Self::Animations { .. } => None,
-        }
+        }?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 
@@ -387,21 +445,32 @@ impl super::Renderable for UndergroundBeltData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        if options.underground_in.unwrap_or_default() {
-            self.structure
-                .direction_in
-                .render(used_mods, image_cache, &options.into())
+    ) -> crate::RenderOutput {
+        let res = if options.underground_in.unwrap_or_default() {
+            self.structure.direction_in.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
         } else {
             let flipped_opts = &super::RenderOpts {
                 direction: options.direction.flip(),
                 ..options.clone()
             };
-            self.structure
-                .direction_out
-                .render(used_mods, image_cache, &flipped_opts.into())
-        }
+            self.structure.direction_out.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &flipped_opts.into(),
+            )
+        }?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 

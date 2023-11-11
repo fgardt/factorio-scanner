@@ -38,9 +38,18 @@ impl super::Renderable for LabData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.off_animation
-            .render(used_mods, image_cache, &options.into())
+    ) -> crate::RenderOutput {
+        let res = self.off_animation.render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }

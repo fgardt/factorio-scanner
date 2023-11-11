@@ -65,10 +65,19 @@ impl super::Renderable for LampData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.picture_off
-            .render(used_mods, image_cache, &options.into())
+    ) -> crate::RenderOutput {
+        let res = self.picture_off.render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 

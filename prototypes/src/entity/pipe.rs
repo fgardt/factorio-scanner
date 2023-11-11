@@ -23,9 +23,10 @@ impl super::Renderable for PipeData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        match options.connections.unwrap_or_default() {
+    ) -> crate::RenderOutput {
+        let res = match options.connections.unwrap_or_default() {
             super::ConnectedDirections::None => &self.pictures.straight_vertical_single,
             super::ConnectedDirections::Up => &self.pictures.ending_up,
             super::ConnectedDirections::Down => &self.pictures.ending_down,
@@ -43,7 +44,16 @@ impl super::Renderable for PipeData {
             super::ConnectedDirections::DownLeftRight => &self.pictures.t_down,
             super::ConnectedDirections::All => &self.pictures.cross,
         }
-        .render(used_mods, image_cache, &options.into())
+        .render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 
@@ -102,9 +112,11 @@ impl super::Renderable for InfinityPipeData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.parent.render(options, used_mods, image_cache)
+    ) -> crate::RenderOutput {
+        self.parent
+            .render(options, used_mods, render_layers, image_cache)
     }
 }
 
@@ -126,16 +138,26 @@ impl super::Renderable for PipeToGroundData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        match options.direction {
+    ) -> crate::RenderOutput {
+        let res = match options.direction {
             Direction::North => &self.pictures.up,
             Direction::East => &self.pictures.right,
             Direction::South => &self.pictures.down,
             Direction::West => &self.pictures.left,
             _ => unimplemented!("PipeToGround only supports cardinal directions"),
         }
-        .render(used_mods, image_cache, &options.into())
+        .render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 

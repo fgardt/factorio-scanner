@@ -48,16 +48,34 @@ impl super::Renderable for ReactorData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        merge_renders(&[
-            self.lower_layer_picture
-                .as_ref()
-                .and_then(|s| s.render(used_mods, image_cache, &options.into())),
-            self.picture
-                .as_ref()
-                .and_then(|s| s.render(used_mods, image_cache, &options.into())),
-        ])
+    ) -> crate::RenderOutput {
+        let res = merge_renders(
+            &[
+                self.lower_layer_picture.as_ref().and_then(|s| {
+                    s.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &options.into(),
+                    )
+                }),
+                self.picture.as_ref().and_then(|s| {
+                    s.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &options.into(),
+                    )
+                }),
+            ],
+            render_layers.scale(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
 
         // TODO: include heatpipes (and maybe glow?)
     }

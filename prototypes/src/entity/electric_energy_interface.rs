@@ -38,11 +38,12 @@ impl super::Renderable for ElectricEnergyInterfaceData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         self.graphics
             .as_ref()?
-            .render(options, used_mods, image_cache)
+            .render(options, used_mods, render_layers, image_cache)
     }
 }
 
@@ -60,17 +61,38 @@ impl super::Renderable for ElectricEnergyInterfaceGraphics {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        match self {
-            Self::Picture { picture } => picture.render(used_mods, image_cache, &options.into()),
-            Self::Pictures { pictures } => pictures.render(used_mods, image_cache, &options.into()),
-            Self::Animation { animation } => {
-                animation.render(used_mods, image_cache, &options.into())
-            }
-            Self::Animations { animations } => {
-                animations.render(used_mods, image_cache, &options.into())
-            }
-        }
+    ) -> crate::RenderOutput {
+        let res = match self {
+            Self::Picture { picture } => picture.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            ),
+            Self::Pictures { pictures } => pictures.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            ),
+            Self::Animation { animation } => animation.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            ),
+            Self::Animations { animations } => animations.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            ),
+        }?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }

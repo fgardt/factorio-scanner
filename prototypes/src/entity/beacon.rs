@@ -30,14 +30,29 @@ impl super::Renderable for BeaconData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        if let Some(set) = self.graphics_set.as_ref() {
-            set.render(used_mods, image_cache, &options.into())
+    ) -> crate::RenderOutput {
+        let res = if let Some(set) = self.graphics_set.as_ref() {
+            set.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
         } else {
-            self.base_picture
-                .as_ref()
-                .and_then(|g| g.render(used_mods, image_cache, &options.into()))
-        }
+            self.base_picture.as_ref().and_then(|g| {
+                g.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            })
+        }?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }

@@ -55,20 +55,25 @@ impl super::Renderable for StorageTankData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         let background = self
             .pictures
             .window_background
-            .render(used_mods, image_cache, &options.into())
-            .map(|(img, scale, shift)| {
+            .render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+            .map(|(img, shift)| {
                 let (shift_x, shift_y) = shift.as_tuple();
                 let (tl_x, tl_y) = self.window_bounding_box.0.as_tuple();
                 let (br_x, br_y) = self.window_bounding_box.1.as_tuple();
 
                 (
                     img,
-                    scale,
                     (
                         shift_x, // + f64::from(br_x - tl_x) / 2.0, // TODO: figure out how to calculate this position
                         shift_y + tl_y + (br_y - tl_y) / 2.0,
@@ -77,12 +82,22 @@ impl super::Renderable for StorageTankData {
                 )
             });
 
-        merge_renders(&[
-            background,
-            self.pictures
-                .picture
-                .render(used_mods, image_cache, &options.into()),
-        ])
+        let res = merge_renders(
+            &[
+                background,
+                self.pictures.picture.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                ),
+            ],
+            render_layers.scale(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 

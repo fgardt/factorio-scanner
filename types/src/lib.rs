@@ -574,7 +574,7 @@ pub enum EntityPrototypeFlag {
 pub type EntityPrototypeFlags = FactorioArray<EntityPrototypeFlag>;
 
 /// [`Types/MapPosition`](https://lua-api.factorio.com/latest/types/MapPosition.html)
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum MapPosition {
     XY { x: f64, y: f64 },
@@ -583,9 +583,30 @@ pub enum MapPosition {
 
 impl MapPosition {
     #[must_use]
+    pub const fn x(&self) -> f64 {
+        match self {
+            Self::Tuple(x, _) | Self::XY { x, .. } => *x,
+        }
+    }
+
+    #[must_use]
+    pub const fn y(&self) -> f64 {
+        match self {
+            Self::Tuple(_, y) | Self::XY { y, .. } => *y,
+        }
+    }
+
+    #[must_use]
     pub const fn as_tuple(&self) -> (f64, f64) {
         match self {
             Self::Tuple(x, y) | Self::XY { x, y } => (*x, *y),
+        }
+    }
+
+    #[must_use]
+    pub fn as_tuple_mut(&mut self) -> (&mut f64, &mut f64) {
+        match self {
+            Self::Tuple(x, y) | Self::XY { x, y } => (x, y),
         }
     }
 
@@ -656,8 +677,166 @@ impl MapPosition {
     }
 }
 
+impl Default for MapPosition {
+    fn default() -> Self {
+        Self::Tuple(Default::default(), Default::default())
+    }
+}
+
+impl PartialOrd for MapPosition {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = other.as_tuple();
+
+        y1.partial_cmp(&y2).map_or_else(
+            || x1.partial_cmp(&x2),
+            |res| match res {
+                std::cmp::Ordering::Equal => x1.partial_cmp(&x2),
+                std::cmp::Ordering::Less | std::cmp::Ordering::Greater => Some(res),
+            },
+        )
+    }
+}
+
+impl std::ops::Add for MapPosition {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = rhs.as_tuple();
+
+        Self::Tuple(x1 + x2, y1 + y2)
+    }
+}
+
+impl std::ops::Add for &MapPosition {
+    type Output = MapPosition;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = rhs.as_tuple();
+
+        MapPosition::Tuple(x1 + x2, y1 + y2)
+    }
+}
+
+impl std::ops::Add<&Self> for MapPosition {
+    type Output = Self;
+
+    fn add(self, rhs: &Self) -> Self::Output {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = rhs.as_tuple();
+
+        Self::Tuple(x1 + x2, y1 + y2)
+    }
+}
+
+impl std::ops::Sub for MapPosition {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = rhs.as_tuple();
+
+        Self::Tuple(x1 - x2, y1 - y2)
+    }
+}
+
+impl std::ops::Sub for &MapPosition {
+    type Output = MapPosition;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = rhs.as_tuple();
+
+        MapPosition::Tuple(x1 - x2, y1 - y2)
+    }
+}
+
+impl std::ops::Sub<&Self> for MapPosition {
+    type Output = Self;
+
+    fn sub(self, rhs: &Self) -> Self::Output {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = rhs.as_tuple();
+
+        Self::Tuple(x1 - x2, y1 - y2)
+    }
+}
+
+impl std::ops::Mul<f64> for MapPosition {
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        let (x, y) = self.as_tuple();
+
+        Self::Tuple(x * rhs, y * rhs)
+    }
+}
+
+impl std::ops::Div<f64> for MapPosition {
+    type Output = Self;
+
+    fn div(self, rhs: f64) -> Self::Output {
+        let (x, y) = self.as_tuple();
+
+        Self::Tuple(x / rhs, y / rhs)
+    }
+}
+
+impl std::ops::AddAssign for MapPosition {
+    fn add_assign(&mut self, rhs: Self) {
+        let (x1, y1) = self.as_tuple_mut();
+        let (x2, y2) = rhs.as_tuple();
+
+        *x1 += x2;
+        *y1 += y2;
+    }
+}
+
+impl std::ops::SubAssign for MapPosition {
+    fn sub_assign(&mut self, rhs: Self) {
+        let (x1, y1) = self.as_tuple_mut();
+        let (x2, y2) = rhs.as_tuple();
+
+        *x1 -= x2;
+        *y1 -= y2;
+    }
+}
+
+impl std::ops::MulAssign<f64> for MapPosition {
+    fn mul_assign(&mut self, rhs: f64) {
+        let (x, y) = self.as_tuple_mut();
+
+        *x *= rhs;
+        *y *= rhs;
+    }
+}
+
+impl std::ops::DivAssign<f64> for MapPosition {
+    fn div_assign(&mut self, rhs: f64) {
+        let (x, y) = self.as_tuple_mut();
+
+        *x /= rhs;
+        *y /= rhs;
+    }
+}
+
 /// [`Types/BoundingBox`](https://lua-api.factorio.com/latest/types/BoundingBox.html)
-pub type BoundingBox = (MapPosition, MapPosition);
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct BoundingBox(pub MapPosition, pub MapPosition);
+
+impl BoundingBox {
+    #[must_use]
+    pub const fn top_left(&self) -> &MapPosition {
+        &self.0
+    }
+
+    #[must_use]
+    pub const fn bottom_right(&self) -> &MapPosition {
+        &self.1
+    }
+}
 
 /// [`Types/Direction`](https://lua-api.factorio.com/latest/types/Direction.html)
 #[derive(
@@ -1043,13 +1222,19 @@ impl RenderableGraphics for BeaconGraphicsSet {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         // TODO: render module visualisations
-        merge_layers(&self.animation_list, used_mods, image_cache, &opts.into())
+        merge_layers(
+            &self.animation_list,
+            scale,
+            used_mods,
+            image_cache,
+            &opts.into(),
+        )
     }
 }
 
@@ -1201,7 +1386,7 @@ impl RenderableGraphics for TransportBeltAnimationSet {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1221,7 +1406,7 @@ impl RenderableGraphics for TransportBeltAnimationSet {
         };
 
         self.animation_set
-            .render(used_mods, image_cache, &index_options.into())
+            .render(scale, used_mods, image_cache, &index_options.into())
     }
 }
 
@@ -1286,7 +1471,7 @@ impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1331,9 +1516,12 @@ impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
             ..*opts
         };
 
-        self.animation_set
-            .animation_set
-            .render(used_mods, image_cache, &index_options.into())
+        self.animation_set.animation_set.render(
+            scale,
+            used_mods,
+            image_cache,
+            &index_options.into(),
+        )
     }
 }
 
@@ -1443,7 +1631,7 @@ impl RenderableGraphics for WorkingVisualisation {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1454,7 +1642,7 @@ impl RenderableGraphics for WorkingVisualisation {
 
         self.animation
             .as_ref()?
-            .render(used_mods, image_cache, opts)
+            .render(scale, used_mods, image_cache, opts)
     }
 }
 
@@ -1505,13 +1693,15 @@ impl RenderableGraphics for WorkingVisualisationAnimation {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Single { animation } => animation.render(used_mods, image_cache, &opts.into()),
+            Self::Single { animation } => {
+                animation.render(scale, used_mods, image_cache, &opts.into())
+            }
             Self::Cardinal {
                 north_animation,
                 east_animation,
@@ -1524,7 +1714,7 @@ impl RenderableGraphics for WorkingVisualisationAnimation {
                 Direction::West => west_animation.as_ref(),
                 _ => return None,
             }
-            .and_then(|a| a.render(used_mods, image_cache, &opts.into())),
+            .and_then(|a| a.render(scale, used_mods, image_cache, &opts.into())),
         }
     }
 }
@@ -1866,7 +2056,7 @@ impl RenderableGraphics for MiningDrillGraphicsSet {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1876,15 +2066,15 @@ impl RenderableGraphics for MiningDrillGraphicsSet {
             .idle_animation
             .as_ref()
             .or(self.animation.as_ref())
-            .and_then(|a| a.render(used_mods, image_cache, &opts.into()))];
+            .and_then(|a| a.render(scale, used_mods, image_cache, &opts.into()))];
 
         renders.extend(
             self.working_visualisations
                 .iter()
-                .map(|wv| wv.render(used_mods, image_cache, &opts.into())),
+                .map(|wv| wv.render(scale, used_mods, image_cache, &opts.into())),
         );
 
-        merge_renders(&renders)
+        merge_renders(&renders, scale)
     }
 }
 

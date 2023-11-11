@@ -41,9 +41,18 @@ impl super::Renderable for ElectricPoleData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.pictures
-            .render(used_mods, image_cache, &options.into())
+    ) -> crate::RenderOutput {
+        let res = self.pictures.render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
