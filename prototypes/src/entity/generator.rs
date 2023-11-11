@@ -59,12 +59,23 @@ impl super::Renderable for GeneratorData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        match options.direction {
+        let res = match options.direction {
             Direction::North | Direction::South => &self.vertical_animation,
             Direction::East | Direction::West => &self.horizontal_animation,
             _ => panic!("Invalid direction, generators only support cardinal directions"),
         }
         .as_ref()
-        .and_then(|a| a.render(used_mods, image_cache, &options.into()))
+        .and_then(|a| {
+            a.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }

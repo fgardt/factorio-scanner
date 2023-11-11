@@ -973,7 +973,6 @@ impl TargetSize {
         shift: &Vector,
         position: &MapPosition,
     ) -> (i64, i64) {
-        const TILE_RES: f64 = 32.0;
         let (x, y) = position.as_tuple();
         let (shift_x, shift_y) = shift.as_tuple();
         let (tl_x, tl_y) = self.top_left.as_tuple();
@@ -1002,7 +1001,7 @@ impl RenderLayerBuffer {
 
     pub fn add(
         &mut self,
-        (img, shift): (&image::DynamicImage, &Vector),
+        (img, shift): (image::DynamicImage, Vector),
         position: &MapPosition,
         layer: InternalRenderLayer,
     ) {
@@ -1012,17 +1011,22 @@ impl RenderLayerBuffer {
 
         let (x, y) = self
             .target_size
-            .get_pixel_pos(img.dimensions(), shift, position);
+            .get_pixel_pos(img.dimensions(), &shift, position);
 
-        imageops::overlay(layer, img, 0, 0);
+        imageops::overlay(layer, &img, 0, 0);
     }
 
-    pub fn add_entity(&mut self, input: (&image::DynamicImage, &Vector), position: &MapPosition) {
+    pub fn add_entity(&mut self, input: (image::DynamicImage, Vector), position: &MapPosition) {
         self.add(input, position, InternalRenderLayer::Entity);
     }
 
-    pub fn add_shadow(&mut self, input: (&image::DynamicImage, &Vector), position: &MapPosition) {
+    pub fn add_shadow(&mut self, input: (image::DynamicImage, Vector), position: &MapPosition) {
         self.add(input, position, InternalRenderLayer::Shadow);
+    }
+
+    #[must_use]
+    pub const fn scale(&self) -> f64 {
+        self.target_size.scale
     }
 
     #[must_use]

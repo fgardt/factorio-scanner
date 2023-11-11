@@ -1222,13 +1222,19 @@ impl RenderableGraphics for BeaconGraphicsSet {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         // TODO: render module visualisations
-        merge_layers(&self.animation_list, used_mods, image_cache, &opts.into())
+        merge_layers(
+            &self.animation_list,
+            scale,
+            used_mods,
+            image_cache,
+            &opts.into(),
+        )
     }
 }
 
@@ -1380,7 +1386,7 @@ impl RenderableGraphics for TransportBeltAnimationSet {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1400,7 +1406,7 @@ impl RenderableGraphics for TransportBeltAnimationSet {
         };
 
         self.animation_set
-            .render(used_mods, image_cache, &index_options.into())
+            .render(scale, used_mods, image_cache, &index_options.into())
     }
 }
 
@@ -1465,7 +1471,7 @@ impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1510,9 +1516,12 @@ impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
             ..*opts
         };
 
-        self.animation_set
-            .animation_set
-            .render(used_mods, image_cache, &index_options.into())
+        self.animation_set.animation_set.render(
+            scale,
+            used_mods,
+            image_cache,
+            &index_options.into(),
+        )
     }
 }
 
@@ -1622,7 +1631,7 @@ impl RenderableGraphics for WorkingVisualisation {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1633,7 +1642,7 @@ impl RenderableGraphics for WorkingVisualisation {
 
         self.animation
             .as_ref()?
-            .render(used_mods, image_cache, opts)
+            .render(scale, used_mods, image_cache, opts)
     }
 }
 
@@ -1684,13 +1693,15 @@ impl RenderableGraphics for WorkingVisualisationAnimation {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Single { animation } => animation.render(used_mods, image_cache, &opts.into()),
+            Self::Single { animation } => {
+                animation.render(scale, used_mods, image_cache, &opts.into())
+            }
             Self::Cardinal {
                 north_animation,
                 east_animation,
@@ -1703,7 +1714,7 @@ impl RenderableGraphics for WorkingVisualisationAnimation {
                 Direction::West => west_animation.as_ref(),
                 _ => return None,
             }
-            .and_then(|a| a.render(used_mods, image_cache, &opts.into())),
+            .and_then(|a| a.render(scale, used_mods, image_cache, &opts.into())),
         }
     }
 }
@@ -2045,7 +2056,7 @@ impl RenderableGraphics for MiningDrillGraphicsSet {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -2055,15 +2066,15 @@ impl RenderableGraphics for MiningDrillGraphicsSet {
             .idle_animation
             .as_ref()
             .or(self.animation.as_ref())
-            .and_then(|a| a.render(used_mods, image_cache, &opts.into()))];
+            .and_then(|a| a.render(scale, used_mods, image_cache, &opts.into()))];
 
         renders.extend(
             self.working_visualisations
                 .iter()
-                .map(|wv| wv.render(used_mods, image_cache, &opts.into())),
+                .map(|wv| wv.render(scale, used_mods, image_cache, &opts.into())),
         );
 
-        merge_renders(&renders)
+        merge_renders(&renders, scale)
     }
 }
 

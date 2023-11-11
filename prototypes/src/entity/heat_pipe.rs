@@ -23,8 +23,18 @@ impl super::Renderable for HeatPipeData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        self.connection_sprites
+        let res = self
+            .connection_sprites
             .get(options.connections.unwrap_or_default())
-            .render(used_mods, image_cache, &options.into())
+            .render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }

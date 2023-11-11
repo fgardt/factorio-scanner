@@ -114,8 +114,13 @@ impl super::Renderable for InserterData {
 
         let hand = self
             .hand_open_picture
-            .render(used_mods, image_cache, &options.into())
-            .map(|(img, scale, shift)| {
+            .render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+            .map(|(img, shift)| {
                 let raw_pickup_pos = options.pickup_position.unwrap_or(self.pickup_position);
                 let pickup_pos = direction.rotate_vector(raw_pickup_pos);
 
@@ -146,24 +151,41 @@ impl super::Renderable for InserterData {
                     image::Rgba([0, 0, 0, 0]),
                 );
 
-                let shift_amount = stretch_lentgh / 2.0 / (TILE_RES / scale);
+                let shift_amount = stretch_lentgh / 2.0 / (TILE_RES / render_layers.scale());
 
                 (
                     rotated_hand.into(),
-                    scale,
                     (shift_amount * angle.sin(), shift_amount * -angle.cos()).into(),
                 )
             });
+
+        let mut empty = true;
+        if let Some(hand) = hand {
+            empty = false;
+            render_layers.add(hand, &options.position, InternalRenderLayer::InserterHand);
+        }
 
         let platform_options = &super::RenderOpts {
             direction: direction.flip(),
             ..options.clone()
         };
 
-        merge_renders(&[
-            self.platform_picture
-                .render(used_mods, image_cache, &platform_options.into()),
-            hand,
-        ])
+        let platform = self.platform_picture.render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &platform_options.into(),
+        );
+
+        if let Some(platform) = platform {
+            empty = false;
+            render_layers.add_entity(platform, &options.position);
+        }
+
+        if empty {
+            None
+        } else {
+            Some(())
+        }
     }
 }

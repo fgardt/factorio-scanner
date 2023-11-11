@@ -64,15 +64,35 @@ impl super::Renderable for ElectricEnergyInterfaceGraphics {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        match self {
-            Self::Picture { picture } => picture.render(used_mods, image_cache, &options.into()),
-            Self::Pictures { pictures } => pictures.render(used_mods, image_cache, &options.into()),
-            Self::Animation { animation } => {
-                animation.render(used_mods, image_cache, &options.into())
-            }
-            Self::Animations { animations } => {
-                animations.render(used_mods, image_cache, &options.into())
-            }
-        }
+        let res = match self {
+            Self::Picture { picture } => picture.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            ),
+            Self::Pictures { pictures } => pictures.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            ),
+            Self::Animation { animation } => animation.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            ),
+            Self::Animations { animations } => animations.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            ),
+        }?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }

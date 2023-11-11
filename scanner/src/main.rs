@@ -16,7 +16,6 @@ use std::{
 };
 
 use clap::Parser;
-use image::GenericImageView;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -24,9 +23,7 @@ use mod_util::{
     mod_list::ModList, mod_loader::Mod, mod_settings::SettingsDat, UsedMods, UsedVersions,
 };
 use prototypes::{DataRaw, DataUtil, EntityType, RenderLayerBuffer, TargetSize};
-use types::{
-    merge_renders, ConnectedDirections, Direction, GraphicsOutput, ImageCache, MapPosition,
-};
+use types::{ConnectedDirections, Direction, ImageCache, MapPosition};
 
 mod bp_helper;
 mod preset;
@@ -170,36 +167,17 @@ fn main() {
     let size = calculate_target_size(&bp, &data, 2048.0, 0.5).unwrap();
     println!("target size: {size:?}");
 
-    let mut layer_buff = RenderLayerBuffer::new(size);
-
-    match render_bp(
+    let img = render_bp(
         bp,
         &data,
         &active_mods,
-        &mut layer_buff,
+        RenderLayerBuffer::new(size),
         &mut ImageCache::new(),
-    ) {
-        Some((img, scale, shift)) => {
-            println!("render done");
+    );
+    println!("render done");
 
-            let shrink_factor = (1.0 / scale).round() as u32;
-
-            let img = img.resize(
-                img.dimensions().0 / shrink_factor,
-                img.dimensions().1 / shrink_factor,
-                image::imageops::FilterType::CatmullRom,
-            );
-            // println!(
-            //     "{}x{} x{scale} {shift}",
-            //     img.dimensions().0,
-            //     img.dimensions().1,
-            // );
-
-            img.save(&cli.out).unwrap();
-            println!("saved to {:?}", cli.out);
-        }
-        None => println!("EMPTY BP!"),
-    }
+    img.save(&cli.out).unwrap();
+    println!("saved to {:?}", cli.out);
 }
 
 fn calculate_target_size(
@@ -316,174 +294,169 @@ fn render_bp(
     bp: &blueprint::Blueprint,
     data: &prototypes::DataUtil,
     used_mods: &UsedMods,
-    render_layers: &mut RenderLayerBuffer,
+    mut render_layers: RenderLayerBuffer,
     image_cache: &mut ImageCache,
-) -> Option<GraphicsOutput> {
-    let renders = bp
-        .entities
-        .iter()
-        .filter_map(|e| {
-            let mut connected_gates: Vec<Direction> = Vec::new();
-            let mut draw_gate_patch = false;
-            let connections = data.get_type(&e.name).and_then(|entity_type| {
-                if entity_type.connectable() {
-                    let mut up = false;
-                    let mut down = false;
-                    let mut left = false;
-                    let mut right = false;
+) -> image::DynamicImage {
+    println!(
+        "entities: {}, layers: {}",
+        bp.entities.len(),
+        bp.entities
+            .iter()
+            .filter_map(|e| {
+                let mut connected_gates: Vec<Direction> = Vec::new();
+                let mut draw_gate_patch = false;
+                let connections = data.get_type(&e.name).and_then(|entity_type| {
+                    if entity_type.connectable() {
+                        let mut up = false;
+                        let mut down = false;
+                        let mut left = false;
+                        let mut right = false;
 
-                    let pos: types::MapPosition = (&e.position).into();
+                        let pos: types::MapPosition = (&e.position).into();
 
-                    for other in &bp.entities {
-                        if other == e {
-                            continue;
-                        }
+                        for other in &bp.entities {
+                            if other == e {
+                                continue;
+                            }
 
-                        let Some(other_type) = data.get_type(&other.name) else {
-                            continue;
-                        };
+                            let Some(other_type) = data.get_type(&other.name) else {
+                                continue;
+                            };
 
-                        if !entity_type.can_connect_to(other_type) {
-                            continue;
-                        }
+                            if !entity_type.can_connect_to(other_type) {
+                                continue;
+                            }
 
-                        let other_pos: types::MapPosition = (&other.position).into();
+                            let other_pos: types::MapPosition = (&other.position).into();
 
-                        match entity_type {
-                            EntityType::Gate => match pos.is_cardinal_neighbor(&other_pos) {
-                                Some(dir) => {
-                                    if dir == Direction::South {
-                                        draw_gate_patch = true;
-                                    }
-                                }
-                                None => continue,
-                            },
-                            EntityType::Wall => match pos.is_cardinal_neighbor(&other_pos) {
-                                Some(dir) => {
-                                    if matches!(other_type, EntityType::Gate) {
-                                        if dir.is_straight(&other.direction) {
-                                            connected_gates.push(dir);
+                            match entity_type {
+                                EntityType::Gate => match pos.is_cardinal_neighbor(&other_pos) {
+                                    Some(dir) => {
+                                        if dir == Direction::South {
+                                            draw_gate_patch = true;
                                         }
-                                    } else {
+                                    }
+                                    None => continue,
+                                },
+                                EntityType::Wall => match pos.is_cardinal_neighbor(&other_pos) {
+                                    Some(dir) => {
+                                        if matches!(other_type, EntityType::Gate) {
+                                            if dir.is_straight(&other.direction) {
+                                                connected_gates.push(dir);
+                                            }
+                                        } else {
+                                            match dir {
+                                                Direction::North => up = true,
+                                                Direction::South => down = true,
+                                                Direction::East => right = true,
+                                                Direction::West => left = true,
+                                                _ => continue,
+                                            }
+                                        }
+                                    }
+                                    None => continue,
+                                },
+                                EntityType::Pipe | EntityType::InfinityPipe => {
+                                    if !matches!(
+                                        &other_type,
+                                        EntityType::Pipe
+                                            | EntityType::InfinityPipe
+                                            | EntityType::PipeToGround
+                                    ) {
+                                        continue;
+                                    }
+
+                                    if let Some(dir) = pos.is_cardinal_neighbor(&other_pos) {
+                                        if matches!(other_type, EntityType::PipeToGround)
+                                            && dir != other.direction.flip()
+                                        {
+                                            continue;
+                                        }
+
                                         match dir {
                                             Direction::North => up = true,
                                             Direction::South => down = true,
                                             Direction::East => right = true,
                                             Direction::West => left = true,
-                                            _ => continue,
+                                            _ => {}
                                         }
                                     }
                                 }
-                                None => continue,
-                            },
-                            EntityType::Pipe | EntityType::InfinityPipe => {
-                                if !matches!(
-                                    &other_type,
-                                    EntityType::Pipe
-                                        | EntityType::InfinityPipe
-                                        | EntityType::PipeToGround
-                                ) {
-                                    continue;
-                                }
-
-                                if let Some(dir) = pos.is_cardinal_neighbor(&other_pos) {
-                                    if matches!(other_type, EntityType::PipeToGround)
-                                        && dir != other.direction.flip()
-                                    {
+                                EntityType::HeatPipe | EntityType::HeatInterface => {
+                                    if !matches!(
+                                        &other_type,
+                                        EntityType::HeatPipe | EntityType::HeatInterface
+                                    ) {
                                         continue;
                                     }
 
-                                    match dir {
-                                        Direction::North => up = true,
-                                        Direction::South => down = true,
-                                        Direction::East => right = true,
-                                        Direction::West => left = true,
-                                        _ => {}
+                                    if let Some(dir) = pos.is_cardinal_neighbor(&other_pos) {
+                                        match dir {
+                                            Direction::North => up = true,
+                                            Direction::South => down = true,
+                                            Direction::East => right = true,
+                                            Direction::West => left = true,
+                                            _ => {}
+                                        }
                                     }
                                 }
-                            }
-                            EntityType::HeatPipe | EntityType::HeatInterface => {
-                                if !matches!(
-                                    &other_type,
-                                    EntityType::HeatPipe | EntityType::HeatInterface
-                                ) {
-                                    continue;
-                                }
+                                EntityType::TransportBelt => {
+                                    let neighbor = match other_type {
+                                        EntityType::TransportBelt
+                                        | EntityType::UndergroundBelt
+                                        | EntityType::LinkedBelt => {
+                                            pos.is_cardinal_neighbor(&other_pos)
+                                        }
+                                        EntityType::Splitter => {
+                                            pos.is_2wide_cardinal_neighbor(&other_pos)
+                                        }
+                                        EntityType::Loader => {
+                                            pos.is_2long_cardinal_neighbor(&other_pos)
+                                        }
+                                        _ => continue,
+                                    };
 
-                                if let Some(dir) = pos.is_cardinal_neighbor(&other_pos) {
-                                    match dir {
-                                        Direction::North => up = true,
-                                        Direction::South => down = true,
-                                        Direction::East => right = true,
-                                        Direction::West => left = true,
-                                        _ => {}
+                                    if let Some(dir) = neighbor {
+                                        if dir != other.direction.flip() {
+                                            continue;
+                                        }
+
+                                        match dir {
+                                            Direction::North => up = true,
+                                            Direction::South => down = true,
+                                            Direction::East => right = true,
+                                            Direction::West => left = true,
+                                            _ => {}
+                                        }
                                     }
                                 }
+                                _ => continue,
                             }
-                            EntityType::TransportBelt => {
-                                let neighbor = match other_type {
-                                    EntityType::TransportBelt
-                                    | EntityType::UndergroundBelt
-                                    | EntityType::LinkedBelt => {
-                                        pos.is_cardinal_neighbor(&other_pos)
-                                    }
-                                    EntityType::Splitter => {
-                                        pos.is_2wide_cardinal_neighbor(&other_pos)
-                                    }
-                                    EntityType::Loader => {
-                                        pos.is_2long_cardinal_neighbor(&other_pos)
-                                    }
-                                    _ => continue,
-                                };
-
-                                if let Some(dir) = neighbor {
-                                    if dir != other.direction.flip() {
-                                        continue;
-                                    }
-
-                                    match dir {
-                                        Direction::North => up = true,
-                                        Direction::South => down = true,
-                                        Direction::East => right = true,
-                                        Direction::West => left = true,
-                                        _ => {}
-                                    }
-                                }
-                            }
-                            _ => continue,
                         }
+
+                        Some(ConnectedDirections::from_directions(up, down, left, right))
+                    } else {
+                        None
                     }
+                });
 
-                    Some(ConnectedDirections::from_directions(up, down, left, right))
-                } else {
-                    None
-                }
-            });
+                let mut render_opts = bp_entity2render_opts(e);
+                render_opts.connections = connections;
+                render_opts.connected_gates = connected_gates;
+                render_opts.draw_gate_patch = draw_gate_patch;
 
-            let mut render_opts = bp_entity2render_opts(e);
-            render_opts.connections = connections;
-            render_opts.connected_gates = connected_gates;
-            render_opts.draw_gate_patch = draw_gate_patch;
+                data.render_entity(
+                    &e.name,
+                    &render_opts,
+                    used_mods,
+                    &mut render_layers,
+                    image_cache,
+                )
+            })
+            .count()
+    );
 
-            data.render_entity(&e.name, &render_opts, used_mods, render_layers, image_cache)
-                .map(|(img, scale, shift)| {
-                    let (shift_x, shift_y) = shift.as_tuple();
-                    Some((
-                        img,
-                        scale,
-                        (
-                            shift_x + f64::from(e.position.x),
-                            shift_y + f64::from(e.position.y),
-                        )
-                            .into(),
-                    ))
-                })
-        })
-        .collect::<Vec<_>>();
-
-    println!("entities: {}, layers: {}", bp.entities.len(), renders.len());
-
-    merge_renders(renders.as_slice())
+    render_layers.combine()
 }
 
 #[skip_serializing_none]

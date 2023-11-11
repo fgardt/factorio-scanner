@@ -73,17 +73,39 @@ impl super::Renderable for MiningDrillData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        if let Some(set) = self.graphics_set.as_ref() {
-            set.render(used_mods, image_cache, &options.into())
+        let res = if let Some(set) = self.graphics_set.as_ref() {
+            set.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
         } else {
-            merge_renders(&[
-                self.base_picture
-                    .as_ref()
-                    .and_then(|s| s.render(used_mods, image_cache, &options.into())),
-                self.animations
-                    .as_ref()
-                    .and_then(|s| s.render(used_mods, image_cache, &options.into())),
-            ])
-        }
+            merge_renders(
+                &[
+                    self.base_picture.as_ref().and_then(|s| {
+                        s.render(
+                            render_layers.scale(),
+                            used_mods,
+                            image_cache,
+                            &options.into(),
+                        )
+                    }),
+                    self.animations.as_ref().and_then(|s| {
+                        s.render(
+                            render_layers.scale(),
+                            used_mods,
+                            image_cache,
+                            &options.into(),
+                        )
+                    }),
+                ],
+                render_layers.scale(),
+            )
+        }?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }

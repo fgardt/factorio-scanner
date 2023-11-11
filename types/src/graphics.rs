@@ -1,14 +1,9 @@
-use std::collections::HashMap;
-
-use image::{
-    imageops::{self, FilterType},
-    DynamicImage, GenericImageView, Rgba,
-};
+use image::{imageops, DynamicImage, GenericImageView, Rgba};
 use mod_util::UsedMods;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use crate::{FactorioArray, ImageCache, MapPosition};
+use crate::{FactorioArray, ImageCache};
 
 use super::{helper, Color, Direction, FileName, Vector};
 
@@ -208,7 +203,7 @@ pub enum SpriteSizeParam {
 pub trait FetchSprite {
     fn fetch(
         &self,
-
+        scale: f64,
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
@@ -217,7 +212,7 @@ pub trait FetchSprite {
 
     fn fetch_offset(
         &self,
-
+        scale: f64,
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
@@ -227,7 +222,7 @@ pub trait FetchSprite {
 
     fn fetch_offset_by_pixels(
         &self,
-
+        scale: f64,
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
@@ -239,13 +234,13 @@ pub trait FetchSprite {
     fn get_size(&self) -> (i16, i16);
 }
 
-pub type GraphicsOutput = (DynamicImage, f64, Vector);
+pub type GraphicsOutput = (DynamicImage, Vector);
 pub trait RenderableGraphics {
     type RenderOpts;
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -254,21 +249,21 @@ pub trait RenderableGraphics {
 
 pub fn merge_layers<O, T: RenderableGraphics<RenderOpts = O>>(
     layers: &[T],
-
+    scale: f64,
     used_mods: &UsedMods,
     image_cache: &mut ImageCache,
     opts: &O,
 ) -> Option<GraphicsOutput> {
     let layers = layers
         .iter()
-        .map(|layer| layer.render(used_mods, image_cache, opts))
+        .map(|layer| layer.render(scale, used_mods, image_cache, opts))
         .collect::<Vec<_>>();
 
-    merge_renders(layers.as_slice())
+    merge_renders(layers.as_slice(), scale)
 }
 
 #[must_use]
-pub fn merge_renders(renders: &[Option<GraphicsOutput>]) -> Option<GraphicsOutput> {
+pub fn merge_renders(renders: &[Option<GraphicsOutput>], scale: f64) -> Option<GraphicsOutput> {
     const TILE_RES: f64 = 32.0;
 
     let renders = renders
@@ -284,9 +279,8 @@ pub fn merge_renders(renders: &[Option<GraphicsOutput>]) -> Option<GraphicsOutpu
     let mut min_y = f64::MAX;
     let mut max_x = f64::MIN;
     let mut max_y = f64::MIN;
-    let mut min_scale = f64::MAX;
 
-    for (img, scale, shift) in &renders {
+    for (img, shift) in &renders {
         let (shift_x, shift_y) = shift.as_tuple();
         let (width, height) = img.dimensions();
         let width = f64::from(width) * scale / TILE_RES;
@@ -299,16 +293,11 @@ pub fn merge_renders(renders: &[Option<GraphicsOutput>]) -> Option<GraphicsOutpu
         min_y = min_y.min(y);
         max_x = max_x.max(x + width);
         max_y = max_y.max(y + height);
-        min_scale = min_scale.min(*scale);
 
         //println!("{width}x{height} x{scale} ({shift_x}, {shift_y})");
     }
 
-    if min_scale <= 0.0 {
-        return None;
-    }
-
-    let px_per_tile = TILE_RES / min_scale;
+    let px_per_tile = TILE_RES / scale;
     let width = (max_x - min_x) * px_per_tile;
     let height = (max_y - min_y) * px_per_tile;
     let res_shift = ((min_x + max_x) / 2.0, (min_y + max_y) / 2.0);
@@ -321,23 +310,16 @@ pub fn merge_renders(renders: &[Option<GraphicsOutput>]) -> Option<GraphicsOutpu
 
     let mut combined = DynamicImage::new_rgba8(width.ceil() as u32, height.ceil() as u32);
 
-    for (img, scale, shift) in &renders {
+    for (img, shift) in &renders {
         let (shift_x, shift_y) = shift.as_tuple();
-        let effective_scale = scale / min_scale;
-        let (pre_width, pre_height) = img.dimensions();
-        let scaled = img.resize(
-            (f64::from(pre_width) * effective_scale).round() as u32,
-            (f64::from(pre_height) * effective_scale).round() as u32,
-            FilterType::Triangle,
-        );
-        let (post_width, post_height) = scaled.dimensions();
+        let (post_width, post_height) = img.dimensions();
         let x = shift_x.mul_add(px_per_tile, center.0 - (f64::from(post_width) / 2.0));
         let y = shift_y.mul_add(px_per_tile, center.1 - (f64::from(post_height) / 2.0));
 
-        imageops::overlay(&mut combined, &scaled, x.round() as i64, y.round() as i64);
+        imageops::overlay(&mut combined, img, x.round() as i64, y.round() as i64);
     }
 
-    Some((combined, min_scale, res_shift.into()))
+    Some((combined, res_shift.into()))
 }
 
 /// [`Types/SpriteParameters`](https://lua-api.factorio.com/latest/types/SpriteParameters.html)
@@ -409,18 +391,25 @@ pub struct SpriteParams {
 impl FetchSprite for SpriteParams {
     fn fetch(
         &self,
-
+        scale: f64,
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
     ) -> Option<GraphicsOutput> {
-        self.fetch_offset_by_pixels(filename, used_mods, image_cache, runtime_tint, (0, 0))
+        self.fetch_offset_by_pixels(
+            scale,
+            filename,
+            used_mods,
+            image_cache,
+            runtime_tint,
+            (0, 0),
+        )
     }
 
     fn fetch_offset(
         &self,
-
+        scale: f64,
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
@@ -429,6 +418,7 @@ impl FetchSprite for SpriteParams {
     ) -> Option<GraphicsOutput> {
         let (width, height) = self.get_size();
         self.fetch_offset_by_pixels(
+            scale,
             filename,
             used_mods,
             image_cache,
@@ -439,7 +429,7 @@ impl FetchSprite for SpriteParams {
 
     fn fetch_offset_by_pixels(
         &self,
-
+        scale: f64,
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
@@ -488,7 +478,7 @@ impl FetchSprite for SpriteParams {
 
         //img.save("test.png").unwrap();
 
-        Some((img, self.scale, self.shift))
+        Some((img, self.shift))
     }
 
     fn get_position(&self) -> (i16, i16) {
@@ -541,13 +531,13 @@ impl<T: FetchSprite> RenderableGraphics for SimpleGraphics<T> {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match &self {
-            Self::Layered { layers } => merge_layers(layers, used_mods, image_cache, opts),
+            Self::Layered { layers } => merge_layers(layers, scale, used_mods, image_cache, opts),
             Self::Simple {
                 filename,
                 data,
@@ -556,9 +546,9 @@ impl<T: FetchSprite> RenderableGraphics for SimpleGraphics<T> {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(used_mods, image_cache, opts)
+                    hr_version.render(scale, used_mods, image_cache, opts)
                 } else {
-                    data.fetch(filename, used_mods, image_cache, opts.runtime_tint)
+                    data.fetch(scale, filename, used_mods, image_cache, opts.runtime_tint)
                 }
             }
         }
@@ -597,29 +587,29 @@ where
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Layered { layers } => merge_layers(layers, used_mods, image_cache, opts),
+            Self::Layered { layers } => merge_layers(layers, scale, used_mods, image_cache, opts),
             Self::Simple { data, hr_version } => {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(used_mods, image_cache, opts)
+                    hr_version.render(scale, used_mods, image_cache, opts)
                 } else {
-                    data.render(used_mods, image_cache, opts)
+                    data.render(scale, used_mods, image_cache, opts)
                 }
             }
             Self::MultiFile { data, hr_version } => {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(used_mods, image_cache, opts)
+                    hr_version.render(scale, used_mods, image_cache, opts)
                 } else {
-                    data.render(used_mods, image_cache, opts)
+                    data.render(scale, used_mods, image_cache, opts)
                 }
             }
         }
@@ -635,12 +625,12 @@ impl RenderableGraphics for Sprite {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
-        self.0.render(used_mods, image_cache, opts)
+        self.0.render(scale, used_mods, image_cache, opts)
     }
 }
 
@@ -699,7 +689,7 @@ impl RenderableGraphics for RotatedSpriteParams {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -721,6 +711,7 @@ impl RenderableGraphics for RotatedSpriteParams {
         let column = index % line_length;
 
         self.sprite_params.fetch_offset(
+            scale,
             &self.filename,
             used_mods,
             image_cache,
@@ -771,7 +762,7 @@ impl RenderableGraphics for RotatedSpriteParamsMultiFile {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -798,6 +789,7 @@ impl RenderableGraphics for RotatedSpriteParamsMultiFile {
         let column = index % line_length;
 
         self.sprite_params.fetch_offset(
+            scale,
             self.filenames.get(file_index as usize)?,
             used_mods,
             image_cache,
@@ -816,12 +808,12 @@ impl RenderableGraphics for RotatedSprite {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
-        self.0.render(used_mods, image_cache, opts)
+        self.0.render(scale, used_mods, image_cache, opts)
     }
 }
 
@@ -863,7 +855,7 @@ impl RenderableGraphics for Sprite4WaySheet {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -871,7 +863,7 @@ impl RenderableGraphics for Sprite4WaySheet {
         // TODO: option to enable/disable HR mode
         #[allow(clippy::option_if_let_else)]
         if let Some(hr_version) = &self.hr_version {
-            hr_version.render(used_mods, image_cache, opts)
+            hr_version.render(scale, used_mods, image_cache, opts)
         } else {
             let direction = match opts.direction {
                 Direction::North => 0,
@@ -882,6 +874,7 @@ impl RenderableGraphics for Sprite4WaySheet {
             } % self.frames;
 
             self.sprite_params.fetch_offset(
+                scale,
                 &self.filename,
                 used_mods,
                 image_cache,
@@ -916,7 +909,7 @@ impl RenderableGraphics for Sprite8WaySheet {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -924,12 +917,13 @@ impl RenderableGraphics for Sprite8WaySheet {
         // TODO: option to enable/disable HR mode
         #[allow(clippy::option_if_let_else)]
         if let Some(hr_version) = &self.hr_version {
-            hr_version.render(used_mods, image_cache, opts)
+            hr_version.render(scale, used_mods, image_cache, opts)
         } else {
             let direction = opts.direction as u32 % self.frames;
 
             let (width, _) = self.sprite_params.get_size();
             self.sprite_params.fetch_offset(
+                scale,
                 &self.filename,
                 used_mods,
                 image_cache,
@@ -964,15 +958,15 @@ impl RenderableGraphics for Sprite4Way {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Sprite(sprite) => sprite.0.render(used_mods, image_cache, &opts.into()),
-            Self::Sheet { sheet } => sheet.render(used_mods, image_cache, opts),
-            Self::Sheets { sheets } => merge_layers(sheets, used_mods, image_cache, opts),
+            Self::Sprite(sprite) => sprite.0.render(scale, used_mods, image_cache, &opts.into()),
+            Self::Sheet { sheet } => sheet.render(scale, used_mods, image_cache, opts),
+            Self::Sheets { sheets } => merge_layers(sheets, scale, used_mods, image_cache, opts),
             Self::Directions {
                 north,
                 east,
@@ -988,7 +982,7 @@ impl RenderableGraphics for Sprite4Way {
                 }
             }
             .0
-            .render(used_mods, image_cache, &opts.into()),
+            .render(scale, used_mods, image_cache, &opts.into()),
         }
     }
 }
@@ -1020,13 +1014,13 @@ impl RenderableGraphics for Sprite8Way {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Sheets { sheets } => merge_layers(sheets, used_mods, image_cache, opts),
+            Self::Sheets { sheets } => merge_layers(sheets, scale, used_mods, image_cache, opts),
             Self::Sheet { sheet } => todo!(),
             Self::Directions {
                 north,
@@ -1048,7 +1042,7 @@ impl RenderableGraphics for Sprite8Way {
                 Direction::NorthWest => north_west,
             }
             .0
-            .render(used_mods, image_cache, &opts.into()),
+            .render(scale, used_mods, image_cache, &opts.into()),
         }
     }
 }
@@ -1080,32 +1074,38 @@ pub struct SpriteSheetParams {
 impl FetchSprite for SpriteSheetParams {
     fn fetch(
         &self,
-
+        scale: f64,
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
     ) -> Option<GraphicsOutput> {
         self.sprite_params
-            .fetch(filename, used_mods, image_cache, runtime_tint)
+            .fetch(scale, filename, used_mods, image_cache, runtime_tint)
     }
 
     fn fetch_offset(
         &self,
-
+        scale: f64,
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
-        self.sprite_params
-            .fetch_offset(filename, used_mods, image_cache, runtime_tint, offset)
+        self.sprite_params.fetch_offset(
+            scale,
+            filename,
+            used_mods,
+            image_cache,
+            runtime_tint,
+            offset,
+        )
     }
 
     fn fetch_offset_by_pixels(
         &self,
-
+        scale: f64,
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
@@ -1113,6 +1113,7 @@ impl FetchSprite for SpriteSheetParams {
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
         self.sprite_params.fetch_offset_by_pixels(
+            scale,
             filename,
             used_mods,
             image_cache,
@@ -1161,19 +1162,19 @@ impl RenderableGraphics for SpriteVariations {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
             Self::Struct { sheet } | Self::SpriteSheet(sheet) => {
-                sheet.render(used_mods, image_cache, &opts.into())
+                sheet.render(scale, used_mods, image_cache, &opts.into())
             }
             Self::Array(variations) => {
                 variations
                     .get(0)?
-                    .render(used_mods, image_cache, &opts.into())
+                    .render(scale, used_mods, image_cache, &opts.into())
             }
         }
     }
@@ -1377,32 +1378,38 @@ pub struct AnimationParams {
 impl FetchSprite for AnimationParams {
     fn fetch(
         &self,
-
+        scale: f64,
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
     ) -> Option<GraphicsOutput> {
         self.sprite_params
-            .fetch(filename, used_mods, image_cache, runtime_tint)
+            .fetch(scale, filename, used_mods, image_cache, runtime_tint)
     }
 
     fn fetch_offset(
         &self,
-
+        scale: f64,
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
-        self.sprite_params
-            .fetch_offset(filename, used_mods, image_cache, runtime_tint, offset)
+        self.sprite_params.fetch_offset(
+            scale,
+            filename,
+            used_mods,
+            image_cache,
+            runtime_tint,
+            offset,
+        )
     }
 
     fn fetch_offset_by_pixels(
         &self,
-
+        scale: f64,
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
@@ -1410,6 +1417,7 @@ impl FetchSprite for AnimationParams {
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
         self.sprite_params.fetch_offset_by_pixels(
+            scale,
             filename,
             used_mods,
             image_cache,
@@ -1522,13 +1530,13 @@ impl RenderableGraphics for Animation {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match &self {
-            Self::Layered { layers } => merge_layers(layers, used_mods, image_cache, opts),
+            Self::Layered { layers } => merge_layers(layers, scale, used_mods, image_cache, opts),
             Self::Striped {
                 stripes,
                 data,
@@ -1537,7 +1545,7 @@ impl RenderableGraphics for Animation {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(used_mods, image_cache, opts)
+                    hr_version.render(scale, used_mods, image_cache, opts)
                 } else {
                     // TODO: add extra output for shadows
                     // rendering shadows / glow / light is not supported
@@ -1571,6 +1579,7 @@ impl RenderableGraphics for Animation {
                         let column = stripe_index % stripe.width_in_frames;
 
                         return data.fetch_offset(
+                            scale,
                             &stripe.filename,
                             used_mods,
                             image_cache,
@@ -1590,7 +1599,7 @@ impl RenderableGraphics for Animation {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(used_mods, image_cache, opts)
+                    hr_version.render(scale, used_mods, image_cache, opts)
                 } else {
                     // line_length = 0 means all frames are in a single line
                     let line_length = if data.line_length.unwrap_or(0) == 0 {
@@ -1609,6 +1618,7 @@ impl RenderableGraphics for Animation {
                     let column = index % line_length;
 
                     data.fetch_offset(
+                        scale,
                         filename,
                         used_mods,
                         image_cache,
@@ -1656,13 +1666,15 @@ impl RenderableGraphics for Animation4Way {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Animation(animation) => animation.render(used_mods, image_cache, &opts.into()),
+            Self::Animation(animation) => {
+                animation.render(scale, used_mods, image_cache, &opts.into())
+            }
             Self::Struct {
                 north,
                 east,
@@ -1688,7 +1700,7 @@ impl RenderableGraphics for Animation4Way {
                     unimplemented!("Animation4Way does not support diagonals")
                 }
             }
-            .render(used_mods, image_cache, &opts.into()),
+            .render(scale, used_mods, image_cache, &opts.into()),
         }
     }
 }
@@ -1726,7 +1738,7 @@ impl RenderableGraphics for AnimationElement {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
@@ -1737,7 +1749,7 @@ impl RenderableGraphics for AnimationElement {
 
         self.animation
             .as_ref()
-            .and_then(|animation| animation.render(used_mods, image_cache, opts))
+            .and_then(|animation| animation.render(scale, used_mods, image_cache, opts))
     }
 }
 
@@ -1790,14 +1802,17 @@ impl RenderableGraphics for AnimationVariations {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Animation(animation) => animation.render(used_mods, image_cache, &opts.into()),
+            Self::Animation(animation) => {
+                animation.render(scale, used_mods, image_cache, &opts.into())
+            }
             Self::Array(animations) => animations.get(opts.variation as usize)?.render(
+                scale,
                 used_mods,
                 image_cache,
                 &opts.into(),
@@ -1869,32 +1884,38 @@ pub struct RotatedAnimationParams {
 impl FetchSprite for RotatedAnimationParams {
     fn fetch(
         &self,
-
+        scale: f64,
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
     ) -> Option<GraphicsOutput> {
         self.animation_params
-            .fetch(filename, used_mods, image_cache, runtime_tint)
+            .fetch(scale, filename, used_mods, image_cache, runtime_tint)
     }
 
     fn fetch_offset(
         &self,
-
+        scale: f64,
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         runtime_tint: Option<Color>,
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
-        self.animation_params
-            .fetch_offset(filename, used_mods, image_cache, runtime_tint, offset)
+        self.animation_params.fetch_offset(
+            scale,
+            filename,
+            used_mods,
+            image_cache,
+            runtime_tint,
+            offset,
+        )
     }
 
     fn fetch_offset_by_pixels(
         &self,
-
+        scale: f64,
         filename: &FileName,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
@@ -1902,6 +1923,7 @@ impl FetchSprite for RotatedAnimationParams {
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
         self.animation_params.fetch_offset_by_pixels(
+            scale,
             filename,
             used_mods,
             image_cache,
@@ -1990,13 +2012,13 @@ impl RenderableGraphics for RotatedAnimation {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Layered { layers } => merge_layers(layers, used_mods, image_cache, opts),
+            Self::Layered { layers } => merge_layers(layers, scale, used_mods, image_cache, opts),
             Self::Striped {
                 stripes,
                 data,
@@ -2005,7 +2027,7 @@ impl RenderableGraphics for RotatedAnimation {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(used_mods, image_cache, opts)
+                    hr_version.render(scale, used_mods, image_cache, opts)
                 } else {
                     // TODO: support stripes
                     None
@@ -2019,7 +2041,7 @@ impl RenderableGraphics for RotatedAnimation {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(used_mods, image_cache, opts)
+                    hr_version.render(scale, used_mods, image_cache, opts)
                 } else {
                     let orientation_index = match opts.override_index {
                         Some(index) => u32::from(index),
@@ -2033,6 +2055,7 @@ impl RenderableGraphics for RotatedAnimation {
                     let row = frame_index / line_length;
 
                     data.fetch_offset(
+                        scale,
                         filenames.get(file_index as usize)?,
                         used_mods,
                         image_cache,
@@ -2049,7 +2072,7 @@ impl RenderableGraphics for RotatedAnimation {
                 // TODO: option to enable/disable HR mode
                 #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(used_mods, image_cache, opts)
+                    hr_version.render(scale, used_mods, image_cache, opts)
                 } else {
                     let orientation_index = match opts.override_index {
                         Some(index) => u32::from(index),
@@ -2062,6 +2085,7 @@ impl RenderableGraphics for RotatedAnimation {
                     let row = frame_index / line_length;
 
                     data.fetch_offset(
+                        scale,
                         filename,
                         used_mods,
                         image_cache,
@@ -2112,14 +2136,14 @@ impl RenderableGraphics for RotatedAnimation4Way {
 
     fn render(
         &self,
-
+        scale: f64,
         used_mods: &UsedMods,
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
             Self::RotatedAnimation(animation) => {
-                animation.render(used_mods, image_cache, &opts.into())
+                animation.render(scale, used_mods, image_cache, &opts.into())
             }
             Self::Struct {
                 north,
@@ -2137,7 +2161,7 @@ impl RenderableGraphics for RotatedAnimation4Way {
                     unimplemented!("RotatedAnimation4Way does not support diagonals")
                 }
             }
-            .render(used_mods, image_cache, &opts.into()),
+            .render(scale, used_mods, image_cache, &opts.into()),
         }
     }
 }

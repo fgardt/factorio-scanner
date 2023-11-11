@@ -87,17 +87,39 @@ impl super::Renderable for ArtilleryTurretData {
             ..options.clone()
         };
 
-        merge_renders(&[
-            self.base_picture
-                .as_ref()
-                .and_then(|a| a.render(used_mods, image_cache, &cannon_opts.into())),
-            self.cannon_barrel_pictures
-                .as_ref()
-                .and_then(|s| s.render(used_mods, image_cache, &cannon_opts.into())),
-            self.cannon_base_pictures
-                .as_ref()
-                .and_then(|s| s.render(used_mods, image_cache, &cannon_opts.into())),
-        ])
+        let res = merge_renders(
+            &[
+                self.base_picture.as_ref().and_then(|a| {
+                    a.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &cannon_opts.into(),
+                    )
+                }),
+                self.cannon_barrel_pictures.as_ref().and_then(|s| {
+                    s.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &cannon_opts.into(),
+                    )
+                }),
+                self.cannon_base_pictures.as_ref().and_then(|s| {
+                    s.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &cannon_opts.into(),
+                    )
+                }),
+            ],
+            render_layers.scale(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 

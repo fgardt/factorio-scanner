@@ -142,14 +142,31 @@ impl super::Renderable for TurretData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        merge_renders(&[
-            self.base_picture
-                .as_ref()
-                .and_then(|a| a.render(used_mods, image_cache, &options.into())),
-            self.folding_animation
-                .as_ref()
-                .and_then(|a| a.render(used_mods, image_cache, &options.into())),
-        ])
+        let res = merge_renders(
+            &[
+                self.base_picture.as_ref().and_then(|a| {
+                    a.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &options.into(),
+                    )
+                }),
+                self.folding_animation.as_ref().and_then(|a| {
+                    a.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &options.into(),
+                    )
+                }),
+            ],
+            render_layers.scale(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 

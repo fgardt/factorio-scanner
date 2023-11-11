@@ -43,7 +43,15 @@ impl super::Renderable for RadarData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        self.pictures
-            .render(used_mods, image_cache, &options.into())
+        let res = self.pictures.render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }

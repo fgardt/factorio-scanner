@@ -51,29 +51,47 @@ impl super::Renderable for GateData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        match options.direction {
+        let res = match options.direction {
             Direction::North | Direction::South => {
                 let renders = if options.draw_gate_patch {
                     [
-                        self.vertical_animation
-                            .render(used_mods, image_cache, &options.into()),
-                        self.wall_patch
-                            .render(used_mods, image_cache, &options.into()),
+                        self.vertical_animation.render(
+                            render_layers.scale(),
+                            used_mods,
+                            image_cache,
+                            &options.into(),
+                        ),
+                        self.wall_patch.render(
+                            render_layers.scale(),
+                            used_mods,
+                            image_cache,
+                            &options.into(),
+                        ),
                     ]
                 } else {
                     [
-                        self.vertical_animation
-                            .render(used_mods, image_cache, &options.into()),
+                        self.vertical_animation.render(
+                            render_layers.scale(),
+                            used_mods,
+                            image_cache,
+                            &options.into(),
+                        ),
                         None,
                     ]
                 };
-                merge_renders(&renders)
+                merge_renders(&renders, render_layers.scale())
             }
-            Direction::West | Direction::East => {
-                self.horizontal_animation
-                    .render(used_mods, image_cache, &options.into())
-            }
+            Direction::West | Direction::East => self.horizontal_animation.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            ),
             _ => None,
-        }
+        }?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }

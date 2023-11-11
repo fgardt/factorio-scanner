@@ -56,9 +56,18 @@ impl super::Renderable for ContainerData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        self.picture
-            .as_ref()
-            .and_then(|picture| picture.render(used_mods, image_cache, &options.into()))
+        let res = self.picture.as_ref().and_then(|picture| {
+            picture.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 
@@ -124,9 +133,16 @@ impl super::Renderable for LogisticContainerData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        self.animation
-            .as_ref()?
-            .render(used_mods, image_cache, &options.into())
+        let res = self.animation.as_ref()?.render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 
@@ -222,8 +238,17 @@ impl super::Renderable for LinkedContainerData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        self.picture
-            .as_ref()
-            .and_then(|picture| picture.render(used_mods, image_cache, &options.into()))
+        let res = self.picture.as_ref().and_then(|picture| {
+            picture.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
