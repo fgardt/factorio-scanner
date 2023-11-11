@@ -117,17 +117,42 @@ impl super::Renderable for RoboportData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        merge_renders(&[
-            self.base.render(used_mods, image_cache, &options.into()),
-            self.base_animation
-                .render(used_mods, image_cache, &options.into()),
-            self.door_animation_up
-                .render(used_mods, image_cache, &options.into()),
-            self.door_animation_down
-                .render(used_mods, image_cache, &options.into()),
-        ])
+    ) -> crate::RenderOutput {
+        let res = merge_renders(
+            &[
+                self.base.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                ),
+                self.base_animation.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                ),
+                self.door_animation_up.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                ),
+                self.door_animation_down.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                ),
+            ],
+            render_layers.scale(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
 
         // TODO: include base_animation & doors
     }

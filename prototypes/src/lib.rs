@@ -11,12 +11,14 @@
     clippy::struct_excessive_bools,
     clippy::module_name_repetitions
 )]
+
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::ops::Deref;
 use std::path::Path;
 
+use image::{imageops, GenericImageView};
 use mod_util::mod_info::Version;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -923,10 +925,122 @@ impl DataUtil {
         entity_name: &str,
         render_opts: &RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> RenderOutput {
         self.get_entity(entity_name)?
-            .render(render_opts, used_mods, image_cache)
+            .render(render_opts, used_mods, render_layers, image_cache)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TargetSize {
+    width: u32,
+    height: u32,
+    scale: f64,
+    top_left: crate::MapPosition,
+    bottom_right: crate::MapPosition,
+
+    tile_res: f64,
+}
+
+impl TargetSize {
+    #[must_use]
+    pub fn new(
+        width: u32,
+        height: u32,
+        scale: f64,
+        top_left: crate::MapPosition,
+        bottom_right: crate::MapPosition,
+    ) -> Self {
+        const TILE_RES: f64 = 32.0;
+        let tile_res = TILE_RES / scale;
+
+        Self {
+            width,
+            height,
+            scale,
+            top_left,
+            bottom_right,
+            tile_res,
+        }
+    }
+
+    #[must_use]
+    fn get_pixel_pos(
+        &self,
+        (width, height): (u32, u32),
+        shift: &Vector,
+        position: &MapPosition,
+    ) -> (i64, i64) {
+        let (x, y) = position.as_tuple();
+        let (shift_x, shift_y) = shift.as_tuple();
+        let (tl_x, tl_y) = self.top_left.as_tuple();
+
+        let px = f64::from(width).mul_add(-0.5, (x + shift_x - tl_x) * self.tile_res);
+        let py = f64::from(height).mul_add(-0.5, (y + shift_y - tl_y) * self.tile_res);
+
+        (px.round() as i64, py.round() as i64)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RenderLayerBuffer {
+    target_size: TargetSize,
+    layers: HashMap<InternalRenderLayer, image::DynamicImage>,
+}
+
+impl RenderLayerBuffer {
+    #[must_use]
+    pub fn new(target_size: TargetSize) -> Self {
+        Self {
+            target_size,
+            layers: HashMap::new(),
+        }
+    }
+
+    pub fn add(
+        &mut self,
+        (img, shift): (image::DynamicImage, Vector),
+        position: &MapPosition,
+        layer: InternalRenderLayer,
+    ) {
+        let layer = self.layers.entry(layer).or_insert_with(|| {
+            image::DynamicImage::new_rgba8(self.target_size.width, self.target_size.height)
+        });
+
+        let (x, y) = self
+            .target_size
+            .get_pixel_pos(img.dimensions(), &shift, position);
+
+        imageops::overlay(layer, &img, x, y);
+    }
+
+    pub fn add_entity(&mut self, input: (image::DynamicImage, Vector), position: &MapPosition) {
+        self.add(input, position, InternalRenderLayer::Entity);
+    }
+
+    pub fn add_shadow(&mut self, input: (image::DynamicImage, Vector), position: &MapPosition) {
+        self.add(input, position, InternalRenderLayer::Shadow);
+    }
+
+    #[must_use]
+    pub const fn scale(&self) -> f64 {
+        self.target_size.scale
+    }
+
+    #[must_use]
+    pub fn combine(self) -> image::DynamicImage {
+        let mut combined =
+            image::DynamicImage::new_rgba8(self.target_size.width, self.target_size.height);
+
+        for layer in InternalRenderLayer::all() {
+            if let Some(img) = self.layers.get(&layer) {
+                imageops::overlay(&mut combined, img, 0, 0);
+            }
+        }
+
+        combined
     }
 }
 

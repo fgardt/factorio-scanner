@@ -64,8 +64,9 @@ impl super::Renderable for TrainStopData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }

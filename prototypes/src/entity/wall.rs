@@ -56,8 +56,9 @@ impl super::Renderable for WallData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         let core = match options.connections.unwrap_or_default() {
             ConnectedDirections::None | ConnectedDirections::Up => &self.pictures.single,
             ConnectedDirections::Down | ConnectedDirections::UpDown => {
@@ -78,7 +79,12 @@ impl super::Renderable for WallData {
             }
             ConnectedDirections::DownLeftRight | ConnectedDirections::All => &self.pictures.t_up,
         }
-        .render(used_mods, image_cache, &options.into());
+        .render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        );
 
         // TODO: fillings
         let mut gate_connection_north: Option<GraphicsOutput> = None;
@@ -92,15 +98,27 @@ impl super::Renderable for WallData {
                 ..options.clone()
             };
 
-            let tmp = merge_renders(&[
-                self.pictures
-                    .gate_connection_patch
-                    .as_ref()
-                    .and_then(|s| s.render(used_mods, image_cache, &gate_opts.into())),
-                self.wall_diode_red
-                    .as_ref()
-                    .and_then(|s| s.render(used_mods, image_cache, &gate_opts.into())),
-            ]);
+            let tmp = merge_renders(
+                &[
+                    self.pictures.gate_connection_patch.as_ref().and_then(|s| {
+                        s.render(
+                            render_layers.scale(),
+                            used_mods,
+                            image_cache,
+                            &gate_opts.into(),
+                        )
+                    }),
+                    self.wall_diode_red.as_ref().and_then(|s| {
+                        s.render(
+                            render_layers.scale(),
+                            used_mods,
+                            image_cache,
+                            &gate_opts.into(),
+                        )
+                    }),
+                ],
+                render_layers.scale(),
+            );
 
             match gate_direction {
                 Direction::North => gate_connection_north = tmp,
@@ -111,13 +129,20 @@ impl super::Renderable for WallData {
             }
         }
 
-        merge_renders(&[
-            core,
-            gate_connection_north,
-            gate_connection_west,
-            gate_connection_east,
-            gate_connection_south,
-        ])
+        let res = merge_renders(
+            &[
+                core,
+                gate_connection_north,
+                gate_connection_west,
+                gate_connection_east,
+                gate_connection_south,
+            ],
+            render_layers.scale(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 

@@ -43,10 +43,20 @@ impl super::Renderable for BoilerData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         let structure: Animation4Way = self.structure.clone().into();
-        structure.render(used_mods, image_cache, &options.into())
+        let res = structure.render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 

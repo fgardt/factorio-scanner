@@ -41,8 +41,9 @@ impl super::Renderable for SimpleEntityData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -93,8 +94,9 @@ impl super::Renderable for SimpleEntityWithOwnerData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }

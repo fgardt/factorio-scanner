@@ -40,10 +40,19 @@ impl super::Renderable for PowerSwitchData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.power_on_animation
-            .render(used_mods, image_cache, &options.into())
+    ) -> crate::RenderOutput {
+        let res = self.power_on_animation.render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
 
         // TODO: render open / closed depending on render option flag
     }

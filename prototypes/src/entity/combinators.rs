@@ -71,11 +71,21 @@ impl<T: super::Renderable> super::Renderable for CombinatorData<T> {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.sprites
-            .as_ref()
-            .and_then(|s| s.render(used_mods, image_cache, &options.into()))
+    ) -> crate::RenderOutput {
+        let res = self.sprites.as_ref().and_then(|s| {
+            s.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 
@@ -103,9 +113,10 @@ impl super::Renderable for ArithmeticCombinatorData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        options.arithmetic_operation.as_ref().and_then(|op| {
+    ) -> crate::RenderOutput {
+        let res = options.arithmetic_operation.as_ref().and_then(|op| {
             match op {
                 ArithmeticOperation::Add => self.plus_symbol_sprites.as_ref(),
                 ArithmeticOperation::Subtract => self.minus_symbol_sprites.as_ref(),
@@ -119,8 +130,19 @@ impl super::Renderable for ArithmeticCombinatorData {
                 ArithmeticOperation::BitwiseOr => self.or_symbol_sprites.as_ref(),
                 ArithmeticOperation::BitwiseXor => self.xor_symbol_sprites.as_ref(),
             }
-            .and_then(|s| s.render(used_mods, image_cache, &options.into()))
-        })
+            .and_then(|s| {
+                s.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            })
+        })?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 
@@ -143,9 +165,10 @@ impl super::Renderable for DeciderCombinatorData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        options.decider_operation.as_ref().and_then(|op| {
+    ) -> crate::RenderOutput {
+        let res = options.decider_operation.as_ref().and_then(|op| {
             match op {
                 Comparator::Equal => self.equal_symbol_sprites.as_ref(),
                 Comparator::Greater => self.greater_symbol_sprites.as_ref(),
@@ -154,8 +177,19 @@ impl super::Renderable for DeciderCombinatorData {
                 Comparator::GreaterOrEqual => self.greater_or_equal_symbol_sprites.as_ref(),
                 Comparator::LessOrEqual => self.less_or_equal_symbol_sprites.as_ref(),
             }
-            .and_then(|s| s.render(used_mods, image_cache, &options.into()))
-        })
+            .and_then(|s| {
+                s.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            })
+        })?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 
@@ -195,10 +229,20 @@ impl super::Renderable for ConstantCombinatorData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.sprites
-            .as_ref()
-            .and_then(|s| s.render(used_mods, image_cache, &options.into()))
+    ) -> crate::RenderOutput {
+        let res = self.sprites.as_ref().and_then(|s| {
+            s.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }

@@ -95,16 +95,29 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         let anim = if self.always_draw_idle_animation && self.idle_animation.is_some() {
             self.idle_animation.as_ref()
         } else {
             self.animation.as_ref()
         }
-        .and_then(|anim| anim.render(used_mods, image_cache, &options.into()));
+        .and_then(|anim| {
+            anim.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        });
 
-        merge_renders(&[anim, self.child.render(options, used_mods, image_cache)])
+        if let Some(anim_res) = anim {
+            render_layers.add_entity(anim_res, &options.position);
+        };
+
+        self.child
+            .render(options, used_mods, render_layers, image_cache)
     }
 }
 
@@ -145,8 +158,9 @@ impl super::Renderable for FurnaceData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -178,8 +192,9 @@ impl super::Renderable for AssemblingMachineData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -280,21 +295,53 @@ impl super::Renderable for RocketSiloData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        merge_renders(&[
-            self.door_back_sprite
-                .render(used_mods, image_cache, &options.into()),
-            self.door_front_sprite
-                .render(used_mods, image_cache, &options.into()),
-            self.base_day_sprite
-                .render(used_mods, image_cache, &options.into()),
-            self.arm_01_back_animation
-                .render(used_mods, image_cache, &options.into()),
-            self.arm_02_right_animation
-                .render(used_mods, image_cache, &options.into()),
-            self.arm_03_front_animation
-                .render(used_mods, image_cache, &options.into()),
-        ])
+    ) -> crate::RenderOutput {
+        let res = merge_renders(
+            &[
+                self.door_back_sprite.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                ),
+                self.door_front_sprite.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                ),
+                self.base_day_sprite.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                ),
+                self.arm_01_back_animation.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                ),
+                self.arm_02_right_animation.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                ),
+                self.arm_03_front_animation.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                ),
+            ],
+            render_layers.scale(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }

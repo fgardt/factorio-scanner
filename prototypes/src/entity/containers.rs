@@ -53,11 +53,21 @@ impl super::Renderable for ContainerData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.picture
-            .as_ref()
-            .and_then(|picture| picture.render(used_mods, image_cache, &options.into()))
+    ) -> crate::RenderOutput {
+        let res = self.picture.as_ref().and_then(|picture| {
+            picture.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 
@@ -120,11 +130,19 @@ impl super::Renderable for LogisticContainerData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.animation
-            .as_ref()?
-            .render(used_mods, image_cache, &options.into())
+    ) -> crate::RenderOutput {
+        let res = self.animation.as_ref()?.render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }
 
@@ -167,9 +185,12 @@ impl super::Renderable for InfinityContainerData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.parent.parent.render(options, used_mods, image_cache)
+    ) -> crate::RenderOutput {
+        self.parent
+            .parent
+            .render(options, used_mods, render_layers, image_cache)
     }
 }
 
@@ -214,10 +235,20 @@ impl super::Renderable for LinkedContainerData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.picture
-            .as_ref()
-            .and_then(|picture| picture.render(used_mods, image_cache, &options.into()))
+    ) -> crate::RenderOutput {
+        let res = self.picture.as_ref().and_then(|picture| {
+            picture.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
     }
 }

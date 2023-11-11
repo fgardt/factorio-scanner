@@ -16,15 +16,14 @@ use std::{
 };
 
 use clap::Parser;
-use image::GenericImageView;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use mod_util::{
     mod_list::ModList, mod_loader::Mod, mod_settings::SettingsDat, UsedMods, UsedVersions,
 };
-use prototypes::{DataRaw, DataUtil, EntityRenderOpts, EntityType, RenderableEntity};
-use types::{merge_renders, ConnectedDirections, Direction, GraphicsOutput, ImageCache};
+use prototypes::{DataRaw, DataUtil, EntityType, RenderLayerBuffer, TargetSize};
+use types::{ConnectedDirections, Direction, ImageCache, MapPosition};
 
 mod bp_helper;
 mod preset;
@@ -165,76 +164,104 @@ fn main() {
         active_mods.keys().collect::<Vec<_>>()
     );
 
-    match render_bp(bp, &data, &active_mods, &mut ImageCache::new()) {
-        Some((img, scale, shift)) => {
-            println!("render done");
+    let size = calculate_target_size(bp, &data, 2048.0, 0.5).unwrap();
+    println!("target size: {size:?}");
 
-            let shrink_factor = (1.0 / scale).round() as u32;
+    let img = render_bp(
+        bp,
+        &data,
+        &active_mods,
+        RenderLayerBuffer::new(size),
+        &mut ImageCache::new(),
+    );
+    println!("render done");
 
-            let img = img.resize(
-                img.dimensions().0 / shrink_factor,
-                img.dimensions().1 / shrink_factor,
-                image::imageops::FilterType::CatmullRom,
-            );
-            // println!(
-            //     "{}x{} x{scale} {shift}",
-            //     img.dimensions().0,
-            //     img.dimensions().1,
-            // );
-
-            img.save(&cli.out).unwrap();
-            println!("saved to {:?}", cli.out);
-        }
-        None => println!("EMPTY BP!"),
-    }
+    img.save(&cli.out).unwrap();
+    println!("saved to {:?}", cli.out);
 }
 
-fn render_entity(
-    name: &str,
-    entity: &dyn RenderableEntity,
-    render_opts: &EntityRenderOpts,
-    used_mods: &UsedMods,
-    image_cache: &mut ImageCache,
-) {
-    match entity.render(render_opts, used_mods, image_cache) {
-        Some((img, scale, shift)) => {
-            // println!(
-            //     "{name}: {}x{} x{scale} ({shift_x}, {shift_y})",
-            //     img.dimensions().0,
-            //     img.dimensions().1,
-            // );
+fn calculate_target_size(
+    bp: &blueprint::Blueprint,
+    data: &DataUtil,
+    target_res: f64,
+    min_scale: f64,
+) -> Option<TargetSize> {
+    const TILE_RES: f64 = 32.0;
 
-            img.save(format!("render_test/{name}.png")).unwrap();
+    let mut min_x = f64::MAX;
+    let mut min_y = f64::MAX;
+    let mut max_x = f64::MIN;
+    let mut max_y = f64::MIN;
+
+    let mut unknown = HashSet::new();
+
+    for entity in &bp.entities {
+        let Some(e_proto) = data.get_entity(&entity.name) else {
+            unknown.insert(entity.name.as_str());
+            continue;
+        };
+
+        let e_pos: MapPosition = (&entity.position).into();
+        let c_box = e_proto.drawing_box();
+
+        let tl = &e_pos + c_box.top_left();
+        let br = &e_pos + c_box.bottom_right();
+
+        if tl.x() < min_x {
+            min_x = tl.x();
         }
-        None => {
-            println!("{name}: NO SPRITE!");
+
+        if tl.y() < min_y {
+            min_y = tl.y();
+        }
+
+        if br.x() > max_x {
+            max_x = br.x();
+        }
+
+        if br.y() > max_y {
+            max_y = br.y();
         }
     }
-}
 
-fn render_by_name(
-    name: &str,
-    data: &prototypes::DataUtil,
-    render_opts: &EntityRenderOpts,
-    used_mods: &UsedMods,
-    image_cache: &mut ImageCache,
-) {
-    match data.render_entity(name, render_opts, used_mods, image_cache) {
-        Some((img, scale, shift)) => {
-            println!(
-                "{name}: {}x{} x{scale} {shift}",
-                img.dimensions().0,
-                img.dimensions().1,
-            );
-        }
-        None => {
-            println!("{name}: NO SPRITE!");
-        }
+    // for tile in &bp.tiles {
+    //     let Some(t_proto) = data.get_tile(&tile.name) else {
+    //         unknown.insert(tile.name.as_str());
+    //         continue;
+    //     };
+    // }
+
+    if !unknown.is_empty() {
+        println!("unknown entities: {unknown:?}");
     }
+
+    let width = (max_x - min_x).abs().ceil();
+    let height = (max_y - min_y).abs().ceil();
+
+    if width == 0.0 || height == 0.0 {
+        return None;
+    }
+
+    // let scale = (f64::from(target_res) / (width * height * TILE_RES))
+    //     .sqrt()
+    //     .max(min_scale);
+
+    let scale = ((TILE_RES * width.sqrt() * height.sqrt()) / target_res).max(min_scale);
+    let scale = (scale * 4.0).ceil() / 4.0;
+    let tile_res = TILE_RES / scale;
+
+    Some(TargetSize::new(
+        (width * tile_res).ceil() as u32,
+        (height * tile_res).ceil() as u32,
+        scale,
+        MapPosition::XY { x: min_x, y: min_y },
+        MapPosition::XY { x: max_x, y: max_y },
+    ))
 }
 
 fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::EntityRenderOpts {
     prototypes::EntityRenderOpts {
+        position: (&value.position).into(),
         direction: value.direction,
         orientation: value.orientation.map(f64::from),
         pickup_position: value
@@ -267,9 +294,10 @@ fn render_bp(
     bp: &blueprint::Blueprint,
     data: &prototypes::DataUtil,
     used_mods: &UsedMods,
+    mut render_layers: RenderLayerBuffer,
     image_cache: &mut ImageCache,
-) -> Option<GraphicsOutput> {
-    let renders = bp
+) -> image::DynamicImage {
+    let rendered_count = bp
         .entities
         .iter()
         .filter_map(|e| {
@@ -415,25 +443,19 @@ fn render_bp(
             render_opts.connected_gates = connected_gates;
             render_opts.draw_gate_patch = draw_gate_patch;
 
-            data.render_entity(&e.name, &render_opts, used_mods, image_cache)
-                .map(|(img, scale, shift)| {
-                    let (shift_x, shift_y) = shift.as_tuple();
-                    Some((
-                        img,
-                        scale,
-                        (
-                            shift_x + f64::from(e.position.x),
-                            shift_y + f64::from(e.position.y),
-                        )
-                            .into(),
-                    ))
-                })
+            data.render_entity(
+                &e.name,
+                &render_opts,
+                used_mods,
+                &mut render_layers,
+                image_cache,
+            )
         })
-        .collect::<Vec<_>>();
+        .count();
 
-    println!("entities: {}, layers: {}", bp.entities.len(), renders.len());
+    println!("entities: {}, layers: {rendered_count}", bp.entities.len());
 
-    merge_renders(renders.as_slice())
+    render_layers.combine()
 }
 
 #[skip_serializing_none]
