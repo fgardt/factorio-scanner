@@ -117,7 +117,7 @@ impl super::Renderable for RoboportData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        render_layers: &mut RenderLayerBuffer,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         merge_renders(&[

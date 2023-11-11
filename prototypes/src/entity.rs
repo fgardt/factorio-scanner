@@ -231,7 +231,7 @@ pub trait Renderable {
         &self,
         options: &RenderOpts,
         used_mods: &UsedMods,
-        render_layers: &mut RenderLayerBuffer,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput>;
 }
@@ -264,7 +264,7 @@ impl<T: Renderable> Renderable for EntityPrototype<T> {
         &self,
         options: &RenderOpts,
         used_mods: &UsedMods,
-        render_layers: &mut RenderLayerBuffer,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         self.child
@@ -421,7 +421,7 @@ impl<T: Renderable> Renderable for EntityData<T> {
         &self,
         options: &RenderOpts,
         used_mods: &UsedMods,
-        render_layers: &mut RenderLayerBuffer,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         self.child
@@ -496,7 +496,7 @@ impl<T: Renderable> Renderable for EntityWithHealthData<T> {
         &self,
         options: &RenderOpts,
         used_mods: &UsedMods,
-        render_layers: &mut RenderLayerBuffer,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         self.child
@@ -533,7 +533,7 @@ impl<T: Renderable> Renderable for EntityWithOwnerData<T> {
         &self,
         options: &RenderOpts,
         used_mods: &UsedMods,
-        render_layers: &mut RenderLayerBuffer,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         self.child

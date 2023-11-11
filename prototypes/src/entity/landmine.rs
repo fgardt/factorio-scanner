@@ -48,7 +48,7 @@ impl super::Renderable for LandMineData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        render_layers: &mut RenderLayerBuffer,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         self.picture_set

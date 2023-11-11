@@ -18,6 +18,7 @@ use std::io::Read;
 use std::ops::Deref;
 use std::path::Path;
 
+use image::{imageops, GenericImageView};
 use mod_util::mod_info::Version;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -924,11 +925,94 @@ impl DataUtil {
         entity_name: &str,
         render_opts: &RenderOpts,
         used_mods: &UsedMods,
-        render_layers: &mut RenderLayerBuffer,
+        render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         self.get_entity(entity_name)?
             .render(render_opts, used_mods, render_layers, image_cache)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TargetSize {
+    pub width: u32,
+    pub height: u32,
+    pub scale: f64,
+    pub top_left: crate::MapPosition,
+    pub bottom_right: crate::MapPosition,
+}
+
+impl TargetSize {
+    #[must_use]
+    fn get_pixel_pos(
+        &self,
+        (width, height): (u32, u32),
+        shift: &Vector,
+        position: &MapPosition,
+    ) -> (i64, i64) {
+        let (tl_x, tl_y) = self.top_left.as_tuple();
+        let (x, y) = position.as_tuple();
+        let (shift_x, shift_y) = shift.as_tuple();
+
+        let px = f64::from(width).mul_add(-0.5, tl_x - x + shift_x);
+        let py = f64::from(height).mul_add(-0.5, tl_y - y + shift_y);
+
+        (px.round() as i64, py.round() as i64)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RenderLayerBuffer {
+    target_size: TargetSize,
+    layers: HashMap<InternalRenderLayer, image::DynamicImage>,
+}
+
+impl RenderLayerBuffer {
+    #[must_use]
+    pub fn new(target_size: TargetSize) -> Self {
+        Self {
+            target_size,
+            layers: HashMap::new(),
+        }
+    }
+
+    pub fn add(
+        &mut self,
+        (img, shift): (&image::DynamicImage, &Vector),
+        position: &MapPosition,
+        layer: InternalRenderLayer,
+    ) {
+        let layer = self.layers.entry(layer).or_insert_with(|| {
+            image::DynamicImage::new_rgba8(self.target_size.width, self.target_size.height)
+        });
+
+        let (x, y) = self
+            .target_size
+            .get_pixel_pos(img.dimensions(), shift, position);
+
+        imageops::overlay(layer, img, 0, 0);
+    }
+
+    pub fn add_entity(&mut self, input: (&image::DynamicImage, &Vector), position: &MapPosition) {
+        self.add(input, position, InternalRenderLayer::Entity);
+    }
+
+    pub fn add_shadow(&mut self, input: (&image::DynamicImage, &Vector), position: &MapPosition) {
+        self.add(input, position, InternalRenderLayer::Shadow);
+    }
+
+    #[must_use]
+    pub fn combine(self) -> image::DynamicImage {
+        let mut combined =
+            image::DynamicImage::new_rgba8(self.target_size.width, self.target_size.height);
+
+        for layer in InternalRenderLayer::all() {
+            if let Some(img) = self.layers.get(&layer) {
+                imageops::overlay(&mut combined, img, 0, 0);
+            }
+        }
+
+        combined
     }
 }
 

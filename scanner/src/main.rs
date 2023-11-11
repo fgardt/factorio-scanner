@@ -23,10 +23,9 @@ use serde_with::skip_serializing_none;
 use mod_util::{
     mod_list::ModList, mod_loader::Mod, mod_settings::SettingsDat, UsedMods, UsedVersions,
 };
-use prototypes::{DataRaw, DataUtil, EntityRenderOpts, EntityType, RenderableEntity};
+use prototypes::{DataRaw, DataUtil, EntityType, RenderLayerBuffer, TargetSize};
 use types::{
     merge_renders, ConnectedDirections, Direction, GraphicsOutput, ImageCache, MapPosition,
-    RenderLayerBuffer, TargetSize,
 };
 
 mod bp_helper;
