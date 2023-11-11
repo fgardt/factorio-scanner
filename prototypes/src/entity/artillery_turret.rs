@@ -77,7 +77,7 @@ impl super::Renderable for ArtilleryTurretData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         let cannon_opts = &super::RenderOpts {
             orientation: Some(
                 options

@@ -141,7 +141,7 @@ impl super::Renderable for TurretData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         merge_renders(&[
             self.base_picture
                 .as_ref()
@@ -187,7 +187,7 @@ impl super::Renderable for AmmoTurretData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         self.parent
             .render(options, used_mods, render_layers, image_cache)
     }
@@ -221,7 +221,7 @@ impl super::Renderable for ElectricTurretData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         self.parent
             .render(options, used_mods, render_layers, image_cache)
     }
@@ -264,7 +264,7 @@ impl super::Renderable for FluidTurretData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         self.parent
             .render(options, used_mods, render_layers, image_cache)
     }

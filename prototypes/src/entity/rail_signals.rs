@@ -59,7 +59,7 @@ impl<T: super::Renderable> super::Renderable for RailSignalBaseData<T> {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -83,7 +83,7 @@ impl super::Renderable for RailChainSignalData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -102,7 +102,7 @@ impl super::Renderable for RailSignalData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }

@@ -927,7 +927,7 @@ impl DataUtil {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> RenderOutput {
         self.get_entity(entity_name)?
             .render(render_opts, used_mods, render_layers, image_cache)
     }

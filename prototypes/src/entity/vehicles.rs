@@ -69,7 +69,7 @@ impl<T: super::Renderable> super::Renderable for VehicleData<T> {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -160,7 +160,7 @@ impl super::Renderable for CarData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -223,7 +223,7 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -284,7 +284,7 @@ impl super::Renderable for ArtilleryWagonData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -306,7 +306,7 @@ impl super::Renderable for CargoWagonData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -331,7 +331,7 @@ impl super::Renderable for FluidWagonData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -377,7 +377,7 @@ impl super::Renderable for LocomotiveData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }

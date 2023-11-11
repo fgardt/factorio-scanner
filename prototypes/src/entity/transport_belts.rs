@@ -44,7 +44,7 @@ where
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         merge_renders(&[
             self.graphics_set
                 .render(options, used_mods, render_layers, image_cache),
@@ -86,7 +86,7 @@ impl super::Renderable for BeltGraphics {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         match self {
             Self::BeltAnimationSet { belt_animation_set } => {
                 belt_animation_set.render(used_mods, image_cache, &options.into())
@@ -125,7 +125,7 @@ impl super::Renderable for LinkedBeltData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         if options.underground_in.unwrap_or_default() {
             self.structure
                 .direction_in
@@ -205,7 +205,7 @@ impl<T: super::Renderable> super::Renderable for LoaderData<T> {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -241,7 +241,7 @@ impl super::Renderable for Loader1x1Data {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -267,7 +267,7 @@ impl super::Renderable for Loader1x2Data {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -296,7 +296,7 @@ impl super::Renderable for SplitterData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         // TODO: figure out how to render the 2 belts below the splitter
 
         merge_renders(&[
@@ -344,7 +344,7 @@ impl super::Renderable for TransportBeltData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         None
     }
 }
@@ -367,7 +367,7 @@ impl super::Renderable for BeltGraphicsWithCorners {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         match self {
             Self::BeltAnimationSetWithCorners { belt_animation_set } => {
                 belt_animation_set.render(used_mods, image_cache, &options.into())
@@ -400,7 +400,7 @@ impl super::Renderable for UndergroundBeltData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         if options.underground_in.unwrap_or_default() {
             self.structure
                 .direction_in

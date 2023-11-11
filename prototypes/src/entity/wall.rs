@@ -58,7 +58,7 @@ impl super::Renderable for WallData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         let core = match options.connections.unwrap_or_default() {
             ConnectedDirections::None | ConnectedDirections::Up => &self.pictures.single,
             ConnectedDirections::Down | ConnectedDirections::UpDown => {

@@ -22,7 +22,7 @@ impl super::Renderable for HeatPipeData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         self.connection_sprites
             .get(options.connections.unwrap_or_default())
             .render(used_mods, image_cache, &options.into())

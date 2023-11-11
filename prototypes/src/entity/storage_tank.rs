@@ -57,7 +57,7 @@ impl super::Renderable for StorageTankData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         let background = self
             .pictures
             .window_background

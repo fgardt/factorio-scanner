@@ -42,7 +42,7 @@ impl super::Renderable for PowerSwitchData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         self.power_on_animation
             .render(used_mods, image_cache, &options.into())
 

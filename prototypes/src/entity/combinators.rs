@@ -73,7 +73,7 @@ impl<T: super::Renderable> super::Renderable for CombinatorData<T> {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         self.sprites
             .as_ref()
             .and_then(|s| s.render(used_mods, image_cache, &options.into()))
@@ -106,7 +106,7 @@ impl super::Renderable for ArithmeticCombinatorData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         options.arithmetic_operation.as_ref().and_then(|op| {
             match op {
                 ArithmeticOperation::Add => self.plus_symbol_sprites.as_ref(),
@@ -147,7 +147,7 @@ impl super::Renderable for DeciderCombinatorData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         options.decider_operation.as_ref().and_then(|op| {
             match op {
                 Comparator::Equal => self.equal_symbol_sprites.as_ref(),
@@ -200,7 +200,7 @@ impl super::Renderable for ConstantCombinatorData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         self.sprites
             .as_ref()
             .and_then(|s| s.render(used_mods, image_cache, &options.into()))

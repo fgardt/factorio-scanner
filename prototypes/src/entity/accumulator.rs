@@ -48,8 +48,7 @@ impl super::Renderable for AccumulatorData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
-        self.picture
+    ) -> crate::RenderOutput {
             .as_ref()
             .and_then(|p| p.render(used_mods, image_cache, &options.into()))
     }

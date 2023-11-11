@@ -107,7 +107,7 @@ impl super::Renderable for InserterData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         const TILE_RES: f64 = 32.0;
 
         let direction = options.direction;

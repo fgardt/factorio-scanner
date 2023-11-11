@@ -74,7 +74,7 @@ impl super::Renderable for PumpData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         self.animations
             .render(used_mods, image_cache, &options.into())
     }

@@ -50,7 +50,7 @@ impl super::Renderable for GateData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         match options.direction {
             Direction::North | Direction::South => {
                 let renders = if options.draw_gate_patch {

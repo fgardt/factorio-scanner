@@ -226,6 +226,8 @@ impl From<&RenderOpts> for MiningDrillGraphicsRenderOpts {
     }
 }
 
+pub type RenderOutput = Option<()>;
+
 pub trait Renderable {
     fn render(
         &self,
@@ -233,7 +235,7 @@ pub trait Renderable {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput>;
+    ) -> RenderOutput;
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -266,7 +268,7 @@ impl<T: Renderable> Renderable for EntityPrototype<T> {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> RenderOutput {
         self.child
             .render(options, used_mods, render_layers, image_cache)
     }
@@ -423,7 +425,7 @@ impl<T: Renderable> Renderable for EntityData<T> {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> RenderOutput {
         self.child
             .render(options, used_mods, render_layers, image_cache)
     }
@@ -498,7 +500,7 @@ impl<T: Renderable> Renderable for EntityWithHealthData<T> {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> RenderOutput {
         self.child
             .render(options, used_mods, render_layers, image_cache)
     }
@@ -535,7 +537,7 @@ impl<T: Renderable> Renderable for EntityWithOwnerData<T> {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> RenderOutput {
         self.child
             .render(options, used_mods, render_layers, image_cache)
     }

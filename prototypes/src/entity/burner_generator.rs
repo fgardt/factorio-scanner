@@ -44,7 +44,7 @@ impl super::Renderable for BurnerGeneratorData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         self.animation
             .as_ref()
             .and_then(|a| a.render(used_mods, image_cache, &options.into()))

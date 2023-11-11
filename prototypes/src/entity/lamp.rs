@@ -67,7 +67,7 @@ impl super::Renderable for LampData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> Option<GraphicsOutput> {
+    ) -> crate::RenderOutput {
         self.picture_off
             .render(used_mods, image_cache, &options.into())
     }
