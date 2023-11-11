@@ -71,7 +71,6 @@ impl<T: super::Renderable> super::Renderable for CombinatorData<T> {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
@@ -105,7 +104,6 @@ impl super::Renderable for ArithmeticCombinatorData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
@@ -147,7 +145,6 @@ impl super::Renderable for DeciderCombinatorData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
@@ -201,7 +198,6 @@ impl super::Renderable for ConstantCombinatorData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {

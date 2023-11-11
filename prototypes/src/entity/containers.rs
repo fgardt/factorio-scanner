@@ -53,7 +53,6 @@ impl super::Renderable for ContainerData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
@@ -122,7 +121,6 @@ impl super::Renderable for LogisticContainerData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
@@ -171,13 +169,12 @@ impl super::Renderable for InfinityContainerData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         self.parent
             .parent
-            .render(options, used_mods, target_size, render_layers, image_cache)
+            .render(options, used_mods, render_layers, image_cache)
     }
 }
 
@@ -222,7 +219,6 @@ impl super::Renderable for LinkedContainerData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {

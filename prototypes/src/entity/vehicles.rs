@@ -67,7 +67,6 @@ impl<T: super::Renderable> super::Renderable for VehicleData<T> {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
@@ -159,7 +158,6 @@ impl super::Renderable for CarData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
@@ -223,7 +221,6 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
@@ -285,7 +282,6 @@ impl super::Renderable for ArtilleryWagonData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
@@ -308,7 +304,6 @@ impl super::Renderable for CargoWagonData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
@@ -334,7 +329,6 @@ impl super::Renderable for FluidWagonData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
@@ -381,7 +375,6 @@ impl super::Renderable for LocomotiveData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {

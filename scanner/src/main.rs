@@ -171,13 +171,12 @@ fn main() {
     let size = calculate_target_size(&bp, &data, 2048.0, 0.5).unwrap();
     println!("target size: {size:?}");
 
-    let mut layer_buff = RenderLayerBuffer::new();
+    let mut layer_buff = RenderLayerBuffer::new(size);
 
     match render_bp(
         bp,
         &data,
         &active_mods,
-        &size,
         &mut layer_buff,
         &mut ImageCache::new(),
     ) {
@@ -316,7 +315,6 @@ fn render_bp(
     bp: &blueprint::Blueprint,
     data: &prototypes::DataUtil,
     used_mods: &UsedMods,
-    target_size: &TargetSize,
     render_layers: &mut RenderLayerBuffer,
     image_cache: &mut ImageCache,
 ) -> Option<GraphicsOutput> {
@@ -466,26 +464,19 @@ fn render_bp(
             render_opts.connected_gates = connected_gates;
             render_opts.draw_gate_patch = draw_gate_patch;
 
-            data.render_entity(
-                &e.name,
-                &render_opts,
-                used_mods,
-                target_size,
-                render_layers,
-                image_cache,
-            )
-            .map(|(img, scale, shift)| {
-                let (shift_x, shift_y) = shift.as_tuple();
-                Some((
-                    img,
-                    scale,
-                    (
-                        shift_x + f64::from(e.position.x),
-                        shift_y + f64::from(e.position.y),
-                    )
-                        .into(),
-                ))
-            })
+            data.render_entity(&e.name, &render_opts, used_mods, render_layers, image_cache)
+                .map(|(img, scale, shift)| {
+                    let (shift_x, shift_y) = shift.as_tuple();
+                    Some((
+                        img,
+                        scale,
+                        (
+                            shift_x + f64::from(e.position.x),
+                            shift_y + f64::from(e.position.y),
+                        )
+                            .into(),
+                    ))
+                })
         })
         .collect::<Vec<_>>();
 

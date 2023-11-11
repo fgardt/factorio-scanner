@@ -23,7 +23,6 @@ impl super::Renderable for PipeData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
@@ -104,12 +103,11 @@ impl super::Renderable for InfinityPipeData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         self.parent
-            .render(options, used_mods, target_size, render_layers, image_cache)
+            .render(options, used_mods, render_layers, image_cache)
     }
 }
 
@@ -131,7 +129,6 @@ impl super::Renderable for PipeToGroundData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {

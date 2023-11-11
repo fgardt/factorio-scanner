@@ -924,17 +924,11 @@ impl DataUtil {
         entity_name: &str,
         render_opts: &RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.get_entity(entity_name)?.render(
-            render_opts,
-            used_mods,
-            target_size,
-            render_layers,
-            image_cache,
-        )
+        self.get_entity(entity_name)?
+            .render(render_opts, used_mods, render_layers, image_cache)
     }
 }
 

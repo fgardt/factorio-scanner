@@ -95,7 +95,6 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
@@ -109,7 +108,7 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
         merge_renders(&[
             anim,
             self.child
-                .render(options, used_mods, target_size, render_layers, image_cache),
+                .render(options, used_mods, render_layers, image_cache),
         ])
     }
 }
@@ -151,7 +150,6 @@ impl super::Renderable for FurnaceData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
@@ -186,7 +184,6 @@ impl super::Renderable for AssemblingMachineData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
@@ -290,7 +287,6 @@ impl super::Renderable for RocketSiloData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
-        target_size: &TargetSize,
         render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
