@@ -935,14 +935,37 @@ impl DataUtil {
 
 #[derive(Debug, Clone)]
 pub struct TargetSize {
-    pub width: u32,
-    pub height: u32,
-    pub scale: f64,
-    pub top_left: crate::MapPosition,
-    pub bottom_right: crate::MapPosition,
+    width: u32,
+    height: u32,
+    scale: f64,
+    top_left: crate::MapPosition,
+    bottom_right: crate::MapPosition,
+
+    tile_res: f64,
 }
 
 impl TargetSize {
+    #[must_use]
+    pub fn new(
+        width: u32,
+        height: u32,
+        scale: f64,
+        top_left: crate::MapPosition,
+        bottom_right: crate::MapPosition,
+    ) -> Self {
+        const TILE_RES: f64 = 32.0;
+        let tile_res = TILE_RES / scale;
+
+        Self {
+            width,
+            height,
+            scale,
+            top_left,
+            bottom_right,
+            tile_res,
+        }
+    }
+
     #[must_use]
     fn get_pixel_pos(
         &self,
@@ -950,12 +973,13 @@ impl TargetSize {
         shift: &Vector,
         position: &MapPosition,
     ) -> (i64, i64) {
-        let (tl_x, tl_y) = self.top_left.as_tuple();
+        const TILE_RES: f64 = 32.0;
         let (x, y) = position.as_tuple();
         let (shift_x, shift_y) = shift.as_tuple();
+        let (tl_x, tl_y) = self.top_left.as_tuple();
 
-        let px = f64::from(width).mul_add(-0.5, tl_x - x + shift_x);
-        let py = f64::from(height).mul_add(-0.5, tl_y - y + shift_y);
+        let px = f64::from(width).mul_add(-0.5, (tl_x - x + shift_x) * self.tile_res);
+        let py = f64::from(height).mul_add(-0.5, (tl_y - y + shift_y) * self.tile_res);
 
         (px.round() as i64, py.round() as i64)
     }

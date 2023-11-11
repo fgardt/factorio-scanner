@@ -257,8 +257,8 @@ fn calculate_target_size(
         println!("unknown entities: {unknown:?}");
     }
 
-    let width = (max_x - min_x).ceil();
-    let height = (max_y - min_y).ceil();
+    let width = (max_x - min_x).abs().ceil();
+    let height = (max_y - min_y).abs().ceil();
 
     if width == 0.0 || height == 0.0 {
         return None;
@@ -270,13 +270,15 @@ fn calculate_target_size(
 
     let scale = ((TILE_RES * width.sqrt() * height.sqrt()) / target_res).max(min_scale);
     let scale = (scale * 4.0).ceil() / 4.0;
+    let tile_res = TILE_RES / scale;
 
-    Some(TargetSize {
-        width: (width * TILE_RES / scale).ceil() as u32,
-        height: (height * TILE_RES / scale).ceil() as u32,
+    Some(TargetSize::new(
+        (width * tile_res).ceil() as u32,
+        (height * tile_res).ceil() as u32,
         scale,
-        top_left: MapPosition::XY { x: min_x, y: min_y },
-    })
+        MapPosition::XY { x: min_x, y: min_y },
+        MapPosition::XY { x: max_x, y: max_y },
+    ))
 }
 
 fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::EntityRenderOpts {
