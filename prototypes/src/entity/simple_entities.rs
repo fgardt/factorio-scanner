@@ -41,6 +41,8 @@ impl super::Renderable for SimpleEntityData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -93,6 +95,8 @@ impl super::Renderable for SimpleEntityWithOwnerData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None

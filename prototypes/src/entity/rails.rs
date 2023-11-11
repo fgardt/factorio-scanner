@@ -35,6 +35,8 @@ impl<T: super::Renderable> super::Renderable for RailData<T> {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -56,6 +58,8 @@ impl super::Renderable for CurvedRailData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -83,6 +87,8 @@ impl super::Renderable for StraightRailData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None

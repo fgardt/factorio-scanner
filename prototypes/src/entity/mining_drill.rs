@@ -70,6 +70,8 @@ impl super::Renderable for MiningDrillData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         if let Some(set) = self.graphics_set.as_ref() {

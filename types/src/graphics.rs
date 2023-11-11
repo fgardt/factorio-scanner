@@ -183,6 +183,8 @@ impl InternalRenderLayer {
     }
 }
 
+pub type RenderLayerBuffer = std::collections::HashMap<InternalRenderLayer, image::DynamicImage>;
+
 #[derive(Debug, Clone)]
 pub struct TargetSize {
     pub width: u32,

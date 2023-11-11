@@ -42,11 +42,15 @@ where
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         merge_renders(&[
-            self.graphics_set.render(options, used_mods, image_cache),
-            self.child.render(options, used_mods, image_cache),
+            self.graphics_set
+                .render(options, used_mods, target_size, render_layers, image_cache),
+            self.child
+                .render(options, used_mods, target_size, render_layers, image_cache),
         ])
     }
 }
@@ -81,6 +85,8 @@ impl super::Renderable for BeltGraphics {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         match self {
@@ -119,6 +125,8 @@ impl super::Renderable for LinkedBeltData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         if options.underground_in.unwrap_or_default() {
@@ -198,6 +206,8 @@ impl<T: super::Renderable> super::Renderable for LoaderData<T> {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -233,6 +243,8 @@ impl super::Renderable for Loader1x1Data {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -258,6 +270,8 @@ impl super::Renderable for Loader1x2Data {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -286,6 +300,8 @@ impl super::Renderable for SplitterData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         // TODO: figure out how to render the 2 belts below the splitter
@@ -333,6 +349,8 @@ impl super::Renderable for TransportBeltData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         None
@@ -355,6 +373,8 @@ impl super::Renderable for BeltGraphicsWithCorners {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         match self {
@@ -387,6 +407,8 @@ impl super::Renderable for UndergroundBeltData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         if options.underground_in.unwrap_or_default() {

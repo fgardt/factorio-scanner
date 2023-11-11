@@ -69,9 +69,12 @@ impl super::Renderable for OffshorePumpData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.graphics.render(options, used_mods, image_cache)
+        self.graphics
+            .render(options, used_mods, target_size, render_layers, image_cache)
     }
 }
 
@@ -92,11 +95,13 @@ impl super::Renderable for OffshorePumpGraphicsVariant {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         match self {
             Self::GraphicsSet { graphics_set } => {
-                graphics_set.render(options, used_mods, image_cache)
+                graphics_set.render(options, used_mods, target_size, render_layers, image_cache)
             }
             Self::Deprecated { picture } => picture.render(used_mods, image_cache, &options.into()),
         }
@@ -129,6 +134,8 @@ impl super::Renderable for OffshorePumpGraphicsSet {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         merge_renders(&[

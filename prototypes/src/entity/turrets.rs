@@ -139,6 +139,8 @@ impl super::Renderable for TurretData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         merge_renders(&[
@@ -184,9 +186,12 @@ impl super::Renderable for AmmoTurretData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.parent.render(options, used_mods, image_cache)
+        self.parent
+            .render(options, used_mods, target_size, render_layers, image_cache)
     }
 }
 
@@ -216,9 +221,12 @@ impl super::Renderable for ElectricTurretData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.parent.render(options, used_mods, image_cache)
+        self.parent
+            .render(options, used_mods, target_size, render_layers, image_cache)
     }
 }
 
@@ -257,9 +265,12 @@ impl super::Renderable for FluidTurretData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
-        self.parent.render(options, used_mods, image_cache)
+        self.parent
+            .render(options, used_mods, target_size, render_layers, image_cache)
     }
 }
 

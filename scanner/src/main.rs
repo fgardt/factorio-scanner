@@ -26,7 +26,7 @@ use mod_util::{
 use prototypes::{DataRaw, DataUtil, EntityRenderOpts, EntityType, RenderableEntity};
 use types::{
     merge_renders, ConnectedDirections, Direction, GraphicsOutput, ImageCache, MapPosition,
-    TargetSize,
+    RenderLayerBuffer, TargetSize,
 };
 
 mod bp_helper;
@@ -171,7 +171,16 @@ fn main() {
     let size = calculate_target_size(&bp, &data, 2048.0, 0.5).unwrap();
     println!("target size: {size:?}");
 
-    match render_bp(bp, &data, &active_mods, &mut ImageCache::new()) {
+    let mut layer_buff = RenderLayerBuffer::new();
+
+    match render_bp(
+        bp,
+        &data,
+        &active_mods,
+        &size,
+        &mut layer_buff,
+        &mut ImageCache::new(),
+    ) {
         Some((img, scale, shift)) => {
             println!("render done");
 
@@ -272,52 +281,9 @@ fn calculate_target_size(
     })
 }
 
-fn render_entity(
-    name: &str,
-    entity: &dyn RenderableEntity,
-    render_opts: &EntityRenderOpts,
-    used_mods: &UsedMods,
-    image_cache: &mut ImageCache,
-) {
-    match entity.render(render_opts, used_mods, image_cache) {
-        Some((img, scale, shift)) => {
-            // println!(
-            //     "{name}: {}x{} x{scale} ({shift_x}, {shift_y})",
-            //     img.dimensions().0,
-            //     img.dimensions().1,
-            // );
-
-            img.save(format!("render_test/{name}.png")).unwrap();
-        }
-        None => {
-            println!("{name}: NO SPRITE!");
-        }
-    }
-}
-
-fn render_by_name(
-    name: &str,
-    data: &prototypes::DataUtil,
-    render_opts: &EntityRenderOpts,
-    used_mods: &UsedMods,
-    image_cache: &mut ImageCache,
-) {
-    match data.render_entity(name, render_opts, used_mods, image_cache) {
-        Some((img, scale, shift)) => {
-            println!(
-                "{name}: {}x{} x{scale} {shift}",
-                img.dimensions().0,
-                img.dimensions().1,
-            );
-        }
-        None => {
-            println!("{name}: NO SPRITE!");
-        }
-    }
-}
-
 fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::EntityRenderOpts {
     prototypes::EntityRenderOpts {
+        position: (&value.position).into(),
         direction: value.direction,
         orientation: value.orientation.map(f64::from),
         pickup_position: value
@@ -350,6 +316,8 @@ fn render_bp(
     bp: &blueprint::Blueprint,
     data: &prototypes::DataUtil,
     used_mods: &UsedMods,
+    target_size: &TargetSize,
+    render_layers: &mut RenderLayerBuffer,
     image_cache: &mut ImageCache,
 ) -> Option<GraphicsOutput> {
     let renders = bp
@@ -498,19 +466,26 @@ fn render_bp(
             render_opts.connected_gates = connected_gates;
             render_opts.draw_gate_patch = draw_gate_patch;
 
-            data.render_entity(&e.name, &render_opts, used_mods, image_cache)
-                .map(|(img, scale, shift)| {
-                    let (shift_x, shift_y) = shift.as_tuple();
-                    Some((
-                        img,
-                        scale,
-                        (
-                            shift_x + f64::from(e.position.x),
-                            shift_y + f64::from(e.position.y),
-                        )
-                            .into(),
-                    ))
-                })
+            data.render_entity(
+                &e.name,
+                &render_opts,
+                used_mods,
+                target_size,
+                render_layers,
+                image_cache,
+            )
+            .map(|(img, scale, shift)| {
+                let (shift_x, shift_y) = shift.as_tuple();
+                Some((
+                    img,
+                    scale,
+                    (
+                        shift_x + f64::from(e.position.x),
+                        shift_y + f64::from(e.position.y),
+                    )
+                        .into(),
+                ))
+            })
         })
         .collect::<Vec<_>>();
 

@@ -23,6 +23,8 @@ impl super::Renderable for SolarPanelData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         self.picture.render(used_mods, image_cache, &options.into())

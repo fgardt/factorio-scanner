@@ -75,6 +75,8 @@ impl super::Renderable for ArtilleryTurretData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         let cannon_opts = &super::RenderOpts {

@@ -105,6 +105,8 @@ impl super::Renderable for InserterData {
         &self,
         options: &super::RenderOpts,
         used_mods: &UsedMods,
+        target_size: &TargetSize,
+        render_layers: &mut RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         const TILE_RES: f64 = 32.0;
