@@ -67,12 +67,12 @@ fn main() {
     let mut mod_list = ModList::generate(&cli.factorio).unwrap();
 
     // get used mods from preset or detect from BP meta info
-    let required_mods = cli
-        .preset
-        .as_ref()
-        .map_or(bp_helper::get_used_versions(bp).unwrap_or_default(), |p| {
-            p.used_mods()
-        });
+    let required_mods = cli.preset.as_ref().map_or(
+        bp_helper::get_used_versions(bp).unwrap_or_else(|| {
+            std::iter::once(("base".to_owned(), prototypes::targeted_engine_version())).collect()
+        }),
+        |p| p.used_mods(),
+    );
 
     if !required_mods.is_empty() {
         println!("checking mod dependencies");
