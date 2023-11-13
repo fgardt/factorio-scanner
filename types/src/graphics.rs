@@ -625,7 +625,17 @@ pub struct RotatedSpriteRenderOpts {
     pub runtime_tint: Option<Color>,
 }
 
-fn direction_count_to_index(direction_count: u16, orientation: super::RealOrientation) -> u16 {
+fn direction_count_to_index(
+    direction_count: u16,
+    orientation: super::RealOrientation,
+    back_equals_front: bool,
+) -> u16 {
+    let orientation = if back_equals_front {
+        orientation * 2.0 % 1.0
+    } else {
+        orientation
+    };
+
     (f64::from(direction_count) * orientation).round() as u16 % direction_count
 }
 
@@ -639,12 +649,16 @@ impl RenderableGraphics for RotatedSpriteParams {
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
-        let mut index = direction_count_to_index(self.direction_count, opts.orientation);
+        let mut index = direction_count_to_index(
+            self.direction_count,
+            opts.orientation,
+            self.back_equals_front,
+        );
         if self.counterclockwise {
             index = self.direction_count - index - 1;
         }
 
-        // TODO: support `axially_symmetrical`, `back_equals_front` and `apply_projection` (and `allow_low_quality_rotation`?)
+        // TODO: support `axially_symmetrical` and `apply_projection` (and `allow_low_quality_rotation`?)
 
         let line_length = if self.line_length == 0 {
             self.direction_count
@@ -716,12 +730,16 @@ impl RenderableGraphics for RotatedSpriteParamsMultiFile {
             return None;
         }
 
-        let mut index = direction_count_to_index(self.direction_count, opts.orientation);
+        let mut index = direction_count_to_index(
+            self.direction_count,
+            opts.orientation,
+            self.back_equals_front,
+        );
         if self.counterclockwise {
             index = self.direction_count - index - 1;
         }
 
-        // TODO: support `axially_symmetrical`, `back_equals_front` and `apply_projection` (and `allow_low_quality_rotation`?)
+        // TODO: support `axially_symmetrical` and `apply_projection` (and `allow_low_quality_rotation`?)
 
         let line_length = if self.line_length == 0 {
             self.direction_count

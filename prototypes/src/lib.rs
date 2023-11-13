@@ -948,6 +948,8 @@ pub enum InternalRenderLayer {
 
     Shadow,
     Entity,
+    EntityHigh,
+    EntityHigher,
     InserterHand,
 
     Wire,
@@ -958,7 +960,7 @@ pub enum InternalRenderLayer {
 
 impl InternalRenderLayer {
     #[must_use]
-    pub const fn all() -> [Self; 14] {
+    pub const fn all() -> [Self; 16] {
         [
             Self::Background,
             Self::Ground,
@@ -970,6 +972,8 @@ impl InternalRenderLayer {
             Self::RailMetal,
             Self::Shadow,
             Self::Entity,
+            Self::EntityHigh,
+            Self::EntityHigher,
             Self::InserterHand,
             Self::Wire,
             Self::DirectionOverlay,
