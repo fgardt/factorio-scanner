@@ -2299,14 +2299,6 @@ pub enum CircuitConnectorSecondaryDrawOrder {
     },
 }
 
-/// [`Types/TrainStopLight`](https://lua-api.factorio.com/latest/types/TrainStopLight.html)
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TrainStopLight {
-    pub picture: Sprite4Way,
-    pub red_picture: Sprite4Way,
-    pub light: LightDefinition,
-}
-
 // Comparator variants
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
 pub enum Comparator {

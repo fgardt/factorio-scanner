@@ -395,7 +395,8 @@ impl FetchSprite for SpriteParams {
 
         // TODO: add extra output for shadows
         // rendering shadows / glow / light is not supported
-        if self.draw_as_shadow || self.draw_as_light || self.draw_as_glow {
+        if self.draw_as_shadow || self.draw_as_light {
+            //|| self.draw_as_glow {
             return None;
         }
 
