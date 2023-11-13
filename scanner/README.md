@@ -57,11 +57,6 @@ Alternatively you can install my [blueprint meta info mod](https://mods.factorio
 
 ## TODO
 
-- reasonably limit rendering size
-- render layers
-  - needed for rails, signals, vehicles, ...
-  - nice to have for alt-mode
-  - nice to have for wires
 - draw "alt-mode"
   - needs recipe / item parsing, loading and rendering
 - draw wires (copper & circuits)
