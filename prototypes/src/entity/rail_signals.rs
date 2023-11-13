@@ -53,8 +53,6 @@ impl super::Renderable for RailSignalBaseData {
         let prog = if frame_count == 10 {
             let r = options.position.y().rem(2.0).ceil().abs();
 
-            println!("{:?}: {r}", options.position);
-
             match options.direction {
                 Direction::North => {
                     if r >= 0.9 {
