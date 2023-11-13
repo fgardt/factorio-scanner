@@ -277,6 +277,10 @@ pub fn merge_renders(renders: &[Option<GraphicsOutput>], scale: f64) -> Option<G
     Some((combined, res_shift.into()))
 }
 
+pub trait Scale {
+    fn scale(&self) -> f64;
+}
+
 /// [`Types/SpriteParameters`](https://lua-api.factorio.com/latest/types/SpriteParameters.html)
 ///
 /// **MISSING THE `filename` FIELD**
@@ -341,6 +345,12 @@ pub struct SpriteParams {
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub generate_sdf: bool,
+}
+
+impl Scale for SpriteParams {
+    fn scale(&self) -> f64 {
+        self.scale
+    }
 }
 
 impl FetchSprite for SpriteParams {
@@ -487,7 +497,7 @@ pub struct SimpleGraphicsRenderOpts {
     pub runtime_tint: Option<Color>,
 }
 
-impl<T: FetchSprite> RenderableGraphics for SimpleGraphics<T> {
+impl<T: FetchSprite + Scale> RenderableGraphics for SimpleGraphics<T> {
     type RenderOpts = SimpleGraphicsRenderOpts;
 
     fn render(
@@ -505,12 +515,13 @@ impl<T: FetchSprite> RenderableGraphics for SimpleGraphics<T> {
                 hr_version,
             } => {
                 // TODO: option to enable/disable HR mode
-                #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(scale, used_mods, image_cache, opts)
-                } else {
-                    data.fetch(scale, filename, used_mods, image_cache, opts.runtime_tint)
+                    if scale < data.scale() {
+                        return hr_version.render(scale, used_mods, image_cache, opts);
+                    }
                 }
+
+                data.fetch(scale, filename, used_mods, image_cache, opts.runtime_tint)
             }
         }
     }
@@ -519,7 +530,7 @@ impl<T: FetchSprite> RenderableGraphics for SimpleGraphics<T> {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum MultiFileGraphics<Single, Multi> {
+pub enum MultiFileGraphics<Single: RenderableGraphics, Multi: RenderableGraphics> {
     Simple {
         #[serde(flatten)]
         data: Box<Single>,
@@ -539,10 +550,28 @@ pub enum MultiFileGraphics<Single, Multi> {
     },
 }
 
+impl<O, S, M> Scale for MultiFileGraphics<S, M>
+where
+    S: RenderableGraphics<RenderOpts = O> + Scale,
+    M: RenderableGraphics<RenderOpts = O> + Scale,
+{
+    fn scale(&self) -> f64 {
+        match self {
+            Self::Simple { data, hr_version } => hr_version
+                .as_ref()
+                .map_or_else(|| data.scale(), |hr| hr.scale()),
+            Self::MultiFile { data, hr_version } => hr_version
+                .as_ref()
+                .map_or_else(|| data.scale(), |hr| hr.scale()),
+            Self::Layered { layers } => layers.first().map_or(1.0, Self::scale),
+        }
+    }
+}
+
 impl<O, S, M> RenderableGraphics for MultiFileGraphics<S, M>
 where
-    S: RenderableGraphics<RenderOpts = O>,
-    M: RenderableGraphics<RenderOpts = O>,
+    S: RenderableGraphics<RenderOpts = O> + Scale,
+    M: RenderableGraphics<RenderOpts = O> + Scale,
 {
     type RenderOpts = O;
 
@@ -557,21 +586,23 @@ where
             Self::Layered { layers } => merge_layers(layers, scale, used_mods, image_cache, opts),
             Self::Simple { data, hr_version } => {
                 // TODO: option to enable/disable HR mode
-                #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(scale, used_mods, image_cache, opts)
-                } else {
-                    data.render(scale, used_mods, image_cache, opts)
+                    if scale < data.scale() {
+                        return hr_version.render(scale, used_mods, image_cache, opts);
+                    }
                 }
+
+                data.render(scale, used_mods, image_cache, opts)
             }
             Self::MultiFile { data, hr_version } => {
                 // TODO: option to enable/disable HR mode
-                #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(scale, used_mods, image_cache, opts)
-                } else {
-                    data.render(scale, used_mods, image_cache, opts)
+                    if scale < data.scale() {
+                        return hr_version.render(scale, used_mods, image_cache, opts);
+                    }
                 }
+
+                data.render(scale, used_mods, image_cache, opts)
             }
         }
     }
@@ -618,6 +649,12 @@ pub struct RotatedSpriteParams {
 
     #[serde(flatten)]
     pub sprite_params: SpriteParams,
+}
+
+impl Scale for RotatedSpriteParams {
+    fn scale(&self) -> f64 {
+        self.sprite_params.scale()
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -717,6 +754,12 @@ pub struct RotatedSpriteParamsMultiFile {
     pub sprite_params: SpriteParams,
 }
 
+impl Scale for RotatedSpriteParamsMultiFile {
+    fn scale(&self) -> f64 {
+        self.sprite_params.scale()
+    }
+}
+
 impl RenderableGraphics for RotatedSpriteParamsMultiFile {
     type RenderOpts = RotatedSpriteRenderOpts;
 
@@ -764,22 +807,7 @@ impl RenderableGraphics for RotatedSpriteParamsMultiFile {
 }
 
 /// [`Types/RotatedSprite`](https://lua-api.factorio.com/latest/types/RotatedSprite.html)
-#[derive(Debug, Serialize, Deserialize)]
-pub struct RotatedSprite(MultiFileGraphics<RotatedSpriteParams, RotatedSpriteParamsMultiFile>);
-
-impl RenderableGraphics for RotatedSprite {
-    type RenderOpts = RotatedSpriteRenderOpts;
-
-    fn render(
-        &self,
-        scale: f64,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-        opts: &Self::RenderOpts,
-    ) -> Option<GraphicsOutput> {
-        self.0.render(scale, used_mods, image_cache, opts)
-    }
-}
+pub type RotatedSprite = MultiFileGraphics<RotatedSpriteParams, RotatedSpriteParamsMultiFile>;
 
 /// [`Types/SpriteNWaySheet`](https://lua-api.factorio.com/latest/types/SpriteNWaySheet.html)
 /// variant for `Sprite4Way`
@@ -798,6 +826,14 @@ pub struct Sprite4WaySheet {
 
     #[serde(flatten)]
     pub sprite_params: SpriteParams,
+}
+
+impl Scale for Sprite4WaySheet {
+    fn scale(&self) -> f64 {
+        self.hr_version
+            .as_ref()
+            .map_or_else(|| self.sprite_params.scale(), |hr| hr.scale())
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -827,25 +863,27 @@ impl RenderableGraphics for Sprite4WaySheet {
         // TODO: option to enable/disable HR mode
         #[allow(clippy::option_if_let_else)]
         if let Some(hr_version) = &self.hr_version {
-            hr_version.render(scale, used_mods, image_cache, opts)
-        } else {
-            let direction = match opts.direction {
-                Direction::North => 0,
-                Direction::East => 1,
-                Direction::South => 2,
-                Direction::West => 3,
-                _ => unreachable!("Sprite4WaySheet does not support diagonals"),
-            } % self.frames;
-
-            self.sprite_params.fetch_offset(
-                scale,
-                &self.filename,
-                used_mods,
-                image_cache,
-                opts.runtime_tint,
-                (direction as i16, 0),
-            )
+            if scale < self.sprite_params.scale() {
+                return hr_version.render(scale, used_mods, image_cache, opts);
+            }
         }
+
+        let direction = match opts.direction {
+            Direction::North => 0,
+            Direction::East => 1,
+            Direction::South => 2,
+            Direction::West => 3,
+            _ => unreachable!("Sprite4WaySheet does not support diagonals"),
+        } % self.frames;
+
+        self.sprite_params.fetch_offset(
+            scale,
+            &self.filename,
+            used_mods,
+            image_cache,
+            opts.runtime_tint,
+            (direction as i16, 0),
+        )
     }
 }
 
@@ -868,6 +906,14 @@ pub struct Sprite8WaySheet {
     pub sprite_params: SpriteParams,
 }
 
+impl Scale for Sprite8WaySheet {
+    fn scale(&self) -> f64 {
+        self.hr_version
+            .as_ref()
+            .map_or_else(|| self.sprite_params.scale(), |hr| hr.scale())
+    }
+}
+
 impl RenderableGraphics for Sprite8WaySheet {
     type RenderOpts = SpriteNWayRenderOpts;
 
@@ -881,20 +927,22 @@ impl RenderableGraphics for Sprite8WaySheet {
         // TODO: option to enable/disable HR mode
         #[allow(clippy::option_if_let_else)]
         if let Some(hr_version) = &self.hr_version {
-            hr_version.render(scale, used_mods, image_cache, opts)
-        } else {
-            let direction = opts.direction as u32 % self.frames;
-
-            let (width, _) = self.sprite_params.get_size();
-            self.sprite_params.fetch_offset(
-                scale,
-                &self.filename,
-                used_mods,
-                image_cache,
-                opts.runtime_tint,
-                (direction as i16, 0),
-            )
+            if scale < self.sprite_params.scale() {
+                return hr_version.render(scale, used_mods, image_cache, opts);
+            }
         }
+
+        let direction = opts.direction as u32 % self.frames;
+
+        let (width, _) = self.sprite_params.get_size();
+        self.sprite_params.fetch_offset(
+            scale,
+            &self.filename,
+            used_mods,
+            image_cache,
+            opts.runtime_tint,
+            (direction as i16, 0),
+        )
     }
 }
 
@@ -1090,6 +1138,12 @@ impl FetchSprite for SpriteSheetParams {
 
     fn get_size(&self) -> (i16, i16) {
         self.sprite_params.get_size()
+    }
+}
+
+impl Scale for SpriteSheetParams {
+    fn scale(&self) -> f64 {
+        self.sprite_params.scale()
     }
 }
 
@@ -1397,6 +1451,12 @@ impl FetchSprite for AnimationParams {
     }
 }
 
+impl Scale for AnimationParams {
+    fn scale(&self) -> f64 {
+        self.sprite_params.scale()
+    }
+}
+
 impl AnimationParams {
     #[must_use]
     #[allow(clippy::match_same_arms)]
@@ -1515,53 +1575,54 @@ impl RenderableGraphics for Animation {
                 hr_version,
             } => {
                 // TODO: option to enable/disable HR mode
-                #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(scale, used_mods, image_cache, opts)
-                } else {
-                    // TODO: add extra output for shadows
-                    // rendering shadows / glow / light is not supported
-                    // theoretically this is not needed here
-                    if data.sprite_params.draw_as_shadow
+                    if scale < data.scale() {
+                        return hr_version.render(scale, used_mods, image_cache, opts);
+                    }
+                }
+
+                // TODO: add extra output for shadows
+                // rendering shadows / glow / light is not supported
+                // theoretically this is not needed here
+                if data.sprite_params.draw_as_shadow
                         //|| data.sprite_params.draw_as_glow
                         || data.sprite_params.draw_as_light
-                    {
+                {
+                    return None;
+                }
+
+                let index = data.frame_index(opts.progress);
+                let mut curr_stripe_max = 0;
+
+                for stripe in stripes {
+                    let stripe_max = stripe.frame_count();
+
+                    if index >= stripe_max + curr_stripe_max {
+                        curr_stripe_max += stripe_max;
+                        continue;
+                    }
+
+                    // prevent division by 0 panic
+                    // tho that should already be prevented by skipping over stripes with 0 frames
+                    if stripe.width_in_frames == 0 {
                         return None;
                     }
 
-                    let index = data.frame_index(opts.progress);
-                    let mut curr_stripe_max = 0;
+                    let stripe_index = index - curr_stripe_max;
+                    let row = stripe_index / stripe.width_in_frames;
+                    let column = stripe_index % stripe.width_in_frames;
 
-                    for stripe in stripes {
-                        let stripe_max = stripe.frame_count();
-
-                        if index >= stripe_max + curr_stripe_max {
-                            curr_stripe_max += stripe_max;
-                            continue;
-                        }
-
-                        // prevent division by 0 panic
-                        // tho that should already be prevented by skipping over stripes with 0 frames
-                        if stripe.width_in_frames == 0 {
-                            return None;
-                        }
-
-                        let stripe_index = index - curr_stripe_max;
-                        let row = stripe_index / stripe.width_in_frames;
-                        let column = stripe_index % stripe.width_in_frames;
-
-                        return data.fetch_offset(
-                            scale,
-                            &stripe.filename,
-                            used_mods,
-                            image_cache,
-                            opts.runtime_tint,
-                            (column as i16, row as i16),
-                        );
-                    }
-
-                    None
+                    return data.fetch_offset(
+                        scale,
+                        &stripe.filename,
+                        used_mods,
+                        image_cache,
+                        opts.runtime_tint,
+                        (column as i16, row as i16),
+                    );
                 }
+
+                None
             }
             Self::Simple {
                 filename,
@@ -1569,35 +1630,36 @@ impl RenderableGraphics for Animation {
                 hr_version,
             } => {
                 // TODO: option to enable/disable HR mode
-                #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(scale, used_mods, image_cache, opts)
-                } else {
-                    // line_length = 0 means all frames are in a single line
-                    let line_length = if data.line_length.unwrap_or(0) == 0 {
-                        data.frame_count.unwrap_or(1)
-                    } else {
-                        data.line_length.unwrap_or(0)
-                    };
-
-                    // prevent division by 0 panic
-                    if line_length == 0 {
-                        return None;
+                    if scale < data.scale() {
+                        return hr_version.render(scale, used_mods, image_cache, opts);
                     }
-
-                    let index = data.frame_index(opts.progress);
-                    let row = index / line_length;
-                    let column = index % line_length;
-
-                    data.fetch_offset(
-                        scale,
-                        filename,
-                        used_mods,
-                        image_cache,
-                        opts.runtime_tint,
-                        (column as i16, row as i16),
-                    )
                 }
+
+                // line_length = 0 means all frames are in a single line
+                let line_length = if data.line_length.unwrap_or(0) == 0 {
+                    data.frame_count.unwrap_or(1)
+                } else {
+                    data.line_length.unwrap_or(0)
+                };
+
+                // prevent division by 0 panic
+                if line_length == 0 {
+                    return None;
+                }
+
+                let index = data.frame_index(opts.progress);
+                let row = index / line_length;
+                let column = index % line_length;
+
+                data.fetch_offset(
+                    scale,
+                    filename,
+                    used_mods,
+                    image_cache,
+                    opts.runtime_tint,
+                    (column as i16, row as i16),
+                )
             }
         }
     }
@@ -1853,6 +1915,12 @@ pub struct RotatedAnimationParams {
     pub animation_params: AnimationParams,
 }
 
+impl Scale for RotatedAnimationParams {
+    fn scale(&self) -> f64 {
+        self.animation_params.scale()
+    }
+}
+
 impl FetchSprite for RotatedAnimationParams {
     fn fetch(
         &self,
@@ -1997,13 +2065,13 @@ impl RenderableGraphics for RotatedAnimation {
                 hr_version,
             } => {
                 // TODO: option to enable/disable HR mode
-                #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(scale, used_mods, image_cache, opts)
-                } else {
-                    // TODO: support stripes
-                    None
+                    if scale < data.scale() {
+                        return hr_version.render(scale, used_mods, image_cache, opts);
+                    }
                 }
+
+                None
             }
             Self::Multi {
                 filenames,
@@ -2011,30 +2079,31 @@ impl RenderableGraphics for RotatedAnimation {
                 hr_version,
             } => {
                 // TODO: option to enable/disable HR mode
-                #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(scale, used_mods, image_cache, opts)
-                } else {
-                    let orientation_index = match opts.override_index {
-                        Some(index) => u32::from(index),
-                        None => data.orientation_index(opts.orientation),
-                    };
-                    let file_index = orientation_index / data.lines_per_file.unwrap_or(1);
-                    let frame_index = data.animation_params.frame_index(opts.progress);
-                    let line_length = data.animation_params.line_length();
-
-                    let column = frame_index % line_length;
-                    let row = frame_index / line_length;
-
-                    data.fetch_offset(
-                        scale,
-                        filenames.get(file_index as usize)?,
-                        used_mods,
-                        image_cache,
-                        opts.runtime_tint,
-                        (column as i16, (row + orientation_index) as i16),
-                    )
+                    if scale < data.scale() {
+                        return hr_version.render(scale, used_mods, image_cache, opts);
+                    }
                 }
+
+                let orientation_index = match opts.override_index {
+                    Some(index) => u32::from(index),
+                    None => data.orientation_index(opts.orientation),
+                };
+                let file_index = orientation_index / data.lines_per_file.unwrap_or(1);
+                let frame_index = data.animation_params.frame_index(opts.progress);
+                let line_length = data.animation_params.line_length();
+
+                let column = frame_index % line_length;
+                let row = frame_index / line_length;
+
+                data.fetch_offset(
+                    scale,
+                    filenames.get(file_index as usize)?,
+                    used_mods,
+                    image_cache,
+                    opts.runtime_tint,
+                    (column as i16, (row + orientation_index) as i16),
+                )
             }
             Self::Single {
                 filename,
@@ -2042,29 +2111,30 @@ impl RenderableGraphics for RotatedAnimation {
                 hr_version,
             } => {
                 // TODO: option to enable/disable HR mode
-                #[allow(clippy::option_if_let_else)]
                 if let Some(hr_version) = hr_version {
-                    hr_version.render(scale, used_mods, image_cache, opts)
-                } else {
-                    let orientation_index = match opts.override_index {
-                        Some(index) => u32::from(index),
-                        None => data.orientation_index(opts.orientation),
-                    };
-                    let frame_index = data.animation_params.frame_index(opts.progress);
-                    let line_length = data.animation_params.line_length();
-
-                    let column = frame_index % line_length;
-                    let row = frame_index / line_length;
-
-                    data.fetch_offset(
-                        scale,
-                        filename,
-                        used_mods,
-                        image_cache,
-                        opts.runtime_tint,
-                        (column as i16, (row + orientation_index) as i16),
-                    )
+                    if scale < data.scale() {
+                        return hr_version.render(scale, used_mods, image_cache, opts);
+                    }
                 }
+
+                let orientation_index = match opts.override_index {
+                    Some(index) => u32::from(index),
+                    None => data.orientation_index(opts.orientation),
+                };
+                let frame_index = data.animation_params.frame_index(opts.progress);
+                let line_length = data.animation_params.line_length();
+
+                let column = frame_index % line_length;
+                let row = frame_index / line_length;
+
+                data.fetch_offset(
+                    scale,
+                    filename,
+                    used_mods,
+                    image_cache,
+                    opts.runtime_tint,
+                    (column as i16, (row + orientation_index) as i16),
+                )
             }
         }
     }
