@@ -7,13 +7,22 @@ use super::EntityWithOwnerPrototype;
 use mod_util::UsedMods;
 use types::*;
 
+pub trait RailDirectionPrototype {
+    fn get_type(&self) -> RailDirectionType;
+}
+
+pub enum RailDirectionType {
+    Straight,
+    Curved,
+}
+
 /// [`Prototypes/RailPrototype`](https://lua-api.factorio.com/latest/prototypes/RailPrototype.html)
 pub type RailPrototype<T> = EntityWithOwnerPrototype<RailData<T>>;
 
 /// [`Prototypes/RailPrototype`](https://lua-api.factorio.com/latest/prototypes/RailPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RailData<T: super::Renderable> {
+pub struct RailData<T: RailDirectionPrototype> {
     pub pictures: RailPictureSet,
 
     #[serde(flatten)]
@@ -22,7 +31,7 @@ pub struct RailData<T: super::Renderable> {
     // pub walking_sound: Option<Sound>,
 }
 
-impl<T: super::Renderable> Deref for RailData<T> {
+impl<T: RailDirectionPrototype> Deref for RailData<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -30,7 +39,7 @@ impl<T: super::Renderable> Deref for RailData<T> {
     }
 }
 
-impl<T: super::Renderable> super::Renderable for RailData<T> {
+impl<T: RailDirectionPrototype> super::Renderable for RailData<T> {
     fn render(
         &self,
         options: &super::RenderOpts,
@@ -38,7 +47,90 @@ impl<T: super::Renderable> super::Renderable for RailData<T> {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        None
+        match self.child.get_type() {
+            RailDirectionType::Straight => {
+                match options.direction {
+                    Direction::North | Direction::South => self
+                        .pictures
+                        .straight_rail_vertical
+                        .render(options, used_mods, render_layers, image_cache),
+                    Direction::East | Direction::West => self
+                        .pictures
+                        .straight_rail_horizontal
+                        .render(options, used_mods, render_layers, image_cache),
+                    Direction::NorthWest => self.pictures.straight_rail_diagonal_left_top.render(
+                        options,
+                        used_mods,
+                        render_layers,
+                        image_cache,
+                    ),
+                    Direction::SouthEast => self
+                        .pictures
+                        .straight_rail_diagonal_right_bottom
+                        .render(options, used_mods, render_layers, image_cache),
+                    Direction::NorthEast => self.pictures.straight_rail_diagonal_right_top.render(
+                        options,
+                        used_mods,
+                        render_layers,
+                        image_cache,
+                    ),
+                    Direction::SouthWest => self
+                        .pictures
+                        .straight_rail_diagonal_left_bottom
+                        .render(options, used_mods, render_layers, image_cache),
+                }
+            }
+            RailDirectionType::Curved => {
+                match options.direction {
+                    Direction::North => self.pictures.curved_rail_vertical_left_bottom.render(
+                        options,
+                        used_mods,
+                        render_layers,
+                        image_cache,
+                    ),
+                    Direction::NorthEast => self.pictures.curved_rail_vertical_right_bottom.render(
+                        options,
+                        used_mods,
+                        render_layers,
+                        image_cache,
+                    ),
+                    Direction::East => self.pictures.curved_rail_horizontal_left_top.render(
+                        options,
+                        used_mods,
+                        render_layers,
+                        image_cache,
+                    ),
+                    Direction::SouthEast => self
+                        .pictures
+                        .curved_rail_horizontal_left_bottom
+                        .render(options, used_mods, render_layers, image_cache),
+                    Direction::South => self.pictures.curved_rail_vertical_right_top.render(
+                        options,
+                        used_mods,
+                        render_layers,
+                        image_cache,
+                    ),
+                    Direction::SouthWest => self.pictures.curved_rail_vertical_left_top.render(
+                        options,
+                        used_mods,
+                        render_layers,
+                        image_cache,
+                    ),
+                    Direction::West => self.pictures.curved_rail_horizontal_right_bottom.render(
+                        options,
+                        used_mods,
+                        render_layers,
+                        image_cache,
+                    ),
+                    Direction::NorthWest => self.pictures.curved_rail_horizontal_right_top.render(
+                        options,
+                        used_mods,
+                        render_layers,
+                        image_cache,
+                    ),
+                }
+            }
+        }
     }
 }
 
@@ -52,15 +144,9 @@ pub struct CurvedRailData {
     pub bending_type: Option<CurvedBendType>,
 }
 
-impl super::Renderable for CurvedRailData {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        render_layers: &mut crate::RenderLayerBuffer,
-        image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
-        None
+impl RailDirectionPrototype for CurvedRailData {
+    fn get_type(&self) -> RailDirectionType {
+        RailDirectionType::Curved
     }
 }
 
@@ -80,15 +166,9 @@ pub struct StraightRailData {
     pub bending_type: Option<StraightBendType>,
 }
 
-impl super::Renderable for StraightRailData {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        render_layers: &mut crate::RenderLayerBuffer,
-        image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
-        None
+impl RailDirectionPrototype for StraightRailData {
+    fn get_type(&self) -> RailDirectionType {
+        RailDirectionType::Straight
     }
 }
 
@@ -96,4 +176,120 @@ impl super::Renderable for StraightRailData {
 #[serde(rename_all = "lowercase")]
 pub enum StraightBendType {
     Straight,
+}
+
+/// [`Types/RailPictureSet`](https://lua-api.factorio.com/latest/types/RailPictureSet.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RailPictureSet {
+    pub straight_rail_horizontal: RailPieceLayers,
+    pub straight_rail_vertical: RailPieceLayers,
+    pub straight_rail_diagonal_left_top: RailPieceLayers,
+    pub straight_rail_diagonal_right_top: RailPieceLayers,
+    pub straight_rail_diagonal_right_bottom: RailPieceLayers,
+    pub straight_rail_diagonal_left_bottom: RailPieceLayers,
+    pub curved_rail_vertical_left_top: RailPieceLayers,
+    pub curved_rail_vertical_right_top: RailPieceLayers,
+    pub curved_rail_vertical_right_bottom: RailPieceLayers,
+    pub curved_rail_vertical_left_bottom: RailPieceLayers,
+    pub curved_rail_horizontal_left_top: RailPieceLayers,
+    pub curved_rail_horizontal_right_top: RailPieceLayers,
+    pub curved_rail_horizontal_right_bottom: RailPieceLayers,
+    pub curved_rail_horizontal_left_bottom: RailPieceLayers,
+    pub rail_endings: Sprite8Way,
+}
+
+/// [`Types/RailPieceLayers`](https://lua-api.factorio.com/latest/types/RailPieceLayers.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RailPieceLayers {
+    pub metals: SpriteVariations,
+    pub backplates: SpriteVariations,
+    pub ties: SpriteVariations,
+    pub stone_path: SpriteVariations,
+
+    pub stone_path_background: Option<SpriteVariations>,
+    pub segment_visualisation_middle: Option<SpriteVariations>,
+    pub segment_visualisation_ending_front: Option<SpriteVariations>,
+    pub segment_visualisation_ending_back: Option<SpriteVariations>,
+    pub segment_visualisation_continuing_front: Option<SpriteVariations>,
+    pub segment_visualisation_continuing_back: Option<SpriteVariations>,
+}
+
+impl super::Renderable for RailPieceLayers {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+        image_cache: &mut ImageCache,
+    ) -> crate::RenderOutput {
+        let mut empty = true;
+
+        if let Some(path_background) = &self.stone_path_background {
+            if let Some(res) = path_background.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            ) {
+                empty = false;
+
+                render_layers.add(
+                    res,
+                    &options.position,
+                    InternalRenderLayer::RailStonePathBackground,
+                );
+            }
+        };
+
+        if let Some(res) = self.stone_path.render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        ) {
+            empty = false;
+
+            render_layers.add(res, &options.position, InternalRenderLayer::RailStonePath);
+        }
+
+        if let Some(res) = self.ties.render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        ) {
+            empty = false;
+
+            render_layers.add(res, &options.position, InternalRenderLayer::RailTies);
+        }
+
+        if let Some(res) = self.backplates.render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        ) {
+            empty = false;
+
+            render_layers.add(res, &options.position, InternalRenderLayer::RailBackplate);
+        }
+
+        if let Some(res) = self.metals.render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        ) {
+            empty = false;
+
+            render_layers.add(res, &options.position, InternalRenderLayer::RailMetal);
+        }
+
+        if empty {
+            None
+        } else {
+            Some(())
+        }
+    }
 }

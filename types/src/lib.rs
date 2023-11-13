@@ -2135,43 +2135,6 @@ pub enum CircuitConnectorSecondaryDrawOrder {
     },
 }
 
-/// [`Types/RailPictureSet`](https://lua-api.factorio.com/latest/types/RailPictureSet.html)
-#[derive(Debug, Serialize, Deserialize)]
-pub struct RailPictureSet {
-    pub straight_rail_horizontal: RailPieceLayers,
-    pub straight_rail_vertical: RailPieceLayers,
-    pub straight_rail_diagonal_left_top: RailPieceLayers,
-    pub straight_rail_diagonal_right_top: RailPieceLayers,
-    pub straight_rail_diagonal_right_bottom: RailPieceLayers,
-    pub straight_rail_diagonal_left_bottom: RailPieceLayers,
-    pub curved_rail_vertical_left_top: RailPieceLayers,
-    pub curved_rail_vertical_right_top: RailPieceLayers,
-    pub curved_rail_vertical_right_bottom: RailPieceLayers,
-    pub curved_rail_vertical_left_bottom: RailPieceLayers,
-    pub curved_rail_horizontal_left_top: RailPieceLayers,
-    pub curved_rail_horizontal_right_top: RailPieceLayers,
-    pub curved_rail_horizontal_right_bottom: RailPieceLayers,
-    pub curved_rail_horizontal_left_bottom: RailPieceLayers,
-    pub rail_endings: Sprite8Way,
-}
-
-/// [`Types/RailPieceLayers`](https://lua-api.factorio.com/latest/types/RailPieceLayers.html)
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct RailPieceLayers {
-    pub metals: SpriteVariations,
-    pub backplates: SpriteVariations,
-    pub ties: SpriteVariations,
-    pub stone_path: SpriteVariations,
-
-    pub stone_path_background: Option<SpriteVariations>,
-    pub segment_visualisation_middle: Option<SpriteVariations>,
-    pub segment_visualisation_ending_front: Option<SpriteVariations>,
-    pub segment_visualisation_ending_back: Option<SpriteVariations>,
-    pub segment_visualisation_continuing_front: Option<SpriteVariations>,
-    pub segment_visualisation_continuing_back: Option<SpriteVariations>,
-}
-
 /// [`Types/TrainStopLight`](https://lua-api.factorio.com/latest/types/TrainStopLight.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TrainStopLight {
