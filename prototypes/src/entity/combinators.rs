@@ -74,18 +74,30 @@ impl<T: super::Renderable> super::Renderable for CombinatorData<T> {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        let res = self.sprites.as_ref().and_then(|s| {
+        let mut empty = true;
+
+        if let Some(res) = self.sprites.as_ref().and_then(|s| {
             s.render(
                 render_layers.scale(),
                 used_mods,
                 image_cache,
                 &options.into(),
             )
-        })?;
+        }) {
+            empty = false;
 
-        render_layers.add_entity(res, &options.position);
+            render_layers.add_entity(res, &options.position);
+        }
 
-        Some(())
+        let child = self
+            .child
+            .render(options, used_mods, render_layers, image_cache);
+
+        if empty && child.is_none() {
+            None
+        } else {
+            Some(())
+        }
     }
 }
 
