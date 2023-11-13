@@ -105,6 +105,21 @@ impl Data {
                 let offset_x = (min_x + width).round();
                 let offset_y = (min_y + height).round();
 
+                // only offset an even amount
+                let offset_x = if offset_x % 2.0 == 0.0 {
+                    offset_x
+                } else {
+                    offset_x - 1.0
+                };
+
+                let offset_y = if offset_y % 2.0 == 0.0 {
+                    offset_y
+                } else {
+                    offset_y - 1.0
+                };
+
+                println!("normalize offset: {offset_x}, {offset_y}");
+
                 for entity in &mut data.entities {
                     entity.position.x -= offset_x;
                     entity.position.y -= offset_y;

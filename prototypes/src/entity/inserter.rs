@@ -162,7 +162,11 @@ impl super::Renderable for InserterData {
         let mut empty = true;
         if let Some(hand) = hand {
             empty = false;
-            render_layers.add(hand, &options.position, InternalRenderLayer::InserterHand);
+            render_layers.add(
+                hand,
+                &options.position,
+                crate::InternalRenderLayer::InserterHand,
+            );
         }
 
         let platform_options = &super::RenderOpts {

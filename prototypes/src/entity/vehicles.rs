@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::ops::{Deref, Rem};
 
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -70,7 +70,8 @@ impl<T: super::Renderable> super::Renderable for VehicleData<T> {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        None
+        self.child
+            .render(options, used_mods, render_layers, image_cache)
     }
 }
 
@@ -224,7 +225,23 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        None
+        if let Some(res) = self.pictures.render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        ) {
+            render_layers.add(
+                res,
+                &options.position,
+                crate::InternalRenderLayer::EntityHigh,
+            );
+        }
+
+        // TODO: wheels?
+
+        self.child
+            .render(options, used_mods, render_layers, image_cache)
     }
 }
 
@@ -251,6 +268,7 @@ pub struct ArtilleryWagonData {
 
     pub cannon_base_pictures: Option<RotatedSprite>,
     pub cannon_barrel_pictures: Option<RotatedSprite>,
+    pub cannon_base_shiftings: Option<FactorioArray<Vector>>,
 
     #[serde(
         default,
@@ -285,7 +303,71 @@ impl super::Renderable for ArtilleryWagonData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        None
+        let mut empty = true;
+
+        let offset = self.cannon_base_shiftings.as_ref().map_or_else(
+            || Vector::new(0.0, 0.0),
+            |shifts| {
+                if shifts.is_empty() {
+                    Vector::new(0.0, 0.0)
+                } else {
+                    let len_f = shifts.len() as f64;
+                    let idx = (len_f
+                        * options
+                            .orientation
+                            .unwrap_or_else(|| options.direction.to_orientation()))
+                    .floor();
+
+                    let idx = if idx < 0.0 {
+                        len_f + idx.rem(len_f)
+                    } else {
+                        idx.rem(len_f)
+                    } as usize;
+
+                    shifts[idx]
+                }
+            },
+        );
+
+        if let Some((img, shift)) = self.cannon_barrel_pictures.as_ref().and_then(|b| {
+            b.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        }) {
+            empty = false;
+
+            render_layers.add(
+                (img, shift + offset),
+                &options.position,
+                crate::InternalRenderLayer::EntityHigher,
+            );
+        }
+
+        if let Some((img, shift)) = self.cannon_base_pictures.as_ref().and_then(|b| {
+            b.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        }) {
+            empty = false;
+
+            render_layers.add(
+                (img, shift + offset),
+                &options.position,
+                crate::InternalRenderLayer::EntityHigher,
+            );
+        }
+
+        if empty {
+            None
+        } else {
+            Some(())
+        }
     }
 }
 
@@ -307,7 +389,7 @@ impl super::Renderable for CargoWagonData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        None
+        Some(())
     }
 }
 
@@ -332,7 +414,7 @@ impl super::Renderable for FluidWagonData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        None
+        Some(())
     }
 }
 
@@ -378,6 +460,6 @@ impl super::Renderable for LocomotiveData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        None
+        Some(())
     }
 }

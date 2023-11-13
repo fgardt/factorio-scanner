@@ -67,7 +67,70 @@ impl super::Renderable for TrainStopData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        None
+        let mut empty = true;
+
+        if let Some(rail) = self.rail_overlay_animations.as_ref().and_then(|r| {
+            r.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        }) {
+            empty = false;
+
+            render_layers.add(
+                rail,
+                &options.position,
+                crate::InternalRenderLayer::RailBackplate,
+            );
+        }
+
+        if let Some(anim) = self.animations.as_ref().and_then(|a| {
+            a.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        }) {
+            empty = false;
+
+            render_layers.add_entity(anim, &options.position);
+        }
+
+        if let Some(top_anim) = self.top_animations.as_ref().and_then(|t| {
+            t.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        }) {
+            empty = false;
+
+            render_layers.add(
+                top_anim,
+                &options.position,
+                crate::InternalRenderLayer::AboveEntity,
+            );
+        }
+
+        let l1 = self
+            .light1
+            .as_ref()
+            .and_then(|l| l.render(options, used_mods, render_layers, image_cache));
+
+        let l2 = self
+            .light2
+            .as_ref()
+            .and_then(|l| l.render(options, used_mods, render_layers, image_cache));
+
+        if empty && l1.is_none() && l2.is_none() {
+            None
+        } else {
+            Some(())
+        }
     }
 }
 
@@ -77,4 +140,37 @@ pub struct TrainStopDrawingBoxes {
     pub east: BoundingBox,
     pub south: BoundingBox,
     pub west: BoundingBox,
+}
+
+/// [`Types/TrainStopLight`](https://lua-api.factorio.com/latest/types/TrainStopLight.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TrainStopLight {
+    pub picture: Sprite4Way,
+    pub red_picture: Sprite4Way,
+    pub light: LightDefinition,
+}
+
+impl super::Renderable for TrainStopLight {
+    fn render(
+        &self,
+        options: &crate::RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+        image_cache: &mut ImageCache,
+    ) -> crate::RenderOutput {
+        let res = self.picture.render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        )?;
+
+        render_layers.add(
+            res,
+            &options.position,
+            crate::InternalRenderLayer::AboveEntity,
+        );
+
+        Some(())
+    }
 }
