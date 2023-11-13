@@ -237,7 +237,7 @@ impl super::Renderable for RailPieceLayers {
                 render_layers.add(
                     res,
                     &options.position,
-                    InternalRenderLayer::RailStonePathBackground,
+                    crate::InternalRenderLayer::RailStonePathBackground,
                 );
             }
         };
@@ -250,7 +250,11 @@ impl super::Renderable for RailPieceLayers {
         ) {
             empty = false;
 
-            render_layers.add(res, &options.position, InternalRenderLayer::RailStonePath);
+            render_layers.add(
+                res,
+                &options.position,
+                crate::InternalRenderLayer::RailStonePath,
+            );
         }
 
         if let Some(res) = self.ties.render(
@@ -261,7 +265,7 @@ impl super::Renderable for RailPieceLayers {
         ) {
             empty = false;
 
-            render_layers.add(res, &options.position, InternalRenderLayer::RailTies);
+            render_layers.add(res, &options.position, crate::InternalRenderLayer::RailTies);
         }
 
         if let Some(res) = self.backplates.render(
@@ -272,7 +276,11 @@ impl super::Renderable for RailPieceLayers {
         ) {
             empty = false;
 
-            render_layers.add(res, &options.position, InternalRenderLayer::RailBackplate);
+            render_layers.add(
+                res,
+                &options.position,
+                crate::InternalRenderLayer::RailBackplate,
+            );
         }
 
         if let Some(res) = self.metals.render(
@@ -283,7 +291,11 @@ impl super::Renderable for RailPieceLayers {
         ) {
             empty = false;
 
-            render_layers.add(res, &options.position, InternalRenderLayer::RailMetal);
+            render_layers.add(
+                res,
+                &options.position,
+                crate::InternalRenderLayer::RailMetal,
+            );
         }
 
         if empty {

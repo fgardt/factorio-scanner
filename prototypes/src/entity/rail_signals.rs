@@ -87,7 +87,11 @@ impl super::Renderable for RailSignalBaseData {
                 &rail_piece_opts,
             )
         }) {
-            render_layers.add(res, &options.position, InternalRenderLayer::RailBackplate);
+            render_layers.add(
+                res,
+                &options.position,
+                crate::InternalRenderLayer::RailBackplate,
+            );
         }
 
         Some(())
