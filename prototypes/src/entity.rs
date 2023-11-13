@@ -177,7 +177,9 @@ impl From<&RenderOpts> for AnimationVariationsRenderOpts {
 impl From<&RenderOpts> for RotatedAnimationRenderOpts {
     fn from(value: &RenderOpts) -> Self {
         Self {
-            orientation: value.orientation.unwrap_or_default(),
+            orientation: value
+                .orientation
+                .unwrap_or_else(|| value.direction.to_orientation()),
             progress: 0.0,
             runtime_tint: value.runtime_tint,
             override_index: None,
