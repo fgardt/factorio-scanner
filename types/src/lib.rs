@@ -199,6 +199,126 @@ impl fmt::Display for Vector {
     }
 }
 
+impl std::ops::Add for Vector {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = rhs.as_tuple();
+
+        Self::Tuple(x1 + x2, y1 + y2)
+    }
+}
+
+impl std::ops::Add for &Vector {
+    type Output = Vector;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = rhs.as_tuple();
+
+        Vector::Tuple(x1 + x2, y1 + y2)
+    }
+}
+
+impl std::ops::Add<&Self> for Vector {
+    type Output = Self;
+
+    fn add(self, rhs: &Self) -> Self::Output {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = rhs.as_tuple();
+
+        Self::Tuple(x1 + x2, y1 + y2)
+    }
+}
+
+impl std::ops::Sub for Vector {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = rhs.as_tuple();
+
+        Self::Tuple(x1 - x2, y1 - y2)
+    }
+}
+
+impl std::ops::Sub for &Vector {
+    type Output = Vector;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = rhs.as_tuple();
+
+        Vector::Tuple(x1 - x2, y1 - y2)
+    }
+}
+
+impl std::ops::Sub<&Self> for Vector {
+    type Output = Self;
+
+    fn sub(self, rhs: &Self) -> Self::Output {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = rhs.as_tuple();
+
+        Self::Tuple(x1 - x2, y1 - y2)
+    }
+}
+
+impl std::ops::Mul<f64> for Vector {
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        let (x, y) = self.as_tuple();
+
+        Self::Tuple(x * rhs, y * rhs)
+    }
+}
+
+impl std::ops::Div<f64> for Vector {
+    type Output = Self;
+
+    fn div(self, rhs: f64) -> Self::Output {
+        let (x, y) = self.as_tuple();
+
+        Self::Tuple(x / rhs, y / rhs)
+    }
+}
+
+impl std::ops::AddAssign for Vector {
+    fn add_assign(&mut self, rhs: Self) {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = rhs.as_tuple();
+
+        *self = Self::Tuple(x1 + x2, y1 + y2);
+    }
+}
+
+impl std::ops::SubAssign for Vector {
+    fn sub_assign(&mut self, rhs: Self) {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = rhs.as_tuple();
+
+        *self = Self::Tuple(x1 - x2, y1 - y2);
+    }
+}
+
+impl std::ops::MulAssign<f64> for Vector {
+    fn mul_assign(&mut self, rhs: f64) {
+        let (x, y) = self.as_tuple();
+
+        *self = Self::Tuple(x * rhs, y * rhs);
+    }
+}
+
+impl std::ops::DivAssign<f64> for Vector {
+    fn div_assign(&mut self, rhs: f64) {
+        let (x, y) = self.as_tuple();
+
+        *self = Self::Tuple(x / rhs, y / rhs);
+    }
+}
+
 /// [`Types/Vector3D`](https://lua-api.factorio.com/latest/types/Vector3D.html)
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -931,6 +1051,34 @@ impl Direction {
     #[must_use]
     pub fn is_default(other: &Self) -> bool {
         other == &Self::default()
+    }
+
+    #[must_use]
+    pub const fn right90(&self) -> Self {
+        match self {
+            Self::North => Self::East,
+            Self::NorthEast => Self::SouthEast,
+            Self::East => Self::South,
+            Self::SouthEast => Self::SouthWest,
+            Self::South => Self::West,
+            Self::SouthWest => Self::NorthWest,
+            Self::West => Self::North,
+            Self::NorthWest => Self::NorthEast,
+        }
+    }
+
+    #[must_use]
+    pub const fn get_offset(&self) -> Vector {
+        match self {
+            Self::North => Vector::new(0.0, -1.0),
+            Self::NorthEast => Vector::new(1.0, -1.0),
+            Self::East => Vector::new(1.0, 0.0),
+            Self::SouthEast => Vector::new(1.0, 1.0),
+            Self::South => Vector::new(0.0, 1.0),
+            Self::SouthWest => Vector::new(-1.0, 1.0),
+            Self::West => Vector::new(-1.0, 0.0),
+            Self::NorthWest => Vector::new(-1.0, -1.0),
+        }
     }
 }
 
