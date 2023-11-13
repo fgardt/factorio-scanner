@@ -171,6 +171,25 @@ impl Vector {
             Self::Tuple(x, y) | Self::Struct { x, y } => (*x, *y),
         }
     }
+
+    /// Rotate the vector by the given orientation
+    #[must_use]
+    pub fn rotate(&self, orientation: RealOrientation) -> Self {
+        let (x, y) = self.as_tuple();
+
+        let rad = orientation * 2.0 * std::f64::consts::PI;
+        let sin = rad.sin();
+        let cos = rad.cos();
+
+        Self::Tuple(x.mul_add(cos, -y * sin), x.mul_add(sin, y * cos))
+    }
+
+    #[must_use]
+    pub fn flip(&self) -> Self {
+        let (x, y) = self.as_tuple();
+
+        Self::Tuple(-x, -y)
+    }
 }
 
 impl Default for Vector {
