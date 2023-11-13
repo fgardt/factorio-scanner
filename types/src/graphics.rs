@@ -1507,6 +1507,16 @@ pub enum Animation {
     },
 }
 
+impl Animation {
+    #[must_use]
+    pub fn frame_count(&self) -> u32 {
+        match self {
+            Self::Layered { layers } => layers.first().map_or(1, Self::frame_count),
+            Self::Simple { data, .. } | Self::Striped { data, .. } => data.frame_count.unwrap_or(1),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 pub struct AnimationRenderOpts {
     pub progress: f64,

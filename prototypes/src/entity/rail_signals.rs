@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::ops::{Deref, Rem};
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -38,6 +38,64 @@ pub struct RailSignalBaseData {
     pub circuit_connector_sprites: FactorioArray<CircuitConnectorSprites>,
 }
 
+impl super::Renderable for RailSignalBaseData {
+    fn render(
+        &self,
+        options: &crate::RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+        image_cache: &mut ImageCache,
+    ) -> crate::RenderOutput {
+        let rail_piece = self.rail_piece.as_ref()?;
+        let frame_count = rail_piece.frame_count();
+
+        // <https://forums.factorio.com/109688>
+        let prog = if frame_count == 10 {
+            let r = options.position.y().rem(2.0).ceil().abs();
+
+            println!("{:?}: {r}", options.position);
+
+            match options.direction {
+                Direction::North => {
+                    if r >= 0.9 {
+                        0.0
+                    } else {
+                        0.8
+                    }
+                }
+                Direction::South => {
+                    if r >= 0.9 {
+                        0.35
+                    } else {
+                        0.9
+                    }
+                }
+                _ => (options.direction.to_orientation() * 8.0) / 10.0,
+            }
+        } else {
+            options.direction.to_orientation()
+        };
+
+        let rail_piece_opts = AnimationRenderOpts {
+            progress: prog,
+            runtime_tint: options.runtime_tint,
+        };
+
+        if let Some(res) = self.rail_piece.as_ref().and_then(|r| {
+            r.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &rail_piece_opts,
+            )
+        }) {
+            render_layers.add(res, &options.position, InternalRenderLayer::RailBackplate);
+        }
+
+        Some(())
+    }
+}
+
 /// [`Prototypes/RailChainSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailChainSignalPrototype.html)
 pub type RailChainSignalPrototype = EntityWithOwnerPrototype<RailChainSignalData>;
 
@@ -69,8 +127,6 @@ impl super::Renderable for RailChainSignalData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        let mut empty = true;
-
         // thanks to bilka: <https://discord.com/channels/139677590393716737/306402592265732098/1173539478669897768>
         let offset = {
             let (mut offset_x, mut offset_y) = options.direction.right90().get_offset().as_tuple();
@@ -83,28 +139,6 @@ impl super::Renderable for RailChainSignalData {
 
             Vector::new(offset_x, offset_y)
         };
-
-        let rail_piece_opts = AnimationRenderOpts {
-            progress: (options.direction.to_orientation() * 8.0) / 10.0, // this is so weird, whyyyy <https://forums.factorio.com/109688>
-            runtime_tint: options.runtime_tint,
-        };
-
-        if let Some((img, shift)) = self.rail_piece.as_ref().and_then(|r| {
-            r.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &rail_piece_opts,
-            )
-        }) {
-            empty = false;
-
-            render_layers.add(
-                (img, shift + offset),
-                &options.position,
-                InternalRenderLayer::RailTies,
-            );
-        }
 
         let animation_opts = RotatedAnimationRenderOpts {
             progress: (1.0 / 5.0) * 2.5, // green light
@@ -119,16 +153,18 @@ impl super::Renderable for RailChainSignalData {
             image_cache,
             &animation_opts,
         ) {
-            empty = false;
-
             render_layers.add_entity((img, shift + offset), &options.position);
         }
 
-        if empty {
-            None
-        } else {
-            Some(())
-        }
+        self.parent.render(
+            &super::RenderOpts {
+                position: options.position.clone() + MapPosition::from(offset),
+                ..options.clone()
+            },
+            used_mods,
+            render_layers,
+            image_cache,
+        )
     }
 }
 
@@ -158,45 +194,16 @@ impl super::Renderable for RailSignalData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
-        let mut empty = true;
-
-        let rail_piece_opts = AnimationRenderOpts {
-            progress: (options.direction.to_orientation() * 8.0) / 10.0, // this is so weird, whyyyy <https://forums.factorio.com/109688>
-            runtime_tint: options.runtime_tint,
-        };
-
-        if let Some(rail_piece) = self.rail_piece.as_ref().and_then(|r| {
-            r.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &rail_piece_opts,
-            )
-        }) {
-            empty = false;
-
-            render_layers.add(
-                rail_piece,
-                &options.position,
-                InternalRenderLayer::RailMetal,
-            );
-        }
-
         if let Some(animation) = self.animation.render(
             render_layers.scale(),
             used_mods,
             image_cache,
             &options.into(),
         ) {
-            empty = false;
-
             render_layers.add_entity(animation, &options.position);
         }
 
-        if empty {
-            None
-        } else {
-            Some(())
-        }
+        self.parent
+            .render(options, used_mods, render_layers, image_cache)
     }
 }

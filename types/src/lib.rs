@@ -191,6 +191,14 @@ impl From<Vector> for (f64, f64) {
     }
 }
 
+impl From<MapPosition> for Vector {
+    fn from(map_position: MapPosition) -> Self {
+        let (x, y) = map_position.as_tuple();
+
+        Self::Tuple(x, y)
+    }
+}
+
 impl fmt::Display for Vector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (x, y) = self.as_tuple();
@@ -815,6 +823,14 @@ impl PartialOrd for MapPosition {
                 std::cmp::Ordering::Less | std::cmp::Ordering::Greater => Some(res),
             },
         )
+    }
+}
+
+impl From<Vector> for MapPosition {
+    fn from(vector: Vector) -> Self {
+        let (x, y) = vector.as_tuple();
+
+        Self::Tuple(x, y)
     }
 }
 
