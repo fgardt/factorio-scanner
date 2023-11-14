@@ -140,6 +140,8 @@ pub struct DataRaw {
 
     pub land_mine: EntityPrototypeMap<LandMinePrototype>,
 
+    pub market: EntityPrototypeMap<MarketPrototype>,
+
     pub mining_drill: EntityPrototypeMap<MiningDrillPrototype>,
     pub offshore_pump: EntityPrototypeMap<OffshorePumpPrototype>,
 
@@ -234,6 +236,7 @@ pub enum EntityType {
     Lab,
     Lamp,
     LandMine,
+    Market,
     MiningDrill,
     OffshorePump,
     Pipe,
@@ -474,6 +477,10 @@ impl DataUtil {
 
             (*data.land_mine).keys().fold((), |(), name| {
                 entities.insert(name.clone(), EntityType::LandMine);
+            });
+
+            (*data.market).keys().fold((), |(), name| {
+                entities.insert(name.clone(), EntityType::Market);
             });
 
             (*data.mining_drill).keys().fold((), |(), name| {
@@ -766,6 +773,11 @@ impl DataUtil {
             EntityType::LandMine => self
                 .data
                 .land_mine
+                .get(name)
+                .map(|x| x as &dyn RenderableEntity),
+            EntityType::Market => self
+                .data
+                .market
                 .get(name)
                 .map(|x| x as &dyn RenderableEntity),
             EntityType::MiningDrill => self
