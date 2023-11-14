@@ -16,6 +16,7 @@ use std::{
 };
 
 use clap::Parser;
+use image::{codecs::png, ImageEncoder};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -176,7 +177,16 @@ fn main() {
     );
     println!("render done");
 
-    img.save(&cli.out).unwrap();
+    let out = fs::File::create(&cli.out).unwrap();
+    let enc = png::PngEncoder::new_with_quality(
+        out,
+        png::CompressionType::Best,
+        png::FilterType::default(),
+    );
+
+    enc.write_image(img.as_bytes(), img.width(), img.height(), img.color())
+        .unwrap();
+
     println!("saved to {:?}", cli.out);
 }
 
