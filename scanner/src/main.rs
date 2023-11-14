@@ -235,6 +235,11 @@ fn calculate_target_size(
         println!("unknown entities: {unknown:?}");
     }
 
+    let min_x = (min_x - 0.5).floor();
+    let min_y = (min_y - 0.5).floor();
+    let max_x = (max_x + 0.5).ceil();
+    let max_y = (max_y + 0.5).ceil();
+
     let width = (max_x - min_x).abs().ceil();
     let height = (max_y - min_y).abs().ceil();
 
@@ -455,6 +460,7 @@ fn render_bp(
 
     println!("entities: {}, layers: {rendered_count}", bp.entities.len());
 
+    render_layers.generate_background();
     render_layers.combine()
 }
 
