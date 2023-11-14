@@ -16,6 +16,7 @@ use std::{
 };
 
 use clap::Parser;
+use image::{codecs::png, ImageEncoder};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -176,7 +177,16 @@ fn main() {
     );
     println!("render done");
 
-    img.save(&cli.out).unwrap();
+    let out = fs::File::create(&cli.out).unwrap();
+    let enc = png::PngEncoder::new_with_quality(
+        out,
+        png::CompressionType::Best,
+        png::FilterType::default(),
+    );
+
+    enc.write_image(img.as_bytes(), img.width(), img.height(), img.color())
+        .unwrap();
+
     println!("saved to {:?}", cli.out);
 }
 
@@ -234,6 +244,11 @@ fn calculate_target_size(
     if !unknown.is_empty() {
         println!("unknown entities: {unknown:?}");
     }
+
+    let min_x = (min_x - 0.5).floor();
+    let min_y = (min_y - 0.5).floor();
+    let max_x = (max_x + 0.5).ceil();
+    let max_y = (max_y + 0.5).ceil();
 
     let width = (max_x - min_x).abs().ceil();
     let height = (max_y - min_y).abs().ceil();
@@ -455,6 +470,7 @@ fn render_bp(
 
     println!("entities: {}, layers: {rendered_count}", bp.entities.len());
 
+    render_layers.generate_background();
     render_layers.combine()
 }
 
