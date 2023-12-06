@@ -59,10 +59,18 @@ impl Data {
     }
 
     #[must_use]
-    pub const fn as_blueprint(&self) -> Option<&Blueprint> {
+    pub fn as_blueprint(&self) -> Option<&Blueprint> {
         match self {
             Self::Blueprint(data) => Some(data),
-            Self::BlueprintBook(_) => None,
+            Self::BlueprintBook(book) => {
+                if book.blueprints.is_empty() {
+                    None
+                } else {
+                    book.blueprints
+                        .get(book.active_index as usize)
+                        .and_then(|entry| entry.data.as_blueprint())
+                }
+            }
         }
     }
 
@@ -152,37 +160,58 @@ impl Data {
 
 // TODO: properly propagate/bubble errors up for better handling
 
+pub fn bp_string_to_json(bp_string: &str) -> Result<String, &'static str> {
+    if bp_string.len() < 2 {
+        return Err("Blueprint string must be at least 2 characters long.");
+    }
+
+    let mut chars = bp_string.chars();
+
+    match chars.next() {
+        Some(first) => {
+            if first != '0' {
+                return Err("Unsupported blueprint version.");
+            }
+        }
+        None => return Err("Error parsing blueprint string."),
+    }
+
+    let Ok(compressed) = general_purpose::STANDARD.decode(chars.as_str()) else {
+        return Err("Error decoding blueprint string.");
+    };
+
+    let mut deflate = ZlibDecoder::new(compressed.as_slice());
+    let mut uncompressed = String::new();
+
+    if deflate.read_to_string(&mut uncompressed).is_err() {
+        return Err("Error decompressing blueprint string.");
+    }
+
+    Ok(uncompressed)
+}
+
+pub fn json_to_bp_string(json: &str) -> Result<String, &'static str> {
+    let mut deflate = ZlibEncoder::new(Vec::new(), flate2::Compression::new(9));
+    match deflate.write_all(json.as_bytes()) {
+        Ok(()) => (),
+        Err(_) => return Err("Error compressing blueprint."),
+    };
+
+    let compressed = deflate.finish().unwrap();
+
+    let mut encoded = general_purpose::STANDARD.encode(compressed);
+
+    encoded.insert(0, '0');
+
+    Ok(encoded)
+}
+
 impl TryFrom<&str> for Data {
     type Error = &'static str;
 
     fn try_from(bp_string: &str) -> Result<Self, Self::Error> {
-        if bp_string.len() < 2 {
-            return Err("Blueprint string must be at least 2 characters long.");
-        }
-
-        let mut chars = bp_string.chars();
-
-        match chars.next() {
-            Some(first) => {
-                if first != '0' {
-                    return Err("Unsupported blueprint version.");
-                }
-            }
-            None => return Err("Error parsing blueprint string."),
-        }
-
-        let Ok(compressed) = general_purpose::STANDARD.decode(chars.as_str()) else {
-            return Err("Error decoding blueprint string.");
-        };
-
-        let mut deflate = ZlibDecoder::new(compressed.as_slice());
-        let mut uncompressed = String::new();
-
-        if deflate.read_to_string(&mut uncompressed).is_err() {
-            return Err("Error decompressing blueprint string.");
-        }
-
-        let mut data: Self = serde_json::from_str(&uncompressed).unwrap(); //.map_or(Err("Error deserializing blueprint."), Ok)?;
+        let json = bp_string_to_json(bp_string)?;
+        let mut data: Self = serde_json::from_str(&json).unwrap(); //.map_or(Err("Error deserializing blueprint."), Ok)?;
 
         data.normalize_positions();
         data.ensure_ordering();
@@ -203,23 +232,11 @@ impl TryFrom<Data> for String {
     type Error = &'static str;
 
     fn try_from(data: Data) -> Result<Self, Self::Error> {
-        let Ok(uncompressed) = serde_json::to_string(&data) else {
+        let Ok(json) = serde_json::to_string(&data) else {
             return Err("Error serializing blueprint.");
         };
 
-        let mut deflate = ZlibEncoder::new(Vec::new(), flate2::Compression::new(9));
-        match deflate.write_all(uncompressed.as_bytes()) {
-            Ok(()) => (),
-            Err(_) => return Err("Error compressing blueprint."),
-        };
-
-        let compressed = deflate.finish().unwrap();
-
-        let mut encoded = general_purpose::STANDARD.encode(compressed);
-
-        encoded.insert(0, '0');
-
-        Ok(encoded)
+        json_to_bp_string(&json)
     }
 }
 
@@ -247,9 +264,6 @@ pub struct BookEntry {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Blueprint {
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub description: String,
-
     #[serde(flatten)]
     pub snapping: SnapData,
 
@@ -278,6 +292,9 @@ pub struct Common {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label_color: Option<Color>,
+
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub description: String,
 
     pub version: u64, // see https://wiki.factorio.com/Version_string_format
 }
