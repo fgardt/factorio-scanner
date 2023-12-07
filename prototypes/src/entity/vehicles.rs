@@ -240,7 +240,13 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
             let offset =
                 (Direction::North.get_offset() * (self.joint_distance / 2.0)).rotate(orientation);
 
-            let rail_offset = Vector::new(0.0, -(0.25 * orientation.cos().abs()));
+            let rail_offset = Vector::new(
+                0.0,
+                -(0.25
+                    * (orientation * std::f64::consts::TAU + std::f64::consts::FRAC_PI_2)
+                        .cos()
+                        .abs()),
+            );
 
             if let Some((img, shift)) = self.wheels.as_ref().and_then(|b| {
                 b.render(
