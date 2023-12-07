@@ -25,7 +25,7 @@ blueprint = { path = "blueprint" }
 clap = { version = "4.4", features = ["derive"] }
 factorio_api = { path = "factorio_api" }
 image = { version = "0.24.7", features = ["png"], default-features = false }
-konst = "0.3.6"
+konst = "0.3.7"
 locale = { path = "locale" }
 mod_util = { path = "mod_util" }
 prototypes = { path = "prototypes" }

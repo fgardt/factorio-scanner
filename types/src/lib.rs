@@ -171,6 +171,25 @@ impl Vector {
             Self::Tuple(x, y) | Self::Struct { x, y } => (*x, *y),
         }
     }
+
+    /// Rotate the vector by the given orientation
+    #[must_use]
+    pub fn rotate(&self, orientation: RealOrientation) -> Self {
+        let (x, y) = self.as_tuple();
+
+        let rad = orientation * std::f64::consts::TAU;
+        let sin = rad.sin();
+        let cos = rad.cos();
+
+        Self::Tuple(x.mul_add(cos, -y * sin), x.mul_add(sin, y * cos))
+    }
+
+    #[must_use]
+    pub fn flip(&self) -> Self {
+        let (x, y) = self.as_tuple();
+
+        Self::Tuple(-x, -y)
+    }
 }
 
 impl Default for Vector {
@@ -411,7 +430,303 @@ pub enum LocalisedString {
 pub type Order = String;
 
 /// [`Types/RealOrientation`](https://lua-api.factorio.com/latest/types/RealOrientation.html)
-pub type RealOrientation = f64;
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+pub struct RealOrientation(f64);
+
+impl RealOrientation {
+    #[must_use]
+    pub const fn new(orientation: f64) -> Self {
+        Self(orientation)
+    }
+
+    #[must_use]
+    pub fn projected_orientation(&self) -> Self {
+        if *self == 0.0 || *self == 0.25 || *self == 0.5 || *self == 0.75 {
+            return *self;
+        }
+
+        let rad = self.0 * std::f64::consts::TAU;
+        let x = rad.cos();
+        let y = rad.sin() * std::f64::consts::FRAC_1_SQRT_2;
+        let res = y.atan2(x) / std::f64::consts::TAU;
+
+        Self((res + 1.0) % 1.0)
+    }
+}
+
+impl From<f64> for RealOrientation {
+    fn from(f: f64) -> Self {
+        Self(f)
+    }
+}
+
+impl From<RealOrientation> for f64 {
+    fn from(orientation: RealOrientation) -> Self {
+        *orientation
+    }
+}
+
+impl PartialEq for RealOrientation {
+    fn eq(&self, other: &Self) -> bool {
+        (self.0 - other.0).abs() < f64::EPSILON
+    }
+}
+
+impl PartialEq<f64> for RealOrientation {
+    fn eq(&self, other: &f64) -> bool {
+        (self.0 - *other).abs() < f64::EPSILON
+    }
+}
+
+impl PartialEq<RealOrientation> for f64 {
+    fn eq(&self, other: &RealOrientation) -> bool {
+        (*self - other.0).abs() < Self::EPSILON
+    }
+}
+
+impl PartialOrd for RealOrientation {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(&other.0)
+    }
+}
+
+impl PartialOrd<f64> for RealOrientation {
+    fn partial_cmp(&self, other: &f64) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(other)
+    }
+}
+
+impl PartialOrd<RealOrientation> for f64 {
+    fn partial_cmp(&self, other: &RealOrientation) -> Option<std::cmp::Ordering> {
+        self.partial_cmp(&other.0)
+    }
+}
+
+impl std::ops::Deref for RealOrientation {
+    type Target = f64;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::Add for RealOrientation {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0 + rhs.0)
+    }
+}
+
+impl std::ops::Add<f64> for RealOrientation {
+    type Output = Self;
+
+    fn add(self, rhs: f64) -> Self::Output {
+        Self(self.0 + rhs)
+    }
+}
+
+impl std::ops::Add<RealOrientation> for f64 {
+    type Output = RealOrientation;
+
+    fn add(self, rhs: RealOrientation) -> Self::Output {
+        RealOrientation(self + rhs.0)
+    }
+}
+
+impl std::ops::AddAssign for RealOrientation {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 += rhs.0;
+    }
+}
+
+impl std::ops::AddAssign<f64> for RealOrientation {
+    fn add_assign(&mut self, rhs: f64) {
+        self.0 += rhs;
+    }
+}
+
+impl std::ops::AddAssign<RealOrientation> for f64 {
+    fn add_assign(&mut self, rhs: RealOrientation) {
+        *self += rhs.0;
+    }
+}
+
+impl std::ops::Sub for RealOrientation {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self(self.0 - rhs.0)
+    }
+}
+
+impl std::ops::Sub<f64> for RealOrientation {
+    type Output = Self;
+
+    fn sub(self, rhs: f64) -> Self::Output {
+        Self(self.0 - rhs)
+    }
+}
+
+impl std::ops::Sub<RealOrientation> for f64 {
+    type Output = RealOrientation;
+
+    fn sub(self, rhs: RealOrientation) -> Self::Output {
+        RealOrientation(self - rhs.0)
+    }
+}
+
+impl std::ops::SubAssign for RealOrientation {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.0 -= rhs.0;
+    }
+}
+
+impl std::ops::SubAssign<f64> for RealOrientation {
+    fn sub_assign(&mut self, rhs: f64) {
+        self.0 -= rhs;
+    }
+}
+
+impl std::ops::SubAssign<RealOrientation> for f64 {
+    fn sub_assign(&mut self, rhs: RealOrientation) {
+        *self -= rhs.0;
+    }
+}
+
+impl std::ops::Mul for RealOrientation {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self(self.0 * rhs.0)
+    }
+}
+
+impl std::ops::Mul<f64> for RealOrientation {
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        Self(self.0 * rhs)
+    }
+}
+
+impl std::ops::Mul<RealOrientation> for f64 {
+    type Output = RealOrientation;
+
+    fn mul(self, rhs: RealOrientation) -> Self::Output {
+        RealOrientation(self * rhs.0)
+    }
+}
+
+impl std::ops::MulAssign for RealOrientation {
+    fn mul_assign(&mut self, rhs: Self) {
+        self.0 *= rhs.0;
+    }
+}
+
+impl std::ops::MulAssign<f64> for RealOrientation {
+    fn mul_assign(&mut self, rhs: f64) {
+        self.0 *= rhs;
+    }
+}
+
+impl std::ops::MulAssign<RealOrientation> for f64 {
+    fn mul_assign(&mut self, rhs: RealOrientation) {
+        *self *= rhs.0;
+    }
+}
+
+impl std::ops::Div for RealOrientation {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        Self(self.0 / rhs.0)
+    }
+}
+
+impl std::ops::Div<f64> for RealOrientation {
+    type Output = Self;
+
+    fn div(self, rhs: f64) -> Self::Output {
+        Self(self.0 / rhs)
+    }
+}
+
+impl std::ops::Div<RealOrientation> for f64 {
+    type Output = RealOrientation;
+
+    fn div(self, rhs: RealOrientation) -> Self::Output {
+        RealOrientation(self / rhs.0)
+    }
+}
+
+impl std::ops::DivAssign for RealOrientation {
+    fn div_assign(&mut self, rhs: Self) {
+        self.0 /= rhs.0;
+    }
+}
+
+impl std::ops::DivAssign<f64> for RealOrientation {
+    fn div_assign(&mut self, rhs: f64) {
+        self.0 /= rhs;
+    }
+}
+
+impl std::ops::DivAssign<RealOrientation> for f64 {
+    fn div_assign(&mut self, rhs: RealOrientation) {
+        *self /= rhs.0;
+    }
+}
+
+impl std::ops::Rem for RealOrientation {
+    type Output = Self;
+
+    fn rem(self, rhs: Self) -> Self::Output {
+        Self(self.0 % rhs.0)
+    }
+}
+
+impl std::ops::Rem<f64> for RealOrientation {
+    type Output = Self;
+
+    fn rem(self, rhs: f64) -> Self::Output {
+        Self(self.0 % rhs)
+    }
+}
+
+impl std::ops::Rem<RealOrientation> for f64 {
+    type Output = RealOrientation;
+
+    fn rem(self, rhs: RealOrientation) -> Self::Output {
+        RealOrientation(self % rhs.0)
+    }
+}
+
+impl std::ops::RemAssign for RealOrientation {
+    fn rem_assign(&mut self, rhs: Self) {
+        self.0 %= rhs.0;
+    }
+}
+
+impl std::ops::RemAssign<f64> for RealOrientation {
+    fn rem_assign(&mut self, rhs: f64) {
+        self.0 %= rhs;
+    }
+}
+
+impl std::ops::RemAssign<RealOrientation> for f64 {
+    fn rem_assign(&mut self, rhs: RealOrientation) {
+        *self %= rhs.0;
+    }
+}
+
+impl std::ops::Neg for RealOrientation {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Self(-self.0)
+    }
+}
 
 /// [`Types/FuelCategoryID`](https://lua-api.factorio.com/latest/types/FuelCategoryID.html)
 pub type FuelCategoryID = String;
@@ -1052,7 +1367,7 @@ impl Direction {
 
     #[must_use]
     pub const fn to_orientation(&self) -> RealOrientation {
-        match self {
+        let val = match self {
             Self::North => 0.0,
             Self::NorthEast => 0.125,
             Self::East => 0.25,
@@ -1061,7 +1376,9 @@ impl Direction {
             Self::SouthWest => 0.625,
             Self::West => 0.75,
             Self::NorthWest => 0.875,
-        }
+        };
+
+        RealOrientation::new(val)
     }
 
     #[must_use]
@@ -1539,7 +1856,7 @@ impl From<&TransportBeltAnimationSetRenderOpts> for RotatedAnimationRenderOpts {
         Self {
             progress: 0.0,
             runtime_tint: value.runtime_tint,
-            orientation: 0.0,
+            orientation: RealOrientation::default(),
             override_index: value.index_override,
         }
     }

@@ -225,12 +225,71 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> crate::RenderOutput {
+        let mut empty = true;
+
+        let orientation = options
+            .orientation
+            .unwrap_or_else(|| options.direction.to_orientation());
+
+        let options = &super::RenderOpts {
+            orientation: Some(orientation.projected_orientation()),
+            ..options.clone()
+        };
+
+        if let Some(wheels) = self.wheels.as_ref() {
+            let offset =
+                (Direction::North.get_offset() * (self.joint_distance / 2.0)).rotate(orientation);
+
+            let rail_offset = Vector::new(0.0, -(0.25 * orientation.cos().abs()));
+
+            if let Some((img, shift)) = self.wheels.as_ref().and_then(|b| {
+                b.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            }) {
+                empty = false;
+
+                render_layers.add(
+                    (img, shift + offset.flip() + rail_offset),
+                    &options.position,
+                    crate::InternalRenderLayer::EntityHigh,
+                );
+            }
+
+            let other_wheel_opts = RotatedSpriteRenderOpts {
+                orientation: (orientation.projected_orientation() + 0.5).rem(1.0),
+                runtime_tint: options.runtime_tint,
+            };
+
+            if let Some((img, shift)) = self.wheels.as_ref().and_then(|b| {
+                b.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &other_wheel_opts,
+                )
+            }) {
+                empty = false;
+
+                render_layers.add(
+                    (img, shift + offset + rail_offset),
+                    &options.position,
+                    crate::InternalRenderLayer::EntityHigh,
+                );
+            }
+        }
+
         if let Some(res) = self.pictures.render(
             render_layers.scale(),
             used_mods,
             image_cache,
             &options.into(),
         ) {
+            empty = false;
+
             render_layers.add(
                 res,
                 &options.position,
@@ -238,10 +297,15 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
             );
         }
 
-        // TODO: wheels?
+        let child = self
+            .child
+            .render(options, used_mods, render_layers, image_cache);
 
-        self.child
-            .render(options, used_mods, render_layers, image_cache)
+        if empty && child.is_none() {
+            None
+        } else {
+            Some(())
+        }
     }
 }
 
