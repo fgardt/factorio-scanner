@@ -68,10 +68,10 @@ impl super::Renderable for RailSignalBaseData {
                         0.9
                     }
                 }
-                _ => (options.direction.to_orientation() * 8.0) / 10.0,
+                _ => ((options.direction.to_orientation() * 8.0) / 10.0).into(),
             }
         } else {
-            options.direction.to_orientation()
+            options.direction.to_orientation().into()
         };
 
         let rail_piece_opts = AnimationRenderOpts {

@@ -3,7 +3,7 @@ use mod_util::UsedMods;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use crate::{FactorioArray, ImageCache};
+use crate::{FactorioArray, ImageCache, RealOrientation};
 
 use super::{helper, Color, Direction, FileName, Vector};
 
@@ -659,13 +659,13 @@ impl Scale for RotatedSpriteParams {
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct RotatedSpriteRenderOpts {
-    pub orientation: f64,
+    pub orientation: RealOrientation,
     pub runtime_tint: Option<Color>,
 }
 
 fn direction_count_to_index(
     direction_count: u16,
-    orientation: super::RealOrientation,
+    orientation: RealOrientation,
     back_equals_front: bool,
 ) -> u16 {
     let orientation = if back_equals_front {
@@ -1983,7 +1983,7 @@ impl FetchSprite for RotatedAnimationParams {
 
 impl RotatedAnimationParams {
     #[must_use]
-    pub fn orientation_index(&self, orientation: f64) -> u32 {
+    pub fn orientation_index(&self, orientation: RealOrientation) -> u32 {
         let index =
             (orientation * f64::from(self.direction_count)).round() as u32 % self.direction_count;
 
@@ -2031,7 +2031,7 @@ pub enum RotatedAnimation {
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct RotatedAnimationRenderOpts {
-    pub orientation: f64,
+    pub orientation: RealOrientation,
     pub progress: f64,
     pub runtime_tint: Option<Color>,
 
@@ -2157,7 +2157,7 @@ pub enum RotatedAnimation4Way {
 #[derive(Debug, Clone, Copy, Default)]
 pub struct RotatedAnimation4WayRenderOpts {
     pub direction: Direction,
-    pub orientation: f64,
+    pub orientation: RealOrientation,
     pub progress: f64,
     pub runtime_tint: Option<Color>,
 }
