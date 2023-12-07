@@ -14,7 +14,9 @@ use flate2::{read::ZlibDecoder, write::ZlibEncoder};
 use serde::{Deserialize, Serialize, Serializer};
 use serde_with::skip_serializing_none;
 
-use types::{ArithmeticOperation, Comparator, Direction, ItemCountType, ItemStackIndex};
+use types::{
+    ArithmeticOperation, Comparator, Direction, ItemCountType, ItemStackIndex, RealOrientation,
+};
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -354,7 +356,7 @@ pub struct Entity {
     #[serde(default, skip_serializing_if = "Direction::is_default")]
     pub direction: Direction,
 
-    pub orientation: Option<f32>,
+    pub orientation: Option<RealOrientation>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub neighbours: Vec<EntityNumber>,

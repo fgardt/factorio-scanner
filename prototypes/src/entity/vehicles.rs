@@ -227,13 +227,20 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
     ) -> crate::RenderOutput {
         let mut empty = true;
 
-        if let Some(wheels) = self.wheels.as_ref() {
-            let orientation = options
-                .orientation
-                .unwrap_or_else(|| options.direction.to_orientation());
+        let orientation = options
+            .orientation
+            .unwrap_or_else(|| options.direction.to_orientation());
 
+        let options = &super::RenderOpts {
+            orientation: Some(orientation.projected_orientation()),
+            ..options.clone()
+        };
+
+        if let Some(wheels) = self.wheels.as_ref() {
             let offset =
                 (Direction::North.get_offset() * (self.joint_distance / 2.0)).rotate(orientation);
+
+            let rail_offset = Vector::new(0.0, -(0.25 * orientation.cos().abs()));
 
             if let Some((img, shift)) = self.wheels.as_ref().and_then(|b| {
                 b.render(
@@ -246,14 +253,14 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
                 empty = false;
 
                 render_layers.add(
-                    (img, shift + offset.flip()),
+                    (img, shift + offset.flip() + rail_offset),
                     &options.position,
                     crate::InternalRenderLayer::EntityHigh,
                 );
             }
 
             let other_wheel_opts = RotatedSpriteRenderOpts {
-                orientation: (orientation + 0.5).rem(1.0),
+                orientation: (orientation.projected_orientation() + 0.5).rem(1.0),
                 runtime_tint: options.runtime_tint,
             };
 
@@ -268,7 +275,7 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
                 empty = false;
 
                 render_layers.add(
-                    (img, shift + offset),
+                    (img, shift + offset + rail_offset),
                     &options.position,
                     crate::InternalRenderLayer::EntityHigh,
                 );

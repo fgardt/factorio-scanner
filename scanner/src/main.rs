@@ -278,7 +278,7 @@ fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::EntityRenderO
     prototypes::EntityRenderOpts {
         position: (&value.position).into(),
         direction: value.direction,
-        orientation: value.orientation.map(f64::from),
+        orientation: value.orientation,
         pickup_position: value
             .pickup_position
             .as_ref()

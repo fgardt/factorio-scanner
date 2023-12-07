@@ -4,12 +4,9 @@ Commandline tool to render factorio blueprints with mod support.
 
 ## Current limitations
 
-- rails, signals, stations and rolling-stock are not rendered at all
 - wires are not rendered
-- background is transparent, no grid
 - no alt-mode (so no recipes, inserter arrows, ...)
-- output image size is not limited so be careful with large blueprints
-- only blueprints will be rendered, no books or upgrade/deconstructon planners
+- only blueprints will be rendered (or only the selected blueprint from a book), no upgrade/deconstructon planners
 
 ## Setup
 
@@ -60,4 +57,3 @@ Alternatively you can install my [blueprint meta info mod](https://mods.factorio
 - draw "alt-mode"
   - needs recipe / item parsing, loading and rendering
 - draw wires (copper & circuits)
-- background grid
