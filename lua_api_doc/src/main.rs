@@ -1,6 +1,7 @@
 use diff::Diff;
 
 pub mod format;
+use format::DiffPrint;
 
 fn main() {
     let proto94 = format::prototype::PrototypeDoc::load("proto.1.1.94.json").unwrap();
@@ -15,21 +16,11 @@ fn main() {
     println!("{} prototypes changed", diff.prototypes.0.len());
     println!("{} types changed", diff.types.0.len());
 
-    print!("Prototypes changed: ");
-    for p in diff.prototypes.0 {
-        match p {
-            diff::VecDiffType::Removed { index, .. } => {
-                print!("-{}, ", proto94.prototypes[index].common.name)
-            }
-            diff::VecDiffType::Altered { index, .. } => {
-                print!("*{}, ", proto94.prototypes[index].common.name)
-            }
-            diff::VecDiffType::Inserted { index, .. } => {
-                print!("+{}, ", proto100.prototypes[index].common.name)
-            }
-        }
-    }
-    println!();
+    // print the diff
+    diff.diff_print(&proto100, &proto94, 0, "");
+
+    // let d = serde_json::to_string_pretty(&diff).unwrap();
+    // println!("{d}");
 }
 
 fn proto_info(proto: &format::prototype::PrototypeDoc) {
