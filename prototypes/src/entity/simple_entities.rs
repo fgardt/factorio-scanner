@@ -52,7 +52,7 @@ impl super::Renderable for SimpleEntityData {
 #[serde(untagged)]
 pub enum SimpleEntityGraphics {
     Pictures { pictures: SpriteVariations },
-    Picture { picture: Sprite },
+    Picture { picture: Sprite4Way },
     Animations { animations: AnimationVariations },
 }
 

@@ -771,6 +771,9 @@ pub enum PipeConnectionDefinition {
             deserialize_with = "helper::truncating_deserializer"
         )]
         max_underground_distance: u32,
+
+        #[serde(default, rename = "type")]
+        type_: PipeConnectionType,
     },
     Single {
         position: Vector,
@@ -851,8 +854,8 @@ pub struct FluidBox {
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub base_area: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
-    pub base_level: f64,
+    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    pub base_level: f32,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub height: f64,
@@ -1486,7 +1489,7 @@ pub struct LightDefinitionData {
     #[serde(default, rename = "type")]
     pub type_: LightDefinitionType,
 
-    pub picture: Option<Sprite>,
+    pub picture: Option<Sprite>, // mandatory for oriented
 
     #[serde(default, skip_serializing_if = "helper::is_0_f64")]
     pub rotation_shift: RealOrientation,
@@ -1544,10 +1547,9 @@ pub struct BoxSpecification {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub is_whole_box: bool,
 
+    // TODO: model mandatory depending on `is_whole_box`
     pub side_length: Option<f64>,
-
     pub side_height: Option<f64>,
-
     pub max_side_length: Option<f64>,
 }
 
@@ -2013,21 +2015,22 @@ pub struct TransportBeltConnectorFrame {
     pub frame_main: AnimationVariations,
     pub frame_shadow: AnimationVariations,
     pub frame_main_scanner: Animation,
-    pub frame_main_scanner_movement_speed: f64, // docs specify single precision float
+    pub frame_main_scanner_movement_speed: f32,
     pub frame_main_scanner_horizontal_start_shift: Vector,
     pub frame_main_scanner_horizontal_end_shift: Vector,
-    pub frame_main_scanner_horizontal_y_scale: f64, // docs specify single precision float
+    pub frame_main_scanner_horizontal_y_scale: f32,
     pub frame_main_scanner_horizontal_rotation: RealOrientation,
     pub frame_main_scanner_vertical_start_shift: Vector,
     pub frame_main_scanner_vertical_end_shift: Vector,
+    pub frame_main_scanner_vertical_y_scale: f32,
     pub frame_main_scanner_vertical_rotation: RealOrientation,
     pub frame_main_scanner_cross_horizontal_start_shift: Vector,
     pub frame_main_scanner_cross_horizontal_end_shift: Vector,
-    pub frame_main_scanner_cross_horizontal_y_scale: f64, // docs specify single precision float
+    pub frame_main_scanner_cross_horizontal_y_scale: f32,
     pub frame_main_scanner_cross_horizontal_rotation: RealOrientation,
     pub frame_main_scanner_cross_vertical_start_shift: Vector,
     pub frame_main_scanner_cross_vertical_end_shift: Vector,
-    pub frame_main_scanner_cross_vertical_y_scale: f64, // docs specify single precision float
+    pub frame_main_scanner_cross_vertical_y_scale: f32,
     pub frame_main_scanner_cross_vertical_rotation: RealOrientation,
     pub frame_main_scanner_nw_ne: Animation,
     pub frame_main_scanner_sw_se: Animation,

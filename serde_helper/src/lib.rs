@@ -268,6 +268,11 @@ pub const fn u32_120() -> u32 {
 }
 
 #[must_use]
+pub const fn f32_001() -> f32 {
+    0.01
+}
+
+#[must_use]
 pub const fn f64_001() -> f64 {
     0.01
 }
@@ -553,6 +558,16 @@ pub const fn is_120_u32(value: &u32) -> bool {
 #[must_use]
 pub const fn is_0_u64(value: &u64) -> bool {
     *value == 0
+}
+
+#[must_use]
+pub fn is_0_f32(value: &f32) -> bool {
+    value.abs() < f32::EPSILON
+}
+
+#[must_use]
+pub fn is_001_f32(value: &f32) -> bool {
+    (*value - f32_001()).abs() < f32::EPSILON
 }
 
 #[must_use]

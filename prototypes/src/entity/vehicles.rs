@@ -129,10 +129,10 @@ pub struct CarData {
     pub immune_to_cliff_impacts: bool,
 
     #[serde(
-        default = "helper::f64_001",
-        skip_serializing_if = "helper::is_001_f64"
+        default = "helper::f32_001",
+        skip_serializing_if = "helper::is_001_f32"
     )]
-    pub turret_rotation_speed: f64,
+    pub turret_rotation_speed: f32,
 
     #[serde(
         default = "helper::u32_60",
