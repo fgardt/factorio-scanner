@@ -16,6 +16,7 @@ Building additional tools might also happen along the way (cli tool to edit `mod
 - [`types`](/types/): generic type (de)serializing, sprite loading, layering, merging, ...
 - [`serde_helper`](/serde_helper/): util functions for deserialized defaults & serialization skip conditions
 - [`scanner`](/scanner/): the actual render tool that connects everything
+- [`lua_api_doc`](/lua_api_doc/): small tool to get diffs of different lua api docs
 
 ### Versions
 
