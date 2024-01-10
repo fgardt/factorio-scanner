@@ -4,6 +4,7 @@ members = [
     "blueprint",
     "factorio_api",
     "locale",
+    "lua_api_doc",
     "mod_util",
     "prototypes",
     "serde_helper",
