@@ -10,7 +10,7 @@ pub trait DiffPrint<T: Diff> {
 
 impl<T> DiffPrint<T> for Option<T>
 where
-    T: Diff<Repr = Option<T>> + PartialEq + std::fmt::Debug,
+    T: Diff<Repr = Self> + PartialEq + std::fmt::Debug,
 {
     fn diff_print(&self, _old: &T, _new: &T, indent: usize, name: &str) {
         let indent_str = " ".repeat(indent);
@@ -42,11 +42,11 @@ where
         let indent_str = " ".repeat(indent);
 
         match self {
-            diff::OptionDiff::Some(_) => {
-                println!("{indent_str}{name}: {:?}", new.as_ref())
+            Self::Some(_) => {
+                println!("{indent_str}{name}: {:?}", new.as_ref());
             }
-            diff::OptionDiff::None => println!("{indent_str}{name}: None"),
-            diff::OptionDiff::NoChange => {}
+            Self::None => println!("{indent_str}{name}: None"),
+            Self::NoChange => {}
         }
     }
 }
@@ -76,7 +76,7 @@ impl DiffPrint<Vec<String>> for diff::VecDiff<String> {
                 }
                 diff::VecDiffType::Altered { index, changes } => {
                     let (o, n) = if old.get(*index).is_none() || new.get(*index).is_none() {
-                        (Default::default(), Default::default())
+                        (String::default(), String::default())
                     } else {
                         (old[*index].clone(), new[*index].clone())
                     };
@@ -91,7 +91,7 @@ impl DiffPrint<Vec<String>> for diff::VecDiff<String> {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, PartialOrd, Diff)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Diff)]
 #[diff(attr(
     #[derive(Debug, Serialize, Deserialize)]
 ))]
@@ -100,7 +100,7 @@ pub enum Application {
     Factorio,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, PartialOrd, Diff)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Diff)]
 #[diff(attr(
     #[derive(Debug, Serialize, Deserialize)]
 ))]
@@ -110,7 +110,7 @@ pub enum Stage {
     Runtime,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, PartialOrd, Diff)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Diff)]
 #[diff(attr(
     #[derive(Debug, Serialize, Deserialize)]
 ))]

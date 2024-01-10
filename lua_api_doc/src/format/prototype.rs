@@ -36,7 +36,7 @@ impl DiffPrint<PrototypeDoc> for PrototypeDocDiff {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, PartialOrd, Diff, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Diff, Clone, Default)]
 #[diff(attr(
     #[derive(Debug, Serialize, Deserialize)]
 ))]
@@ -69,7 +69,7 @@ impl DiffPrint<Common> for CommonDiff {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, PartialOrd, Diff, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Diff, Clone, Default)]
 #[diff(attr(
     #[derive(Debug, Serialize, Deserialize)]
 ))]
@@ -290,7 +290,7 @@ impl DiffPrint<Vec<TypeConcept>> for diff::VecDiff<TypeConcept> {
                 }
                 diff::VecDiffType::Altered { index, changes } => {
                     let (o, n) = if old.get(*index).is_none() || new.get(*index).is_none() {
-                        (Default::default(), Default::default())
+                        (TypeConcept::default(), TypeConcept::default())
                     } else {
                         (old[*index].clone(), new[*index].clone())
                     };
@@ -305,7 +305,7 @@ impl DiffPrint<Vec<TypeConcept>> for diff::VecDiff<TypeConcept> {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, PartialOrd, Diff, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Diff, Clone, Default)]
 #[diff(attr(
     #[derive(Debug, Serialize, Deserialize)]
 ))]
@@ -347,7 +347,7 @@ impl DiffPrint<Vec<Image>> for diff::VecDiff<Image> {
                 }
                 diff::VecDiffType::Altered { index, changes } => {
                     let (o, n) = if old.get(*index).is_none() || new.get(*index).is_none() {
-                        (Default::default(), Default::default())
+                        (Image::default(), Image::default())
                     } else {
                         (old[*index].clone(), new[*index].clone())
                     };
@@ -439,7 +439,7 @@ impl DiffPrint<Vec<Property>> for diff::VecDiff<Property> {
                 }
                 diff::VecDiffType::Altered { index, changes } => {
                     let (o, n) = if old.get(*index).is_none() || new.get(*index).is_none() {
-                        (Default::default(), Default::default())
+                        (Property::default(), Property::default())
                     } else {
                         (old[*index].clone(), new[*index].clone())
                     };
@@ -519,43 +519,45 @@ pub enum Type {
 }
 
 impl Type {
+    #[must_use]
     pub fn as_simple(&self) -> Option<String> {
         match self {
-            Type::Simple(s) => Some(s.clone()),
-            _ => None,
+            Self::Simple(s) => Some(s.clone()),
+            Self::Complex(_) => None,
         }
     }
 
+    #[must_use]
     pub fn as_complex(&self) -> Option<Box<ComplexType>> {
         match self {
-            Type::Complex(c) => Some(c.clone()),
-            _ => None,
+            Self::Complex(c) => Some(c.clone()),
+            Self::Simple(_) => None,
         }
     }
 }
 
 impl Default for Type {
     fn default() -> Self {
-        Type::Simple(String::new())
+        Self::Simple(String::new())
     }
 }
 
 impl DiffPrint<Type> for TypeDiff {
     fn diff_print(&self, old: &Type, new: &Type, indent: usize, name: &str) {
         match self {
-            TypeDiff::Simple(s) => s.diff_print(
+            Self::Simple(s) => s.diff_print(
                 &old.as_simple().unwrap_or_default(),
                 &new.as_simple().unwrap_or_default(),
                 indent,
                 name,
             ),
-            TypeDiff::Complex(c) => c.diff_print(
+            Self::Complex(c) => c.diff_print(
                 &old.as_complex().unwrap_or_default(),
                 &new.as_complex().unwrap_or_default(),
                 indent,
                 name,
             ),
-            TypeDiff::NoChange => {}
+            Self::NoChange => {}
         }
     }
 }
@@ -577,7 +579,7 @@ impl DiffPrint<Vec<Type>> for diff::VecDiff<Type> {
                     println!("{indent_str}  -{:?}", old[*index]);
                 }
                 diff::VecDiffType::Altered { index, changes } => {
-                    println!("{indent_str}  *{}", index);
+                    println!("{indent_str}  *{index}");
                     for diff in changes {
                         diff.diff_print(&old[*index], &new[*index], indent + 4, "");
                     }
@@ -616,51 +618,58 @@ pub enum ComplexType {
 }
 
 impl ComplexType {
+    #[must_use]
     pub fn as_array(&self) -> Option<Type> {
         match self {
-            ComplexType::Array { value } => Some(value.clone()),
+            Self::Array { value } => Some(value.clone()),
             _ => None,
         }
     }
 
+    #[must_use]
     pub fn as_dictionary(&self) -> Option<Self> {
         match self {
-            ComplexType::Dictionary { .. } => Some(self.clone()),
+            Self::Dictionary { .. } => Some(self.clone()),
             _ => None,
         }
     }
 
+    #[must_use]
     pub fn as_tuple(&self) -> Option<Vec<Type>> {
         match self {
-            ComplexType::Tuple { values } => Some(values.clone()),
+            Self::Tuple { values } => Some(values.clone()),
             _ => None,
         }
     }
 
+    #[must_use]
     pub fn as_union(&self) -> Option<Self> {
         match self {
-            ComplexType::Union { .. } => Some(self.clone()),
+            Self::Union { .. } => Some(self.clone()),
             _ => None,
         }
     }
 
+    #[must_use]
     pub fn as_type(&self) -> Option<Self> {
         match self {
-            ComplexType::Type { .. } => Some(self.clone()),
+            Self::Type { .. } => Some(self.clone()),
             _ => None,
         }
     }
 
+    #[must_use]
     pub fn as_literal(&self) -> Option<Literal> {
         match self {
-            ComplexType::Literal(l) => Some(l.clone()),
+            Self::Literal(l) => Some(l.clone()),
             _ => None,
         }
     }
 
-    pub fn as_struct(&self) -> Option<()> {
+    #[must_use]
+    pub const fn as_struct(&self) -> Option<()> {
         match self {
-            ComplexType::Struct => Some(()),
+            Self::Struct => Some(()),
             _ => None,
         }
     }
@@ -668,7 +677,7 @@ impl ComplexType {
 
 impl Default for ComplexType {
     fn default() -> Self {
-        ComplexType::Struct {}
+        Self::Struct {}
     }
 }
 
@@ -681,13 +690,13 @@ impl DiffPrint<ComplexType> for ComplexTypeDiff {
         let indent_str = " ".repeat(indent);
 
         match self {
-            ComplexTypeDiff::Array { value } => value.diff_print(
+            Self::Array { value } => value.diff_print(
                 &old.as_array().unwrap_or_default(),
                 &new.as_array().unwrap_or_default(),
                 indent,
                 name,
             ),
-            ComplexTypeDiff::Dictionary { key, value } => {
+            Self::Dictionary { key, value } => {
                 let old = old.as_dictionary().unwrap_or_default();
                 let new = new.as_dictionary().unwrap_or_default();
 
@@ -707,13 +716,13 @@ impl DiffPrint<ComplexType> for ComplexTypeDiff {
                     value.diff_print(&old_v, &new_v, indent + 2, "value");
                 }
             }
-            ComplexTypeDiff::Tuple { values } => values.diff_print(
+            Self::Tuple { values } => values.diff_print(
                 &old.as_tuple().unwrap_or_default(),
                 &new.as_tuple().unwrap_or_default(),
                 indent,
                 name,
             ),
-            ComplexTypeDiff::Union {
+            Self::Union {
                 options,
                 full_format,
             } => {
@@ -736,7 +745,7 @@ impl DiffPrint<ComplexType> for ComplexTypeDiff {
                     full_format.diff_print(&old_f, &new_f, indent + 2, "full_format");
                 }
             }
-            ComplexTypeDiff::Type { value, description } => {
+            Self::Type { value, description } => {
                 let old = old.as_type().unwrap_or_default();
                 let new = new.as_type().unwrap_or_default();
 
@@ -756,14 +765,14 @@ impl DiffPrint<ComplexType> for ComplexTypeDiff {
                     description.diff_print(&old_d, &new_d, indent + 2, "description");
                 }
             }
-            ComplexTypeDiff::Literal(l) => l.diff_print(
+            Self::Literal(l) => l.diff_print(
                 &old.as_literal().unwrap_or_default(),
                 &new.as_literal().unwrap_or_default(),
                 indent,
                 name,
             ),
-            ComplexTypeDiff::Struct => println!("{indent_str}{name}: struct"),
-            ComplexTypeDiff::NoChange => {}
+            Self::Struct => println!("{indent_str}{name}: struct"),
+            Self::NoChange => {}
         }
     }
 }
@@ -809,37 +818,42 @@ pub enum LiteralValue {
 }
 
 impl LiteralValue {
+    #[must_use]
     pub fn as_string(&self) -> Option<String> {
         match self {
-            LiteralValue::String(s) => Some(s.clone()),
+            Self::String(s) => Some(s.clone()),
             _ => None,
         }
     }
 
-    pub fn as_uint(&self) -> Option<u64> {
+    #[must_use]
+    pub const fn as_uint(&self) -> Option<u64> {
         match self {
-            LiteralValue::UInt(u) => Some(*u),
+            Self::UInt(u) => Some(*u),
             _ => None,
         }
     }
 
-    pub fn as_int(&self) -> Option<i64> {
+    #[must_use]
+    pub const fn as_int(&self) -> Option<i64> {
         match self {
-            LiteralValue::Int(i) => Some(*i),
+            Self::Int(i) => Some(*i),
             _ => None,
         }
     }
 
-    pub fn as_float(&self) -> Option<f64> {
+    #[must_use]
+    pub const fn as_float(&self) -> Option<f64> {
         match self {
-            LiteralValue::Float(f) => Some(*f),
+            Self::Float(f) => Some(*f),
             _ => None,
         }
     }
 
-    pub fn as_boolean(&self) -> Option<bool> {
+    #[must_use]
+    pub const fn as_boolean(&self) -> Option<bool> {
         match self {
-            LiteralValue::Boolean(b) => Some(*b),
+            Self::Boolean(b) => Some(*b),
             _ => None,
         }
     }
@@ -847,44 +861,44 @@ impl LiteralValue {
 
 impl Default for LiteralValue {
     fn default() -> Self {
-        LiteralValue::String(String::new())
+        Self::String(String::new())
     }
 }
 
 impl DiffPrint<LiteralValue> for LiteralValueDiff {
     fn diff_print(&self, old: &LiteralValue, new: &LiteralValue, indent: usize, name: &str) {
         match self {
-            LiteralValueDiff::String(s) => s.diff_print(
+            Self::String(s) => s.diff_print(
                 &old.as_string().unwrap_or_default(),
                 &new.as_string().unwrap_or_default(),
                 indent,
                 name,
             ),
-            LiteralValueDiff::UInt(u) => u.diff_print(
+            Self::UInt(u) => u.diff_print(
                 &old.as_uint().unwrap_or_default(),
                 &new.as_uint().unwrap_or_default(),
                 indent,
                 name,
             ),
-            LiteralValueDiff::Int(i) => i.diff_print(
+            Self::Int(i) => i.diff_print(
                 &old.as_int().unwrap_or_default(),
                 &new.as_int().unwrap_or_default(),
                 indent,
                 name,
             ),
-            LiteralValueDiff::Float(f) => f.diff_print(
+            Self::Float(f) => f.diff_print(
                 &old.as_float().unwrap_or_default(),
                 &new.as_float().unwrap_or_default(),
                 indent,
                 name,
             ),
-            LiteralValueDiff::Boolean(b) => b.diff_print(
+            Self::Boolean(b) => b.diff_print(
                 &old.as_boolean().unwrap_or_default(),
                 &new.as_boolean().unwrap_or_default(),
                 indent,
                 name,
             ),
-            LiteralValueDiff::NoChange => {}
+            Self::NoChange => {}
         }
     }
 }

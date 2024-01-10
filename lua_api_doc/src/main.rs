@@ -1,3 +1,12 @@
+#![forbid(unsafe_code)]
+#![warn(
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::unwrap_used,
+    clippy::expect_used
+)]
+#![allow(dead_code, clippy::upper_case_acronyms, unused_variables)]
+
 use clap::Parser;
 use diff::Diff;
 
@@ -32,7 +41,7 @@ fn main() {
 
     let target = reqwest::blocking::get(format!(
         "https://lua-api.factorio.com/{}/prototype-api.json",
-        cli.target.unwrap_or("latest".to_owned())
+        cli.target.unwrap_or_else(|| "latest".to_owned())
     ))
     .unwrap()
     .bytes()
