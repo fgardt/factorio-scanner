@@ -28,6 +28,7 @@ mod inserter;
 mod lab;
 mod lamp;
 mod landmine;
+mod market;
 mod mining_drill;
 mod offshore_pump;
 mod pipe;
@@ -67,6 +68,7 @@ pub use inserter::*;
 pub use lab::*;
 pub use lamp::*;
 pub use landmine::*;
+pub use market::*;
 pub use mining_drill::*;
 pub use offshore_pump::*;
 pub use pipe::*;
@@ -350,7 +352,7 @@ pub struct EntityData<T: Renderable> {
     #[serde(default, skip_serializing_if = "helper::is_0_f64")]
     pub emissions_per_second: f64,
 
-    pub shooting_cursor_size: Option<f64>,
+    pub shooting_cursor_size: Option<f32>,
 
     pub radius_visualisation_specification: Option<RadiusVisualisationSpecification>,
 
@@ -480,7 +482,7 @@ pub struct EntityWithHealthData<T: Renderable> {
     // pub dying_trigger_effect: Option<TriggerEffect>,
     // pub damaged_trigger_effect: Option<TriggerEffect>,
     // pub loot: FactorioArray<LootItem>,
-    // pub attack_reaction: FactorioArray<AttackReactionItem>,
+    // pub attack_reaction: AttackReactionItem or FactorioArray<AttackReactionItem>,
     // pub repair_sound: Option<Sound>,
     // pub corpse: Option<Corpse>,
     #[serde(flatten)]
