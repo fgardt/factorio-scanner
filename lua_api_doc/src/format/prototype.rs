@@ -295,7 +295,7 @@ impl DiffPrint<Vec<TypeConcept>> for diff::VecDiff<TypeConcept> {
                         (old[*index].clone(), new[*index].clone())
                     };
 
-                    println!("{indent_str}  *");
+                    println!("{indent_str}  *{}", n.name);
                     for diff in changes {
                         diff.diff_print(&o, &n, indent + 4, "");
                     }
@@ -444,7 +444,7 @@ impl DiffPrint<Vec<Property>> for diff::VecDiff<Property> {
                         (old[*index].clone(), new[*index].clone())
                     };
 
-                    println!("{indent_str}  *{}", n.name);
+                    println!("{indent_str}  *{}", o.name);
                     for diff in changes {
                         diff.diff_print(&o, &n, indent + 4, "");
                     }

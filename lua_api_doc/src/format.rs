@@ -63,14 +63,16 @@ impl DiffPrint<Vec<String>> for diff::VecDiff<String> {
             match diff {
                 diff::VecDiffType::Inserted { changes, .. } => {
                     for ins in changes.iter().flatten() {
-                        println!("{indent_str}  +{ins}");
+                        ins.lines().for_each(|l| {
+                            println!("{indent_str}  +{l}");
+                        });
                     }
                 }
                 diff::VecDiffType::Removed { index, .. } => {
-                    println!(
-                        "{indent_str}  -{:?}",
-                        old.get(*index).cloned().unwrap_or_default()
-                    );
+                    let old_val = old.get(*index).cloned().unwrap_or_default();
+                    old_val.lines().for_each(|l| {
+                        println!("{indent_str}  -{l}");
+                    });
                 }
                 diff::VecDiffType::Altered { index, changes } => {
                     let (o, n) = if old.get(*index).is_none() || new.get(*index).is_none() {
