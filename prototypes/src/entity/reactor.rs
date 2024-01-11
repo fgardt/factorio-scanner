@@ -50,7 +50,7 @@ impl super::Renderable for ReactorData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = merge_renders(
             &[
                 self.lower_layer_picture.as_ref().and_then(|s| {

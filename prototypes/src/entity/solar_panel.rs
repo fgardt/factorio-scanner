@@ -25,7 +25,7 @@ impl super::Renderable for SolarPanelData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = self.picture.render(
             render_layers.scale(),
             used_mods,

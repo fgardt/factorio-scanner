@@ -46,7 +46,7 @@ impl<T: RailDirectionPrototype> super::Renderable for RailData<T> {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         match self.child.get_type() {
             RailDirectionType::Straight => {
                 match options.direction {
@@ -222,7 +222,7 @@ impl super::Renderable for RailPieceLayers {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let mut empty = true;
 
         if let Some(path_background) = &self.stone_path_background {

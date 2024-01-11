@@ -58,7 +58,7 @@ impl super::Renderable for GeneratorData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = match options.direction {
             Direction::North | Direction::South => &self.vertical_animation,
             Direction::East | Direction::West => &self.horizontal_animation,

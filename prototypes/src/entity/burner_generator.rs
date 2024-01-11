@@ -44,7 +44,7 @@ impl super::Renderable for BurnerGeneratorData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = self.animation.as_ref().and_then(|a| {
             a.render(
                 render_layers.scale(),

@@ -50,7 +50,7 @@ impl super::Renderable for LandMineData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = self.picture_set.render(
             render_layers.scale(),
             used_mods,

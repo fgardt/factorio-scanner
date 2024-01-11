@@ -60,7 +60,7 @@ impl<T: super::Renderable> super::Renderable for FlyingRobotData<T> {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         None
     }
 }
@@ -101,7 +101,7 @@ impl super::Renderable for CombatRobotData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         None
     }
 }
@@ -148,7 +148,7 @@ impl<T: super::Renderable> super::Renderable for RobotWithLogisticInterfaceData<
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         None
     }
 }
@@ -177,7 +177,7 @@ impl super::Renderable for ConstructionRobotData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         None
     }
 }
@@ -202,7 +202,7 @@ impl super::Renderable for LogisticRobotData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         None
     }
 }

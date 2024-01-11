@@ -119,7 +119,7 @@ impl super::Renderable for RoboportData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = merge_renders(
             &[
                 self.base.render(

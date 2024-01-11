@@ -55,7 +55,7 @@ impl super::Renderable for ContainerData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = self.picture.as_ref().and_then(|picture| {
             picture.render(
                 render_layers.scale(),
@@ -132,7 +132,7 @@ impl super::Renderable for LogisticContainerData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = self.animation.as_ref()?.render(
             render_layers.scale(),
             used_mods,
@@ -187,7 +187,7 @@ impl super::Renderable for InfinityContainerData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         self.parent
             .parent
             .render(options, used_mods, render_layers, image_cache)
@@ -237,7 +237,7 @@ impl super::Renderable for LinkedContainerData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = self.picture.as_ref().and_then(|picture| {
             picture.render(
                 render_layers.scale(),

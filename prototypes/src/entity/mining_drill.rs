@@ -72,7 +72,7 @@ impl super::Renderable for MiningDrillData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = if let Some(set) = self.graphics_set.as_ref() {
             set.render(
                 render_layers.scale(),
