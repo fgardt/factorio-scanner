@@ -5,6 +5,10 @@ use serde_helper as helper;
 
 use crate::PrototypeMap;
 
+mod ammo;
+
+pub use ammo::*;
+
 /// [`Prototypes/ItemPrototype`](https://lua-api.factorio.com/latest/prototypes/ItemPrototype.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ItemPrototype(super::BasePrototype<ItemPrototypeData>);
@@ -97,8 +101,8 @@ pub enum RocketLaunchProduct {
 #[serde(rename_all = "kebab-case")]
 pub struct AllTypes {
     pub item: PrototypeMap<ItemPrototype>,
+    pub ammo: PrototypeMap<AmmoItemPrototype>,
     // not implemented
-    // pub ammo: PrototypeMap<AmmoItemPrototype>,
     // pub capsule: PrototypeMap<CapsulePrototype>,
     // pub gun: PrototypeMap<GunPrototype>,
     // pub item_with_entity_data: PrototypeMap<ItemWithEntityDataPrototype>,

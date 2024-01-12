@@ -44,7 +44,59 @@ pub use graphics::*;
 pub use icon::*;
 pub use item::*;
 
-///[`Types/Color`](https://lua-api.factorio.com/latest/types/Color.html)
+/// [`Types/AmmoCategoryID`](https://lua-api.factorio.com/latest/types/AmmoCategoryID.html)
+pub type AmmoCategoryID = String;
+
+/// [`Types/AmmoType`](https://lua-api.factorio.com/latest/types/AmmoType.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AmmoType {
+    pub category: AmmoCategoryID,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub clamp_position: bool,
+
+    pub energy_consumption: Option<Energy>,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub range_modifier: f64,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub cooldown_modifier: f64,
+
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub consumption_modifier: f32,
+
+    pub target_type: Option<AmmoTypeTargetType>,
+
+    // TODO: skip serializing if default
+    #[serde(default)]
+    pub source_type: AmmoSourceType,
+    // not implemented
+    // pub action: Option<Trigger>,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AmmoTypeTargetType {
+    #[default]
+    Entity,
+    Position,
+    Direction,
+}
+
+/// [`Types/AmmoSourceType`](https://lua-api.factorio.com/latest/types/AmmoSourceType.html)
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AmmoSourceType {
+    #[default]
+    Default,
+    Player,
+    Turret,
+    Vehicle,
+}
+
+/// [`Types/Color`](https://lua-api.factorio.com/latest/types/Color.html)
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Color {
@@ -892,9 +944,6 @@ pub type RecipeID = String;
 
 /// [`Types/RecipeCategoryID`](https://lua-api.factorio.com/latest/types/RecipeCategoryID.html)
 pub type RecipeCategoryID = String;
-
-/// [`Types/AmmoCategoryID`](https://lua-api.factorio.com/latest/types/AmmoCategoryID.html)
-pub type AmmoCategoryID = String;
 
 /// [`Types/EquipmentGridID`](https://lua-api.factorio.com/latest/types/EquipmentGridID.html)
 pub type EquipmentGridID = String;
