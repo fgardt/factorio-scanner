@@ -17,7 +17,7 @@ pub struct AmmoItemPrototypeData {
     pub reload_time: f32,
 
     #[serde(flatten)]
-    pub parent: super::ItemPrototypeData,
+    parent: super::ItemPrototypeData,
 }
 
 impl std::ops::Deref for AmmoItemPrototypeData {

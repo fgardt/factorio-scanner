@@ -22,7 +22,7 @@ pub struct IconData {
     #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
     pub tint: Color,
 
-    #[serde(default, skip_serializing_if = "is_0_vector")]
+    #[serde(default, skip_serializing_if = "Vector::is_0_vector")]
     pub shift: Vector,
 
     // TODO: Defaults to `32/icon_size` for items and recipes, `256/icon_size` for technologies.
@@ -34,11 +34,6 @@ pub struct IconData {
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub icon_mipmaps: IconMipMapType,
-}
-
-#[must_use]
-pub fn is_0_vector(value: &Vector) -> bool {
-    value.x() == 0.0 && value.y() == 0.0
 }
 
 #[derive(Debug, Deserialize, Serialize)]

@@ -96,6 +96,230 @@ pub enum AmmoSourceType {
     Vehicle,
 }
 
+/// [`Types/BaseAttackParameters`](https://lua-api.factorio.com/latest/types/BaseAttackParameters.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BaseAttackParameters {
+    pub range: f32,
+    pub cooldown: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    pub min_range: f32,
+
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub turn_range: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    pub fire_penalty: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    pub rotate_penalty: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    pub health_penalty: f32,
+
+    // TODO: skip serializing if default
+    #[serde(default)]
+    pub range_mode: BaseAttackParametersRangeMode,
+
+    // default is value of range property
+    pub min_attack_distance: Option<f32>,
+
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub damage_modifier: f32,
+
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub ammo_consumption_modifier: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    pub cooldown_deviation: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+    pub warmup: u32,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    pub lead_target_for_projectile_speed: f32,
+
+    // default is value of cooldown property
+    pub movement_slow_down_cool_down: Option<f32>,
+
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub movement_slow_down_factor: f32,
+
+    // TODO: skip serializing if default
+    #[serde(default)]
+    pub activation_type: BaseAttackParametersActivationType,
+
+    pub animation: Option<RotatedAnimation>,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub use_shooter_direction: bool,
+    // not implemented
+    // ammo_type, ammo_categories, ammo_category: are these mutually exclusive?
+    // sound, cyclic_sound
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum BaseAttackParametersRangeMode {
+    #[default]
+    CenterToCenter,
+    BoundingBoxToBoundingBox,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum BaseAttackParametersActivationType {
+    #[default]
+    Shoot,
+    Throw,
+    Consume,
+    Activate,
+}
+
+/// [`Types/AttackParameters`](https://lua-api.factorio.com/latest/types/AttackParameters.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AttackParameters {
+    /// [`Types/ProjectileAttackParameters`](https://lua-api.factorio.com/latest/types/ProjectileAttackParameters.html)
+    #[serde(rename = "projectile")]
+    ProjectileAttackParameters {
+        #[serde(default, skip_serializing_if = "Vector::is_0_vector")]
+        projectile_center: Vector,
+
+        #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+        projectile_creation_distance: f32,
+
+        #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+        projectile_orientation_offset: f32,
+
+        #[serde(flatten)]
+        base: BaseAttackParameters,
+        // not implemented
+        // shell_particle, projectile_creation_parameters
+    },
+
+    /// [`Types/BeamAttackParameters`](https://lua-api.factorio.com/latest/types/BeamAttackParameters.html)
+    #[serde(rename = "beam")]
+    BeamAttackParameters {
+        #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+        source_direction_count: u32,
+
+        source_offset: Option<Vector>,
+
+        #[serde(flatten)]
+        base: BaseAttackParameters,
+    },
+
+    /// [`Types/StreamAttackParameters`](https://lua-api.factorio.com/latest/types/StreamAttackParameters.html)
+    #[serde(rename = "stream")]
+    StreamAttackParameters {
+        #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+        fluid_consumption: f32,
+
+        #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+        gun_barrel_length: f32,
+
+        gun_center_shift: Option<GunShift4WayUnion>,
+
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        fluids: FactorioArray<StreamFluidProperties>,
+
+        #[serde(flatten)]
+        base: BaseAttackParameters,
+        // not implemented
+        // projectile_creation_parameters
+    },
+}
+
+impl std::ops::Deref for AttackParameters {
+    type Target = BaseAttackParameters;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Self::BeamAttackParameters { base, .. }
+            | Self::ProjectileAttackParameters { base, .. }
+            | Self::StreamAttackParameters { base, .. } => base,
+        }
+    }
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum GunShift4WayUnion {
+    Single(Vector),
+    Directed {
+        north: Vector,
+        east: Option<Vector>,
+        south: Option<Vector>,
+        west: Option<Vector>,
+    },
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct StreamFluidProperties {
+    pub _type: FluidID,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub damage_modifier: f64,
+}
+
+/// [`Types/CapsuleAction`](https://lua-api.factorio.com/latest/types/CapsuleAction.html)
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum CapsuleAction {
+    /// [`Types/ThrowCapsuleAction`](https://lua-api.factorio.com/latest/types/ThrowCapsuleAction.html)
+    #[serde(rename = "throw")]
+    ThrowCapsuleAction {
+        attack_parameters: AttackParameters,
+
+        #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+        uses_stack: bool,
+    },
+
+    /// [`Types/ActivateCapsuleAction`](https://lua-api.factorio.com/latest/types/ActivateCapsuleAction.html)
+    #[serde(rename = "equipment-remote")]
+    ActivateEquipmentCapsuleAction { equipment: EquipmentID },
+
+    /// [`Types/UseOnSelfCapsuleAction`](https://lua-api.factorio.com/latest/types/UseOnSelfCapsuleAction.html)
+    #[serde(rename = "use-on-self")]
+    UseOnSelfCapsuleAction {
+        attack_parameters: AttackParameters,
+
+        #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+        uses_stack: bool,
+    },
+
+    /// [`Types/DestroyCliffsCapsuleAction`](https://lua-api.factorio.com/latest/types/DestroyCliffsCapsuleAction.html)
+    #[serde(rename = "destroy-cliffs")]
+    DestroyCliffsCapsuleAction {
+        attack_parameters: AttackParameters,
+        radius: f32,
+
+        #[serde(
+            default = "helper::u32_3600",
+            skip_serializing_if = "helper::is_3600_u32"
+        )]
+        timeout: u32,
+
+        #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+        play_sound_on_failure: bool,
+
+        #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+        uses_stack: bool,
+    },
+
+    /// [`Types/ArtilleryRemoteCapsuleAction`](https://lua-api.factorio.com/latest/types/ArtilleryRemoteCapsuleAction.html)
+    #[serde(rename = "artillery-remote")]
+    ArtilleryRemoteCapsuleAction {
+        flare: EntityID,
+
+        #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+        play_sound_on_failure: bool,
+    },
+}
+
 /// [`Types/Color`](https://lua-api.factorio.com/latest/types/Color.html)
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -241,6 +465,11 @@ impl Vector {
         let (x, y) = self.as_tuple();
 
         Self::Tuple(-x, -y)
+    }
+
+    #[must_use]
+    pub fn is_0_vector(value: &Vector) -> bool {
+        value.x() == 0.0 && value.y() == 0.0
     }
 }
 

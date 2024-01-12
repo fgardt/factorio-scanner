@@ -6,9 +6,11 @@ use serde_helper as helper;
 use crate::PrototypeMap;
 
 mod ammo;
+mod capsule;
 mod tool;
 
 pub use ammo::*;
+pub use capsule::*;
 pub use tool::*;
 
 /// [`Prototypes/ItemPrototype`](https://lua-api.factorio.com/latest/prototypes/ItemPrototype.html)
@@ -106,12 +108,13 @@ pub struct AllTypes {
 
     pub ammo: PrototypeMap<AmmoItemPrototype>,
 
+    pub capsule: PrototypeMap<CapsulePrototype>,
+
     pub tool: PrototypeMap<ToolPrototype>,
     pub armor: PrototypeMap<ArmorPrototype>,
     pub mining_tool: PrototypeMap<MiningToolPrototype>,
     pub repair_tool: PrototypeMap<RepairToolPrototype>,
     // not implemented
-    // pub capsule: PrototypeMap<CapsulePrototype>,
     // pub gun: PrototypeMap<GunPrototype>,
     // pub item_with_entity_data: PrototypeMap<ItemWithEntityDataPrototype>,
     // pub item_with_label: PrototypeMap<ItemWithLabelPrototype>,

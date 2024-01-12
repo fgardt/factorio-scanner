@@ -20,7 +20,7 @@ pub struct ToolPrototypeData {
     pub infinite: bool,
 
     #[serde(flatten)]
-    pub parent: super::ItemPrototypeData,
+    parent: super::ItemPrototypeData,
 }
 
 impl std::ops::Deref for ToolPrototypeData {
@@ -46,7 +46,7 @@ pub struct ArmorPrototypeData {
     pub inventory_size_bonus: Option<types::ItemStackIndex>,
 
     #[serde(flatten)]
-    pub parent: ToolPrototypeData,
+    parent: ToolPrototypeData,
 }
 
 impl std::ops::Deref for ArmorPrototypeData {
@@ -70,7 +70,15 @@ pub struct RepairToolPrototypeData {
     pub speed: f32,
 
     #[serde(flatten)]
-    pub parent: ToolPrototypeData,
+    parent: ToolPrototypeData,
     // not implemented
     // pub repair_result: Option<Trigger>,
+}
+
+impl std::ops::Deref for RepairToolPrototypeData {
+    type Target = ToolPrototypeData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
 }

@@ -268,6 +268,11 @@ pub const fn u32_120() -> u32 {
 }
 
 #[must_use]
+pub const fn u32_3600() -> u32 {
+    3600
+}
+
+#[must_use]
 pub const fn f32_001() -> f32 {
     0.01
 }
@@ -558,6 +563,11 @@ pub const fn is_60_u32(value: &u32) -> bool {
 #[must_use]
 pub const fn is_120_u32(value: &u32) -> bool {
     *value == u32_120()
+}
+
+#[must_use]
+pub const fn is_3600_u32(value: &u32) -> bool {
+    *value == u32_3600()
 }
 
 #[must_use]
