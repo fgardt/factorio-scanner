@@ -7,10 +7,12 @@ use crate::PrototypeMap;
 
 mod ammo;
 mod capsule;
+mod gun;
 mod tool;
 
 pub use ammo::*;
 pub use capsule::*;
+pub use gun::*;
 pub use tool::*;
 
 /// [`Prototypes/ItemPrototype`](https://lua-api.factorio.com/latest/prototypes/ItemPrototype.html)
@@ -110,12 +112,13 @@ pub struct AllTypes {
 
     pub capsule: PrototypeMap<CapsulePrototype>,
 
+    pub gun: PrototypeMap<GunPrototype>,
+
     pub tool: PrototypeMap<ToolPrototype>,
     pub armor: PrototypeMap<ArmorPrototype>,
     pub mining_tool: PrototypeMap<MiningToolPrototype>,
     pub repair_tool: PrototypeMap<RepairToolPrototype>,
     // not implemented
-    // pub gun: PrototypeMap<GunPrototype>,
     // pub item_with_entity_data: PrototypeMap<ItemWithEntityDataPrototype>,
     // pub item_with_label: PrototypeMap<ItemWithLabelPrototype>,
     // pub item_with_inventory: PrototypeMap<ItemWithInventoryPrototype>,
