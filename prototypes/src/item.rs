@@ -8,11 +8,13 @@ use crate::PrototypeMap;
 mod ammo;
 mod capsule;
 mod gun;
+mod item_with_entity_data;
 mod tool;
 
 pub use ammo::*;
 pub use capsule::*;
 pub use gun::*;
+pub use item_with_entity_data::*;
 pub use tool::*;
 
 /// [`Prototypes/ItemPrototype`](https://lua-api.factorio.com/latest/prototypes/ItemPrototype.html)
@@ -114,12 +116,13 @@ pub struct AllTypes {
 
     pub gun: PrototypeMap<GunPrototype>,
 
+    pub item_with_entity_data: PrototypeMap<ItemWithEntityDataPrototype>,
+
     pub tool: PrototypeMap<ToolPrototype>,
     pub armor: PrototypeMap<ArmorPrototype>,
     pub mining_tool: PrototypeMap<MiningToolPrototype>,
     pub repair_tool: PrototypeMap<RepairToolPrototype>,
     // not implemented
-    // pub item_with_entity_data: PrototypeMap<ItemWithEntityDataPrototype>,
     // pub item_with_label: PrototypeMap<ItemWithLabelPrototype>,
     // pub item_with_inventory: PrototypeMap<ItemWithInventoryPrototype>,
     // pub blueprint_book: PrototypeMap<BlueprintBookPrototype>,
@@ -228,15 +231,17 @@ mod test {
                 //     icon_mipmaps: 4,
                 // },
                 icon: types::Icon::Array {
-                    icons: types::FactorioArray::new(vec![types::IconData {
+                    icons: types::FactorioArray::new(vec![types::IconData::Default {
                         icon: types::FileName::new(
                             "__base__/graphics/icons/iron-plate.png".to_owned(),
                         ),
-                        icon_size: None,
-                        tint: types::Color::white(),
-                        shift: types::Vector::new(0.0, 0.0),
-                        scale: None,
-                        icon_mipmaps: 4,
+                        common: types::CommonIconData {
+                            icon_size: None,
+                            tint: types::Color::white(),
+                            shift: types::Vector::new(0.0, 0.0),
+                            scale: None,
+                            icon_mipmaps: 4,
+                        },
                     }]),
                     icon_size: Some(32),
                     icon_mipmaps: 0,
