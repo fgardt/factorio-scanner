@@ -28,6 +28,7 @@ use mod_util::UsedMods;
 use types::*;
 
 pub mod entity;
+pub mod item;
 
 /// [`Prototypes/PrototypeBase`](https://lua-api.factorio.com/latest/PrototypeBase.html)
 #[skip_serializing_none]
@@ -93,6 +94,9 @@ pub type PrototypeMap<T> = HashMap<String, T>;
 pub struct DataRaw {
     #[serde(flatten)]
     pub entity: entity::AllTypes,
+
+    #[serde(flatten)]
+    pub item: item::AllTypes,
 
     pub utility_sprites: PrototypeMap<UtilitySprites>,
 }

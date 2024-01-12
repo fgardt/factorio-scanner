@@ -33,16 +33,16 @@ pub const fn targeted_engine_version() -> Version {
 }
 
 mod empty_array_fix;
-
-pub use empty_array_fix::*;
-
 mod energy;
 mod graphics;
 mod icon;
+mod item;
 
+pub use empty_array_fix::*;
 pub use energy::*;
 pub use graphics::*;
 pub use icon::*;
+pub use item::*;
 
 ///[`Types/Color`](https://lua-api.factorio.com/latest/types/Color.html)
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -377,6 +377,10 @@ pub struct FileName(String);
 pub type ImageCache = HashMap<String, Option<image::DynamicImage>>;
 
 impl FileName {
+    pub fn new(filename: String) -> Self {
+        Self(filename)
+    }
+
     pub fn load<'a>(
         &self,
         used_mods: &UsedMods,
@@ -743,6 +747,9 @@ pub enum FuelCategory {
     },
 }
 
+/// [`Types/TileID`](https://lua-api.factorio.com/latest/types/TileID.html)
+pub type TileID = String;
+
 /// [`Types/VirtualSignalID`](https://lua-api.factorio.com/latest/types/VirtualSignalID.html)
 pub type VirtualSignalID = String;
 
@@ -892,6 +899,9 @@ pub type AmmoCategoryID = String;
 /// [`Types/EquipmentGridID`](https://lua-api.factorio.com/latest/types/EquipmentGridID.html)
 pub type EquipmentGridID = String;
 
+/// [`Types/EquipmentID`](https://lua-api.factorio.com/latest/types/EquipmentID.html)
+pub type EquipmentID = String;
+
 /// [`Types/ResourceCategoryID`](https://lua-api.factorio.com/latest/types/ResourceCategoryID.html)
 pub type ResourceCategoryID = String;
 
@@ -905,15 +915,6 @@ pub enum SignalIDConnector {
     Item { name: ItemID },
     Fluid { name: FluidID },
 }
-
-/// [`Types/ItemStackIndex`](https://lua-api.factorio.com/latest/types/ItemStackIndex.html)
-pub type ItemStackIndex = u16;
-
-/// [`Types/ItemCountType`](https://lua-api.factorio.com/latest/types/ItemCountType.html)
-pub type ItemCountType = u32;
-
-/// [`Types/ItemSubGroupID`](https://lua-api.factorio.com/latest/types/ItemSubGroupID.html)
-pub type ItemSubGroupID = String;
 
 /// [`Types/ItemToPlace`](https://lua-api.factorio.com/latest/types/ItemToPlace.html)
 #[derive(Debug, Serialize, Deserialize)]
