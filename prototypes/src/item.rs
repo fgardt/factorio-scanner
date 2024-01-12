@@ -6,8 +6,10 @@ use serde_helper as helper;
 use crate::PrototypeMap;
 
 mod ammo;
+mod tool;
 
 pub use ammo::*;
+pub use tool::*;
 
 /// [`Prototypes/ItemPrototype`](https://lua-api.factorio.com/latest/prototypes/ItemPrototype.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -101,7 +103,13 @@ pub enum RocketLaunchProduct {
 #[serde(rename_all = "kebab-case")]
 pub struct AllTypes {
     pub item: PrototypeMap<ItemPrototype>,
+
     pub ammo: PrototypeMap<AmmoItemPrototype>,
+
+    pub tool: PrototypeMap<ToolPrototype>,
+    pub armor: PrototypeMap<ArmorPrototype>,
+    pub mining_tool: PrototypeMap<MiningToolPrototype>,
+    pub repair_tool: PrototypeMap<RepairToolPrototype>,
     // not implemented
     // pub capsule: PrototypeMap<CapsulePrototype>,
     // pub gun: PrototypeMap<GunPrototype>,
@@ -118,10 +126,6 @@ pub struct AllTypes {
     // pub module: PrototypeMap<ModulePrototype>,
     // pub rail_planner: PrototypeMap<RailPlannerPrototype>,
     // pub spidertron_remote: PrototypeMap<SpidertronRemotePrototype>,
-    // pub tool: PrototypeMap<ToolPrototype>,
-    // pub armor: PrototypeMap<ArmorPrototype>,
-    // pub mining_tool: PrototypeMap<MiningToolPrototype>,
-    // pub repair_tool: PrototypeMap<RepairToolPrototype>,
 }
 
 #[cfg(test)]

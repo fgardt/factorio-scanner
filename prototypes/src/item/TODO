@@ -1,6 +1,6 @@
 - [x] item
 - [x] ammo
-- [ ] armor
+- [x] armor
 - [ ] blueprint
 - [ ] blueprint-book
 - [ ] capsule
@@ -12,11 +12,11 @@
 - [ ] item-with-inventory
 - [ ] item-with-label
 - [ ] item-with-tags
-- [ ] mining-tool
+- [x] mining-tool
 - [ ] module
 - [ ] rail-planner
-- [ ] repair-tool
+- [x] repair-tool
 - [ ] selection-tool
 - [ ] spidertron-remote
-- [ ] tool
+- [x] tool
 - [ ] upgrade-item
