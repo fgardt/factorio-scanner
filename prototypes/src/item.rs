@@ -12,6 +12,7 @@ mod item_with_entity_data;
 mod item_with_label;
 mod module;
 mod rail_planner;
+mod spidertron_remote;
 mod tool;
 
 pub use ammo::*;
@@ -21,6 +22,7 @@ pub use item_with_entity_data::*;
 pub use item_with_label::*;
 pub use module::*;
 pub use rail_planner::*;
+pub use spidertron_remote::*;
 pub use tool::*;
 
 /// [`Prototypes/ItemPrototype`](https://lua-api.factorio.com/latest/prototypes/ItemPrototype.html)
@@ -138,12 +140,12 @@ pub struct AllTypes {
 
     pub rail_planner: PrototypeMap<RailPlannerPrototype>,
 
+    pub spidertron_remote: PrototypeMap<SpidertronRemotePrototype>,
+
     pub tool: PrototypeMap<ToolPrototype>,
     pub armor: PrototypeMap<ArmorPrototype>,
     pub mining_tool: PrototypeMap<MiningToolPrototype>,
     pub repair_tool: PrototypeMap<RepairToolPrototype>,
-    // not implemented
-    // pub spidertron_remote: PrototypeMap<SpidertronRemotePrototype>,
 }
 
 #[cfg(test)]
