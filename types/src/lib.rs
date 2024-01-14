@@ -37,12 +37,14 @@ mod energy;
 mod graphics;
 mod icon;
 mod item;
+mod module;
 
 pub use empty_array_fix::*;
 pub use energy::*;
 pub use graphics::*;
 pub use icon::*;
 pub use item::*;
+pub use module::*;
 
 /// [`Types/AmmoCategoryID`](https://lua-api.factorio.com/latest/types/AmmoCategoryID.html)
 pub type AmmoCategoryID = String;
@@ -1256,52 +1258,6 @@ pub struct ItemToPlace {
 pub enum PlaceableBy {
     Single(ItemToPlace),
     Multiple(FactorioArray<ItemToPlace>),
-}
-
-/// [`Types/ModuleSpecification`](https://lua-api.factorio.com/latest/types/ModuleSpecification.html)
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ModuleSpecification {
-    #[serde(
-        default,
-        skip_serializing_if = "helper::is_0_u16",
-        deserialize_with = "helper::truncating_deserializer"
-    )]
-    pub module_slots: ItemStackIndex,
-
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        deserialize_with = "helper::truncating_opt_deserializer"
-    )]
-    pub module_info_max_icons_per_row: Option<u8>,
-
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        deserialize_with = "helper::truncating_opt_deserializer"
-    )]
-    pub module_info_max_icon_rows: Option<u8>,
-    pub module_info_icon_shift: Option<Vector>,
-    pub module_info_separation_multiplier: Option<f32>,
-    pub module_info_multi_row_initial_height_modifier: Option<f32>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum EffectType {
-    Speed,
-    Productivity,
-    Consumption,
-    Pollution,
-}
-
-/// [`Types/EffectTypeLimitation`](https://lua-api.factorio.com/latest/types/EffectTypeLimitation.html)
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum EffectTypeLimitation {
-    Single(EffectType),
-    Multiple(FactorioArray<EffectType>),
 }
 
 /// [`Types/CollisionMask`](https://lua-api.factorio.com/latest/types/CollisionMask.html)

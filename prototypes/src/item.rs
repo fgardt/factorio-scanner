@@ -10,6 +10,7 @@ mod capsule;
 mod gun;
 mod item_with_entity_data;
 mod item_with_label;
+mod module;
 mod tool;
 
 pub use ammo::*;
@@ -17,6 +18,7 @@ pub use capsule::*;
 pub use gun::*;
 pub use item_with_entity_data::*;
 pub use item_with_label::*;
+pub use module::*;
 pub use tool::*;
 
 /// [`Prototypes/ItemPrototype`](https://lua-api.factorio.com/latest/prototypes/ItemPrototype.html)
@@ -130,12 +132,13 @@ pub struct AllTypes {
     pub deconstruction_item: PrototypeMap<DeconstructionItemPrototype>,
     pub upgrade_item: PrototypeMap<UpgradeItemPrototype>,
 
+    pub module: PrototypeMap<ModulePrototype>,
+
     pub tool: PrototypeMap<ToolPrototype>,
     pub armor: PrototypeMap<ArmorPrototype>,
     pub mining_tool: PrototypeMap<MiningToolPrototype>,
     pub repair_tool: PrototypeMap<RepairToolPrototype>,
     // not implemented
-    // pub module: PrototypeMap<ModulePrototype>,
     // pub rail_planner: PrototypeMap<RailPlannerPrototype>,
     // pub spidertron_remote: PrototypeMap<SpidertronRemotePrototype>,
 }
