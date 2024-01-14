@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 
 use serde_helper as helper;
 
+use types::{AmmoType, FactorioArray};
+
 /// [`Prototypes/AmmoItemPrototype`](https://lua-api.factorio.com/latest/prototypes/AmmoItemPrototype.html)
 pub type AmmoItemPrototype = crate::BasePrototype<AmmoItemPrototypeData>;
 
@@ -31,6 +33,6 @@ impl std::ops::Deref for AmmoItemPrototypeData {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum AmmoTypeUnion {
-    Single(types::AmmoType),
-    Array(types::FactorioArray<types::AmmoType>),
+    Single(AmmoType),
+    Array(FactorioArray<AmmoType>),
 }

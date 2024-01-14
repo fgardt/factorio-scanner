@@ -6,7 +6,9 @@ use serde_helper as helper;
 mod selection_tool;
 
 pub use selection_tool::*;
-use types::{FactorioArray, FilterMode, ItemGroupID, ItemID, ItemStackIndex, ItemSubGroupID};
+use types::{
+    Color, FactorioArray, FilterMode, ItemGroupID, ItemID, ItemStackIndex, ItemSubGroupID,
+};
 
 /// [`Prototypes/ItemWithLabelPrototype`](https://lua-api.factorio.com/latest/prototypes/ItemWithLabelPrototype.html)
 pub type ItemWithLabelPrototype = crate::BasePrototype<ItemWithLabelPrototypeData>;
@@ -15,7 +17,7 @@ pub type ItemWithLabelPrototype = crate::BasePrototype<ItemWithLabelPrototypeDat
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ItemWithLabelPrototypeData {
-    pub default_label_color: Option<types::Color>,
+    pub default_label_color: Option<Color>,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub draw_label_for_cursor_render: bool,

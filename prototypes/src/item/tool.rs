@@ -3,6 +3,8 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
+use types::{EquipmentGridID, ItemStackIndex, Resistances};
+
 /// [`Prototypes/ToolPrototype`](https://lua-api.factorio.com/latest/prototypes/ToolPrototype.html)
 pub type ToolPrototype = crate::BasePrototype<ToolPrototypeData>;
 
@@ -38,12 +40,12 @@ pub type ArmorPrototype = crate::BasePrototype<ArmorPrototypeData>;
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ArmorPrototypeData {
-    pub equipment_grid: Option<types::EquipmentGridID>,
+    pub equipment_grid: Option<EquipmentGridID>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub resistances: types::Resistances,
+    pub resistances: Resistances,
 
-    pub inventory_size_bonus: Option<types::ItemStackIndex>,
+    pub inventory_size_bonus: Option<ItemStackIndex>,
 
     #[serde(flatten)]
     parent: ToolPrototypeData,

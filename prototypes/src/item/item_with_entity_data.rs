@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
+use types::{FactorioArray, FileName, IconData};
+
 /// [`Prototypes/ItemWithEntityDataPrototype`](https://lua-api.factorio.com/latest/prototypes/ItemWithEntityDataPrototype.html)
 pub type ItemWithEntityDataPrototype = crate::BasePrototype<ItemWithEntityDataPrototypeData>;
 
@@ -8,15 +10,15 @@ pub type ItemWithEntityDataPrototype = crate::BasePrototype<ItemWithEntityDataPr
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ItemWithEntityDataPrototypeData {
-    pub icon_tintable: Option<types::FileName>,
+    pub icon_tintable: Option<FileName>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub icon_tintables: types::FactorioArray<types::IconData>,
+    pub icon_tintables: FactorioArray<IconData>,
 
-    pub icon_tintable_mask: Option<types::FileName>,
+    pub icon_tintable_mask: Option<FileName>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub icon_tintable_masks: types::FactorioArray<types::IconData>,
+    pub icon_tintable_masks: FactorioArray<IconData>,
 
     #[serde(flatten)]
     parent: super::ItemPrototypeData,

@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
+use types::{CapsuleAction, Color};
+
 /// [`Prototypes/CapsulePrototype`](https://lua-api.factorio.com/latest/prototypes/CapsulePrototype.html)
 pub type CapsulePrototype = crate::BasePrototype<CapsulePrototypeData>;
 
@@ -8,8 +10,8 @@ pub type CapsulePrototype = crate::BasePrototype<CapsulePrototypeData>;
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CapsulePrototypeData {
-    pub capsule_action: types::CapsuleAction,
-    pub radius_color: Option<types::Color>,
+    pub capsule_action: CapsuleAction,
+    pub radius_color: Option<Color>,
 
     #[serde(flatten)]
     parent: super::ItemPrototypeData,

@@ -2,6 +2,11 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
+use types::{
+    CollisionMask, Color, EntityID, EquipmentID, FactorioArray, FileName, FuelCategoryID, Icon,
+    IconData, ItemCountType, ItemID, ItemProductPrototype, ItemPrototypeFlags, SpriteVariations,
+    TileID,
+};
 
 use crate::PrototypeMap;
 
@@ -41,37 +46,37 @@ impl std::ops::Deref for ItemPrototype {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ItemPrototypeData {
-    pub stack_size: types::ItemCountType,
+    pub stack_size: ItemCountType,
 
     #[serde(flatten)]
-    pub icon: types::Icon,
+    pub icon: Icon,
 
     #[serde(flatten)]
     pub dark_background_icon: Option<DarkBackgroundIcon>,
 
     #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub place_result: types::EntityID,
+    pub place_result: EntityID,
 
     #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub placed_as_equipment_result: types::EquipmentID,
+    pub placed_as_equipment_result: EquipmentID,
 
     #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub fuel_category: types::FuelCategoryID,
+    pub fuel_category: FuelCategoryID,
 
     #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub burnt_result: types::ItemID,
+    pub burnt_result: ItemID,
 
     pub place_as_tile: Option<PlaceAsTile>,
 
-    pub pictures: Option<types::SpriteVariations>,
+    pub pictures: Option<SpriteVariations>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub flags: types::ItemPrototypeFlags,
+    pub flags: ItemPrototypeFlags,
 
-    pub default_request_amount: Option<types::ItemCountType>,
+    pub default_request_amount: Option<ItemCountType>,
 
     #[serde(default, skip_serializing_if = "helper::is_0_u32")]
-    pub wire_count: types::ItemCountType,
+    pub wire_count: ItemCountType,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub fuel_acceleration_multiplier: f64,
@@ -82,7 +87,7 @@ pub struct ItemPrototypeData {
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub fuel_emissions_multiplier: f64,
 
-    pub fuel_glow_color: Option<types::Color>,
+    pub fuel_glow_color: Option<Color>,
 
     #[serde(flatten)]
     pub rocket_launch_product: Option<RocketLaunchProduct>,
@@ -92,25 +97,25 @@ pub struct ItemPrototypeData {
 #[serde(untagged)]
 pub enum DarkBackgroundIcon {
     Array {
-        dark_background_icons: types::FactorioArray<types::IconData>,
+        dark_background_icons: FactorioArray<IconData>,
     },
     Single {
-        dark_background_icon: types::FileName,
+        dark_background_icon: FileName,
     },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PlaceAsTile {
-    pub result: types::TileID,
-    pub condition: types::CollisionMask,
+    pub result: TileID,
+    pub condition: CollisionMask,
     pub condition_size: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum RocketLaunchProduct {
-    Multiple(types::FactorioArray<types::ItemProductPrototype>),
-    Single(types::ItemProductPrototype),
+    Multiple(FactorioArray<ItemProductPrototype>),
+    Single(ItemProductPrototype),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -151,6 +156,7 @@ pub struct AllTypes {
 #[cfg(test)]
 mod test {
     use super::*;
+    use types::{CommonIconData, Vector};
 
     #[test]
     fn deserialize() {
@@ -228,20 +234,18 @@ mod test {
             order: String::new(),
             child: ItemPrototypeData {
                 stack_size: 100,
-                // icon: types::Icon::Single {
-                //     icon: types::FileName::new("__base__/graphics/icons/iron-plate.png".to_owned()),
+                // icon: Icon::Single {
+                //     icon: FileName::new("__base__/graphics/icons/iron-plate.png".to_owned()),
                 //     icon_size: 64,
                 //     icon_mipmaps: 4,
                 // },
-                icon: types::Icon::Array {
-                    icons: types::FactorioArray::new(vec![types::IconData::Default {
-                        icon: types::FileName::new(
-                            "__base__/graphics/icons/iron-plate.png".to_owned(),
-                        ),
-                        common: types::CommonIconData {
+                icon: Icon::Array {
+                    icons: FactorioArray::new(vec![IconData::Default {
+                        icon: FileName::new("__base__/graphics/icons/iron-plate.png".to_owned()),
+                        common: CommonIconData {
                             icon_size: None,
-                            tint: types::Color::white(),
-                            shift: types::Vector::new(0.0, 0.0),
+                            tint: Color::white(),
+                            shift: Vector::new(0.0, 0.0),
                             scale: None,
                             icon_mipmaps: 4,
                         },
@@ -256,7 +260,7 @@ mod test {
                 fuel_category: String::new(),
                 burnt_result: String::new(),
                 pictures: None,
-                flags: types::FactorioArray::default(),
+                flags: FactorioArray::default(),
                 default_request_amount: None,
                 wire_count: 0,
                 fuel_acceleration_multiplier: 1.0,
