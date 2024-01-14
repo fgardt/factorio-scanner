@@ -75,7 +75,7 @@ pub struct ItemPrototypeData {
 
     pub default_request_amount: Option<ItemCountType>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub wire_count: ItemCountType,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]

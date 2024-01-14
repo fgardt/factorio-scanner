@@ -11,7 +11,7 @@ use crate::{FactorioArray, ItemStackIndex, Vector};
 pub struct ModuleSpecification {
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u16",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub module_slots: ItemStackIndex,
@@ -40,7 +40,7 @@ pub type ModuleCategoryID = String;
 /// [`Types/EffectValue`](https://lua-api.factorio.com/latest/types/EffectValue.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EffectValue {
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub bonus: f64,
 }
 
@@ -53,7 +53,7 @@ pub struct Effect {
     pub pollution: Option<EffectValue>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum EffectType {
     Speed,
@@ -68,4 +68,24 @@ pub enum EffectType {
 pub enum EffectTypeLimitation {
     Single(EffectType),
     Multiple(FactorioArray<EffectType>),
+}
+
+/// [`Types/ModuleTint`](https://lua-api.factorio.com/latest/types/ModuleTint.html)
+#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum ModuleTint {
+    #[default]
+    None,
+    Primary,
+    Secondary,
+    Tertiary,
+    Quaternary,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum ModuleTintMode {
+    #[default]
+    SingleModule,
+    Mix,
 }

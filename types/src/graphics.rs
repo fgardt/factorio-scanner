@@ -8,7 +8,7 @@ use crate::{FactorioArray, ImageCache, RealOrientation};
 use super::{helper, Color, Direction, FileName, Vector};
 
 /// [`Types/SpritePriority`](https://lua-api.factorio.com/latest/types/SpritePriority.html)
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum SpritePriority {
     ExtraHighNoScale,
@@ -74,7 +74,7 @@ pub type SpriteFlags = FactorioArray<SpriteFlag>;
 pub type SpriteSizeType = i16;
 
 /// [`Types/BlendMode`](https://lua-api.factorio.com/latest/types/BlendMode.html)
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum BlendMode {
     #[default]
@@ -286,8 +286,7 @@ pub trait Scale {
 /// **MISSING THE `filename` FIELD**
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SpriteParams {
-    // TODO: skip serializing if default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub priority: SpritePriority,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -322,7 +321,7 @@ pub struct SpriteParams {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u8",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub mipmap_count: u8,
@@ -333,8 +332,7 @@ pub struct SpriteParams {
     #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
     pub tint: Color,
 
-    // TODO: skip serializing if default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub blend_mode: BlendMode,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -620,7 +618,7 @@ pub struct RotatedSpriteParams {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u64",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     lines_per_file: u64,
@@ -639,7 +637,7 @@ pub struct RotatedSpriteParams {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u32",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     line_length: u32,
@@ -742,7 +740,7 @@ pub struct RotatedSpriteParamsMultiFile {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u32",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     line_length: u32,
@@ -1232,21 +1230,21 @@ pub struct TileSpriteParams {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_i16",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub x: SpriteSizeType,
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_i16",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub y: SpriteSizeType,
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u32",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub line_length: u32,
@@ -1293,7 +1291,7 @@ pub type TileTransitionSprite = TileGraphics<TileTransitionSpriteParams>;
 /// [`Types/AnimationFrameSequence`](https://lua-api.factorio.com/latest/types/AnimationFrameSequence.html)
 pub type AnimationFrameSequence = FactorioArray<u16>;
 
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum AnimationRunMode {
     #[default]
@@ -1318,14 +1316,14 @@ pub struct Stripe {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u32",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub x: u32,
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u32",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub y: u32,
@@ -1349,8 +1347,7 @@ pub struct AnimationParams {
     #[serde(flatten)]
     pub sprite_params: SpriteParams,
 
-    // TODO: skip searializing if default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub run_mode: AnimationRunMode,
 
     // #[serde(
@@ -1364,7 +1361,7 @@ pub struct AnimationParams {
 
     // #[serde(
     //     default,
-    //     skip_serializing_if = "helper::is_0_u32",
+    //     skip_serializing_if = "helper::is_default",
     //     deserialize_with = "helper::truncating_deserializer"
     // )]
 
@@ -1888,7 +1885,7 @@ pub struct RotatedAnimationParams {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u32",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub still_frame: u32,

@@ -334,18 +334,17 @@ pub struct EntityData<T: Renderable> {
     )]
     pub build_grid_size: u8,
 
-    // skip serializing if default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub remove_decoratives: DecorativeRemoveMode,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub emissions_per_second: f64,
 
     pub shooting_cursor_size: Option<f32>,
 
     pub radius_visualisation_specification: Option<RadiusVisualisationSpecification>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub build_base_evolution_requirement: f64,
 
     pub alert_icon_shift: Option<Vector>,
@@ -424,7 +423,7 @@ impl<T: Renderable> Renderable for EntityData<T> {
     }
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum DecorativeRemoveMode {
     #[default]
@@ -443,7 +442,7 @@ pub struct EntityWithHealthData<T: Renderable> {
     #[serde(default = "helper::f64_10", skip_serializing_if = "helper::is_10_f64")]
     pub max_health: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub healing_per_tick: f64,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]

@@ -35,7 +35,7 @@ pub struct GateData {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u32",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub fadeout_interval: u32,

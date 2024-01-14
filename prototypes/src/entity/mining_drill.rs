@@ -33,7 +33,7 @@ pub struct MiningDrillData {
     pub allowed_effects: Option<EffectTypeLimitation>,
     pub radius_visualisation_picture: Option<Sprite>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub circuit_wire_max_distance: f64,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -44,7 +44,7 @@ pub struct MiningDrillData {
 
     pub base_render_layer: Option<RenderLayer>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub base_productivity: f64,
 
     pub monitor_visualization_tint: Option<Color>,

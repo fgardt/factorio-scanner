@@ -36,7 +36,7 @@ pub struct ContainerData {
 
     pub circuit_wire_connection_point: Option<WireConnectionPoint>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub circuit_wire_max_distance: f64,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -71,7 +71,7 @@ impl super::Renderable for ContainerData {
     }
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum InventoryType {
     #[default]
@@ -100,7 +100,7 @@ pub struct LogisticContainerData {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u8",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub opened_duration: u8,
@@ -164,7 +164,6 @@ pub type InfinityContainerPrototype = EntityWithOwnerPrototype<InfinityContainer
 pub struct InfinityContainerData {
     pub erase_contents_when_mined: bool,
 
-    // TODO: skip serializing if default
     #[serde(default = "GuiMode::all", skip_serializing_if = "GuiMode::is_all")]
     pub gui_mode: GuiMode,
 
@@ -206,8 +205,7 @@ pub struct LinkedContainerData {
 
     pub picture: Option<Sprite>,
 
-    // TODO: skip serializing if default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub inventory_type: InventoryType,
 
     #[serde(default = "GuiMode::all", skip_serializing_if = "GuiMode::is_all")]
@@ -218,7 +216,7 @@ pub struct LinkedContainerData {
 
     pub circuit_wire_connection_point: Option<WireConnectionPoint>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub circuit_wire_max_distance: f64,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]

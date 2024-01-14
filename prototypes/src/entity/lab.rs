@@ -26,7 +26,7 @@ pub struct LabData {
     pub allowed_effects: Option<EffectTypeLimitation>,
     pub light: Option<LightDefinition>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub base_productivity: f64,
 
     pub entity_info_icon_shift: Option<Vector>,

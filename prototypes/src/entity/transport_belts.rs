@@ -254,7 +254,7 @@ pub type Loader1x1Prototype = LoaderPrototype<Loader1x1Data>;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Loader1x1Data {
     // hardcoded to 0, validate this?
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub belt_length: f64,
 }
 
@@ -359,7 +359,7 @@ pub type TransportBeltPrototype =
 pub struct TransportBeltData {
     pub connector_frame_sprites: TransportBeltConnectorFrame,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub circuit_wire_max_distance: f64,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]

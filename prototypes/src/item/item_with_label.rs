@@ -42,7 +42,7 @@ pub type ItemWithInventoryPrototype = crate::BasePrototype<ItemWithInventoryProt
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ItemWithInventoryPrototypeData {
     // only has a default because BlueprintBookPrototype overrides it
-    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub inventory_size: ItemStackIndex,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -54,8 +54,7 @@ pub struct ItemWithInventoryPrototypeData {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub item_subgroup_filters: FactorioArray<ItemSubGroupID>,
 
-    // TODO: skip serializing if default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub filter_mode: FilterMode,
 
     #[serde(
@@ -67,8 +66,7 @@ pub struct ItemWithInventoryPrototypeData {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub extends_inventory_by_default: bool,
 
-    // TODO: skip serializing if default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub insertion_priority_mode: InsertionPriorityMode,
 
     #[serde(flatten)]
@@ -94,7 +92,7 @@ fn is_default_filter_message_key(key: &String) -> bool {
     *key == default_filter_message_key()
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum InsertionPriorityMode {
     #[default]

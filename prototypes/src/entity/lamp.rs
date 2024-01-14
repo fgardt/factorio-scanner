@@ -23,7 +23,7 @@ pub struct LampData {
     pub light_when_colored: Option<LightDefinition>,
     pub circuit_wire_connection_point: Option<WireConnectionPoint>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub circuit_wire_max_distance: f64,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -34,10 +34,10 @@ pub struct LampData {
 
     pub circuit_connector_sprites: Option<CircuitConnectorSprites>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub glow_size: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub glow_color_intensity: f64,
 
     #[serde(
@@ -55,8 +55,7 @@ pub struct LampData {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub signal_to_color_mapping: FactorioArray<SignalColorMapping>,
 
-    // TODO: skip serializing if default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub glow_render_mode: GlowRenderMode,
 }
 
@@ -89,7 +88,7 @@ pub struct SignalColorMapping {
     pub color: Color,
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum GlowRenderMode {
     #[default]

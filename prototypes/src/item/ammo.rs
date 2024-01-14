@@ -15,7 +15,7 @@ pub struct AmmoItemPrototypeData {
     #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
     pub magazine_size: f32,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub reload_time: f32,
 
     #[serde(flatten)]
