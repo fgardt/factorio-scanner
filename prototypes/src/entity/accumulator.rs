@@ -48,7 +48,7 @@ impl super::Renderable for AccumulatorData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = self.picture.as_ref().and_then(|p| {
             p.render(
                 render_layers.scale(),

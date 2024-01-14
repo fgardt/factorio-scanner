@@ -23,7 +23,8 @@ use serde_with::skip_serializing_none;
 use mod_util::{
     mod_list::ModList, mod_loader::Mod, mod_settings::SettingsDat, UsedMods, UsedVersions,
 };
-use prototypes::{DataRaw, DataUtil, EntityType, RenderLayerBuffer, TargetSize};
+use prototypes::entity::Type as EntityType;
+use prototypes::{DataRaw, DataUtil, RenderLayerBuffer, TargetSize};
 use types::{ConnectedDirections, Direction, ImageCache, MapPosition};
 
 mod bp_helper;
@@ -274,8 +275,8 @@ fn calculate_target_size(
     ))
 }
 
-fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::EntityRenderOpts {
-    prototypes::EntityRenderOpts {
+fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::entity::RenderOpts {
+    prototypes::entity::RenderOpts {
         position: (&value.position).into(),
         direction: value.direction,
         orientation: value.orientation,

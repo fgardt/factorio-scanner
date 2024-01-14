@@ -97,7 +97,7 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let anim = if self.always_draw_idle_animation && self.idle_animation.is_some() {
             self.idle_animation.as_ref()
         } else {
@@ -160,7 +160,7 @@ impl super::Renderable for FurnaceData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         None
     }
 }
@@ -194,7 +194,7 @@ impl super::Renderable for AssemblingMachineData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         None
     }
 }
@@ -297,7 +297,7 @@ impl super::Renderable for RocketSiloData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = merge_renders(
             &[
                 self.door_back_sprite.render(

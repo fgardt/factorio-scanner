@@ -60,7 +60,7 @@ impl<T: super::Renderable> super::Renderable for FlyingRobotData<T> {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         None
     }
 }
@@ -75,10 +75,13 @@ pub struct CombatRobotData {
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub time_to_live: u32,
 
+    pub attack_parameters: AttackParameters,
+
     pub idle: RotatedAnimation,
     pub in_motion: RotatedAnimation,
     pub shadow_idle: RotatedAnimation,
     pub shadow_in_motion: RotatedAnimation,
+
     #[serde(default, skip_serializing_if = "helper::is_0_f64")]
     pub range_from_player: f64,
 
@@ -90,7 +93,6 @@ pub struct CombatRobotData {
 
     pub light: Option<LightDefinition>,
     // not implemented
-    // pub attack_parameters: AttackParameters,
     // pub destroy_action: Option<Trigger>,
 }
 
@@ -101,7 +103,7 @@ impl super::Renderable for CombatRobotData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         None
     }
 }
@@ -148,7 +150,7 @@ impl<T: super::Renderable> super::Renderable for RobotWithLogisticInterfaceData<
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         None
     }
 }
@@ -177,7 +179,7 @@ impl super::Renderable for ConstructionRobotData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         None
     }
 }
@@ -202,7 +204,7 @@ impl super::Renderable for LogisticRobotData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         None
     }
 }

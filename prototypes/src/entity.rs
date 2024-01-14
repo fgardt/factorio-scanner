@@ -242,17 +242,6 @@ pub trait Renderable {
     ) -> RenderOutput;
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct EntityPrototypeMap<T: Renderable>(HashMap<String, T>);
-
-impl<T: Renderable> Deref for EntityPrototypeMap<T> {
-    type Target = HashMap<String, T>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
 /// [`Prototypes/EntityPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EntityPrototype<T: Renderable>(BasePrototype<EntityData<T>>);
@@ -545,4 +534,241 @@ impl<T: Renderable> Renderable for EntityWithOwnerData<T> {
         self.child
             .render(options, used_mods, render_layers, image_cache)
     }
+}
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Type {
+    Accumulator,
+    ArtilleryTurret,
+    Beacon,
+    Boiler,
+    BurnerGenerator,
+    ArithmeticCombinator,
+    DeciderCombinator,
+    ConstantCombinator,
+    ProgrammableSpeaker,
+    Container,
+    LogisticContainer,
+    InfinityContainer,
+    LinkedContainer,
+    AssemblingMachine,
+    RocketSilo,
+    Furnace,
+    ElectricEnergyInterface,
+    ElectricPole,
+    PowerSwitch,
+    CombatRobot,
+    ConstructionRobot,
+    LogisticRobot,
+    Roboport,
+    Gate,
+    Wall,
+    Generator,
+    Reactor,
+    HeatInterface,
+    HeatPipe,
+    Inserter,
+    Lab,
+    Lamp,
+    LandMine,
+    Market,
+    MiningDrill,
+    OffshorePump,
+    Pipe,
+    InfinityPipe,
+    PipeToGround,
+    Pump,
+    SimpleEntityWithOwner,
+    SimpleEntityWithForce,
+    SolarPanel,
+    StorageTank,
+    LinkedBelt,
+    Loader1x1,
+    Loader,
+    Splitter,
+    TransportBelt,
+    UndergroundBelt,
+    Radar,
+    Turret,
+    AmmoTurret,
+    ElectricTurret,
+    FluidTurret,
+    Car,
+    CurvedRail,
+    StraightRail,
+    RailSignal,
+    RailChainSignal,
+    TrainStop,
+    Locomotive,
+    CargoWagon,
+    FluidWagon,
+    ArtilleryWagon,
+}
+
+#[allow(clippy::match_like_matches_macro)]
+impl Type {
+    #[must_use]
+    pub const fn connectable(&self) -> bool {
+        match self {
+            Self::HeatPipe | Self::HeatInterface => true,
+            Self::Pipe | Self::InfinityPipe => true,
+            Self::TransportBelt => true,
+            Self::Wall | Self::Gate => true,
+            _ => false,
+        }
+    }
+
+    #[must_use]
+    #[allow(clippy::match_same_arms)]
+    pub const fn can_connect_to(&self, other: &Self) -> bool {
+        match self {
+            Self::Gate => matches!(other, Self::Wall),
+            Self::Wall => match other {
+                Self::Wall => true,
+                Self::Gate => true, // when direction fits
+                _ => false,
+            },
+            Self::TransportBelt => match other {
+                Self::Loader | Self::Loader1x1 => true,
+                Self::UndergroundBelt => true,
+                Self::TransportBelt => true,
+                Self::LinkedBelt => true,
+                Self::Splitter => true,
+                _ => false,
+            },
+            Self::Pipe | Self::InfinityPipe => match other {
+                Self::Pipe | Self::InfinityPipe | Self::PipeToGround => true,
+                Self::Pump | Self::OffshorePump | Self::StorageTank => true,
+                Self::AssemblingMachine | Self::Furnace => true,
+                Self::Boiler | Self::Generator => true,
+                Self::MiningDrill => true,
+                Self::FluidTurret => true,
+                _ => false,
+            },
+            Self::HeatPipe | Self::HeatInterface => match other {
+                Self::HeatPipe | Self::HeatInterface => true,
+                Self::Reactor => true,
+                Self::Boiler
+                | Self::Inserter
+                | Self::AssemblingMachine
+                | Self::Furnace
+                | Self::Lab
+                | Self::MiningDrill
+                | Self::Pump
+                | Self::Radar => true, // when energy_source.type == "heat"
+                _ => false,
+            },
+            _ => false,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct EntityPrototypeMap<T: Renderable>(HashMap<String, T>);
+
+impl<T: Renderable> Deref for EntityPrototypeMap<T> {
+    type Target = HashMap<String, T>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct AllTypes {
+    pub accumulator: EntityPrototypeMap<AccumulatorPrototype>,
+    pub artillery_turret: EntityPrototypeMap<ArtilleryTurretPrototype>,
+    pub beacon: EntityPrototypeMap<BeaconPrototype>,
+    pub boiler: EntityPrototypeMap<BoilerPrototype>,
+    pub burner_generator: EntityPrototypeMap<BurnerGeneratorPrototype>,
+
+    pub arithmetic_combinator: EntityPrototypeMap<ArithmeticCombinatorPrototype>,
+    pub decider_combinator: EntityPrototypeMap<DeciderCombinatorPrototype>,
+    pub constant_combinator: EntityPrototypeMap<ConstantCombinatorPrototype>,
+    pub programmable_speaker: EntityPrototypeMap<ProgrammableSpeakerPrototype>,
+
+    pub container: EntityPrototypeMap<ContainerPrototype>,
+    pub logistic_container: EntityPrototypeMap<LogisticContainerPrototype>,
+    pub infinity_container: EntityPrototypeMap<InfinityContainerPrototype>,
+    pub linked_container: EntityPrototypeMap<LinkedContainerPrototype>,
+
+    pub assembling_machine: EntityPrototypeMap<AssemblingMachinePrototype>,
+    pub rocket_silo: EntityPrototypeMap<RocketSiloPrototype>,
+    pub furnace: EntityPrototypeMap<FurnacePrototype>,
+
+    pub electric_energy_interface: EntityPrototypeMap<ElectricEnergyInterfacePrototype>,
+    pub electric_pole: EntityPrototypeMap<ElectricPolePrototype>,
+    pub power_switch: EntityPrototypeMap<PowerSwitchPrototype>,
+
+    pub combat_robot: EntityPrototypeMap<CombatRobotPrototype>,
+    pub construction_robot: EntityPrototypeMap<ConstructionRobotPrototype>,
+    pub logistic_robot: EntityPrototypeMap<LogisticRobotPrototype>,
+    pub roboport: EntityPrototypeMap<RoboportPrototype>,
+
+    pub gate: EntityPrototypeMap<GatePrototype>,
+    pub wall: EntityPrototypeMap<WallPrototype>,
+
+    pub generator: EntityPrototypeMap<GeneratorPrototype>,
+
+    pub reactor: EntityPrototypeMap<ReactorPrototype>,
+    pub heat_interface: EntityPrototypeMap<HeatInterfacePrototype>,
+    pub heat_pipe: EntityPrototypeMap<HeatPipePrototype>,
+
+    pub inserter: EntityPrototypeMap<InserterPrototype>,
+
+    pub lab: EntityPrototypeMap<LabPrototype>,
+
+    pub lamp: EntityPrototypeMap<LampPrototype>,
+
+    pub land_mine: EntityPrototypeMap<LandMinePrototype>,
+
+    pub market: EntityPrototypeMap<MarketPrototype>,
+
+    pub mining_drill: EntityPrototypeMap<MiningDrillPrototype>,
+    pub offshore_pump: EntityPrototypeMap<OffshorePumpPrototype>,
+
+    pub pipe: EntityPrototypeMap<PipePrototype>,
+    pub infinity_pipe: EntityPrototypeMap<InfinityPipePrototype>,
+    pub pipe_to_ground: EntityPrototypeMap<PipeToGroundPrototype>,
+    pub pump: EntityPrototypeMap<PumpPrototype>,
+
+    pub simple_entity: EntityPrototypeMap<SimpleEntityPrototype>,
+    pub simple_entity_with_owner: EntityPrototypeMap<SimpleEntityWithOwnerPrototype>,
+    pub simple_entity_with_force: EntityPrototypeMap<SimpleEntityWithForcePrototype>,
+
+    pub solar_panel: EntityPrototypeMap<SolarPanelPrototype>,
+
+    pub storage_tank: EntityPrototypeMap<StorageTankPrototype>,
+
+    pub linked_belt: EntityPrototypeMap<LinkedBeltPrototype>,
+    pub loader_1x1: EntityPrototypeMap<Loader1x1Prototype>,
+    pub loader: EntityPrototypeMap<Loader1x2Prototype>,
+    pub splitter: EntityPrototypeMap<SplitterPrototype>,
+    pub transport_belt: EntityPrototypeMap<TransportBeltPrototype>,
+    pub underground_belt: EntityPrototypeMap<UndergroundBeltPrototype>,
+
+    pub radar: EntityPrototypeMap<RadarPrototype>,
+    pub turret: EntityPrototypeMap<TurretPrototype>,
+    pub ammo_turret: EntityPrototypeMap<AmmoTurretPrototype>,
+    pub electric_turret: EntityPrototypeMap<ElectricTurretPrototype>,
+    pub fluid_turret: EntityPrototypeMap<FluidTurretPrototype>,
+
+    pub car: EntityPrototypeMap<CarPrototype>,
+
+    pub curved_rail: EntityPrototypeMap<CurvedRailPrototype>,
+    pub straight_rail: EntityPrototypeMap<StraightRailPrototype>,
+    pub rail_signal: EntityPrototypeMap<RailSignalPrototype>,
+    pub rail_chain_signal: EntityPrototypeMap<RailChainSignalPrototype>,
+    pub train_stop: EntityPrototypeMap<TrainStopPrototype>,
+    pub locomotive: EntityPrototypeMap<LocomotivePrototype>,
+    pub cargo_wagon: EntityPrototypeMap<CargoWagonPrototype>,
+    pub fluid_wagon: EntityPrototypeMap<FluidWagonPrototype>,
+    pub artillery_wagon: EntityPrototypeMap<ArtilleryWagonPrototype>,
+    // not implemented
+    // pub character: EntityPrototypeMap<CharacterPrototype>,
+    // pub unit_spawner: EntityPrototypeMap<EnemySpawnerPrototype>,
+    // pub player_port: EntityPrototypeMap<PlayerPortPrototype>,
+    // pub unit: EntityPrototypeMap<UnitPrototype>,
+    // pub spider_vehicle: EntityPrototypeMap<SpiderVehiclePrototype>,
 }

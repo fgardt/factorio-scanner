@@ -17,11 +17,11 @@ pub struct MarketData {
 impl super::Renderable for MarketData {
     fn render(
         &self,
-        options: &crate::RenderOpts,
+        options: &super::RenderOpts,
         used_mods: &mod_util::UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = self.picture.render(
             render_layers.scale(),
             used_mods,

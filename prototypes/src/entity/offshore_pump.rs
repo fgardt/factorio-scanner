@@ -71,7 +71,7 @@ impl super::Renderable for OffshorePumpData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         self.graphics
             .render(options, used_mods, render_layers, image_cache)
     }
@@ -96,7 +96,7 @@ impl super::Renderable for OffshorePumpGraphicsVariant {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         match self {
             Self::GraphicsSet { graphics_set } => {
                 graphics_set.render(options, used_mods, render_layers, image_cache)
@@ -145,7 +145,7 @@ impl super::Renderable for OffshorePumpGraphicsSet {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = merge_renders(
             &[
                 self.base_pictures.as_ref().and_then(|b| {

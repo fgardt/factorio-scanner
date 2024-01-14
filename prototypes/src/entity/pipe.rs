@@ -25,7 +25,7 @@ impl super::Renderable for PipeData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = match options.connections.unwrap_or_default() {
             super::ConnectedDirections::None => &self.pictures.straight_vertical_single,
             super::ConnectedDirections::Up => &self.pictures.ending_up,
@@ -114,7 +114,7 @@ impl super::Renderable for InfinityPipeData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         self.parent
             .render(options, used_mods, render_layers, image_cache)
     }
@@ -140,7 +140,7 @@ impl super::Renderable for PipeToGroundData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = match options.direction {
             Direction::North => &self.pictures.up,
             Direction::East => &self.pictures.right,

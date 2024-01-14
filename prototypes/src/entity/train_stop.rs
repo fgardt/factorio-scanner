@@ -66,7 +66,7 @@ impl super::Renderable for TrainStopData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let mut empty = true;
 
         if let Some(rail) = self.rail_overlay_animations.as_ref().and_then(|r| {
@@ -153,11 +153,11 @@ pub struct TrainStopLight {
 impl super::Renderable for TrainStopLight {
     fn render(
         &self,
-        options: &crate::RenderOpts,
+        options: &super::RenderOpts,
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = self.picture.render(
             render_layers.scale(),
             used_mods,
