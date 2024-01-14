@@ -471,7 +471,7 @@ impl Vector {
     }
 
     #[must_use]
-    pub fn is_0_vector(value: &Vector) -> bool {
+    pub fn is_0_vector(value: &Self) -> bool {
         value.x() == 0.0 && value.y() == 0.0
     }
 }
@@ -661,7 +661,8 @@ pub struct FileName(String);
 pub type ImageCache = HashMap<String, Option<image::DynamicImage>>;
 
 impl FileName {
-    pub fn new(filename: String) -> Self {
+    #[must_use]
+    pub const fn new(filename: String) -> Self {
         Self(filename)
     }
 
