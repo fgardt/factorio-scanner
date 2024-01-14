@@ -45,7 +45,7 @@ pub struct CombinatorData<T: super::Renderable> {
     )]
     pub activity_led_hold_time: u8,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub circuit_wire_max_distance: f64,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -226,7 +226,7 @@ pub struct ConstantCombinatorData {
 
     pub activity_led_light: Option<LightDefinition>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub circuit_wire_max_distance: f64,
 
     #[serde(default, skip_serializing_if = "Clone::clone")]

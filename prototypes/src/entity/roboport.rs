@@ -47,7 +47,7 @@ pub struct RoboportData {
 
     pub circuit_wire_connection_point: Option<WireConnectionPoint>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub circuit_wire_max_distance: f64,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -59,7 +59,7 @@ pub struct RoboportData {
     pub circuit_connector_sprites: Option<CircuitConnectorSprites>,
 
     // docs specify single precision float
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub spawn_and_station_shadow_height_offset: f64,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -72,13 +72,13 @@ pub struct RoboportData {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u32",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub charging_station_count: u32,
 
     // docs specify single precision float
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub charging_distance: f64,
 
     pub charging_station_shift: Option<Vector>,

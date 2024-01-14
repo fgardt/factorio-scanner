@@ -31,8 +31,7 @@ pub struct BoilerData {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub fire_flicker_enabled: bool,
 
-    // TODO: skip serializing if default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub mode: BoilerMode,
 
     pub patch: Option<BoilerPatch>,
@@ -97,7 +96,7 @@ pub struct BoilerFireGlow {
     pub west: Option<Animation>,
 }
 
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum BoilerMode {
     #[default]

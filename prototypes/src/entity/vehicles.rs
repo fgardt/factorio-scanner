@@ -37,7 +37,7 @@ pub struct VehicleData<T: super::Renderable> {
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub sound_scaling_ratio: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub stop_trigger_speed: f64,
 
     pub equipment_grid: Option<EquipmentGridID>,
@@ -342,14 +342,14 @@ pub struct ArtilleryWagonData {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u16",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub turn_after_shooting_cooldown: u16,
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u16",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub cannon_parking_frame_count: u16,
@@ -471,8 +471,7 @@ pub type FluidWagonPrototype = RollingStockPrototype<FluidWagonData>;
 pub struct FluidWagonData {
     pub capacity: f64,
 
-    // TODO: skip serializing if default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub tank_count: FluidWagonTankCount,
 }
 
@@ -488,7 +487,7 @@ impl super::Renderable for FluidWagonData {
     }
 }
 
-#[derive(Debug, Default, Serialize_repr, Deserialize_repr)]
+#[derive(Debug, Default, Serialize_repr, Deserialize_repr, PartialEq, Eq)]
 #[repr(u8)]
 pub enum FluidWagonTankCount {
     Single = 1,

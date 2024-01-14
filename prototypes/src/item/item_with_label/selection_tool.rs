@@ -66,14 +66,13 @@ pub struct SelectionToolPrototypeData {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub alt_tile_filters: FactorioArray<TileID>,
 
-    // TODO: skip serializing if default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub entity_filter_mode: FilterMode,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub alt_entity_filter_mode: FilterMode,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub tile_filter_mode: FilterMode,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub alt_tile_filter_mode: FilterMode,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -91,14 +90,13 @@ pub struct SelectionToolPrototypeData {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub alt_reverse_tile_filters: FactorioArray<TileID>,
 
-    // TODO: skip serializing if default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub reverse_entity_filter_mode: FilterMode,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub alt_reverse_entity_filter_mode: FilterMode,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub reverse_tile_filter_mode: FilterMode,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub alt_reverse_tile_filter_mode: FilterMode,
 
     #[serde(flatten)]
@@ -153,10 +151,10 @@ pub type DeconstructionItemPrototype = crate::BasePrototype<DeconstructionItemPr
 /// [`Prototypes/DeconstructionItemPrototype`](https://lua-api.factorio.com/latest/prototypes/DeconstructionItemPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DeconstructionItemPrototypeData {
-    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub entity_filter_count: ItemStackIndex,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub tile_filter_count: ItemStackIndex,
 
     #[serde(flatten)]
@@ -177,7 +175,7 @@ pub type UpgradeItemPrototype = crate::BasePrototype<UpgradeItemPrototypeData>;
 /// [`Prototypes/UpgradeItemPrototype`](https://lua-api.factorio.com/latest/prototypes/UpgradeItemPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct UpgradeItemPrototypeData {
-    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub mapper_count: ItemStackIndex,
 
     #[serde(flatten)]

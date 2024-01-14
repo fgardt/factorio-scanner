@@ -13,11 +13,6 @@ mod f32 {
     }
 
     #[must_use]
-    pub fn is_0_f32(value: &f32) -> bool {
-        value.abs() < f32::EPSILON
-    }
-
-    #[must_use]
     pub fn is_001_f32(value: &f32) -> bool {
         (*value - f32_001()).abs() < f32::EPSILON
     }
@@ -116,11 +111,6 @@ mod f64 {
     #[must_use]
     pub const fn f64_max() -> f64 {
         f64::MAX
-    }
-
-    #[must_use]
-    pub fn is_0_f64(value: &f64) -> bool {
-        *value == 0.0
     }
 
     #[must_use]

@@ -50,7 +50,7 @@ pub struct InserterData {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u8",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub filter_count: u8,
@@ -61,7 +61,7 @@ pub struct InserterData {
     )]
     pub hand_size: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub circuit_wire_max_distance: f64,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -80,7 +80,7 @@ pub struct InserterData {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u8",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub stack_size_bonus: u8,

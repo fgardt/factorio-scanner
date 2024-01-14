@@ -21,7 +21,7 @@ pub struct ElectricPoleData {
     pub radius_visualisation_picture: Option<Sprite>,
     pub active_picture: Option<Sprite>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub maximum_wire_distance: f64,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]

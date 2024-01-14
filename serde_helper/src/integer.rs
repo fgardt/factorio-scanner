@@ -13,11 +13,6 @@ mod i8 {
     }
 
     #[must_use]
-    pub const fn is_0_i8(value: &i8) -> bool {
-        *value == 0
-    }
-
-    #[must_use]
     pub const fn is_1_i8(value: &i8) -> bool {
         *value == i8_1()
     }
@@ -151,11 +146,6 @@ mod u8 {
     }
 
     #[must_use]
-    pub const fn is_0_u8(value: &u8) -> bool {
-        *value == 0
-    }
-
-    #[must_use]
     pub const fn is_1_u8(value: &u8) -> bool {
         *value == u8_1()
     }
@@ -276,14 +266,6 @@ mod u8 {
     }
 }
 
-pub use i16::*;
-mod i16 {
-    #[must_use]
-    pub const fn is_0_i16(value: &i16) -> bool {
-        *value == 0
-    }
-}
-
 pub use u16::*;
 mod u16 {
     #[must_use]
@@ -292,21 +274,8 @@ mod u16 {
     }
 
     #[must_use]
-    pub const fn is_0_u16(value: &u16) -> bool {
-        *value == 0
-    }
-
-    #[must_use]
     pub const fn is_1_u16(value: &u16) -> bool {
         *value == u16_1()
-    }
-}
-
-pub use i32::*;
-mod i32 {
-    #[must_use]
-    pub const fn is_0_i32(value: &i32) -> bool {
-        *value == 0
     }
 }
 
@@ -348,11 +317,6 @@ mod u32 {
     }
 
     #[must_use]
-    pub const fn is_0_u32(value: &u32) -> bool {
-        *value == 0
-    }
-
-    #[must_use]
     pub const fn is_1_u32(value: &u32) -> bool {
         *value == u32_1()
     }
@@ -385,13 +349,5 @@ mod u32 {
     #[must_use]
     pub const fn is_3600_u32(value: &u32) -> bool {
         *value == u32_3600()
-    }
-}
-
-pub use u64::*;
-mod u64 {
-    #[must_use]
-    pub const fn is_0_u64(value: &u64) -> bool {
-        *value == 0
     }
 }

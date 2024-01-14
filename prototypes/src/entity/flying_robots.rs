@@ -38,7 +38,7 @@ pub struct FlyingRobotData<T: super::Renderable> {
     )]
     pub max_to_charge: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub speed_multiplier_when_out_of_energy: f64,
 
     #[serde(flatten)]
@@ -82,10 +82,10 @@ pub struct CombatRobotData {
     pub shadow_idle: RotatedAnimation,
     pub shadow_in_motion: RotatedAnimation,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub range_from_player: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub friction: f64,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
