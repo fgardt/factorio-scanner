@@ -1184,9 +1184,6 @@ pub type EquipmentID = String;
 /// [`Types/ResourceCategoryID`](https://lua-api.factorio.com/latest/types/ResourceCategoryID.html)
 pub type ResourceCategoryID = String;
 
-/// [`Types/ItemID`](https://lua-api.factorio.com/latest/types/ItemID.html)
-pub type ItemID = String;
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum SignalIDConnector {
@@ -1194,6 +1191,56 @@ pub enum SignalIDConnector {
     Item { name: ItemID },
     Fluid { name: FluidID },
 }
+
+/// [`Types/SelectionModeFlags`](https://lua-api.factorio.com/latest/types/SelectionModeFlags.html)
+pub type SelectionModeFlags = FactorioArray<SelectionModeFlagsUnion>;
+
+/// [`Types/SelectionModeFlags`](https://lua-api.factorio.com/latest/types/SelectionModeFlags.html)
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum SelectionModeFlagsUnion {
+    Blueprint,
+    Deconstruct,
+    CancelDeconstruct,
+    Items,
+    Trees,
+    BuildableType,
+    Nothing,
+    ItemsToPlace,
+    AnyEntity,
+    AnyTile,
+    SameForce,
+    NotSameForce,
+    Friend,
+    Enemy,
+    Upgrade,
+    CancelUpgrade,
+    Downgrade,
+    EntityWithHealth,
+    EntityWithForce,
+    IsMilitaryTarget,
+    EntityWithOwner,
+    AvoidRollingStock,
+    EntityGhost,
+    TileGhost,
+}
+
+/// [`Types/CursorBoxType`](https://lua-api.factorio.com/latest/types/CursorBoxType.html)
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum CursorBoxType {
+    Entity,
+    Electricity,
+    Copy,
+    NotAllowed,
+    Pair,
+    Logistics,
+    TrainVisualizations,
+    BlueprintSnapRectangle,
+}
+
+/// [`Types/MouseCursorID`](https://lua-api.factorio.com/latest/types/MouseCursorID.html)
+pub type MouseCursorID = String;
 
 /// [`Types/ItemToPlace`](https://lua-api.factorio.com/latest/types/ItemToPlace.html)
 #[derive(Debug, Serialize, Deserialize)]

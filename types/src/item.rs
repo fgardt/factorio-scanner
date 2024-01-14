@@ -4,14 +4,20 @@ use serde_helper as helper;
 
 use crate::FactorioArray;
 
+/// [`Types/ItemID`](https://lua-api.factorio.com/latest/types/ItemID.html)
+pub type ItemID = String;
+
+/// [`Types/ItemGroupID`](https://lua-api.factorio.com/latest/types/ItemGroupID.html)
+pub type ItemGroupID = String;
+
+/// [`Types/ItemSubGroupID`](https://lua-api.factorio.com/latest/types/ItemSubGroupID.html)
+pub type ItemSubGroupID = String;
+
 /// [`Types/ItemStackIndex`](https://lua-api.factorio.com/latest/types/ItemStackIndex.html)
 pub type ItemStackIndex = u16;
 
 /// [`Types/ItemCountType`](https://lua-api.factorio.com/latest/types/ItemCountType.html)
 pub type ItemCountType = u32;
-
-/// [`Types/ItemSubGroupID`](https://lua-api.factorio.com/latest/types/ItemSubGroupID.html)
-pub type ItemSubGroupID = String;
 
 /// [`Types/ItemPrototypeFlags`](https://lua-api.factorio.com/latest/types/ItemPrototypeFlags.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -64,4 +70,12 @@ pub struct ItemProductPrototypeStruct {
 pub enum ItemProductAmount {
     Static { amount: u16 },
     Range { amount_min: u16, amount_max: u16 },
+}
+
+#[derive(Debug, Default, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum FilterMode {
+    #[default]
+    Whitelist,
+    Blacklist,
 }

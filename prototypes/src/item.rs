@@ -9,12 +9,14 @@ mod ammo;
 mod capsule;
 mod gun;
 mod item_with_entity_data;
+mod item_with_label;
 mod tool;
 
 pub use ammo::*;
 pub use capsule::*;
 pub use gun::*;
 pub use item_with_entity_data::*;
+pub use item_with_label::*;
 pub use tool::*;
 
 /// [`Prototypes/ItemPrototype`](https://lua-api.factorio.com/latest/prototypes/ItemPrototype.html)
@@ -118,20 +120,21 @@ pub struct AllTypes {
 
     pub item_with_entity_data: PrototypeMap<ItemWithEntityDataPrototype>,
 
+    pub item_with_label: PrototypeMap<ItemWithLabelPrototype>,
+    pub item_with_inventory: PrototypeMap<ItemWithInventoryPrototype>,
+    pub blueprint_book: PrototypeMap<BlueprintBookPrototype>,
+    pub item_with_tags: PrototypeMap<ItemWithTagsPrototype>,
+    pub selection_tool: PrototypeMap<SelectionToolPrototype>,
+    pub blueprint: PrototypeMap<BlueprintItemPrototype>,
+    pub copy_paste_tool: PrototypeMap<CopyPasteToolPrototype>,
+    pub deconstruction_item: PrototypeMap<DeconstructionItemPrototype>,
+    pub upgrade_item: PrototypeMap<UpgradeItemPrototype>,
+
     pub tool: PrototypeMap<ToolPrototype>,
     pub armor: PrototypeMap<ArmorPrototype>,
     pub mining_tool: PrototypeMap<MiningToolPrototype>,
     pub repair_tool: PrototypeMap<RepairToolPrototype>,
     // not implemented
-    // pub item_with_label: PrototypeMap<ItemWithLabelPrototype>,
-    // pub item_with_inventory: PrototypeMap<ItemWithInventoryPrototype>,
-    // pub blueprint_book: PrototypeMap<BlueprintBookPrototype>,
-    // pub item_with_tags: PrototypeMap<ItemWithTagsPrototype>,
-    // pub selection_tool: PrototypeMap<SelectionToolPrototype>,
-    // pub blueprint: PrototypeMap<BlueprintItemPrototype>,
-    // pub copy_paste_tool: PrototypeMap<CopyPasteToolPrototype>,
-    // pub deconstruction_item: PrototypeMap<DeconstructionItemPrototype>,
-    // pub upgrade_item: PrototypeMap<UpgradeItemPrototype>,
     // pub module: PrototypeMap<ModulePrototype>,
     // pub rail_planner: PrototypeMap<RailPlannerPrototype>,
     // pub spidertron_remote: PrototypeMap<SpidertronRemotePrototype>,
