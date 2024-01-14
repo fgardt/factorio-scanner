@@ -35,7 +35,7 @@ pub struct ArtilleryTurretData {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u8",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub base_picture_secondary_draw_order: u8,
@@ -48,14 +48,14 @@ pub struct ArtilleryTurretData {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u16",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub turn_after_shooting_cooldown: u16,
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u16",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub cannon_parking_frame_count: u16,

@@ -71,8 +71,7 @@ pub struct AmmoType {
 
     pub target_type: Option<AmmoTypeTargetType>,
 
-    // TODO: skip serializing if default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub source_type: AmmoSourceType,
     // not implemented
     // pub action: Option<Trigger>,
@@ -88,7 +87,7 @@ pub enum AmmoTypeTargetType {
 }
 
 /// [`Types/AmmoSourceType`](https://lua-api.factorio.com/latest/types/AmmoSourceType.html)
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum AmmoSourceType {
     #[default]
@@ -104,23 +103,22 @@ pub struct BaseAttackParameters {
     pub range: f32,
     pub cooldown: f32,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub min_range: f32,
 
     #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
     pub turn_range: f32,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub fire_penalty: f32,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub rotate_penalty: f32,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub health_penalty: f32,
 
-    // TODO: skip serializing if default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub range_mode: BaseAttackParametersRangeMode,
 
     // default is value of range property
@@ -132,13 +130,13 @@ pub struct BaseAttackParameters {
     #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
     pub ammo_consumption_modifier: f32,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub cooldown_deviation: f32,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub warmup: u32,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub lead_target_for_projectile_speed: f32,
 
     // default is value of cooldown property
@@ -147,8 +145,7 @@ pub struct BaseAttackParameters {
     #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
     pub movement_slow_down_factor: f32,
 
-    // TODO: skip serializing if default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub activation_type: BaseAttackParametersActivationType,
 
     pub animation: Option<RotatedAnimation>,
@@ -160,7 +157,7 @@ pub struct BaseAttackParameters {
     // sound, cyclic_sound
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum BaseAttackParametersRangeMode {
     #[default]
@@ -168,7 +165,7 @@ pub enum BaseAttackParametersRangeMode {
     BoundingBoxToBoundingBox,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum BaseAttackParametersActivationType {
     #[default]
@@ -189,10 +186,10 @@ pub enum AttackParameters {
         #[serde(default, skip_serializing_if = "Vector::is_0_vector")]
         projectile_center: Vector,
 
-        #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+        #[serde(default, skip_serializing_if = "helper::is_default")]
         projectile_creation_distance: f32,
 
-        #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+        #[serde(default, skip_serializing_if = "helper::is_default")]
         projectile_orientation_offset: f32,
 
         #[serde(flatten)]
@@ -204,7 +201,7 @@ pub enum AttackParameters {
     /// [`Types/BeamAttackParameters`](https://lua-api.factorio.com/latest/types/BeamAttackParameters.html)
     #[serde(rename = "beam")]
     BeamAttackParameters {
-        #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+        #[serde(default, skip_serializing_if = "helper::is_default")]
         source_direction_count: u32,
 
         source_offset: Option<Vector>,
@@ -216,10 +213,10 @@ pub enum AttackParameters {
     /// [`Types/StreamAttackParameters`](https://lua-api.factorio.com/latest/types/StreamAttackParameters.html)
     #[serde(rename = "stream")]
     StreamAttackParameters {
-        #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+        #[serde(default, skip_serializing_if = "helper::is_default")]
         fluid_consumption: f32,
 
-        #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+        #[serde(default, skip_serializing_if = "helper::is_default")]
         gun_barrel_length: f32,
 
         gun_center_shift: Option<GunShift4WayUnion>,
@@ -1059,7 +1056,7 @@ pub enum PipeConnectionDefinition {
 
         #[serde(
             default,
-            skip_serializing_if = "helper::is_0_u32",
+            skip_serializing_if = "helper::is_default",
             deserialize_with = "helper::truncating_deserializer"
         )]
         max_underground_distance: u32,
@@ -1072,7 +1069,7 @@ pub enum PipeConnectionDefinition {
 
         #[serde(
             default,
-            skip_serializing_if = "helper::is_0_u32",
+            skip_serializing_if = "helper::is_default",
             deserialize_with = "helper::truncating_deserializer"
         )]
         max_underground_distance: u32,
@@ -1082,7 +1079,7 @@ pub enum PipeConnectionDefinition {
     },
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum FluidBoxProductionType {
     #[default]
@@ -1146,7 +1143,7 @@ pub struct FluidBox {
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub base_area: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub base_level: f32,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
@@ -1164,8 +1161,7 @@ pub struct FluidBox {
     pub minimum_temperature: Option<f64>,
     pub maximum_temperature: Option<f64>,
 
-    // TODO: skip serializing if default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub production_type: FluidBoxProductionType,
 
     #[serde(flatten)]
@@ -1729,10 +1725,10 @@ pub struct Resistance {
     #[serde(rename = "type")]
     pub type_: DamageTypeID,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub decrease: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub percent: f64,
 }
 
@@ -1745,7 +1741,7 @@ pub type Resistances = FactorioArray<Resistance>;
 pub struct RadiusVisualisationSpecification {
     pub sprite: Option<Sprite>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub distance: f64,
 
     pub offset: Option<Vector>,
@@ -1757,7 +1753,7 @@ pub struct RadiusVisualisationSpecification {
     pub draw_on_selection: bool,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum LightDefinitionType {
     #[default]
@@ -1769,19 +1765,18 @@ pub enum LightDefinitionType {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LightDefinitionData {
-    // TODO: skip serializing if is default
-    #[serde(default, rename = "type")]
+    #[serde(default, rename = "type", skip_serializing_if = "helper::is_default")]
     pub type_: LightDefinitionType,
 
     pub picture: Option<Sprite>, // mandatory for oriented
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub rotation_shift: RealOrientation,
 
     pub intensity: f64,
     pub size: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub source_orientation_offset: RealOrientation,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -1790,7 +1785,7 @@ pub struct LightDefinitionData {
     pub shift: Option<Vector>,
     pub color: Option<Color>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub minimum_darkness: f64,
 }
 
@@ -1848,26 +1843,6 @@ pub struct BeamAnimationSet {
     pub body: Option<AnimationVariations>,
 }
 
-/// [`Types/ModuleTint`](https://lua-api.factorio.com/latest/types/ModuleTint.html)
-#[derive(Debug, Default, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum ModuleTint {
-    #[default]
-    None,
-    Primary,
-    Secondary,
-    Tertiary,
-    Quaternary,
-}
-
-#[derive(Debug, Default, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum ModuleTintMode {
-    #[default]
-    SingleModule,
-    Mix,
-}
-
 /// [`Types/BeaconModuleVisualization`](https://lua-api.factorio.com/latest/types/BeaconModuleVisualization.html)
 #[skip_serializing_none]
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -1883,13 +1858,12 @@ pub struct BeaconModuleVisualization {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_i8",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub secondary_draw_order: i8,
 
-    // TODO: skip serializing if is default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub apply_module_tint: ModuleTint,
 
     pub render_layer: Option<RenderLayer>,
@@ -1906,7 +1880,7 @@ pub struct BeaconModuleVisualizations {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_i32",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub tier_offset: i32,
@@ -1938,7 +1912,7 @@ pub struct BeaconGraphicsSet {
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub animation_progress: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub min_animation_progress: f64,
 
     #[serde(
@@ -1947,12 +1921,10 @@ pub struct BeaconGraphicsSet {
     )]
     pub max_animation_progress: f64,
 
-    // TODO: skip serializing if is default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub apply_module_tint: ModuleTint,
 
-    // TODO: skip serializing if is default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub apply_module_tint_to_light: ModuleTint,
 
     pub no_modules_tint: Option<Color>,
@@ -1965,8 +1937,7 @@ pub struct BeaconGraphicsSet {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub module_visualisations: FactorioArray<BeaconModuleVisualizations>,
 
-    /// TODO: skip serializing if is default
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub module_tint_mode: ModuleTintMode,
 }
 
@@ -2487,7 +2458,7 @@ impl RenderableGraphics for WorkingVisualisationAnimation {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum GuiMode {
     All,
@@ -2766,14 +2737,14 @@ pub struct MiningDrillGraphicsSet {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u16",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub shift_animation_waypoint_stop_duration: u16,
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u16",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub shift_animation_transition_duration: u16,
@@ -2782,7 +2753,7 @@ pub struct MiningDrillGraphicsSet {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u16",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub drilling_vertical_movement_duration: u16,
@@ -2796,7 +2767,7 @@ pub struct MiningDrillGraphicsSet {
     )]
     pub max_animation_progress: f64, // specified as single precision in docs
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub min_animation_progress: f64, // specified as single precision in docs
 
     pub circuit_connector_layer: Option<CircuitConnectorLayer>, // TODO: fix that only the internal members need to be optional

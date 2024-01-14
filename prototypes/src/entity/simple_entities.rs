@@ -21,7 +21,7 @@ pub struct SimpleEntityData {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_i8",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub secondary_draw_order: i8,
@@ -68,7 +68,7 @@ pub struct SimpleEntityWithOwnerData {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_i8",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub secondary_draw_order: i8,

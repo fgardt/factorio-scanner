@@ -41,14 +41,14 @@ pub struct TurretData {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u8",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub base_picture_secondary_draw_order: u8,
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u8",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub gun_animation_secondary_draw_order: u8,
@@ -68,10 +68,10 @@ pub struct TurretData {
     pub integration: Option<Sprite>,
 
     // docs specify single precision float for all of these except `prepare_range`
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub glow_light_intensity: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub energy_glow_animation_flicker_strength: f64,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
@@ -98,7 +98,7 @@ pub struct TurretData {
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub prepared_alternative_speed_secondary: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub prepared_alternative_chance: f64,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]

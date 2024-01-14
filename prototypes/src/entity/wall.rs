@@ -18,14 +18,14 @@ pub struct WallData {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u32",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub visual_merge_group: u32,
 
     pub circuit_wire_connection_point: Option<WireConnectionPoint>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub circuit_wire_max_distance: f64,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]

@@ -24,7 +24,7 @@ pub struct StorageTankData {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub two_direction_only: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub circuit_wire_max_distance: f64,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]

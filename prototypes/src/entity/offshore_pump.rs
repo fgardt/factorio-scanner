@@ -41,7 +41,7 @@ pub struct OffshorePumpData {
 
     pub check_bounding_box_collides_with_tiles: Option<bool>,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub circuit_wire_max_distance: f64,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]

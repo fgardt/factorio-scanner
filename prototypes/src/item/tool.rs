@@ -12,7 +12,7 @@ pub type ToolPrototype = crate::BasePrototype<ToolPrototypeData>;
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ToolPrototypeData {
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub durability: f64,
 
     pub durability_description_key: Option<String>,

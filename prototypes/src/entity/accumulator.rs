@@ -29,7 +29,7 @@ pub struct AccumulatorData {
     pub discharge_light: Option<LightDefinition>,
 
     pub circuit_wire_connection_point: Option<WireConnectionPoint>,
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub circuit_wire_max_distance: f64,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]

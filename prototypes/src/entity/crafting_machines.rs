@@ -46,14 +46,14 @@ pub struct CraftingMachineData<T: super::Renderable> {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u16",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub shift_animation_waypoint_stop_duration: u16,
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u16",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub shift_animation_transition_duration: u16,
@@ -70,7 +70,7 @@ pub struct CraftingMachineData<T: super::Renderable> {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub show_recipe_icon_on_map: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub base_productivity: f64,
 
     pub module_specification: Option<ModuleSpecification>,
@@ -261,7 +261,7 @@ pub struct RocketSiloData {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u16",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub rocket_result_inventory_size: ItemStackIndex,

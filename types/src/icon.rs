@@ -103,7 +103,7 @@ pub struct CommonIconData {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u8",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub icon_mipmaps: IconMipMapType,
@@ -124,7 +124,7 @@ pub enum Icon {
 
         #[serde(
             default,
-            skip_serializing_if = "helper::is_0_u8",
+            skip_serializing_if = "helper::is_default",
             deserialize_with = "helper::truncating_deserializer"
         )]
         icon_mipmaps: IconMipMapType,
@@ -137,7 +137,7 @@ pub enum Icon {
 
         #[serde(
             default,
-            skip_serializing_if = "helper::is_0_u8",
+            skip_serializing_if = "helper::is_default",
             deserialize_with = "helper::truncating_deserializer"
         )]
         icon_mipmaps: IconMipMapType,

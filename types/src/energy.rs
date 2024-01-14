@@ -11,7 +11,7 @@ pub type Energy = String;
 /// [`Types/BaseEnergySource`](https://lua-api.factorio.com/latest/types/BaseEnergySource.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BaseEnergySource<T> {
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub emissions_per_minute: f64,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -33,7 +33,7 @@ pub struct BurnerEnergySourceData {
 
     #[serde(
         default,
-        skip_serializing_if = "helper::is_0_u16",
+        skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub burnt_inventory_size: super::ItemStackIndex,
@@ -86,10 +86,10 @@ pub struct FluidEnergySourceData {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub destroy_non_fuel_fluid: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub fluid_usage_per_tick: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_f64")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub maximum_temperature: f64,
 }
 

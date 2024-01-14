@@ -58,7 +58,7 @@ pub struct ItemProductPrototypeStruct {
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub probability: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_0_u16")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub catalyst_amount: u16,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
