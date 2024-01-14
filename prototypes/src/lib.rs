@@ -1040,3 +1040,31 @@ pub const fn targeted_engine_version() -> Version {
         unwrap_ctx!(parse_u16(env!("CARGO_PKG_VERSION_PATCH"))),
     )
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[must_use]
+    fn load_data(name: &str) -> DataRaw {
+        let mut bytes = Vec::new();
+        File::open(format!(
+            "test_dumps/{name}.{}.json",
+            targeted_engine_version()
+        ))
+        .unwrap()
+        .read_to_end(&mut bytes)
+        .unwrap();
+        serde_json::from_slice(&bytes).unwrap()
+    }
+
+    #[test]
+    fn deserialize_vanilla() {
+        let _ = load_data("vanilla");
+    }
+
+    #[test]
+    fn deserialize_k2_se() {
+        let _ = load_data("k2-se");
+    }
+}

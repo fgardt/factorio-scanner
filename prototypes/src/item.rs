@@ -144,75 +144,67 @@ mod test {
     #[test]
     fn deserialize() {
         let json = r#"{
-            "item": {
-                "iron-plate": {
-                    "type": "item",
-                    "name": "iron-plate",
-                    "localised_name": [
-                        "item-name.iron-plate"
-                    ],
-                    "icons": 
-                    [
-                        {
-                            "icon": "__base__/graphics/icons/linked-belt.png",
-                            "icon_size": 64,
-                            "icon_mipmaps": 4,
-                            "tint": 
-                            {
-                                "r": 1.0,
-                                "g": 0.5,
-                                "b": 1.0,
-                                "a": 1.0
-                            }
-                        }
-                    ],
-                    "stack_size": 100,
-                    "flags": {},
-                    "fuel_category": "chemical",
-                    "fuel_value": "2MJ",
-                    "fuel_acceleration_multiplier": 1.2,
-                    "fuel_top_speed_multiplier": 1.05,
-                    "fuel_emissions_multiplier": 1.2,
-                    "subgroup": "raw-material",
-                    "order": "a[iron-plate]"
+            "type": "item",
+            "name": "iron-plate",
+            "localised_name": [
+                "item-name.iron-plate"
+            ],
+            "icons": 
+            [
+                {
+                    "icon": "__base__/graphics/icons/linked-belt.png",
+                    "icon_size": 64,
+                    "icon_mipmaps": 4,
+                    "tint": 
+                    {
+                        "r": 1.0,
+                        "g": 0.5,
+                        "b": 1.0,
+                        "a": 1.0
+                    }
                 }
-            }
+            ],
+            "stack_size": 100,
+            "flags": {},
+            "fuel_category": "chemical",
+            "fuel_value": "2MJ",
+            "fuel_acceleration_multiplier": 1.2,
+            "fuel_top_speed_multiplier": 1.05,
+            "fuel_emissions_multiplier": 1.2,
+            "subgroup": "raw-material",
+            "order": "a[iron-plate]"
         }"#;
 
-        let _all_types: AllTypes = serde_json::from_str(json).unwrap();
+        let _ = serde_json::from_str::<ItemPrototype>(json).unwrap();
     }
 
     #[test]
     fn deserialize_ee_infinity_pipe() {
         let json = r#"{
-          "item": {
-            "ee-infinity-pipe": {
-              "type": "item",
-              "name": "ee-infinity-pipe",
-              "icons": [
+            "type": "item",
+            "name": "ee-infinity-pipe",
+            "icons": [
                 {
-                  "icon": "__base__/graphics/icons/pipe.png",
-                  "tint": 
-                  {
-                  "r": 1,
-                  "g": 0.5,
-                  "b": 1,
-                  "a": 1
-                  }
+                    "icon": "__base__/graphics/icons/pipe.png",
+                    "tint": 
+                    {
+                    "r": 1,
+                    "g": 0.5,
+                    "b": 1,
+                    "a": 1
+                    }
                 }
-              ],
-              "icon_size": 64,
-              "icon_mipmaps": 4,
-              "flags": {},
-              "subgroup": "ee-misc",
-              "order": "ba",
-              "stack_size": 50,
-              "place_result": "ee-infinity-pipe-100"
-            }
-          }
+            ],
+            "icon_size": 64,
+            "icon_mipmaps": 4,
+            "flags": {},
+            "subgroup": "ee-misc",
+            "order": "ba",
+            "stack_size": 50,
+            "place_result": "ee-infinity-pipe-100"
         }"#;
 
-        let _all_types: AllTypes = serde_json::from_str(json).unwrap();
+        let _ = serde_json::from_str::<ItemPrototype>(json).unwrap();
     }
 
     #[test]
@@ -266,6 +258,6 @@ mod test {
 
         let serialized = serde_json::to_string_pretty(&item).unwrap();
 
-        println!("{serialized}");
+        //println!("{serialized}");
     }
 }
