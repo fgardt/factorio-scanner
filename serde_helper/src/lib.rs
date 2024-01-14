@@ -268,8 +268,18 @@ pub const fn u32_120() -> u32 {
 }
 
 #[must_use]
+pub const fn u32_3600() -> u32 {
+    3600
+}
+
+#[must_use]
 pub const fn f32_001() -> f32 {
     0.01
+}
+
+#[must_use]
+pub const fn f32_1() -> f32 {
+    1.0
 }
 
 #[must_use]
@@ -556,6 +566,11 @@ pub const fn is_120_u32(value: &u32) -> bool {
 }
 
 #[must_use]
+pub const fn is_3600_u32(value: &u32) -> bool {
+    *value == u32_3600()
+}
+
+#[must_use]
 pub const fn is_0_u64(value: &u64) -> bool {
     *value == 0
 }
@@ -568,6 +583,11 @@ pub fn is_0_f32(value: &f32) -> bool {
 #[must_use]
 pub fn is_001_f32(value: &f32) -> bool {
     (*value - f32_001()).abs() < f32::EPSILON
+}
+
+#[must_use]
+pub fn is_1_f32(value: &f32) -> bool {
+    (*value - f32_1()).abs() < f32::EPSILON
 }
 
 #[must_use]

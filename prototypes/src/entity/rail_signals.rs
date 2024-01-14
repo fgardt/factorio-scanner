@@ -41,11 +41,11 @@ pub struct RailSignalBaseData {
 impl super::Renderable for RailSignalBaseData {
     fn render(
         &self,
-        options: &crate::RenderOpts,
+        options: &super::RenderOpts,
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let rail_piece = self.rail_piece.as_ref()?;
         let frame_count = rail_piece.frame_count();
 
@@ -128,7 +128,7 @@ impl super::Renderable for RailChainSignalData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         // thanks to bilka: <https://discord.com/channels/139677590393716737/306402592265732098/1173539478669897768>
         let offset = {
             let (mut offset_x, mut offset_y) = options.direction.right90().get_offset().as_tuple();
@@ -195,7 +195,7 @@ impl super::Renderable for RailSignalData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         if let Some(animation) = self.animation.render(
             render_layers.scale(),
             used_mods,

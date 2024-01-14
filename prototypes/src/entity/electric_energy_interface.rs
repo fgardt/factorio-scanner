@@ -40,7 +40,7 @@ impl super::Renderable for ElectricEnergyInterfaceData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         self.graphics
             .as_ref()?
             .render(options, used_mods, render_layers, image_cache)
@@ -63,7 +63,7 @@ impl super::Renderable for ElectricEnergyInterfaceGraphics {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = match self {
             Self::Picture { picture } => picture.render(
                 render_layers.scale(),

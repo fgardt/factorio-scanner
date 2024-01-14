@@ -69,7 +69,7 @@ impl<T: super::Renderable> super::Renderable for VehicleData<T> {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         self.child
             .render(options, used_mods, render_layers, image_cache)
     }
@@ -161,7 +161,7 @@ impl super::Renderable for CarData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         None
     }
 }
@@ -224,7 +224,7 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let mut empty = true;
 
         let orientation = options
@@ -372,7 +372,7 @@ impl super::Renderable for ArtilleryWagonData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let mut empty = true;
 
         let offset = self.cannon_base_shiftings.as_ref().map_or_else(
@@ -458,7 +458,7 @@ impl super::Renderable for CargoWagonData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         Some(())
     }
 }
@@ -483,7 +483,7 @@ impl super::Renderable for FluidWagonData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         Some(())
     }
 }
@@ -529,7 +529,7 @@ impl super::Renderable for LocomotiveData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         Some(())
     }
 }

@@ -10,6 +10,13 @@ use serde::{
 #[derive(Debug, Clone)]
 pub struct FactorioArray<T>(Vec<T>);
 
+impl<T> FactorioArray<T> {
+    #[must_use]
+    pub fn new(data: Vec<T>) -> Self {
+        Self(data)
+    }
+}
+
 impl<T> Deref for FactorioArray<T> {
     type Target = Vec<T>;
 

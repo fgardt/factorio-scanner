@@ -16,6 +16,8 @@ pub type TurretPrototype = EntityWithOwnerPrototype<TurretData>;
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TurretData {
+    pub attack_parameters: AttackParameters,
+
     pub folded_animation: RotatedAnimation4Way,
     pub call_for_help_radius: f64,
 
@@ -122,7 +124,6 @@ pub struct TurretData {
     // TODO: overridden `corpse` & `is_military_target`
 
     // not implemented
-    // pub attack_parameters: AttackParameters,
     // pub attack_target_mask: Option<TriggerTargetMask>,
     // pub ignore_target_mask: Option<TriggerTargetMask>,
     // pub start_attacking_sound: Option<Sound>,
@@ -141,7 +142,7 @@ impl super::Renderable for TurretData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         let res = merge_renders(
             &[
                 self.base_picture.as_ref().and_then(|a| {
@@ -204,7 +205,7 @@ impl super::Renderable for AmmoTurretData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         self.parent
             .render(options, used_mods, render_layers, image_cache)
     }
@@ -238,7 +239,7 @@ impl super::Renderable for ElectricTurretData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         self.parent
             .render(options, used_mods, render_layers, image_cache)
     }
@@ -281,7 +282,7 @@ impl super::Renderable for FluidTurretData {
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
-    ) -> crate::RenderOutput {
+    ) -> super::RenderOutput {
         self.parent
             .render(options, used_mods, render_layers, image_cache)
     }

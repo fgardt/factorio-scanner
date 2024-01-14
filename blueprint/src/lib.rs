@@ -15,7 +15,8 @@ use serde::{Deserialize, Serialize, Serializer};
 use serde_with::skip_serializing_none;
 
 use types::{
-    ArithmeticOperation, Comparator, Direction, ItemCountType, ItemStackIndex, RealOrientation,
+    ArithmeticOperation, Comparator, Direction, FilterMode, ItemCountType, ItemStackIndex,
+    RealOrientation,
 };
 
 #[skip_serializing_none]
@@ -448,13 +449,6 @@ pub enum UndergroundType {
 pub enum SplitterPriority {
     Left,
     Right,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
-pub enum FilterMode {
-    Whitelist,
-    Blacklist,
 }
 
 #[skip_serializing_none]

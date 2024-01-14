@@ -33,18 +33,297 @@ pub const fn targeted_engine_version() -> Version {
 }
 
 mod empty_array_fix;
-
-pub use empty_array_fix::*;
-
 mod energy;
 mod graphics;
 mod icon;
+mod item;
+mod module;
 
+pub use empty_array_fix::*;
 pub use energy::*;
 pub use graphics::*;
 pub use icon::*;
+pub use item::*;
+pub use module::*;
 
-///[`Types/Color`](https://lua-api.factorio.com/latest/types/Color.html)
+/// [`Types/AmmoCategoryID`](https://lua-api.factorio.com/latest/types/AmmoCategoryID.html)
+pub type AmmoCategoryID = String;
+
+/// [`Types/AmmoType`](https://lua-api.factorio.com/latest/types/AmmoType.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AmmoType {
+    pub category: AmmoCategoryID,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub clamp_position: bool,
+
+    pub energy_consumption: Option<Energy>,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub range_modifier: f64,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub cooldown_modifier: f64,
+
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub consumption_modifier: f32,
+
+    pub target_type: Option<AmmoTypeTargetType>,
+
+    // TODO: skip serializing if default
+    #[serde(default)]
+    pub source_type: AmmoSourceType,
+    // not implemented
+    // pub action: Option<Trigger>,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AmmoTypeTargetType {
+    #[default]
+    Entity,
+    Position,
+    Direction,
+}
+
+/// [`Types/AmmoSourceType`](https://lua-api.factorio.com/latest/types/AmmoSourceType.html)
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AmmoSourceType {
+    #[default]
+    Default,
+    Player,
+    Turret,
+    Vehicle,
+}
+
+/// [`Types/BaseAttackParameters`](https://lua-api.factorio.com/latest/types/BaseAttackParameters.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BaseAttackParameters {
+    pub range: f32,
+    pub cooldown: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    pub min_range: f32,
+
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub turn_range: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    pub fire_penalty: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    pub rotate_penalty: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    pub health_penalty: f32,
+
+    // TODO: skip serializing if default
+    #[serde(default)]
+    pub range_mode: BaseAttackParametersRangeMode,
+
+    // default is value of range property
+    pub min_attack_distance: Option<f32>,
+
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub damage_modifier: f32,
+
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub ammo_consumption_modifier: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    pub cooldown_deviation: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+    pub warmup: u32,
+
+    #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+    pub lead_target_for_projectile_speed: f32,
+
+    // default is value of cooldown property
+    pub movement_slow_down_cool_down: Option<f32>,
+
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub movement_slow_down_factor: f32,
+
+    // TODO: skip serializing if default
+    #[serde(default)]
+    pub activation_type: BaseAttackParametersActivationType,
+
+    pub animation: Option<RotatedAnimation>,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub use_shooter_direction: bool,
+    // not implemented
+    // ammo_type, ammo_categories, ammo_category: are these mutually exclusive?
+    // sound, cyclic_sound
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum BaseAttackParametersRangeMode {
+    #[default]
+    CenterToCenter,
+    BoundingBoxToBoundingBox,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum BaseAttackParametersActivationType {
+    #[default]
+    Shoot,
+    Throw,
+    Consume,
+    Activate,
+}
+
+/// [`Types/AttackParameters`](https://lua-api.factorio.com/latest/types/AttackParameters.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AttackParameters {
+    /// [`Types/ProjectileAttackParameters`](https://lua-api.factorio.com/latest/types/ProjectileAttackParameters.html)
+    #[serde(rename = "projectile")]
+    ProjectileAttackParameters {
+        #[serde(default, skip_serializing_if = "Vector::is_0_vector")]
+        projectile_center: Vector,
+
+        #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+        projectile_creation_distance: f32,
+
+        #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+        projectile_orientation_offset: f32,
+
+        #[serde(flatten)]
+        base: BaseAttackParameters,
+        // not implemented
+        // shell_particle, projectile_creation_parameters
+    },
+
+    /// [`Types/BeamAttackParameters`](https://lua-api.factorio.com/latest/types/BeamAttackParameters.html)
+    #[serde(rename = "beam")]
+    BeamAttackParameters {
+        #[serde(default, skip_serializing_if = "helper::is_0_u32")]
+        source_direction_count: u32,
+
+        source_offset: Option<Vector>,
+
+        #[serde(flatten)]
+        base: BaseAttackParameters,
+    },
+
+    /// [`Types/StreamAttackParameters`](https://lua-api.factorio.com/latest/types/StreamAttackParameters.html)
+    #[serde(rename = "stream")]
+    StreamAttackParameters {
+        #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+        fluid_consumption: f32,
+
+        #[serde(default, skip_serializing_if = "helper::is_0_f32")]
+        gun_barrel_length: f32,
+
+        gun_center_shift: Option<GunShift4WayUnion>,
+
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        fluids: FactorioArray<StreamFluidProperties>,
+
+        #[serde(flatten)]
+        base: BaseAttackParameters,
+        // not implemented
+        // projectile_creation_parameters
+    },
+}
+
+impl std::ops::Deref for AttackParameters {
+    type Target = BaseAttackParameters;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Self::BeamAttackParameters { base, .. }
+            | Self::ProjectileAttackParameters { base, .. }
+            | Self::StreamAttackParameters { base, .. } => base,
+        }
+    }
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum GunShift4WayUnion {
+    Single(Vector),
+    Directed {
+        north: Vector,
+        east: Option<Vector>,
+        south: Option<Vector>,
+        west: Option<Vector>,
+    },
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct StreamFluidProperties {
+    #[serde(rename = "type")]
+    pub _type: FluidID,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub damage_modifier: f64,
+}
+
+/// [`Types/CapsuleAction`](https://lua-api.factorio.com/latest/types/CapsuleAction.html)
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum CapsuleAction {
+    /// [`Types/ThrowCapsuleAction`](https://lua-api.factorio.com/latest/types/ThrowCapsuleAction.html)
+    #[serde(rename = "throw")]
+    ThrowCapsuleAction {
+        attack_parameters: AttackParameters,
+
+        #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+        uses_stack: bool,
+    },
+
+    /// [`Types/ActivateCapsuleAction`](https://lua-api.factorio.com/latest/types/ActivateCapsuleAction.html)
+    #[serde(rename = "equipment-remote")]
+    ActivateEquipmentCapsuleAction { equipment: EquipmentID },
+
+    /// [`Types/UseOnSelfCapsuleAction`](https://lua-api.factorio.com/latest/types/UseOnSelfCapsuleAction.html)
+    #[serde(rename = "use-on-self")]
+    UseOnSelfCapsuleAction {
+        attack_parameters: AttackParameters,
+
+        #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+        uses_stack: bool,
+    },
+
+    /// [`Types/DestroyCliffsCapsuleAction`](https://lua-api.factorio.com/latest/types/DestroyCliffsCapsuleAction.html)
+    #[serde(rename = "destroy-cliffs")]
+    DestroyCliffsCapsuleAction {
+        attack_parameters: AttackParameters,
+        radius: f32,
+
+        #[serde(
+            default = "helper::u32_3600",
+            skip_serializing_if = "helper::is_3600_u32"
+        )]
+        timeout: u32,
+
+        #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+        play_sound_on_failure: bool,
+
+        #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+        uses_stack: bool,
+    },
+
+    /// [`Types/ArtilleryRemoteCapsuleAction`](https://lua-api.factorio.com/latest/types/ArtilleryRemoteCapsuleAction.html)
+    #[serde(rename = "artillery-remote")]
+    ArtilleryRemoteCapsuleAction {
+        flare: EntityID,
+
+        #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+        play_sound_on_failure: bool,
+    },
+}
+
+/// [`Types/Color`](https://lua-api.factorio.com/latest/types/Color.html)
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Color {
@@ -189,6 +468,11 @@ impl Vector {
         let (x, y) = self.as_tuple();
 
         Self::Tuple(-x, -y)
+    }
+
+    #[must_use]
+    pub fn is_0_vector(value: &Self) -> bool {
+        value.x() == 0.0 && value.y() == 0.0
     }
 }
 
@@ -377,6 +661,11 @@ pub struct FileName(String);
 pub type ImageCache = HashMap<String, Option<image::DynamicImage>>;
 
 impl FileName {
+    #[must_use]
+    pub const fn new(filename: String) -> Self {
+        Self(filename)
+    }
+
     pub fn load<'a>(
         &self,
         used_mods: &UsedMods,
@@ -743,6 +1032,9 @@ pub enum FuelCategory {
     },
 }
 
+/// [`Types/TileID`](https://lua-api.factorio.com/latest/types/TileID.html)
+pub type TileID = String;
+
 /// [`Types/VirtualSignalID`](https://lua-api.factorio.com/latest/types/VirtualSignalID.html)
 pub type VirtualSignalID = String;
 
@@ -886,17 +1178,14 @@ pub type RecipeID = String;
 /// [`Types/RecipeCategoryID`](https://lua-api.factorio.com/latest/types/RecipeCategoryID.html)
 pub type RecipeCategoryID = String;
 
-/// [`Types/AmmoCategoryID`](https://lua-api.factorio.com/latest/types/AmmoCategoryID.html)
-pub type AmmoCategoryID = String;
-
 /// [`Types/EquipmentGridID`](https://lua-api.factorio.com/latest/types/EquipmentGridID.html)
 pub type EquipmentGridID = String;
 
+/// [`Types/EquipmentID`](https://lua-api.factorio.com/latest/types/EquipmentID.html)
+pub type EquipmentID = String;
+
 /// [`Types/ResourceCategoryID`](https://lua-api.factorio.com/latest/types/ResourceCategoryID.html)
 pub type ResourceCategoryID = String;
-
-/// [`Types/ItemID`](https://lua-api.factorio.com/latest/types/ItemID.html)
-pub type ItemID = String;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -906,14 +1195,55 @@ pub enum SignalIDConnector {
     Fluid { name: FluidID },
 }
 
-/// [`Types/ItemStackIndex`](https://lua-api.factorio.com/latest/types/ItemStackIndex.html)
-pub type ItemStackIndex = u16;
+/// [`Types/SelectionModeFlags`](https://lua-api.factorio.com/latest/types/SelectionModeFlags.html)
+pub type SelectionModeFlags = FactorioArray<SelectionModeFlagsUnion>;
 
-/// [`Types/ItemCountType`](https://lua-api.factorio.com/latest/types/ItemCountType.html)
-pub type ItemCountType = u32;
+/// [`Types/SelectionModeFlags`](https://lua-api.factorio.com/latest/types/SelectionModeFlags.html)
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum SelectionModeFlagsUnion {
+    Blueprint,
+    Deconstruct,
+    CancelDeconstruct,
+    Items,
+    Trees,
+    BuildableType,
+    Nothing,
+    ItemsToPlace,
+    AnyEntity,
+    AnyTile,
+    SameForce,
+    NotSameForce,
+    Friend,
+    Enemy,
+    Upgrade,
+    CancelUpgrade,
+    Downgrade,
+    EntityWithHealth,
+    EntityWithForce,
+    IsMilitaryTarget,
+    EntityWithOwner,
+    AvoidRollingStock,
+    EntityGhost,
+    TileGhost,
+}
 
-/// [`Types/ItemSubGroupID`](https://lua-api.factorio.com/latest/types/ItemSubGroupID.html)
-pub type ItemSubGroupID = String;
+/// [`Types/CursorBoxType`](https://lua-api.factorio.com/latest/types/CursorBoxType.html)
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum CursorBoxType {
+    Entity,
+    Electricity,
+    Copy,
+    NotAllowed,
+    Pair,
+    Logistics,
+    TrainVisualizations,
+    BlueprintSnapRectangle,
+}
+
+/// [`Types/MouseCursorID`](https://lua-api.factorio.com/latest/types/MouseCursorID.html)
+pub type MouseCursorID = String;
 
 /// [`Types/ItemToPlace`](https://lua-api.factorio.com/latest/types/ItemToPlace.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -929,52 +1259,6 @@ pub struct ItemToPlace {
 pub enum PlaceableBy {
     Single(ItemToPlace),
     Multiple(FactorioArray<ItemToPlace>),
-}
-
-/// [`Types/ModuleSpecification`](https://lua-api.factorio.com/latest/types/ModuleSpecification.html)
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ModuleSpecification {
-    #[serde(
-        default,
-        skip_serializing_if = "helper::is_0_u16",
-        deserialize_with = "helper::truncating_deserializer"
-    )]
-    pub module_slots: ItemStackIndex,
-
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        deserialize_with = "helper::truncating_opt_deserializer"
-    )]
-    pub module_info_max_icons_per_row: Option<u8>,
-
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        deserialize_with = "helper::truncating_opt_deserializer"
-    )]
-    pub module_info_max_icon_rows: Option<u8>,
-    pub module_info_icon_shift: Option<Vector>,
-    pub module_info_separation_multiplier: Option<f32>,
-    pub module_info_multi_row_initial_height_modifier: Option<f32>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum EffectType {
-    Speed,
-    Productivity,
-    Consumption,
-    Pollution,
-}
-
-/// [`Types/EffectTypeLimitation`](https://lua-api.factorio.com/latest/types/EffectTypeLimitation.html)
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum EffectTypeLimitation {
-    Single(EffectType),
-    Multiple(FactorioArray<EffectType>),
 }
 
 /// [`Types/CollisionMask`](https://lua-api.factorio.com/latest/types/CollisionMask.html)
