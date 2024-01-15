@@ -11,17 +11,19 @@ use std::ops::Deref;
 use std::path::Path;
 use std::{collections::HashMap, ops::Rem};
 
+use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
+
 use entity::RenderableEntity;
 use image::{imageops, GenericImageView};
 use mod_util::mod_info::Version;
-use serde::{Deserialize, Serialize};
-use serde_with::skip_serializing_none;
 
 use mod_util::UsedMods;
 use types::*;
 
 pub mod entity;
 pub mod item;
+pub mod recipe;
 
 /// [`Prototypes/PrototypeBase`](https://lua-api.factorio.com/latest/PrototypeBase.html)
 #[skip_serializing_none]
@@ -90,6 +92,9 @@ pub struct DataRaw {
 
     #[serde(flatten)]
     pub item: item::AllTypes,
+
+    pub recipe_category: PrototypeMap<recipe::RecipeCategory>,
+    pub recipe: PrototypeMap<recipe::RecipePrototype>,
 
     pub utility_sprites: PrototypeMap<UtilitySprites>,
 }
