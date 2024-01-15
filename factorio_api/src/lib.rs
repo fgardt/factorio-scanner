@@ -1,10 +1,3 @@
-#![forbid(unsafe_code)]
-#![warn(
-    clippy::pedantic,
-    clippy::nursery,
-    clippy::unwrap_used,
-    clippy::expect_used
-)]
 #![allow(clippy::module_name_repetitions)]
 
 use mod_util::mod_info::Version;

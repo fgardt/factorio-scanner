@@ -4,6 +4,9 @@ version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
 
+[lints]
+workspace = true
+
 [features]
 bp_meta_info = []
 
