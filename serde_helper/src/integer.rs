@@ -302,6 +302,11 @@ mod u32 {
     }
 
     #[must_use]
+    pub const fn u32_30() -> u32 {
+        30
+    }
+
+    #[must_use]
     pub const fn u32_60() -> u32 {
         60
     }
@@ -334,6 +339,11 @@ mod u32 {
     #[must_use]
     pub const fn is_10_u32(value: &u32) -> bool {
         *value == u32_10()
+    }
+
+    #[must_use]
+    pub const fn is_30_u32(value: &u32) -> bool {
+        *value == u32_30()
     }
 
     #[must_use]
