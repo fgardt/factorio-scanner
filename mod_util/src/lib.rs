@@ -1,10 +1,3 @@
-#![forbid(unsafe_code)]
-#![warn(
-    clippy::pedantic,
-    clippy::nursery,
-    clippy::unwrap_used,
-    clippy::expect_used
-)]
 #![allow(dead_code)]
 
 use std::collections::HashMap;

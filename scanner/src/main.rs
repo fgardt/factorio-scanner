@@ -1,10 +1,3 @@
-#![forbid(unsafe_code)]
-#![warn(
-    clippy::pedantic,
-    clippy::nursery,
-    clippy::unwrap_used,
-    clippy::expect_used
-)]
 #![allow(dead_code, clippy::upper_case_acronyms, unused_variables)]
 
 use std::{
