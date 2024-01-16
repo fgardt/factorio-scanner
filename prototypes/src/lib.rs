@@ -22,6 +22,7 @@ use mod_util::UsedMods;
 use types::*;
 
 pub mod entity;
+pub mod fluid;
 pub mod item;
 pub mod recipe;
 
@@ -92,6 +93,9 @@ pub struct DataRaw {
 
     #[serde(flatten)]
     pub item: item::AllTypes,
+
+    #[serde(flatten)]
+    pub fluid: fluid::AllTypes,
 
     pub recipe_category: PrototypeMap<recipe::RecipeCategory>,
     pub recipe: PrototypeMap<recipe::RecipePrototype>,
