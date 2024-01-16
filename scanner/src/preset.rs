@@ -7,6 +7,7 @@ pub enum Preset {
     K2,
     SE,
     K2SE,
+    SeaBlock,
 }
 
 impl Preset {
@@ -18,6 +19,7 @@ impl Preset {
                 ("Krastorio2".to_owned(), Version::new(1, 3, 23)),
                 ("space-exploration".to_owned(), Version::new(0, 6, 119)),
             ],
+            Self::SeaBlock => vec![("SeaBlockMetaPack".to_owned(), Version::new(1, 1, 4))],
         }
         .iter()
         .cloned()
@@ -40,6 +42,9 @@ impl clap::ValueEnum for Preset {
                 PossibleValue::new("K2SE")
                     .aliases(["k2se", "K2+SE", "k2+se", "SEK2", "sek2", "SE+K2", "se+k2"]),
             ),
+            Self::SeaBlock => {
+                Some(PossibleValue::new("SeaBlock").aliases(["seablock", "SB", "sb"]))
+            }
         }
     }
 }
