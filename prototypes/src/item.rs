@@ -1,11 +1,13 @@
+use std::collections::HashSet;
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 use types::{
     CollisionMask, Color, EntityID, EquipmentID, FactorioArray, FileName, FuelCategoryID, Icon,
-    IconData, ItemCountType, ItemID, ItemProductPrototype, ItemPrototypeFlags, SpriteVariations,
-    TileID,
+    IconData, ItemCountType, ItemID, ItemProductPrototype, ItemPrototypeFlags, RenderableGraphics,
+    SpriteVariations, TileID,
 };
 
 use crate::PrototypeMap;
@@ -93,6 +95,17 @@ pub struct ItemPrototypeData {
     pub rocket_launch_product: Option<RocketLaunchProduct>,
 }
 
+impl ItemPrototypeData {
+    pub fn get_icon(
+        &self,
+        scale: f64,
+        used_mods: &mod_util::UsedMods,
+        image_cache: &mut types::ImageCache,
+    ) -> Option<types::GraphicsOutput> {
+        self.icon.render(scale, used_mods, image_cache, &())
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum DarkBackgroundIcon {
@@ -151,6 +164,131 @@ pub struct AllTypes {
     pub armor: PrototypeMap<ArmorPrototype>,
     pub mining_tool: PrototypeMap<MiningToolPrototype>,
     pub repair_tool: PrototypeMap<RepairToolPrototype>,
+}
+
+impl AllTypes {
+    #[must_use]
+    pub fn all_names(&self) -> HashSet<ItemID> {
+        let mut res = HashSet::new();
+
+        res.extend(self.item.keys().cloned());
+        res.extend(self.ammo.keys().cloned());
+        res.extend(self.capsule.keys().cloned());
+        res.extend(self.gun.keys().cloned());
+        res.extend(self.item_with_entity_data.keys().cloned());
+        res.extend(self.item_with_label.keys().cloned());
+        res.extend(self.item_with_inventory.keys().cloned());
+        res.extend(self.blueprint_book.keys().cloned());
+        res.extend(self.item_with_tags.keys().cloned());
+        res.extend(self.selection_tool.keys().cloned());
+        res.extend(self.blueprint.keys().cloned());
+        res.extend(self.copy_paste_tool.keys().cloned());
+        res.extend(self.deconstruction_item.keys().cloned());
+        res.extend(self.upgrade_item.keys().cloned());
+        res.extend(self.module.keys().cloned());
+        res.extend(self.rail_planner.keys().cloned());
+        res.extend(self.spidertron_remote.keys().cloned());
+        res.extend(self.tool.keys().cloned());
+        res.extend(self.armor.keys().cloned());
+        res.extend(self.mining_tool.keys().cloned());
+        res.extend(self.repair_tool.keys().cloned());
+
+        res
+    }
+
+    pub fn get_icon(
+        &self,
+        name: &str,
+        scale: f64,
+        used_mods: &mod_util::UsedMods,
+        image_cache: &mut types::ImageCache,
+    ) -> Option<types::GraphicsOutput> {
+        if self.item.contains_key(name) {
+            return self.item[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.ammo.contains_key(name) {
+            return self.ammo[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.capsule.contains_key(name) {
+            return self.capsule[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.gun.contains_key(name) {
+            return self.gun[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.item_with_entity_data.contains_key(name) {
+            return self.item_with_entity_data[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.item_with_label.contains_key(name) {
+            return self.item_with_label[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.item_with_inventory.contains_key(name) {
+            return self.item_with_inventory[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.blueprint_book.contains_key(name) {
+            return self.blueprint_book[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.item_with_tags.contains_key(name) {
+            return self.item_with_tags[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.selection_tool.contains_key(name) {
+            return self.selection_tool[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.blueprint.contains_key(name) {
+            return self.blueprint[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.copy_paste_tool.contains_key(name) {
+            return self.copy_paste_tool[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.deconstruction_item.contains_key(name) {
+            return self.deconstruction_item[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.upgrade_item.contains_key(name) {
+            return self.upgrade_item[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.module.contains_key(name) {
+            return self.module[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.rail_planner.contains_key(name) {
+            return self.rail_planner[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.spidertron_remote.contains_key(name) {
+            return self.spidertron_remote[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.tool.contains_key(name) {
+            return self.tool[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.armor.contains_key(name) {
+            return self.armor[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.mining_tool.contains_key(name) {
+            return self.mining_tool[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        if self.repair_tool.contains_key(name) {
+            return self.repair_tool[name].get_icon(scale, used_mods, image_cache);
+        }
+
+        None
+    }
 }
 
 #[cfg(test)]
