@@ -31,7 +31,7 @@ impl Preset {
 
 impl clap::ValueEnum for Preset {
     fn value_variants<'a>() -> &'a [Self] {
-        &[Self::K2, Self::SE, Self::K2SE]
+        &[Self::K2, Self::SE, Self::K2SE, Self::SeaBlock]
     }
 
     fn to_possible_value(&self) -> Option<PossibleValue> {
