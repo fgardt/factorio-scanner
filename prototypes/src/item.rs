@@ -168,30 +168,30 @@ pub struct AllTypes {
 
 impl AllTypes {
     #[must_use]
-    pub fn all_names(&self) -> HashSet<ItemID> {
+    pub fn all_names(&self) -> HashSet<&ItemID> {
         let mut res = HashSet::new();
 
-        res.extend(self.item.keys().cloned());
-        res.extend(self.ammo.keys().cloned());
-        res.extend(self.capsule.keys().cloned());
-        res.extend(self.gun.keys().cloned());
-        res.extend(self.item_with_entity_data.keys().cloned());
-        res.extend(self.item_with_label.keys().cloned());
-        res.extend(self.item_with_inventory.keys().cloned());
-        res.extend(self.blueprint_book.keys().cloned());
-        res.extend(self.item_with_tags.keys().cloned());
-        res.extend(self.selection_tool.keys().cloned());
-        res.extend(self.blueprint.keys().cloned());
-        res.extend(self.copy_paste_tool.keys().cloned());
-        res.extend(self.deconstruction_item.keys().cloned());
-        res.extend(self.upgrade_item.keys().cloned());
-        res.extend(self.module.keys().cloned());
-        res.extend(self.rail_planner.keys().cloned());
-        res.extend(self.spidertron_remote.keys().cloned());
-        res.extend(self.tool.keys().cloned());
-        res.extend(self.armor.keys().cloned());
-        res.extend(self.mining_tool.keys().cloned());
-        res.extend(self.repair_tool.keys().cloned());
+        res.extend(self.item.keys());
+        res.extend(self.ammo.keys());
+        res.extend(self.capsule.keys());
+        res.extend(self.gun.keys());
+        res.extend(self.item_with_entity_data.keys());
+        res.extend(self.item_with_label.keys());
+        res.extend(self.item_with_inventory.keys());
+        res.extend(self.blueprint_book.keys());
+        res.extend(self.item_with_tags.keys());
+        res.extend(self.selection_tool.keys());
+        res.extend(self.blueprint.keys());
+        res.extend(self.copy_paste_tool.keys());
+        res.extend(self.deconstruction_item.keys());
+        res.extend(self.upgrade_item.keys());
+        res.extend(self.module.keys());
+        res.extend(self.rail_planner.keys());
+        res.extend(self.spidertron_remote.keys());
+        res.extend(self.tool.keys());
+        res.extend(self.armor.keys());
+        res.extend(self.mining_tool.keys());
+        res.extend(self.repair_tool.keys());
 
         res
     }
