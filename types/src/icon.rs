@@ -1,7 +1,7 @@
 use image::Rgba;
 use serde::{Deserialize, Serialize};
 
-use crate::{merge_layers, FactorioArray, GraphicsOutput, ImageCache, RenderableGraphics};
+use crate::{merge_renders, FactorioArray, GraphicsOutput, ImageCache, RenderableGraphics};
 
 use super::{helper, Color, FileName, SpriteSizeType, Vector};
 
@@ -216,7 +216,7 @@ impl RenderableGraphics for Icon {
                 icons,
                 icon_size,
                 icon_mipmaps,
-            } => merge_layers(
+            } => merge_icon_layers(
                 icons,
                 scale,
                 used_mods,
@@ -248,4 +248,35 @@ impl RenderableGraphics for Icon {
             ),
         }
     }
+}
+
+pub fn merge_icon_layers<O, T: RenderableGraphics<RenderOpts = O>>(
+    layers: &[T],
+    scale: f64,
+    used_mods: &mod_util::UsedMods,
+    image_cache: &mut ImageCache,
+    opts: &O,
+) -> Option<GraphicsOutput> {
+    let layers = layers
+        .iter()
+        .filter_map(|layer| layer.render(scale, used_mods, image_cache, opts))
+        .collect::<Vec<_>>();
+
+    if layers.is_empty() {
+        return None;
+    }
+
+    let (base_icon, base_shift) = &layers[0];
+    let base_size = f64::from(base_icon.width());
+
+    let layers = layers
+        .iter()
+        .map(|(img, shift)| {
+            let shift = shift - base_shift;
+
+            Some((img.clone(), shift / base_size))
+        })
+        .collect::<Vec<_>>();
+
+    merge_renders(layers.as_slice(), scale)
 }

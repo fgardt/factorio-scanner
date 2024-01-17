@@ -97,8 +97,9 @@ pub struct DataRaw {
     #[serde(flatten)]
     pub fluid: fluid::AllTypes,
 
+    #[serde(flatten)]
+    pub recipe: recipe::AllTypes,
     pub recipe_category: PrototypeMap<recipe::RecipeCategory>,
-    pub recipe: PrototypeMap<recipe::RecipePrototype>,
 
     pub utility_sprites: PrototypeMap<UtilitySprites>,
 }
@@ -109,6 +110,17 @@ impl DataRaw {
         let mut bytes = Vec::new();
         File::open(dump_path).ok()?.read_to_end(&mut bytes).ok()?;
         Some(serde_json::from_slice(&bytes).unwrap())
+    }
+
+    pub fn get_recipe_icon(
+        &self,
+        name: &str,
+        scale: f64,
+        used_mods: &mod_util::UsedMods,
+        image_cache: &mut types::ImageCache,
+    ) -> Option<types::GraphicsOutput> {
+        self.recipe
+            .get_icon(name, scale, used_mods, image_cache, &self.item, &self.fluid)
     }
 }
 
