@@ -1277,7 +1277,7 @@ pub enum EntityPrototypeFlag {
     NotBlueprintable,
     Hidden,
     HideAltInfo,
-    FastReplaceNoCrossTypeWhileMoving,
+    FastReplaceableNoCrossTypeWhileMoving,
     NoGapFillWhileBuilding,
     NotFlammable,
     NoAutomatedItemRemoval,

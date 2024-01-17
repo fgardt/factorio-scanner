@@ -16,7 +16,7 @@ use serde_with::skip_serializing_none;
 use mod_util::{
     mod_list::ModList, mod_loader::Mod, mod_settings::SettingsDat, UsedMods, UsedVersions,
 };
-use prototypes::entity::Type as EntityType;
+use prototypes::{entity::Type as EntityType, InternalRenderLayer};
 use prototypes::{DataRaw, DataUtil, RenderLayerBuffer, TargetSize};
 use types::{ConnectedDirections, Direction, ImageCache, MapPosition};
 
@@ -49,6 +49,14 @@ struct Cli {
     /// Path to the output file
     #[clap(short, long, value_parser)]
     out: PathBuf,
+
+    /// Target resolution (1 side of a square) in pixels
+    #[clap(long = "res", default_value_t = 2048.0)]
+    target_res: f64,
+
+    /// Minimum scale to use (below 0.5 makes not much sense, vanilla HR mode is 0.5)
+    #[clap(long, default_value_t = 0.5)]
+    min_scale: f64,
 }
 
 fn main() {
@@ -159,7 +167,7 @@ fn main() {
         active_mods.keys().collect::<Vec<_>>()
     );
 
-    let size = calculate_target_size(bp, &data, 2048.0, 0.5).unwrap();
+    let size = calculate_target_size(bp, &data, cli.target_res, 0.5).unwrap();
     println!("target size: {size:?}");
 
     let img = render_bp(
@@ -451,6 +459,30 @@ fn render_bp(
             render_opts.connections = connections;
             render_opts.connected_gates = connected_gates;
             render_opts.draw_gate_patch = draw_gate_patch;
+
+            if !e.recipe.is_empty() {
+                if let Some(icon) = data.get_recipe_icon(
+                    &e.recipe,
+                    render_layers.scale() * 0.75,
+                    used_mods,
+                    image_cache,
+                ) {
+                    // println!(
+                    //     "rendering recipe icon for {} at {:?} [{}]",
+                    //     e.recipe, e.position, e.name
+                    // );
+                    render_layers.add(
+                        icon,
+                        &render_opts.position,
+                        InternalRenderLayer::RecipeOverlay,
+                    );
+                } else {
+                    println!(
+                        "failed to render recipe icon for {} at {:?} [{}]",
+                        e.recipe, e.position, e.name
+                    );
+                }
+            }
 
             data.render_entity(
                 &e.name,
