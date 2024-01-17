@@ -1,8 +1,13 @@
+use std::collections::HashSet;
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
-use types::{Color, FactorioArray, FluidID, Icon, ItemID, ItemSubGroupID, RecipeCategoryID};
+use types::{
+    Color, FactorioArray, FluidID, Icon, ItemID, ItemSubGroupID, RecipeCategoryID,
+    RenderableGraphics,
+};
 
 /// [`Prototypes/RecipeCategory`](https://lua-api.factorio.com/latest/prototypes/RecipeCategory.html)
 pub type RecipeCategory = crate::BasePrototype<()>;
@@ -28,6 +33,83 @@ pub struct RecipePrototypeData {
 
     #[serde(flatten)]
     pub recipe: DifficultyRecipeData,
+}
+
+impl RecipePrototypeData {
+    pub fn get_icon(
+        &self,
+        scale: f64,
+        used_mods: &mod_util::UsedMods,
+        image_cache: &mut types::ImageCache,
+        items: &crate::item::AllTypes,
+        fluids: &crate::fluid::AllTypes,
+    ) -> Option<types::GraphicsOutput> {
+        if let Some(icon) = self.icon.as_ref() {
+            return icon.render(scale, used_mods, image_cache, &());
+        }
+
+        let recipe = self.recipe.get_data();
+
+        match &recipe.results {
+            RecipeDataResult::Multiple { results } => {
+                if results.is_empty() {
+                    return None;
+                }
+
+                if results.len() == 1 {
+                    return match results.first() {
+                        Some(ProductPrototype::Specific(
+                            SpecificProductPrototype::FluidProductPrototype { name, .. },
+                        )) => fluids.get_icon(name, scale, used_mods, image_cache),
+                        Some(
+                            ProductPrototype::SimpleItem(name, _)
+                            | ProductPrototype::UntaggedItem(ItemProductPrototype { name, .. })
+                            | ProductPrototype::Specific(
+                                SpecificProductPrototype::ItemProductPrototype(
+                                    ItemProductPrototype { name, .. },
+                                ),
+                            ),
+                        ) => items.get_icon(name, scale, used_mods, image_cache),
+                        _ => None,
+                    };
+                }
+
+                let Some(main_product) = &recipe.main_product else {
+                    return None;
+                };
+
+                for product in results {
+                    match product {
+                        ProductPrototype::Specific(
+                            SpecificProductPrototype::FluidProductPrototype { name, .. },
+                        ) => {
+                            if name == main_product {
+                                return fluids.get_icon(name, scale, used_mods, image_cache);
+                            }
+                        }
+                        ProductPrototype::SimpleItem(name, _)
+                        | ProductPrototype::UntaggedItem(ItemProductPrototype { name, .. })
+                        | ProductPrototype::Specific(
+                            SpecificProductPrototype::ItemProductPrototype(ItemProductPrototype {
+                                name,
+                                ..
+                            }),
+                        ) => {
+                            if name == main_product {
+                                return items.get_icon(name, scale, used_mods, image_cache);
+                            }
+                        }
+                    }
+                }
+
+                None
+            }
+            RecipeDataResult::Single { result, .. } => {
+                // println!("single result");
+                items.get_icon(result, scale, used_mods, image_cache)
+            }
+        }
+    }
 }
 
 fn crafting_category() -> RecipeCategoryID {
@@ -107,10 +189,18 @@ pub struct RecipeData {
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub emissions_multiplier: f64,
 
-    #[serde(default = "helper::u32_30", skip_serializing_if = "helper::is_30_u32")]
+    #[serde(
+        default = "helper::u32_30",
+        deserialize_with = "helper::truncating_deserializer",
+        skip_serializing_if = "helper::is_30_u32"
+    )]
     pub requester_paste_multiplier: u32,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
+    #[serde(
+        default,
+        deserialize_with = "helper::truncating_deserializer",
+        skip_serializing_if = "helper::is_default"
+    )]
     pub overload_multiplier: u32,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -159,7 +249,11 @@ pub enum RecipeDataResult {
     Single {
         result: ItemID,
 
-        #[serde(default = "helper::u16_1", skip_serializing_if = "helper::is_1_u16")]
+        #[serde(
+            default = "helper::u16_1",
+            deserialize_with = "helper::truncating_deserializer",
+            skip_serializing_if = "helper::is_1_u16"
+        )]
         result_count: u16,
     },
 }
@@ -168,39 +262,56 @@ pub enum RecipeDataResult {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum IngredientPrototype {
-    SimpleItem(ItemID, u16),
-
-    /// [`Types/FluidIngredientPrototype`](https://lua-api.factorio.com/latest/types/FluidIngredientPrototype.html)
-    Fluid(FluidIngredientPrototype),
-
-    /// [`Types/ItemIngredientPrototype`](https://lua-api.factorio.com/latest/types/ItemIngredientPrototype.html)
-    Item(ItemIngredientPrototype),
+    SimpleItem(
+        ItemID,
+        #[serde(deserialize_with = "helper::truncating_deserializer")] u16,
+    ),
+    Specific(SpecificIngredientPrototype),
+    UntaggedItem(ItemIngredientPrototype),
 }
 
-/// [`Types/FluidIngredientPrototype`](https://lua-api.factorio.com/latest/types/FluidIngredientPrototype.html)
+#[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "fluid", tag = "type")]
-pub struct FluidIngredientPrototype {
-    pub name: FluidID,
-    pub amount: f64,
+#[serde(tag = "type")]
+pub enum SpecificIngredientPrototype {
+    /// [`Types/ItemIngredientPrototype`](https://lua-api.factorio.com/latest/types/ItemIngredientPrototype.html)
+    #[serde(rename = "item")]
+    ItemIngredientPrototype(ItemIngredientPrototype),
 
-    #[serde(flatten)]
-    pub temperature: Option<IngredientTemperature>,
+    /// [`Types/FluidIngredientPrototype`](https://lua-api.factorio.com/latest/types/FluidIngredientPrototype.html)
+    #[serde(rename = "fluid")]
+    FluidIngredientPrototype {
+        name: FluidID,
+        amount: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub catalyst_amount: f64,
+        #[serde(flatten)]
+        temperature: Option<IngredientTemperature>,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub fluidbox_index: u32,
+        #[serde(default, skip_serializing_if = "helper::is_default")]
+        catalyst_amount: f64,
+
+        #[serde(
+            default,
+            deserialize_with = "helper::truncating_deserializer",
+            skip_serializing_if = "helper::is_default"
+        )]
+        fluidbox_index: u32,
+    },
 }
 
 /// [`Types/ItemIngredientPrototype`](https://lua-api.factorio.com/latest/types/ItemIngredientPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ItemIngredientPrototype {
     pub name: ItemID,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub amount: u16,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
+    #[serde(
+        default,
+        deserialize_with = "helper::truncating_deserializer",
+        skip_serializing_if = "helper::is_default"
+    )]
     pub catalyst_amount: u16,
 }
 
@@ -220,37 +331,48 @@ pub enum IngredientTemperature {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum ProductPrototype {
-    SimpleItem(ItemID, u16),
-
-    /// [`Types/FluidProductPrototype`](https://lua-api.factorio.com/latest/types/FluidProductPrototype.html)
-    Fluid(FluidProductPrototype),
-
-    /// [`Types/ItemProductPrototype`](https://lua-api.factorio.com/latest/types/ItemProductPrototype.html)
-    Item(ItemProductPrototype),
+    SimpleItem(
+        ItemID,
+        #[serde(deserialize_with = "helper::truncating_deserializer")] u16,
+    ),
+    Specific(SpecificProductPrototype),
+    UntaggedItem(ItemProductPrototype),
 }
 
-/// [`Types/FluidProductPrototype`](https://lua-api.factorio.com/latest/types/FluidProductPrototype.html)
+#[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "fluid", tag = "type")]
-pub struct FluidProductPrototype {
-    pub name: FluidID,
+#[serde(tag = "type")]
+pub enum SpecificProductPrototype {
+    /// [`Types/ItemProductPrototype`](https://lua-api.factorio.com/latest/types/ItemProductPrototype.html)
+    #[serde(rename = "item")]
+    ItemProductPrototype(ItemProductPrototype),
 
-    #[serde(flatten)]
-    pub amount: ProductAmount<f64>,
+    /// [`Types/FluidProductPrototype`](https://lua-api.factorio.com/latest/types/FluidProductPrototype.html)
+    #[serde(rename = "fluid")]
+    FluidProductPrototype {
+        name: FluidID,
 
-    pub temperature: Option<f64>,
+        #[serde(flatten)]
+        amount: ProductFluidAmount,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub probability: f64,
+        temperature: Option<f64>,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub catalyst_amount: f64,
+        #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+        probability: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub fluidbox_index: u32,
+        #[serde(default, skip_serializing_if = "helper::is_default")]
+        catalyst_amount: f64,
 
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub show_details_in_recipe_tooltip: bool,
+        #[serde(
+            default,
+            deserialize_with = "helper::truncating_deserializer",
+            skip_serializing_if = "helper::is_default"
+        )]
+        fluidbox_index: u32,
+
+        #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+        show_details_in_recipe_tooltip: bool,
+    },
 }
 
 /// [`Types/ItemProductPrototype`](https://lua-api.factorio.com/latest/types/ItemProductPrototype.html)
@@ -259,12 +381,16 @@ pub struct ItemProductPrototype {
     pub name: ItemID,
 
     #[serde(flatten)]
-    pub amount: ProductAmount<u16>,
+    pub amount: ProductItemAmount,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub probability: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
+    #[serde(
+        default,
+        deserialize_with = "helper::truncating_deserializer",
+        skip_serializing_if = "helper::is_default"
+    )]
     pub catalyst_amount: u16,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -273,7 +399,127 @@ pub struct ItemProductPrototype {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
-pub enum ProductAmount<T> {
-    Static { amount: T },
-    Range { amount_min: T, amount_max: T },
+pub enum ProductFluidAmount {
+    Static { amount: f64 },
+    Range { amount_min: f64, amount_max: f64 },
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum ProductItemAmount {
+    Static {
+        #[serde(deserialize_with = "helper::truncating_deserializer")]
+        amount: u16,
+    },
+    Range {
+        #[serde(deserialize_with = "helper::truncating_deserializer")]
+        amount_min: u16,
+
+        #[serde(deserialize_with = "helper::truncating_deserializer")]
+        amount_max: u16,
+    },
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct AllTypes {
+    pub recipe: crate::PrototypeMap<RecipePrototype>,
+}
+
+impl AllTypes {
+    #[must_use]
+    pub fn all_names(&self) -> HashSet<&String> {
+        self.recipe.keys().collect()
+    }
+
+    pub fn get_icon(
+        &self,
+        name: &str,
+        scale: f64,
+        used_mods: &mod_util::UsedMods,
+        image_cache: &mut types::ImageCache,
+        items: &crate::item::AllTypes,
+        fluids: &crate::fluid::AllTypes,
+    ) -> Option<types::GraphicsOutput> {
+        self.recipe
+            .get(name)
+            .and_then(|recipe| recipe.get_icon(scale, used_mods, image_cache, items, fluids))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn deserialize_empty_barrel() {
+        let recipe = r#"{
+          "type": "recipe",
+          "name": "empty-barrel",
+          "category": "crafting",
+          "energy_required": 1,
+          "subgroup": "intermediate-product",
+          "enabled": false,
+          "ingredients": 
+          [
+            
+            {
+              "type": "item",
+              "name": "steel-plate",
+              "amount": 1
+            }
+          ],
+          "results": 
+          [
+            
+            {
+              "type": "item",
+              "name": "empty-barrel",
+              "amount": 1
+            }
+          ]
+        }"#;
+
+        let _ = serde_json::from_str::<RecipePrototype>(recipe).unwrap();
+    }
+
+    #[test]
+    fn deserialize_uranium_processing() {
+        let recipe = r#"{
+            "type": "recipe",
+            "name": "uranium-processing",
+            "energy_required": 12,
+            "enabled": false,
+            "category": "centrifuging",
+            "ingredients": 
+            [
+              
+              [
+                "uranium-ore",
+                10
+              ]
+            ],
+            "icon": "__base__/graphics/icons/uranium-processing.png",
+            "icon_size": 64,
+            "icon_mipmaps": 4,
+            "subgroup": "raw-material",
+            "order": "k[uranium-processing]",
+            "results": 
+            [
+              
+              {
+                "name": "uranium-235",
+                "probability": 0.00700000000000000088817841970012523233890533447265625,
+                "amount": 1
+              },
+              
+              {
+                "name": "uranium-238",
+                "probability": 0.992999999999999971578290569595992565155029296875,
+                "amount": 1
+              }
+            ]
+          }"#;
+
+        let _ = serde_json::from_str::<RecipePrototype>(recipe).unwrap();
+    }
 }
