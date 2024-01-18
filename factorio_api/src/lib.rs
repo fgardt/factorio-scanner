@@ -91,6 +91,19 @@ pub mod blocking {
     }
 
     #[must_use]
+    pub fn fetch_mod_raw(download_url: &str, username: &str, token: &str) -> Option<Vec<u8>> {
+        let client = reqwest::blocking::Client::new();
+        let res = client
+            .get(format!(
+                "https://mods.factorio.com{download_url}?username={username}&token={token}",
+            ))
+            .send()
+            .ok()?;
+
+        Some(res.bytes().ok()?.to_vec())
+    }
+
+    #[must_use]
     pub fn fetch_mod(
         mod_name: &str,
         version: &Version,
@@ -104,16 +117,7 @@ pub mod blocking {
                 continue;
             }
 
-            let client = reqwest::blocking::Client::new();
-            let res = client
-                .get(format!(
-                    "https://mods.factorio.com{}?username={username}&token={token}",
-                    release.download_url
-                ))
-                .send()
-                .ok()?;
-
-            return Some(res.bytes().ok()?.to_vec());
+            return fetch_mod_raw(&release.download_url, username, token);
         }
 
         None
@@ -556,7 +560,7 @@ mod portal {
 
     #[derive(Debug, Deserialize, Serialize, Clone)]
     pub struct PortalListResponse {
-        pub pagination: PortalSearchPagination,
+        pub pagination: Option<PortalSearchPagination>,
         pub results: Vec<PortalSearchResultEntry>,
     }
 
@@ -688,6 +692,20 @@ mod portal {
 }
 
 #[must_use]
+pub async fn fetch_mod_raw(download_url: &str, username: &str, token: &str) -> Option<Vec<u8>> {
+    let client = reqwest::Client::new();
+    let res = client
+        .get(format!(
+            "https://mods.factorio.com{download_url}?username={username}&token={token}"
+        ))
+        .send()
+        .await
+        .ok()?;
+
+    Some(res.bytes().await.ok()?.to_vec())
+}
+
+#[must_use]
 pub async fn fetch_mod(
     mod_name: &str,
     version: &Version,
@@ -701,17 +719,7 @@ pub async fn fetch_mod(
             continue;
         }
 
-        let client = reqwest::Client::new();
-        let res = client
-            .get(format!(
-                "https://mods.factorio.com{}?username={username}&token={token}",
-                release.download_url,
-            ))
-            .send()
-            .await
-            .ok()?;
-
-        return Some(res.bytes().await.ok()?.to_vec());
+        return fetch_mod_raw(&release.download_url, username, token).await;
     }
 
     None
