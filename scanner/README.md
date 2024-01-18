@@ -5,7 +5,7 @@ Commandline tool to render factorio blueprints with mod support.
 ## Current limitations
 
 - wires are not rendered
-- no alt-mode (so no recipes, inserter arrows, ...)
+- very limited "alt-mode" (recipes are supported (without a black background tho), anything else is still missing)
 - only blueprints will be rendered (or only the selected blueprint from a book), no upgrade/deconstructon planners
 
 ## Setup
@@ -36,9 +36,13 @@ Options:
       --prototype-dump <PROTOTYPE_DUMP>
           Path to the data dump json file. If not set, the data will be dumped automatically
       --preset <PRESET>
-          Preset to use [possible values: K2, SE, K2SE]
+          Preset to use [possible values: K2, SE, K2SE, SeaBlock]
   -o, --out <OUT>
           Path to the output file
+      --res <TARGET_RES>
+          Target resolution (1 side of a square) in pixels [default: 2048]
+      --min-scale <MIN_SCALE>
+          Minimum scale to use (below 0.5 makes not much sense, vanilla HR mode is 0.5) [default: 0.5]
   -h, --help
           Print help
   -V, --version
@@ -55,5 +59,9 @@ Alternatively you can install my [blueprint meta info mod](https://mods.factorio
 ## TODO
 
 - draw "alt-mode"
-  - needs recipe / item parsing, loading and rendering
+  - [x] draw recipes
+  - [ ] draw inserter arrows
+  - [ ] draw fluid box arrows
+  - [ ] draw modules
+  - [ ] draw filters (splitters, inserters)
 - draw wires (copper & circuits)

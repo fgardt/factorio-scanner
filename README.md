@@ -12,7 +12,7 @@ Building additional tools might also happen along the way (cli tool to edit `mod
 - [`factorio_api`](/factorio_api/): internal factorio mod portal api
 - [`locale`](/locale/): locale dump (de)serializing
 - [`mod_util`](/mod_util/): mod settings (de)serializing (`.json` and `.dat` files), mod list (de)serializing, property tree (de)serializing (binary format only)
-- [`prototypes`](/prototypes/): entity prototype (de)serializing & rendering
+- [`prototypes`](/prototypes/): prototype (de)serializing & rendering (supports entities, items, fluids and recipes)
 - [`types`](/types/): generic type (de)serializing, sprite loading, layering, merging, ...
 - [`serde_helper`](/serde_helper/): util functions for deserialized defaults & serialization skip conditions
 - [`scanner`](/scanner/): the actual render tool that connects everything
