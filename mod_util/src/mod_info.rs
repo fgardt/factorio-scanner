@@ -1,4 +1,5 @@
 use core::fmt;
+use std::str::FromStr;
 
 use serde::{
     de::{Error, Visitor},
@@ -75,6 +76,14 @@ impl fmt::Display for Version {
         let patch = &self.patch;
 
         write!(f, "{major}.{minor}.{patch}")
+    }
+}
+
+impl FromStr for Version {
+    type Err = anyhow::Error;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        Self::try_from(value)
     }
 }
 
