@@ -571,7 +571,7 @@ fn resolve_mod_dependencies(
         fetched_deps.push(name);
     }
 
-    mod_list.solve_dependencies(required)
+    Ok(mod_list.solve_dependencies(required)?)
 }
 
 fn download_mods(missing: UsedVersions, factorio_dir: &Path) -> anyhow::Result<()> {

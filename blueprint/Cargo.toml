@@ -15,4 +15,5 @@ serde.workspace = true
 serde_helper.workspace = true
 serde_json.workspace = true
 serde_with.workspace = true
+thiserror.workspace = true
 types.workspace = true

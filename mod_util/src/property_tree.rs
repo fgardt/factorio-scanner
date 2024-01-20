@@ -33,8 +33,18 @@ use std::{
     io::{self, Cursor, Seek, SeekFrom},
 };
 
-use anyhow::{anyhow, Error, Result};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+
+#[derive(Debug, thiserror::Error)]
+pub enum PropertyTreeError {
+    #[error("property tree io error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("invalid property tree type: {0}")]
+    InvalidType(u8),
+}
+
+type Result<T> = std::result::Result<T, PropertyTreeError>;
 
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -51,9 +61,9 @@ enum PropertyTreeType {
 type PTT = PropertyTreeType;
 
 impl TryFrom<&u8> for PropertyTreeType {
-    type Error = Error;
+    type Error = PropertyTreeError;
 
-    fn try_from(value: &u8) -> Result<Self, Self::Error> {
+    fn try_from(value: &u8) -> Result<Self> {
         match value {
             0 => Ok(Self::None),
             1 => Ok(Self::Bool),
@@ -61,15 +71,15 @@ impl TryFrom<&u8> for PropertyTreeType {
             3 => Ok(Self::String),
             4 => Ok(Self::List),
             5 => Ok(Self::Dictionary),
-            _ => Err(anyhow!("Invalid PropertyTreeType")),
+            _ => Err(PropertyTreeError::InvalidType(*value)),
         }
     }
 }
 
 impl TryFrom<u8> for PropertyTreeType {
-    type Error = Error;
+    type Error = PropertyTreeError;
 
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
+    fn try_from(value: u8) -> Result<Self> {
         Self::try_from(&value)
     }
 }
