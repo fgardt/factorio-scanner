@@ -2,19 +2,25 @@
 
 use std::{
     collections::{HashMap, HashSet},
+    env,
     fs::{self},
     io::{Read, Write},
     path::{Path, PathBuf},
-    process::Command,
+    process::{Command, ExitCode},
 };
 
 use clap::Parser;
+use error_stack::{ensure, report, Context, Result, ResultExt};
 use image::{codecs::png, ImageEncoder};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
+#[macro_use]
+extern crate log;
+
 use mod_util::{
-    mod_list::ModList, mod_loader::Mod, mod_settings::SettingsDat, UsedMods, UsedVersions,
+    mod_info::Version, mod_list::ModList, mod_loader::Mod, mod_settings::SettingsDat, UsedMods,
+    UsedVersions,
 };
 use prototypes::{entity::Type as EntityType, InternalRenderLayer};
 use prototypes::{DataRaw, DataUtil, RenderLayerBuffer, TargetSize};
@@ -57,17 +63,67 @@ struct Cli {
     /// Minimum scale to use (below 0.5 makes not much sense, vanilla HR mode is 0.5)
     #[clap(long, default_value_t = 0.5)]
     min_scale: f64,
+
+    /// Sets the used logging level
+    /// Possible values: error, warn, info, debug, trace
+    /// For no logging don't set this option
+    /// Note: the LOG_LEVEL environment variable overrides this option
+    #[clap(long, value_parser, verbatim_doc_comment)]
+    log_level: Option<log::Level>,
 }
 
-fn main() {
+#[derive(Debug)]
+enum ScannerError {
+    SetupError,
+    RenderError,
+    NoBlueprint,
+}
+
+impl Context for ScannerError {}
+
+impl std::fmt::Display for ScannerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::SetupError => write!(f, "setup error"),
+            Self::RenderError => write!(f, "render error"),
+            Self::NoBlueprint => write!(f, "no blueprint"),
+        }
+    }
+}
+
+fn main() -> ExitCode {
+    dotenv::dotenv().ok();
     let cli = Cli::parse();
 
-    let bp = blueprint::Data::try_from(fs::read_to_string(cli.blueprint).unwrap()).unwrap();
-    let bp = bp.as_blueprint().unwrap();
+    let level = cli
+        .log_level
+        .as_ref()
+        .map_or("info", |level| level.as_str());
+    if let Err(logger_err) = pretty_logging::init(level) {
+        eprintln!("{logger_err:?}");
+        return ExitCode::FAILURE;
+    };
 
-    println!("loaded BP");
+    if let Err(err) = full_process(cli) {
+        error!("{err:?}");
+        return ExitCode::FAILURE;
+    };
 
-    let mut mod_list = ModList::generate(&cli.factorio).unwrap();
+    ExitCode::SUCCESS
+}
+
+fn full_process(cli: Cli) -> Result<(), ScannerError> {
+    let bp = blueprint::Data::try_from(
+        fs::read_to_string(cli.blueprint).change_context(ScannerError::NoBlueprint)?,
+    )
+    .change_context(ScannerError::NoBlueprint)?;
+    let bp = bp
+        .as_blueprint()
+        .ok_or(report!(ScannerError::NoBlueprint))?;
+
+    info!("loaded BP");
+
+    let mut mod_list = ModList::generate(&cli.factorio).change_context(ScannerError::SetupError)?;
 
     // get used mods from preset or detect from BP meta info
     let required_mods = cli.preset.as_ref().map_or(
@@ -78,29 +134,27 @@ fn main() {
     );
 
     if !required_mods.is_empty() {
-        println!("checking mod dependencies");
+        debug!("checking mod dependencies");
 
-        let used_mods = match resolve_mod_dependencies(&required_mods, &mut mod_list) {
-            Ok(res) => res,
-            Err(e) => panic!("{e}"),
-        };
+        let used_mods = resolve_mod_dependencies(&required_mods, &mut mod_list)
+            .change_context(ScannerError::SetupError)?;
 
         let missing = mod_list.enable_mods(&used_mods);
         if missing.is_empty() {
-            println!("all mods are already installed");
+            debug!("all mods are already installed");
         } else {
-            println!("downloading missing mods from mod portal");
-            download_mods(missing, &cli.factorio).unwrap();
+            info!("downloading missing mods from mod portal");
+            download_mods(missing, &cli.factorio).change_context(ScannerError::SetupError)?;
         }
     }
 
     let used_mods = mod_list.active_mods();
 
     let data_raw = if let Some(path) = cli.prototype_dump {
-        DataRaw::load(&path).unwrap()
+        DataRaw::load(&path).change_context(ScannerError::SetupError)?
     } else {
-        mod_list.save().unwrap();
-        println!("updated mod-list.json");
+        mod_list.save().change_context(ScannerError::SetupError)?;
+        debug!("updated mod-list.json");
 
         // set settings used in BP
         let empty_settings = &HashMap::new();
@@ -111,64 +165,53 @@ fn main() {
             bp.info.version,
             &cli.factorio.join("mods/mod-settings.dat"),
         )
-        .unwrap()
+        .change_context(ScannerError::SetupError)?
         .save()
-        .unwrap();
+        .change_context(ScannerError::SetupError)?;
 
-        println!("updated mod-settings.dat");
+        debug!("updated mod-settings.dat");
 
         // execute factorio to dump prototypes
-        print!("dumping prototypes ");
-        std::io::stdout().flush().unwrap();
+        info!("dumping prototypes");
+        std::io::stdout()
+            .flush()
+            .change_context(ScannerError::SetupError)?;
+
         let binary_path = cli.factorio.join("bin/x64/run");
         let dump_out = Command::new(cli.factorio_bin.unwrap_or(binary_path))
             .arg("--dump-data")
             .output()
-            .expect("failed to execute process");
+            .change_context(ScannerError::SetupError)?;
 
         if dump_out.status.success() {
-            println!("success");
+            debug!("prototype dump success");
         } else {
-            println!("failed!");
-            println!("{}", String::from_utf8_lossy(&dump_out.stderr));
-            panic!("failed to dump prototypes");
+            return Err(report!(ScannerError::SetupError)
+                .attach_printable(format!(
+                    "prototype dump failed with exit code {}",
+                    dump_out.status.code().unwrap_or(-1)
+                ))
+                .attach_printable(String::from_utf8_lossy(&dump_out.stderr).to_string()));
         }
 
         let dump_path = cli.factorio.join("script-output/data-raw-dump.json");
-        DataRaw::load(&dump_path).unwrap()
+        DataRaw::load(&dump_path).change_context(ScannerError::SetupError)?
     };
 
-    println!("loaded prototype data");
+    info!("loaded prototype data");
 
     // =====[  RENDER TEST  ]=====
     let data = DataUtil::new(data_raw);
 
-    // render every entity once and check if it is empty or not
-    // let mut image_cache = ImageCache::new();
-    // println!("mods: {used_mods:?}");
-    // for name in data.entities() {
-    //     render_by_name(
-    //         name, //"se-spaceship-rocket-booster-tank",
-    //         &data,
-    //         &EntityRenderOpts {
-    //             factorio_dir: &cli.factorio,
-    //             used_mods: used_mods.clone(),
-    //             ..Default::default()
-    //         },
-    //         &mut image_cache,
-    //     );
-    // }
-
     let active_mods = mod_list.active_mods();
-
-    println!(
-        "{} mods active: {:?}",
+    debug!(
+        "{} mods active:\n{:?}",
         active_mods.len(),
         active_mods.keys().collect::<Vec<_>>()
     );
 
     let size = calculate_target_size(bp, &data, cli.target_res, 0.5).unwrap();
-    println!("target size: {size:?}");
+    debug!("target size: {size:?}");
 
     let img = render_bp(
         bp,
@@ -177,9 +220,9 @@ fn main() {
         RenderLayerBuffer::new(size),
         &mut ImageCache::new(),
     );
-    println!("render done");
+    info!("render completed");
 
-    let out = fs::File::create(&cli.out).unwrap();
+    let out = fs::File::create(&cli.out).change_context(ScannerError::RenderError)?;
     let enc = png::PngEncoder::new_with_quality(
         out,
         png::CompressionType::Best,
@@ -187,9 +230,10 @@ fn main() {
     );
 
     enc.write_image(img.as_bytes(), img.width(), img.height(), img.color())
-        .unwrap();
+        .change_context(ScannerError::RenderError)?;
 
-    println!("saved to {:?}", cli.out);
+    info!("saved to {:?}", cli.out);
+    Ok(())
 }
 
 fn calculate_target_size(
@@ -244,7 +288,7 @@ fn calculate_target_size(
     // }
 
     if !unknown.is_empty() {
-        println!("unknown entities: {unknown:?}");
+        warn!("unknown entities: {unknown:?}");
     }
 
     let min_x = (min_x - 0.5).floor();
@@ -467,17 +511,17 @@ fn render_bp(
                     used_mods,
                     image_cache,
                 ) {
-                    // println!(
-                    //     "rendering recipe icon for {} at {:?} [{}]",
-                    //     e.recipe, e.position, e.name
-                    // );
+                    debug!(
+                        "rendering recipe icon for {} at {:?} [{}]",
+                        e.recipe, e.position, e.name
+                    );
                     render_layers.add(
                         icon,
                         &render_opts.position,
                         InternalRenderLayer::RecipeOverlay,
                     );
                 } else {
-                    println!(
+                    warn!(
                         "failed to render recipe icon for {} at {:?} [{}]",
                         e.recipe, e.position, e.name
                     );
@@ -494,10 +538,19 @@ fn render_bp(
         })
         .count();
 
-    println!("entities: {}, layers: {rendered_count}", bp.entities.len());
+    info!("entities: {}, layers: {rendered_count}", bp.entities.len());
 
     render_layers.generate_background();
     render_layers.combine()
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum PlayerDataError {
+    #[error("failed to load player data: {0}")]
+    Load(#[from] std::io::Error),
+
+    #[error("failed to parse player data: {0}")]
+    Parse(#[from] serde_json::Error),
 }
 
 #[skip_serializing_none]
@@ -511,24 +564,38 @@ struct PlayerData {
 }
 
 impl PlayerData {
-    pub fn load(path: &Path) -> Option<Self> {
+    pub fn load(path: &Path) -> std::result::Result<Self, PlayerDataError> {
         let mut bytes = Vec::new();
-        fs::File::open(path).ok()?.read_to_end(&mut bytes).ok()?;
-        serde_json::from_slice(&bytes).ok()
+        fs::File::open(path)?.read_to_end(&mut bytes)?;
+        Ok(serde_json::from_slice(&bytes)?)
+    }
+}
+
+#[derive(Debug)]
+struct DependencyResoutionError;
+
+impl Context for DependencyResoutionError {}
+
+impl std::fmt::Display for DependencyResoutionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "mod dependency resolving error")
     }
 }
 
 fn resolve_mod_dependencies(
     required: &UsedVersions,
     mod_list: &mut ModList,
-) -> anyhow::Result<UsedVersions> {
-    if let Ok(res) = mod_list.solve_dependencies(required) {
-        return Ok(res);
+) -> Result<UsedVersions, DependencyResoutionError> {
+    match mod_list
+        .solve_dependencies(required)
+        .change_context(DependencyResoutionError)
+        .attach_printable_lazy(|| "could not resolve dependencies with local mods")
+    {
+        Ok(res) => return Ok(res),
+        Err(err) => info!("{err:?}"),
     }
 
-    println!(
-        "Could not resolve dependencies with local mods, fetching dependency info from mod portal"
-    );
+    info!("fetching dependency info from mod portal");
 
     let mut process_queue = required.keys().cloned().collect::<Vec<_>>();
     let mut fetched_deps = Vec::new();
@@ -539,13 +606,10 @@ fn resolve_mod_dependencies(
             continue;
         }
 
-        print!("fetching mod info for {name}: ");
-        std::io::stdout().flush().unwrap();
         let Some(info) = factorio_api::blocking::full_info(&name) else {
-            println!("failed");
+            warn!("fetching mod info for {name} failed");
             continue;
         };
-        println!("done");
 
         let deps_info = info
             .releases
@@ -553,7 +617,7 @@ fn resolve_mod_dependencies(
             .map(|r| (r.version, r.info_json.dependencies))
             .collect::<HashMap<_, _>>();
 
-        mod_list.set_dependency_info(&name, deps_info.clone());
+        mod_list.set_dependency_info(&name.clone(), deps_info.clone());
 
         let queue_add = deps_info
             .values()
@@ -567,48 +631,86 @@ fn resolve_mod_dependencies(
             })
             .collect::<HashSet<_>>();
 
+        debug!("fetched dependency info for {name}");
+
         process_queue.extend(queue_add);
         fetched_deps.push(name);
     }
 
-    Ok(mod_list.solve_dependencies(required)?)
+    info!("collected dependency info for {} mods", fetched_deps.len());
+
+    mod_list
+        .solve_dependencies(required)
+        .change_context(DependencyResoutionError)
 }
 
-fn download_mods(missing: UsedVersions, factorio_dir: &Path) -> anyhow::Result<()> {
+#[derive(Debug)]
+enum ModDownloadError {
+    MissingCredentials,
+    TriedToDownloadWubeMod(String, Version),
+    DownloadFailed(String, Version),
+    SaveFailed(String, Version),
+}
+
+impl Context for ModDownloadError {}
+
+impl std::fmt::Display for ModDownloadError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::MissingCredentials => {
+                write!(f, "missing credentials for mod portal")
+            }
+            Self::TriedToDownloadWubeMod(name, version) => {
+                write!(f, "tried to download wube mod {name} v{version}")
+            }
+            Self::DownloadFailed(name, version) => {
+                write!(f, "failed to download mod {name} v{version}")
+            }
+            Self::SaveFailed(name, version) => write!(f, "failed to save mod {name} v{version}",),
+        }
+    }
+}
+
+fn download_mods(missing: UsedVersions, factorio_dir: &Path) -> Result<(), ModDownloadError> {
     let mods_path = factorio_dir.join("mods");
-    let Some(player_data) = PlayerData::load(&factorio_dir.join("player-data.json")) else {
-        panic!("You need to login inside factorio first!");
-    };
 
-    let Some(username) = player_data.username else {
-        panic!("You need to login inside factorio first!");
-    };
+    let (username, token) = {
+        let env_username = env::var("FACTORIO_USERNAME").ok();
+        let env_token = env::var("FACTORIO_TOKEN").ok();
 
-    let Some(token) = player_data.token else {
-        panic!("You need to login inside factorio first!");
+        if let (Some(username), Some(token)) = (env_username.clone(), env_token.clone()) {
+            (username, token)
+        } else {
+            let player_data = PlayerData::load(&factorio_dir.join("player-data.json"))
+                .change_context(ModDownloadError::MissingCredentials).attach_printable("you can either use the game to login to your account\nor you provide the environment variables FACTORIO_USERNAME & FACTORIO_TOKEN\nwhich also work from a .env file")?;
+
+            match (
+                player_data.username,
+                player_data.token,
+                env_username,
+                env_token,
+            ) {
+                (Some(username), Some(token), _, _)
+                | (Some(username), None, _, Some(token))
+                | (None, Some(token), Some(username), _) => (username, token),
+                _ => return Err(report!(ModDownloadError::MissingCredentials).attach_printable("you can either use the game to login to your account\nor you provide the environment variables FACTORIO_USERNAME & FACTORIO_TOKEN\nwhich also work from a .env file"))
+            }
+        }
     };
 
     for (name, version) in missing {
-        if Mod::wube_mods().contains(&name.as_str()) {
-            return Err(anyhow::anyhow!(
-                "Tried to download {name} v{version}, a wube mod! You need to install it manually!"
-            ));
-        }
+        ensure!(
+            !Mod::wube_mods().contains(&name.as_str()),
+            ModDownloadError::TriedToDownloadWubeMod(name, version)
+        );
 
-        print!("downloading {name} v{version}: ");
-        std::io::stdout().flush().unwrap();
-        let Some(dl) = factorio_api::blocking::fetch_mod(&name, &version, &username, &token) else {
-            println!("failed");
-            return Err(anyhow::anyhow!("failed to download mod"));
-        };
+        info!("downloading {name} v{version}");
+        let dl = factorio_api::blocking::fetch_mod(&name, &version, &username, &token).ok_or(
+            report!(ModDownloadError::DownloadFailed(name.clone(), version)),
+        )?;
 
-        match fs::write(mods_path.join(format!("{name}_{version}.zip")), dl) {
-            Ok(()) => println!("done"),
-            Err(e) => {
-                println!("failed -> {e}");
-                return Err(anyhow::anyhow!("failed to write mod"));
-            }
-        }
+        fs::write(mods_path.join(format!("{name}_{version}.zip")), dl)
+            .change_context(ModDownloadError::SaveFailed(name, version))?;
     }
 
     Ok(())

@@ -22,16 +22,15 @@ strip = true
 lto = "thin"
 
 [workspace.dependencies]
-anyhow = "1.0.75"
 blueprint = { path = "blueprint" }
 clap = { version = "4.4", features = ["derive"] }
-error-stack = "0.4"
 factorio_api = { path = "factorio_api" }
 image = { version = "0.24.7", features = ["png"], default-features = false }
 konst = "0.3.7"
 log = "0.4"
 locale = { path = "locale" }
 mod_util = { path = "mod_util" }
+pretty_logging = { path = "pretty_logging" }
 prototypes = { path = "prototypes" }
 serde = { version = "1.0", features = ["derive"] }
 serde_helper = { path = "serde_helper" }

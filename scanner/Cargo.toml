@@ -8,15 +8,19 @@ edition.workspace = true
 workspace = true
 
 [dependencies]
-anyhow.workspace = true
 blueprint.workspace = true
 clap.workspace = true
+error-stack = "0.4"
 factorio_api = { workspace = true, features = ["blocking"] }
 image.workspace = true
+log.workspace = true
 locale.workspace = true
 mod_util = { workspace = true, features = ["bp_meta_info"] }
+pretty_logging.workspace = true
 prototypes.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 serde_with.workspace = true
+thiserror.workspace = true
 types.workspace = true
+dotenv = "0.15.0"
