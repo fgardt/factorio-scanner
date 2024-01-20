@@ -156,9 +156,39 @@ impl Data {
 
 // TODO: properly propagate/bubble errors up for better handling
 
-pub fn bp_string_to_json(bp_string: &str) -> Result<String, &'static str> {
+#[derive(Debug, thiserror::Error)]
+pub enum BlueprintDecodeError {
+    #[error("blueprint string must be at least 2 characters long")]
+    MinSize,
+
+    #[error("unsupported blueprint version: {0}")]
+    UnsupportedVersion(char),
+
+    #[error("blueprint string parsing failed")]
+    Parsing,
+
+    #[error("blueprint string decoding failed: {0}")]
+    Decoding(#[from] base64::DecodeError),
+
+    #[error("blueprint string decompression failed: {0}")]
+    Decompress(#[from] std::io::Error),
+
+    #[error("blueprint string deserialization failed: {0}")]
+    Deserializing(#[from] serde_json::Error),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum BlueprintEncodeError {
+    #[error("blueprint string compression failed: {0}")]
+    Decompress(#[from] std::io::Error),
+
+    #[error("blueprint string serialization failed: {0}")]
+    Serializing(#[from] serde_json::Error),
+}
+
+pub fn bp_string_to_json(bp_string: &str) -> Result<String, BlueprintDecodeError> {
     if bp_string.len() < 2 {
-        return Err("Blueprint string must be at least 2 characters long.");
+        return Err(BlueprintDecodeError::MinSize);
     }
 
     let mut chars = bp_string.chars();
@@ -166,34 +196,27 @@ pub fn bp_string_to_json(bp_string: &str) -> Result<String, &'static str> {
     match chars.next() {
         Some(first) => {
             if first != '0' {
-                return Err("Unsupported blueprint version.");
+                return Err(BlueprintDecodeError::UnsupportedVersion(first));
             }
         }
-        None => return Err("Error parsing blueprint string."),
+        None => return Err(BlueprintDecodeError::Parsing),
     }
 
-    let Ok(compressed) = general_purpose::STANDARD.decode(chars.as_str()) else {
-        return Err("Error decoding blueprint string.");
-    };
+    let compressed = general_purpose::STANDARD.decode(chars.as_str())?;
 
     let mut deflate = ZlibDecoder::new(compressed.as_slice());
     let mut uncompressed = String::new();
 
-    if deflate.read_to_string(&mut uncompressed).is_err() {
-        return Err("Error decompressing blueprint string.");
-    }
+    deflate.read_to_string(&mut uncompressed)?;
+    // .map_err(|err| Err(BlueprintError::Decompressing(err.to_string())))?;
 
     Ok(uncompressed)
 }
 
-pub fn json_to_bp_string(json: &str) -> Result<String, &'static str> {
+pub fn json_to_bp_string(json: &str) -> Result<String, BlueprintEncodeError> {
     let mut deflate = ZlibEncoder::new(Vec::new(), flate2::Compression::new(9));
-    match deflate.write_all(json.as_bytes()) {
-        Ok(()) => (),
-        Err(_) => return Err("Error compressing blueprint."),
-    };
-
-    let compressed = deflate.finish().unwrap();
+    deflate.write_all(json.as_bytes())?;
+    let compressed = deflate.finish()?;
 
     let mut encoded = general_purpose::STANDARD.encode(compressed);
 
@@ -203,11 +226,11 @@ pub fn json_to_bp_string(json: &str) -> Result<String, &'static str> {
 }
 
 impl TryFrom<&str> for Data {
-    type Error = &'static str;
+    type Error = BlueprintDecodeError;
 
     fn try_from(bp_string: &str) -> Result<Self, Self::Error> {
         let json = bp_string_to_json(bp_string)?;
-        let mut data: Self = serde_json::from_str(&json).unwrap(); //.map_or(Err("Error deserializing blueprint."), Ok)?;
+        let mut data: Self = serde_json::from_str(&json)?;
 
         data.normalize_positions();
         data.ensure_ordering();
@@ -217,7 +240,7 @@ impl TryFrom<&str> for Data {
 }
 
 impl TryFrom<String> for Data {
-    type Error = &'static str;
+    type Error = BlueprintDecodeError;
 
     fn try_from(bp_string: String) -> Result<Self, Self::Error> {
         Self::try_from(bp_string.as_str())
@@ -225,12 +248,10 @@ impl TryFrom<String> for Data {
 }
 
 impl TryFrom<Data> for String {
-    type Error = &'static str;
+    type Error = BlueprintEncodeError;
 
     fn try_from(data: Data) -> Result<Self, Self::Error> {
-        let Ok(json) = serde_json::to_string(&data) else {
-            return Err("Error serializing blueprint.");
-        };
+        let json = serde_json::to_string(&data)?;
 
         json_to_bp_string(&json)
     }

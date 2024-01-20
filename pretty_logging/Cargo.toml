@@ -6,7 +6,6 @@ edition.workspace = true
 
 [dependencies]
 env_logger = "0.10"
-error-stack.workspace = true
 log.workspace = true
 
 [lints]

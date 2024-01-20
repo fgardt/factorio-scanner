@@ -9,6 +9,41 @@ use zip::ZipArchive;
 
 use crate::mod_info::ModInfo;
 
+#[derive(Debug, thiserror::Error)]
+pub enum ModError {
+    #[error("mod path does not exist: {0:?}")]
+    PathDoesNotExist(PathBuf),
+
+    #[error("mod path is not a zip file or directory: {0:?}")]
+    PathNotZipOrDir(PathBuf),
+
+    #[error("mod zip is empty: {0:?}")]
+    ZipEmpty(PathBuf),
+
+    #[error("could not get mod zips internal folder: {0:?}")]
+    UnknownInternalFolder(PathBuf),
+
+    #[error("unable to parse info.json of {0}: {1}")]
+    InvalidInfoJson(String, serde_json::Error),
+
+    #[error("mod filename does not match expected format: {0}")]
+    InvalidFilename(String),
+
+    #[error("mod name does not match name in info.json: {expected} != {actual}")]
+    NameMismatch { expected: String, actual: String },
+
+    #[error("mod io error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("mod zip error: {0}")]
+    ZipError(#[from] zip::result::ZipError),
+
+    #[error("mod mutable borrow error: {0}")]
+    BorrowError(#[from] std::cell::BorrowMutError),
+}
+
+type Result<T> = std::result::Result<T, ModError>;
+
 #[derive(Debug)]
 pub struct Mod {
     pub info: ModInfo,
@@ -17,7 +52,7 @@ pub struct Mod {
 }
 
 impl Mod {
-    pub fn load(factorio_dir: &Path, name: &str) -> anyhow::Result<Self> {
+    pub fn load(factorio_dir: &Path, name: &str) -> Result<Self> {
         let path = if Self::wube_mods().contains(&name) {
             factorio_dir.join("data")
         } else {
@@ -31,36 +66,38 @@ impl Mod {
         let info = if name == "core" {
             let internal_base = ModType::load(factorio_dir.join("data/base"))?;
             let info_file = internal_base.get_file("info.json")?;
-            let mut info = serde_json::from_slice::<ModInfo>(&info_file)?;
+            let mut info = serde_json::from_slice::<ModInfo>(&info_file)
+                .map_err(|err| ModError::InvalidInfoJson("base [to read core]".into(), err))?;
             info.name = "core".to_owned();
             info.title = "Core Factorio data".to_owned();
             info
         } else {
             let info_file = internal.get_file("info.json")?;
-            serde_json::from_slice::<ModInfo>(&info_file)?
+            serde_json::from_slice::<ModInfo>(&info_file)
+                .map_err(|err| ModError::InvalidInfoJson(name.into(), err))?
         };
 
         #[allow(clippy::unwrap_used)] // known good regex
         let name_extractor = regex::Regex::new(r"^(.+?)(?:_\d+\.\d+\.\d+(?:\.zip)?)?$").unwrap();
 
-        let Some(extracted) = name_extractor.captures(name) else {
-            anyhow::bail!("mod filename does not match expected format: {name}");
-        };
-        let Some(name) = extracted.get(1).map(|n| n.as_str().to_owned()) else {
-            anyhow::bail!("mod filename does not match expected format: {name}");
-        };
+        let name = name_extractor
+            .captures(name)
+            .ok_or(ModError::InvalidFilename(name.into()))?
+            .get(1)
+            .map(|n| n.as_str().to_owned())
+            .ok_or(ModError::InvalidFilename(name.into()))?;
 
         if name != info.name {
-            anyhow::bail!(
-                "Mod name does not match name in info.json: {name} != {}",
-                info.name
-            );
+            return Err(ModError::NameMismatch {
+                expected: name,
+                actual: info.name,
+            });
         }
 
         Ok(Self { info, internal })
     }
 
-    pub fn get_file(&self, path: &str) -> anyhow::Result<Vec<u8>> {
+    pub fn get_file(&self, path: &str) -> Result<Vec<u8>> {
         self.internal.get_file(path)
     }
 
@@ -82,9 +119,9 @@ enum ModType {
 }
 
 impl ModType {
-    fn load(path: PathBuf) -> anyhow::Result<Self> {
+    fn load(path: PathBuf) -> Result<Self> {
         if !path.exists() {
-            anyhow::bail!("Mod path does not exist: {path:?}");
+            return Err(ModError::PathDoesNotExist(path));
         }
 
         if path.is_dir() {
@@ -94,10 +131,10 @@ impl ModType {
             let internal_prefix = zip
                 .file_names()
                 .next()
-                .ok_or_else(|| anyhow::anyhow!("Mod zip is empty: {path:?}"))?
+                .ok_or(ModError::ZipEmpty(path.clone()))?
                 .split('/')
                 .next()
-                .ok_or_else(|| anyhow::anyhow!("Could not get mod zips internal folder: {path:?}"))?
+                .ok_or(ModError::UnknownInternalFolder(path))?
                 .to_owned()
                 + "/";
 
@@ -106,16 +143,16 @@ impl ModType {
                 zip: RefCell::new(zip),
             })
         } else {
-            anyhow::bail!("Mod path is not a zip file or directory: {path:?}")
+            return Err(ModError::PathNotZipOrDir(path));
         }
     }
 
-    fn get_file(&self, file: &str) -> anyhow::Result<Vec<u8>> {
+    fn get_file(&self, file: &str) -> Result<Vec<u8>> {
         match self {
             Self::Folder { path } => {
                 let path = path.join(file);
                 if !path.exists() {
-                    anyhow::bail!("Mod file does not exist: {path:?}");
+                    return Err(ModError::PathDoesNotExist(path));
                 }
 
                 Ok(std::fs::read(path)?)

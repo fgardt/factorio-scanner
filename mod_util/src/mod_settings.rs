@@ -5,15 +5,31 @@ use std::{
     path::Path,
 };
 
-use anyhow::{anyhow, Result};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use crate::property_tree::PropertyTree;
+use crate::property_tree::{PropertyTree, PropertyTreeError};
+
+#[derive(Debug, thiserror::Error)]
+pub enum SettingsError {
+    #[error("mod-settings io error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("invalid settings.dat: {0}")]
+    InvalidSettingsDat(String),
+
+    #[cfg(feature = "bp_meta_info")]
+    #[error("invalid settings in blueprint: {0}")]
+    InvalidSettingsInBlueprint(String),
+
+    #[error(transparent)]
+    Other(#[from] PropertyTreeError),
+}
+
+type Result<T> = std::result::Result<T, SettingsError>;
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
@@ -167,19 +183,23 @@ impl<'a> SettingsDat<'a> {
         let data = PropertyTree::load(&mut cursor)?;
 
         let PropertyTree::Dictionary(data) = data else {
-            return Err(anyhow!("Invalid settings.dat: not a dictionary"));
+            return Err(SettingsError::InvalidSettingsDat("not a dictionary".into()));
         };
 
         let Some(PropertyTree::Dictionary(startup)) = data.get("startup") else {
-            return Err(anyhow!("Invalid settings.dat: no startup tree"));
+            return Err(SettingsError::InvalidSettingsDat("no startup tree".into()));
         };
 
         let Some(PropertyTree::Dictionary(rt_g)) = data.get("runtime-global") else {
-            return Err(anyhow!("Invalid settings.dat: no runtime-global tree"));
+            return Err(SettingsError::InvalidSettingsDat(
+                "no runtime-global tree".into(),
+            ));
         };
 
         let Some(PropertyTree::Dictionary(rt_p_u)) = data.get("runtime-per-user") else {
-            return Err(anyhow!("Invalid settings.dat: no runtime-per-user tree"));
+            return Err(SettingsError::InvalidSettingsDat(
+                "no runtime-per-user tree".into(),
+            ));
         };
 
         Ok(Self {
@@ -263,8 +283,8 @@ fn settings_property_tree(value: &crate::AnyBasic) -> Result<PropertyTree> {
 
             for (k, v) in val {
                 let AnyBasic::Number(num) = v else {
-                    return Err(anyhow!(
-                        "Invalid settings in blueprint: expected number in color setting"
+                    return Err(SettingsError::InvalidSettingsInBlueprint(
+                        "expected number in color setting".into(),
                     ));
                 };
 
@@ -274,7 +294,9 @@ fn settings_property_tree(value: &crate::AnyBasic) -> Result<PropertyTree> {
             PropertyTree::Dictionary(map)
         }
         AnyBasic::Array(_) => {
-            return Err(anyhow!("Invalid settings in blueprint: unexpected array"))
+            return Err(SettingsError::InvalidSettingsInBlueprint(
+                "unexpected array".into(),
+            ))
         }
     };
 

@@ -1,7 +1,6 @@
 // This is a modified version of pretty_env_logger v0.4.0 that uses Builder::from_env()
 
 use std::collections::HashMap;
-use std::error::Error;
 use std::fmt;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -9,24 +8,13 @@ use env_logger::{
     fmt::{Color, Style, StyledValue},
     Builder, Env,
 };
-use error_stack::{Result, ResultExt};
-use log::Level;
 
-#[derive(Debug)]
-pub struct SetupError;
-
-impl fmt::Display for SetupError {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fmt.write_str("Logging setup error")
-    }
-}
-
-impl Error for SetupError {}
+use log::{Level, SetLoggerError};
 
 pub fn init_remapped<S: ::std::hash::BuildHasher + Send + Sync + 'static>(
     level: &str,
     remapping: HashMap<&'static str, Level, S>,
-) -> Result<(), SetupError> {
+) -> Result<(), SetLoggerError> {
     let env = Env::default().filter_or("LOG_LEVEL", level);
     let level: Level = std::env::var("LOG_LEVEL")
         .unwrap_or_else(|_| level.to_string())
@@ -80,13 +68,9 @@ pub fn init_remapped<S: ::std::hash::BuildHasher + Send + Sync + 'static>(
             Ok(())
         })
         .try_init()
-        .attach_printable_lazy(|| "unable to configure logger")
-        .change_context(SetupError)?;
-
-    Ok(())
 }
 
-pub fn init(level: &str) -> Result<(), SetupError> {
+pub fn init(level: &str) -> Result<(), SetLoggerError> {
     init_remapped(level, HashMap::new())
 }
 

@@ -1,11 +1,12 @@
 use core::fmt;
-use std::str::FromStr;
+use std::{num::ParseIntError, str::FromStr};
 
 use serde::{
-    de::{Error, Visitor},
+    de::{Error as DeError, Visitor},
     Deserialize, Deserializer, Serialize,
 };
 use serde_with::skip_serializing_none;
+use thiserror::Error;
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -79,8 +80,17 @@ impl fmt::Display for Version {
     }
 }
 
+#[derive(Debug, Error)]
+pub enum VersionParseError {
+    #[error("invalid version format: expected \"major.minor.patch\"")]
+    InvalidFormat,
+
+    #[error("invalid version number: {0}")]
+    InvalidNumber(String),
+}
+
 impl FromStr for Version {
-    type Err = anyhow::Error;
+    type Err = VersionParseError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         Self::try_from(value)
@@ -88,26 +98,26 @@ impl FromStr for Version {
 }
 
 impl TryFrom<&str> for Version {
-    type Error = anyhow::Error;
+    type Error = VersionParseError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let mut parts = value.split('.');
 
         let major = parts
             .next()
-            .ok_or_else(|| anyhow::anyhow!("expected 3 parts"))?
+            .ok_or(VersionParseError::InvalidFormat)?
             .parse()
-            .map_err(anyhow::Error::new)?;
+            .map_err(|err: ParseIntError| VersionParseError::InvalidNumber(err.to_string()))?;
         let minor = parts
             .next()
-            .ok_or_else(|| anyhow::anyhow!("expected 3 parts"))?
+            .ok_or(VersionParseError::InvalidFormat)?
             .parse()
-            .map_err(anyhow::Error::new)?;
+            .map_err(|err: ParseIntError| VersionParseError::InvalidNumber(err.to_string()))?;
         let patch = parts
             .next()
-            .ok_or_else(|| anyhow::anyhow!("expected 3 parts"))?
+            .ok_or(VersionParseError::InvalidFormat)?
             .parse()
-            .map_err(anyhow::Error::new)?;
+            .map_err(|err: ParseIntError| VersionParseError::InvalidNumber(err.to_string()))?;
 
         Ok(Self {
             major,
@@ -118,7 +128,7 @@ impl TryFrom<&str> for Version {
 }
 
 impl TryFrom<String> for Version {
-    type Error = anyhow::Error;
+    type Error = VersionParseError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::try_from(value.as_str())
@@ -126,7 +136,7 @@ impl TryFrom<String> for Version {
 }
 
 impl TryFrom<&String> for Version {
-    type Error = anyhow::Error;
+    type Error = VersionParseError;
 
     fn try_from(value: &String) -> Result<Self, Self::Error> {
         Self::try_from(value.as_str())
@@ -176,17 +186,25 @@ impl<'de> Visitor<'de> for VersionVisitor {
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
     where
-        E: Error,
+        E: DeError,
     {
         let mut parts = v.split('.');
 
         let major = parts
             .next()
-            .ok_or_else(|| Error::custom("expected 3 parts"))?
+            .ok_or_else(|| DeError::custom("expected 3 parts"))?
             .parse()
-            .map_err(Error::custom)?;
-        let minor = parts.next().unwrap_or("0").parse().map_err(Error::custom)?; // minor will default to 0 if missing
-        let patch = parts.next().unwrap_or("0").parse().map_err(Error::custom)?; // patch will default to 0 if missing
+            .map_err(DeError::custom)?;
+        let minor = parts
+            .next()
+            .unwrap_or("0")
+            .parse()
+            .map_err(DeError::custom)?; // minor will default to 0 if missing
+        let patch = parts
+            .next()
+            .unwrap_or("0")
+            .parse()
+            .map_err(DeError::custom)?; // patch will default to 0 if missing
 
         Ok(Self::Value {
             major,
@@ -197,7 +215,7 @@ impl<'de> Visitor<'de> for VersionVisitor {
 
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
     where
-        E: Error,
+        E: DeError,
     {
         self.visit_str(&v)
     }
@@ -265,7 +283,7 @@ impl<'de> Visitor<'de> for DependencyTypeVisitor {
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
     where
-        E: Error,
+        E: DeError,
     {
         match v {
             "!" => Ok(DependencyType::Incompatible),
@@ -273,13 +291,13 @@ impl<'de> Visitor<'de> for DependencyTypeVisitor {
             "(?)" => Ok(DependencyType::HiddenOptional),
             "~" => Ok(DependencyType::RequiredLazy),
             "" => Ok(DependencyType::Required),
-            _ => Err(Error::custom("Invalid dependency type")),
+            _ => Err(DeError::custom("Invalid dependency type")),
         }
     }
 
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
     where
-        E: Error,
+        E: DeError,
     {
         self.visit_str(&v)
     }
@@ -404,7 +422,7 @@ impl<'de> Visitor<'de> for DependencyVersionVisitor {
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
     where
-        E: Error,
+        E: DeError,
     {
         let v = v.trim();
         if v.is_empty() {
@@ -413,12 +431,12 @@ impl<'de> Visitor<'de> for DependencyVersionVisitor {
 
         let mut parts = v.split(' ');
 
-        let comparator = parts
-            .next()
-            .ok_or_else(|| Error::custom("Invalid dependency version: failed to get comparator"))?;
+        let comparator = parts.next().ok_or_else(|| {
+            DeError::custom("Invalid dependency version: failed to get comparator")
+        })?;
         let version = parts
             .next()
-            .ok_or_else(|| Error::custom("Invalid dependency version: failed to get version"))?;
+            .ok_or_else(|| DeError::custom("Invalid dependency version: failed to get version"))?;
 
         let version = VersionVisitor::visit_str::<E>(VersionVisitor, version)?;
 
@@ -428,13 +446,13 @@ impl<'de> Visitor<'de> for DependencyVersionVisitor {
             "=" => Ok(DependencyVersion::Exact(version)),
             ">=" => Ok(DependencyVersion::HigherOrEqual(version)),
             ">" => Ok(DependencyVersion::Higher(version)),
-            _ => Err(Error::custom("Invalid dependency version")),
+            _ => Err(DeError::custom("Invalid dependency version")),
         }
     }
 
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
     where
-        E: Error,
+        E: DeError,
     {
         self.visit_str(&v)
     }
@@ -535,7 +553,7 @@ impl<'de> Visitor<'de> for DependencyVisitor {
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
     where
-        E: Error,
+        E: DeError,
     {
         #[allow(clippy::unwrap_used)] // The regex is hardcoded and will always compile
         let extractor =
@@ -543,7 +561,7 @@ impl<'de> Visitor<'de> for DependencyVisitor {
                 .unwrap();
 
         let Some(captures) = extractor.captures(v) else {
-            return Err(Error::custom(format!(
+            return Err(DeError::custom(format!(
                 "Invalid dependency: does not match expected format: {v}"
             )));
         };
@@ -553,7 +571,7 @@ impl<'de> Visitor<'de> for DependencyVisitor {
 
         let name = captures
             .get(2)
-            .ok_or_else(|| Error::custom("Invalid dependency: failed to get name"))?
+            .ok_or_else(|| DeError::custom("Invalid dependency: failed to get name"))?
             .as_str()
             .trim()
             .to_owned();
@@ -574,7 +592,7 @@ impl<'de> Visitor<'de> for DependencyVisitor {
 
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
     where
-        E: Error,
+        E: DeError,
     {
         self.visit_str(&v)
     }
