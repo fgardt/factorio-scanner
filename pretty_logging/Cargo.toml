@@ -1,0 +1,13 @@
+[package]
+name = "pretty_logging"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+env_logger = "0.10"
+error-stack.workspace = true
+log.workspace = true
+
+[lints]
+workspace = true
