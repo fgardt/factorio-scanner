@@ -68,7 +68,6 @@ struct ModListFormat {
 }
 
 impl ModListFormat {
-    #[must_use]
     fn load(list_path: &Path) -> Result<Self> {
         if !list_path.is_file() {
             return Ok(Self { mods: Vec::new() });
@@ -76,7 +75,7 @@ impl ModListFormat {
 
         let mut bytes = Vec::new();
         File::open(list_path)?.read_to_end(&mut bytes)?;
-        serde_json::from_slice(&bytes).map_err(|err| err.into())
+        Ok(serde_json::from_slice(&bytes)?)
     }
 }
 
@@ -122,7 +121,6 @@ impl<'a> From<ModList<'a>> for ModListFormat {
 }
 
 impl<'a> ModList<'a> {
-    #[must_use]
     pub fn load(factorio_dir: &'a Path) -> Result<Self> {
         let mut res = Self::generate(factorio_dir)?;
         let list = ModListFormat::load(&factorio_dir.join("mods/mod-list.json"))?;
@@ -419,12 +417,12 @@ impl<'a> ModList<'a> {
         for node in dep_graph.node_indices() {
             let (name, version) = &dep_graph[node];
             let Some(info) = all_deps.get(name) else {
-                return Err(ModListError::SolverEdgesMissingInfo(name.to_string()));
+                return Err(ModListError::SolverEdgesMissingInfo((*name).to_string()));
             };
 
             let Some(deps) = info.get(version) else {
                 return Err(ModListError::SolverEdgesNoInfoOnDependency(
-                    name.to_string(),
+                    (*name).to_string(),
                     *version,
                 ));
             };
@@ -460,7 +458,7 @@ impl<'a> ModList<'a> {
 
             if !conflicts.is_empty() {
                 return Err(ModListError::SolverFoundConflicts(
-                    name.to_string(),
+                    (*name).to_string(),
                     *version,
                     conflicts,
                 ));
