@@ -7,7 +7,6 @@
 
 use std::fs::File;
 use std::io::Read;
-use std::ops::Deref;
 use std::path::Path;
 use std::{collections::HashMap, ops::Rem};
 
@@ -25,6 +24,7 @@ pub mod entity;
 pub mod fluid;
 pub mod item;
 pub mod recipe;
+pub mod utility_sprites;
 
 /// [`Prototypes/PrototypeBase`](https://lua-api.factorio.com/latest/PrototypeBase.html)
 #[skip_serializing_none]
@@ -46,7 +46,7 @@ pub struct BasePrototype<T> {
     pub child: T,
 }
 
-impl<T> Deref for BasePrototype<T> {
+impl<T> std::ops::Deref for BasePrototype<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -54,36 +54,16 @@ impl<T> Deref for BasePrototype<T> {
     }
 }
 
-/// [`Prototypes/UtilitySprites/CursorBoxSpecification`](https://lua-api.factorio.com/latest/prototypes/UtilitySprites.html#cursor_box)
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CursorBoxSpecification {
-    pub regular: FactorioArray<BoxSpecification>,
-    pub not_allowed: FactorioArray<BoxSpecification>,
-    pub copy: FactorioArray<BoxSpecification>,
-    pub electricity: FactorioArray<BoxSpecification>,
-    pub logistics: FactorioArray<BoxSpecification>,
-    pub pair: FactorioArray<BoxSpecification>,
-    pub train_visualization: FactorioArray<BoxSpecification>,
-    pub blueprint_snap_rectangle: FactorioArray<BoxSpecification>,
-}
-
-/// [`Prototypes/UtilitySprites`](https://lua-api.factorio.com/latest/prototypes/UtilitySprites.html)
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct UtilitySpritesData {
-    pub cursor_box: CursorBoxSpecification,
-    pub clouds: Animation,
-    pub arrow_button: Animation,
-    pub explosion_chart_visualization: Animation,
-    pub refresh_white: Animation,
-
-    #[serde(flatten)]
-    pub sprites: HashMap<String, Sprite>,
-}
-
-pub type UtilitySprites = BasePrototype<UtilitySpritesData>;
-
 pub type PrototypeMap<T> = HashMap<String, T>;
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("data.raw io error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("data.raw JSON error: {0}")]
+    Json(#[from] serde_json::Error),
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -101,15 +81,14 @@ pub struct DataRaw {
     pub recipe: recipe::AllTypes,
     pub recipe_category: PrototypeMap<recipe::RecipeCategory>,
 
-    pub utility_sprites: PrototypeMap<UtilitySprites>,
+    pub utility_sprites: PrototypeMap<utility_sprites::UtilitySprites>,
 }
 
 impl DataRaw {
-    #[must_use]
-    pub fn load(dump_path: &Path) -> Option<Self> {
+    pub fn load(dump_path: &Path) -> Result<Self, Error> {
         let mut bytes = Vec::new();
-        File::open(dump_path).ok()?.read_to_end(&mut bytes).ok()?;
-        Some(serde_json::from_slice(&bytes).unwrap())
+        File::open(dump_path)?.read_to_end(&mut bytes)?;
+        Ok(serde_json::from_slice(&bytes)?)
     }
 }
 
