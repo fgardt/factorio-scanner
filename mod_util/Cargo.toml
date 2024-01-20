@@ -11,7 +11,6 @@ workspace = true
 bp_meta_info = []
 
 [dependencies]
-anyhow.workspace = true
 byteorder = "1.5.0"
 petgraph = "0.6.4"
 regex = "1.10.2"
@@ -19,4 +18,5 @@ serde.workspace = true
 serde_helper.workspace = true
 serde_json.workspace = true
 serde_with.workspace = true
+thiserror.workspace = true
 zip = "0.6.6"

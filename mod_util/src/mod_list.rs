@@ -5,17 +5,54 @@ use std::{
     path::Path,
 };
 
-use anyhow::Result;
-
 use petgraph::prelude::DiGraph;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use crate::{
-    mod_info::{Dependency, DependencyExt, DependencyUtil, Version},
+    mod_info::{Dependency, DependencyExt, DependencyUtil, DependencyVersion, Version},
     mod_loader::Mod,
     UsedMods, UsedVersions,
 };
+
+#[derive(Debug, thiserror::Error)]
+pub enum ModListError {
+    #[error("failed to read file: {0}")]
+    FileError(#[from] std::io::Error),
+
+    #[error("failed to load mod list: {0}")]
+    ModListDeserializationError(#[from] serde_json::Error),
+
+    #[error("failed to load wube mod {0}: {1}")]
+    WubeModLoadError(String, String),
+
+    #[error("dependency solver could not find info about {0}")]
+    SolverMissingInfo(String),
+
+    #[error("dependency solver could not find dependencies for {0} v{1}")]
+    SolverNoDependencies(String, Version),
+
+    #[error("dependency solver could not find info about dep {0}")]
+    SolverNoInfoOnDependency(String),
+
+    #[error("dependency solver could not find a version for {0} that satisfies {1}")]
+    SolverUnsatisfiable(String, DependencyVersion),
+
+    #[error("dependency solver could not find info about {0} while building edges")]
+    SolverEdgesMissingInfo(String),
+
+    #[error("dependency solver could not find dependencies for {0} v{1} while building edges")]
+    SolverEdgesNoInfoOnDependency(String, Version),
+
+    #[error("dependency solver could not find required node for {0} while building edges")]
+    SolverEdgesNodeNotFound(String),
+
+    #[error("dependency solver found conflicts for {0} v{1}: {2:?}")]
+    SolverFoundConflicts(String, Version, Vec<Dependency>),
+}
+
+type Result<T> = std::result::Result<T, ModListError>;
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
@@ -32,10 +69,14 @@ struct ModListFormat {
 
 impl ModListFormat {
     #[must_use]
-    fn load(list_path: &Path) -> Option<Self> {
+    fn load(list_path: &Path) -> Result<Self> {
+        if !list_path.is_file() {
+            return Ok(Self { mods: Vec::new() });
+        }
+
         let mut bytes = Vec::new();
-        File::open(list_path).ok()?.read_to_end(&mut bytes).ok()?;
-        serde_json::from_slice(&bytes).ok()
+        File::open(list_path)?.read_to_end(&mut bytes)?;
+        serde_json::from_slice(&bytes).map_err(|err| err.into())
     }
 }
 
@@ -82,31 +123,31 @@ impl<'a> From<ModList<'a>> for ModListFormat {
 
 impl<'a> ModList<'a> {
     #[must_use]
-    pub fn load(factorio_dir: &'a Path) -> Option<Self> {
-        let mut res = Self::generate(factorio_dir).ok()?;
+    pub fn load(factorio_dir: &'a Path) -> Result<Self> {
+        let mut res = Self::generate(factorio_dir)?;
+        let list = ModListFormat::load(&factorio_dir.join("mods/mod-list.json"))?;
 
-        if let Some(tmp) = ModListFormat::load(&factorio_dir.join("mods/mod-list.json")) {
-            // enable mods (and set active version) if they were found in the folder
-            for entry in tmp.mods {
-                res.list.entry(entry.name).and_modify(|e| {
-                    if let Some(entry_v) = entry.version {
-                        if !e.versions.contains_key(&entry_v) {
-                            return;
-                        }
-
-                        e.active_version = Some(entry_v);
+        // enable mods (and set active version) if they were found in the folder
+        for entry in list.mods {
+            res.list.entry(entry.name).and_modify(|e| {
+                if let Some(entry_v) = entry.version {
+                    if !e.versions.contains_key(&entry_v) {
+                        return;
                     }
 
-                    e.enabled = entry.enabled;
-                });
-            }
-        };
+                    e.active_version = Some(entry_v);
+                }
 
-        Some(res)
+                e.enabled = entry.enabled;
+            });
+        }
+
+        Ok(res)
     }
 
     pub fn generate(factorio_dir: &'a Path) -> Result<Self> {
-        let filename_extractor = regex::Regex::new(r"^(.+?)(?:_(\d+\.\d+\.\d+)(?:\.zip)?)?$")?;
+        #[allow(clippy::unwrap_used)]
+        let filename_extractor = Regex::new(r"^(.+?)(?:_(\d+\.\d+\.\d+)(?:\.zip)?)?$").unwrap();
 
         let mut list = HashMap::new();
 
@@ -129,11 +170,10 @@ impl<'a> ModList<'a> {
                     );
                 }
                 Err(e) => {
-                    if w_mod == "core" || w_mod == "base" {
-                        anyhow::bail!("Failed to load wube mod {w_mod}: {e}");
-                    }
-
-                    //println!("Failed to load wube mod {w_mod}: {e}");
+                    return Err(ModListError::WubeModLoadError(
+                        w_mod.to_string(),
+                        e.to_string(),
+                    ));
                 }
             }
         }
@@ -171,7 +211,7 @@ impl<'a> ModList<'a> {
             let m = match Mod::load(factorio_dir, filename) {
                 Ok(m) => m,
                 Err(e) => {
-                    println!("Failed to load mod {name} at {path:?}: {e}");
+                    println!("failed to load mod {name} at {path:?}: {e}");
                     // make sure the mod is disabled if its the only version
                     list.entry(name).or_default();
                     continue;
@@ -334,13 +374,14 @@ impl<'a> ModList<'a> {
             node_map.insert(name, dep_graph.add_node((name, version)));
 
             let Some(info) = all_deps.get(name) else {
-                anyhow::bail!("Dependency solver could not find info about {name}");
+                return Err(ModListError::SolverMissingInfo(name.to_string()));
             };
 
             let Some(node_reqs) = info.get(&version) else {
-                anyhow::bail!(
-                    "Dependency solver could not find dependencies for {name} v{version}"
-                );
+                return Err(ModListError::SolverNoDependencies(
+                    name.to_string(),
+                    version,
+                ));
             };
 
             // add required dependencies to the reqs queue
@@ -353,7 +394,7 @@ impl<'a> ModList<'a> {
                 let dep_version = dep.version();
 
                 let Some(info) = all_deps.get(dep_name) else {
-                    anyhow::bail!("Dependency solver could not find info about dep {dep_name}");
+                    return Err(ModListError::SolverNoInfoOnDependency(dep_name.to_string()));
                 };
 
                 let mut dep_versions = info
@@ -364,9 +405,10 @@ impl<'a> ModList<'a> {
 
                 let Some(dep_version) = dep_versions.last() else {
                     // no more versions to try, fail?
-                    anyhow::bail!(
-                            "Dependency solver could not find a version for {dep_name} that satisfies {dep_version}"
-                        );
+                    return Err(ModListError::SolverUnsatisfiable(
+                        dep_name.to_string(),
+                        *dep_version,
+                    ));
                 };
 
                 reqs.push((dep_name, **dep_version));
@@ -377,13 +419,14 @@ impl<'a> ModList<'a> {
         for node in dep_graph.node_indices() {
             let (name, version) = &dep_graph[node];
             let Some(info) = all_deps.get(name) else {
-                anyhow::bail!(
-                    "Dependency solver could not find info about {name} while building edges"
-                );
+                return Err(ModListError::SolverEdgesMissingInfo(name.to_string()));
             };
 
             let Some(deps) = info.get(version) else {
-                anyhow::bail!("Dependency solver could not find dependencies for {name} v{version} while building edges");
+                return Err(ModListError::SolverEdgesNoInfoOnDependency(
+                    name.to_string(),
+                    *version,
+                ));
             };
 
             for dep in deps {
@@ -396,9 +439,9 @@ impl<'a> ModList<'a> {
                     None => {
                         // optional / incompatible dependencies are allowed to be missing
                         if dep.is_required() {
-                            anyhow::bail!(
-                                    "Dependency solver could not find required node for {dep_name} while building edges"
-                                );
+                            return Err(ModListError::SolverEdgesNodeNotFound(
+                                dep_name.to_string(),
+                            ));
                         }
                     }
                 }
@@ -412,12 +455,15 @@ impl<'a> ModList<'a> {
             let conflicts = dep_graph
                 .edges_directed(node, petgraph::Direction::Incoming)
                 .map(|e| *e.weight())
+                .cloned()
                 .collect_conflicts::<Vec<_>>(name, *version);
 
             if !conflicts.is_empty() {
-                anyhow::bail!(
-                    "Dependency solver found conflicts for {name} v{version}: {conflicts:?}"
-                );
+                return Err(ModListError::SolverFoundConflicts(
+                    name.to_string(),
+                    *version,
+                    conflicts,
+                ));
             }
         }
 

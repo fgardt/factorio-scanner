@@ -1,7 +1,7 @@
 use std::{io::Read, ops::Deref};
 
 use diff::Diff;
-use serde::{Deserialize, Serialize};
+use serde::{de::Visitor, Deserialize, Serialize};
 
 use super::DiffPrint;
 
@@ -125,13 +125,55 @@ pub struct Prototype {
 
     // #[serde(default, skip_serializing_if = "Option::is_none")]
     // pub instance_limit: Option<u128>,
-    #[serde(default, skip_serializing_if = "String::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_instance_limit",
+        skip_serializing_if = "String::is_empty"
+    )]
     pub instance_limit: String,
 
     pub deprecated: bool,
 
     pub properties: Vec<Property>,
     pub custom_properties: Option<CustomProperties>,
+}
+
+struct InstanceLimitVisitor;
+
+impl<'de> Visitor<'de> for InstanceLimitVisitor {
+    type Value = String;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("a string")
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(value.to_owned())
+    }
+
+    fn visit_none<E>(self) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(String::new())
+    }
+
+    fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(v.to_string())
+    }
+}
+
+fn deserialize_instance_limit<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    deserializer.deserialize_any(InstanceLimitVisitor)
 }
 
 impl Deref for Prototype {
@@ -573,7 +615,9 @@ impl DiffPrint<Vec<Type>> for diff::VecDiff<Type> {
         for diff in &self.0 {
             match diff {
                 diff::VecDiffType::Inserted { index, .. } => {
-                    println!("{indent_str}  +{:?}", new[*index]);
+                    if new.len() > *index {
+                        println!("{indent_str}  +{:?}", new[*index]);
+                    }
                 }
                 diff::VecDiffType::Removed { index, .. } => {
                     println!("{indent_str}  -{:?}", old[*index]);
