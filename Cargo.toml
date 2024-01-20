@@ -25,6 +25,7 @@ lto = "thin"
 anyhow = "1.0.75"
 blueprint = { path = "blueprint" }
 clap = { version = "4.4", features = ["derive"] }
+error-stack = "0.4"
 factorio_api = { path = "factorio_api" }
 image = { version = "0.24.7", features = ["png"], default-features = false }
 konst = "0.3.7"
