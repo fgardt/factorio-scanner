@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use std::{collections::HashMap, convert::Infallible, error::Error, io::prelude::*};
+use std::{collections::HashMap, io::prelude::*};
 
 use base64::{engine::general_purpose, Engine};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder};
@@ -156,51 +156,39 @@ impl Data {
 
 // TODO: properly propagate/bubble errors up for better handling
 
-#[derive(Debug, Clone)]
-pub enum BlueprintError {
+#[derive(Debug, thiserror::Error)]
+pub enum BlueprintDecodeError {
+    #[error("blueprint string must be at least 2 characters long")]
     MinSize,
+
+    #[error("unsupported blueprint version: {0}")]
     UnsupportedVersion(char),
+
+    #[error("blueprint string parsing failed")]
     Parsing,
-    Decoding(String),
-    Decompressing(String),
-    Deserializing(String),
-    Serializing(String),
-    Compressing(String),
+
+    #[error("blueprint string decoding failed: {0}")]
+    Decoding(#[from] base64::DecodeError),
+
+    #[error("blueprint string decompression failed: {0}")]
+    Decompress(#[from] std::io::Error),
+
+    #[error("blueprint string deserialization failed: {0}")]
+    Deserializing(#[from] serde_json::Error),
 }
 
-impl Error for BlueprintError {}
+#[derive(Debug, thiserror::Error)]
+pub enum BlueprintEncodeError {
+    #[error("blueprint string compression failed: {0}")]
+    Decompress(#[from] std::io::Error),
 
-impl std::fmt::Display for BlueprintError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::MinSize => write!(f, "blueprint string must be at least 2 characters long"),
-            Self::UnsupportedVersion(v) => write!(f, "unsupported blueprint version: {v}"),
-            Self::Parsing => write!(f, "blueprint string parsing failed"),
-            Self::Decoding(info) => write!(f, "blueprint string decoding failed:\n{info}"),
-            Self::Decompressing(info) => {
-                write!(f, "blueprint string decompression failed:\n{info}")
-            }
-            Self::Deserializing(info) => {
-                write!(f, "blueprint string deserialization failed:\n{info}")
-            }
-            Self::Serializing(info) => write!(f, "blueprint string serialization failed:\n{info}"),
-            Self::Compressing(info) => write!(f, "blueprint string compression failed:\n{info}"),
-        }
-    }
+    #[error("blueprint string serialization failed: {0}")]
+    Serializing(#[from] serde_json::Error),
 }
 
-impl From<Result<Infallible, Self>> for BlueprintError {
-    fn from(res: Result<Infallible, Self>) -> Self {
-        match res {
-            Ok(_) => unreachable!(),
-            Err(err) => err,
-        }
-    }
-}
-
-pub fn bp_string_to_json(bp_string: &str) -> Result<String, BlueprintError> {
+pub fn bp_string_to_json(bp_string: &str) -> Result<String, BlueprintDecodeError> {
     if bp_string.len() < 2 {
-        return Err(BlueprintError::MinSize);
+        return Err(BlueprintDecodeError::MinSize);
     }
 
     let mut chars = bp_string.chars();
@@ -208,35 +196,27 @@ pub fn bp_string_to_json(bp_string: &str) -> Result<String, BlueprintError> {
     match chars.next() {
         Some(first) => {
             if first != '0' {
-                return Err(BlueprintError::UnsupportedVersion(first));
+                return Err(BlueprintDecodeError::UnsupportedVersion(first));
             }
         }
-        None => return Err(BlueprintError::Parsing),
+        None => return Err(BlueprintDecodeError::Parsing),
     }
 
-    let compressed = general_purpose::STANDARD
-        .decode(chars.as_str())
-        .map_err(|err| Err(BlueprintError::Decoding(err.to_string())))?;
+    let compressed = general_purpose::STANDARD.decode(chars.as_str())?;
 
     let mut deflate = ZlibDecoder::new(compressed.as_slice());
     let mut uncompressed = String::new();
 
-    deflate
-        .read_to_string(&mut uncompressed)
-        .map_err(|err| Err(BlueprintError::Decompressing(err.to_string())))?;
+    deflate.read_to_string(&mut uncompressed)?;
+    // .map_err(|err| Err(BlueprintError::Decompressing(err.to_string())))?;
 
     Ok(uncompressed)
 }
 
-pub fn json_to_bp_string(json: &str) -> Result<String, BlueprintError> {
+pub fn json_to_bp_string(json: &str) -> Result<String, BlueprintEncodeError> {
     let mut deflate = ZlibEncoder::new(Vec::new(), flate2::Compression::new(9));
-    deflate
-        .write_all(json.as_bytes())
-        .map_err(|err| Err(BlueprintError::Compressing(err.to_string())))?;
-
-    let compressed = deflate
-        .finish()
-        .map_err(|err| Err(BlueprintError::Compressing(err.to_string())))?;
+    deflate.write_all(json.as_bytes())?;
+    let compressed = deflate.finish()?;
 
     let mut encoded = general_purpose::STANDARD.encode(compressed);
 
@@ -246,12 +226,11 @@ pub fn json_to_bp_string(json: &str) -> Result<String, BlueprintError> {
 }
 
 impl TryFrom<&str> for Data {
-    type Error = BlueprintError;
+    type Error = BlueprintDecodeError;
 
     fn try_from(bp_string: &str) -> Result<Self, Self::Error> {
         let json = bp_string_to_json(bp_string)?;
-        let mut data: Self = serde_json::from_str(&json)
-            .map_err(|err| Err(BlueprintError::Deserializing(err.to_string())))?;
+        let mut data: Self = serde_json::from_str(&json)?;
 
         data.normalize_positions();
         data.ensure_ordering();
@@ -261,7 +240,7 @@ impl TryFrom<&str> for Data {
 }
 
 impl TryFrom<String> for Data {
-    type Error = BlueprintError;
+    type Error = BlueprintDecodeError;
 
     fn try_from(bp_string: String) -> Result<Self, Self::Error> {
         Self::try_from(bp_string.as_str())
@@ -269,11 +248,10 @@ impl TryFrom<String> for Data {
 }
 
 impl TryFrom<Data> for String {
-    type Error = BlueprintError;
+    type Error = BlueprintEncodeError;
 
     fn try_from(data: Data) -> Result<Self, Self::Error> {
-        let json = serde_json::to_string(&data)
-            .map_err(|err| Err(BlueprintError::Serializing(err.to_string())))?;
+        let json = serde_json::to_string(&data)?;
 
         json_to_bp_string(&json)
     }
