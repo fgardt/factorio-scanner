@@ -12,6 +12,7 @@ blueprint.workspace = true
 clap.workspace = true
 error-stack = "0.4"
 factorio_api = { workspace = true, features = ["blocking"] }
+flate2.workspace = true
 image.workspace = true
 log.workspace = true
 locale.workspace = true
@@ -24,3 +25,4 @@ serde_with.workspace = true
 thiserror.workspace = true
 types.workspace = true
 dotenv = "0.15.0"
+rustc-hash = "1.1.0"

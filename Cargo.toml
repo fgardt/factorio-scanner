@@ -25,6 +25,7 @@ lto = "thin"
 blueprint = { path = "blueprint" }
 clap = { version = "4.4", features = ["derive"] }
 factorio_api = { path = "factorio_api" }
+flate2 = "1.0"
 image = { version = "0.24.7", features = ["png"], default-features = false }
 konst = "0.3.7"
 log = "0.4"

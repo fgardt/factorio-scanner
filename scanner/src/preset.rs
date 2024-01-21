@@ -29,6 +29,18 @@ impl Preset {
     // TODO: used settings
 }
 
+impl ToString for Preset {
+    fn to_string(&self) -> String {
+        match self {
+            Self::K2 => "K2",
+            Self::SE => "SE",
+            Self::K2SE => "K2SE",
+            Self::SeaBlock => "SeaBlock",
+        }
+        .to_owned()
+    }
+}
+
 impl clap::ValueEnum for Preset {
     fn value_variants<'a>() -> &'a [Self] {
         &[Self::K2, Self::SE, Self::K2SE, Self::SeaBlock]

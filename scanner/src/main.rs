@@ -4,13 +4,15 @@ use std::{
     collections::{HashMap, HashSet},
     env,
     fs::{self},
+    hash::{Hash, Hasher},
     io::{Read, Write},
     path::{Path, PathBuf},
     process::{Command, ExitCode},
 };
 
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use error_stack::{ensure, report, Context, Result, ResultExt};
+use flate2::{read::ZlibDecoder, write::ZlibEncoder};
 use image::{codecs::png, ImageEncoder};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -19,8 +21,8 @@ use serde_with::skip_serializing_none;
 extern crate log;
 
 use mod_util::{
-    mod_info::Version, mod_list::ModList, mod_loader::Mod, mod_settings::SettingsDat, UsedMods,
-    UsedVersions,
+    mod_info::Version, mod_list::ModList, mod_loader::Mod, mod_settings::SettingsDat, AnyBasic,
+    UsedMods, UsedVersions,
 };
 use prototypes::{entity::Type as EntityType, InternalRenderLayer};
 use prototypes::{DataRaw, DataUtil, RenderLayerBuffer, TargetSize};
@@ -29,12 +31,15 @@ use types::{ConnectedDirections, Direction, ImageCache, MapPosition};
 mod bp_helper;
 mod preset;
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Cli {
-    /// Path to the file that contains your blueprint string
-    #[clap(short, long, value_parser)]
-    blueprint: PathBuf,
+    /// Sets the used logging level
+    /// Possible values: error, warn, info, debug, trace
+    /// For no logging don't set this option
+    /// Note: the LOG_LEVEL environment variable overrides this option
+    #[clap(long, value_parser, verbatim_doc_comment)]
+    log_level: Option<log::Level>,
 
     /// Path to the factorio directory that contains the data folder (path.read-data)
     #[clap(short, long, value_parser)]
@@ -44,32 +49,75 @@ struct Cli {
     #[clap(long, value_parser)]
     factorio_bin: Option<PathBuf>,
 
-    /// Path to the data dump json file. If not set, the data will be dumped automatically
-    #[clap(long, value_parser)]
-    prototype_dump: Option<PathBuf>,
+    #[clap(subcommand)]
+    command: Commands,
+}
 
-    /// Preset to use
-    #[clap(long, value_enum)]
-    preset: Option<preset::Preset>,
+#[derive(Subcommand, Debug)]
+enum Commands {
+    /// Render a blueprint string
+    Render {
+        #[clap(subcommand)]
+        input: Input,
 
-    /// Path to the output file
-    #[clap(short, long, value_parser)]
-    out: PathBuf,
+        /// Path to the data dump json file. If not set, the data will be dumped automatically
+        #[clap(long, value_parser)]
+        prototype_dump: Option<PathBuf>,
 
-    /// Target resolution (1 side of a square) in pixels
-    #[clap(long = "res", default_value_t = 2048.0)]
-    target_res: f64,
+        /// Preset to use
+        #[clap(long, value_enum)]
+        preset: Option<preset::Preset>,
 
-    /// Minimum scale to use (below 0.5 makes not much sense, vanilla HR mode is 0.5)
-    #[clap(long, default_value_t = 0.5)]
-    min_scale: f64,
+        /// Path to the output file
+        #[clap(short, long, value_parser)]
+        out: PathBuf,
 
-    /// Sets the used logging level
-    /// Possible values: error, warn, info, debug, trace
-    /// For no logging don't set this option
-    /// Note: the LOG_LEVEL environment variable overrides this option
-    #[clap(long, value_parser, verbatim_doc_comment)]
-    log_level: Option<log::Level>,
+        /// Target resolution (1 side of a square) in pixels
+        #[clap(long = "res", default_value_t = 2048.0)]
+        target_res: f64,
+
+        /// Minimum scale to use (below 0.5 makes not much sense, vanilla HR mode is 0.5)
+        #[clap(long, default_value_t = 0.5)]
+        min_scale: f64,
+    },
+
+    /// Run scanner as a server so that other applications can use it through its WebSocket API
+    Server,
+}
+
+#[derive(Subcommand, Debug)]
+enum Input {
+    String {
+        /// The blueprint string
+        #[clap(value_parser)]
+        string: String,
+    },
+
+    File {
+        /// Path to the file that contains your blueprint string
+        #[clap(value_parser)]
+        file: PathBuf,
+    },
+}
+
+#[derive(Debug)]
+struct BlueprintInputError;
+
+impl Context for BlueprintInputError {}
+
+impl std::fmt::Display for BlueprintInputError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "blueprint input error")
+    }
+}
+
+impl Input {
+    fn get_bp_string(self) -> Result<String, BlueprintInputError> {
+        match self {
+            Self::String { string } => Ok(string),
+            Self::File { file } => fs::read_to_string(file).change_context(BlueprintInputError),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -77,6 +125,7 @@ enum ScannerError {
     SetupError,
     RenderError,
     NoBlueprint,
+    ServerError,
 }
 
 impl Context for ScannerError {}
@@ -87,6 +136,7 @@ impl std::fmt::Display for ScannerError {
             Self::SetupError => write!(f, "setup error"),
             Self::RenderError => write!(f, "render error"),
             Self::NoBlueprint => write!(f, "no blueprint"),
+            Self::ServerError => write!(f, "server error"),
         }
     }
 }
@@ -104,29 +154,213 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     };
 
-    if let Err(err) = full_process(cli) {
-        error!("{err:?}");
-        return ExitCode::FAILURE;
-    };
-
-    ExitCode::SUCCESS
+    if let Err(err) = match cli.command {
+        Commands::Render {
+            input,
+            prototype_dump,
+            preset,
+            out,
+            target_res,
+            min_scale,
+        } => render_command(
+            input,
+            &cli.factorio,
+            cli.factorio_bin,
+            preset,
+            prototype_dump,
+            target_res,
+            &out,
+        ),
+        Commands::Server => run_server().change_context(ScannerError::ServerError),
+    } {
+        error!("{err:#?}");
+        ExitCode::FAILURE
+    } else {
+        ExitCode::SUCCESS
+    }
 }
 
-fn full_process(cli: Cli) -> Result<(), ScannerError> {
-    let bp = blueprint::Data::try_from(
-        fs::read_to_string(cli.blueprint).change_context(ScannerError::NoBlueprint)?,
+#[allow(clippy::too_many_lines)]
+fn get_protodump(
+    factorio: &Path,
+    factorio_bin: Option<PathBuf>,
+    mod_list: &ModList,
+    (bp_settings, bp_version): (&HashMap<String, AnyBasic>, u64),
+) -> Result<DataRaw, ScannerError> {
+    // check if cached dump exists and load it if available
+    let cached_path = {
+        let mut active_mods = mod_list
+            .active_mods()
+            .values()
+            .map(|m| format!("{}@{}", m.info.name, m.info.version))
+            .collect::<Vec<_>>();
+        active_mods.sort();
+
+        let mut hash = rustc_hash::FxHasher::default();
+        for mod_name in &active_mods {
+            mod_name.hash(&mut hash);
+        }
+        let mods_hash = hash.finish();
+
+        let mut active_settings = bp_settings
+            .iter()
+            .map(|(k, v)| format!("{k}={v}"))
+            .collect::<Vec<_>>();
+        active_settings.sort();
+
+        let mut hash = rustc_hash::FxHasher::default();
+        for setting in &active_settings {
+            setting.hash(&mut hash);
+        }
+        let settings_hash = hash.finish();
+
+        let cached_path = factorio.join(format!(
+            "script-output/cached-dump_{mods_hash:X}-{settings_hash:X}.json.deflate"
+        ));
+
+        if cached_path.exists() {
+            info!("loading cached prototype dump");
+            let mut deflate = ZlibDecoder::new(
+                fs::File::open(&cached_path)
+                    .change_context(ScannerError::SetupError)
+                    .attach_printable(format!(
+                        "failed to open cached prototype dump at {cached_path:?}"
+                    ))?,
+            );
+
+            let mut uncompressed = Vec::new();
+
+            deflate
+                .read_to_end(&mut uncompressed)
+                .change_context(ScannerError::SetupError)
+                .attach_printable(format!(
+                    "failed to decompress cached prototype dump at {cached_path:?}"
+                ))?;
+
+            return DataRaw::load_from_bytes(&uncompressed)
+                .change_context(ScannerError::SetupError);
+        }
+
+        cached_path
+    };
+
+    mod_list.save().change_context(ScannerError::SetupError)?;
+    debug!("updated mod-list.json");
+
+    SettingsDat::load_bp_settings(
+        bp_settings,
+        bp_version,
+        &factorio.join("mods/mod-settings.dat"),
     )
-    .change_context(ScannerError::NoBlueprint)?;
+    .change_context(ScannerError::SetupError)?
+    .save()
+    .change_context(ScannerError::SetupError)?;
+    debug!("updated mod-settings.dat");
+
+    let binary_path = factorio_bin.unwrap_or_else(|| factorio.join("bin/x64/factorio"));
+    debug!("executing {binary_path:?} with --dump-data");
+    let dump_out = Command::new(binary_path)
+        .arg("--dump-data")
+        .output()
+        .change_context(ScannerError::SetupError)?;
+
+    if dump_out.status.success() {
+        debug!("prototype dump success");
+    } else {
+        return Err(report!(ScannerError::SetupError)
+            .attach_printable(format!(
+                "prototype dump failed with exit code {}",
+                dump_out.status.code().unwrap_or(-1)
+            ))
+            .attach_printable(String::from_utf8_lossy(&dump_out.stdout).to_string()));
+    }
+
+    let dump_path = factorio.join("script-output/data-raw-dump.json");
+    let dump_bytes = fs::read(&dump_path)
+        .change_context(ScannerError::SetupError)
+        .attach_printable(format!("failed to read prototype dump at {dump_path:?}"))?;
+
+    // store minified + deflated version of dump in script-output folder
+    {
+        let minified = serde_json::to_vec(
+            &serde_json::from_slice::<serde_json::Value>(&dump_bytes)
+                .change_context(ScannerError::SetupError)
+                .attach_printable("failed to minify prototype dump")?,
+        )
+        .change_context(ScannerError::SetupError)
+        .attach_printable("failed to minify prototype dump")?;
+
+        let mut deflate = ZlibEncoder::new(
+            fs::File::create(&cached_path)
+                .change_context(ScannerError::SetupError)
+                .attach_printable(format!(
+                    "failed to create cached prototype dump at {cached_path:?}"
+                ))?,
+            flate2::Compression::best(),
+        );
+
+        deflate
+            .write_all(&minified)
+            .change_context(ScannerError::SetupError)
+            .attach_printable(format!(
+                "failed to compress cached prototype dump at {cached_path:?}"
+            ))?;
+    }
+
+    DataRaw::load_from_bytes(&dump_bytes).change_context(ScannerError::SetupError)
+}
+
+fn render_command(
+    input: Input,
+    factorio: &Path,
+    factorio_bin: Option<PathBuf>,
+    preset: Option<preset::Preset>,
+    prototype_dump: Option<PathBuf>,
+    target_res: f64,
+    out: &Path,
+) -> Result<(), ScannerError> {
+    let (res, missing) = render(
+        input,
+        factorio,
+        factorio_bin,
+        preset,
+        prototype_dump,
+        target_res,
+    )?;
+
+    if !missing.is_empty() {
+        warn!("missing prototypes: {missing:?}");
+    }
+
+    fs::write(out, res).change_context(ScannerError::RenderError)?;
+    info!("saved render to {out:?}");
+
+    Ok(())
+}
+
+fn render(
+    input: Input,
+    factorio: &Path,
+    factorio_bin: Option<PathBuf>,
+    preset: Option<preset::Preset>,
+    prototype_dump: Option<PathBuf>,
+    target_res: f64,
+) -> Result<(Vec<u8>, HashSet<String>), ScannerError> {
+    let bp_string = input
+        .get_bp_string()
+        .change_context(ScannerError::NoBlueprint)?;
+
+    let bp = blueprint::Data::try_from(bp_string).change_context(ScannerError::NoBlueprint)?;
     let bp = bp
         .as_blueprint()
         .ok_or(report!(ScannerError::NoBlueprint))?;
 
     info!("loaded BP");
 
-    let mut mod_list = ModList::generate(&cli.factorio).change_context(ScannerError::SetupError)?;
+    let mut mod_list = ModList::generate(factorio).change_context(ScannerError::SetupError)?;
 
     // get used mods from preset or detect from BP meta info
-    let required_mods = cli.preset.as_ref().map_or(
+    let required_mods = preset.as_ref().map_or(
         bp_helper::get_used_versions(bp).unwrap_or_else(|| {
             std::iter::once(("base".to_owned(), prototypes::targeted_engine_version())).collect()
         }),
@@ -144,64 +378,26 @@ fn full_process(cli: Cli) -> Result<(), ScannerError> {
             debug!("all mods are already installed");
         } else {
             info!("downloading missing mods from mod portal");
-            download_mods(missing, &cli.factorio).change_context(ScannerError::SetupError)?;
+            download_mods(missing, factorio).change_context(ScannerError::SetupError)?;
         }
     }
 
-    let used_mods = mod_list.active_mods();
-
-    let data_raw = if let Some(path) = cli.prototype_dump {
+    let data = if let Some(path) = prototype_dump {
         DataRaw::load(&path).change_context(ScannerError::SetupError)?
     } else {
-        mod_list.save().change_context(ScannerError::SetupError)?;
-        debug!("updated mod-list.json");
-
-        // set settings used in BP
-        let empty_settings = &HashMap::new();
-        let settings =
-            bp_helper::get_used_startup_settings(bp).map_or(empty_settings, |settings| settings);
-        SettingsDat::load_bp_settings(
-            settings,
-            bp.info.version,
-            &cli.factorio.join("mods/mod-settings.dat"),
-        )
-        .change_context(ScannerError::SetupError)?
-        .save()
-        .change_context(ScannerError::SetupError)?;
-
-        debug!("updated mod-settings.dat");
-
-        // execute factorio to dump prototypes
-        info!("dumping prototypes");
-        std::io::stdout()
-            .flush()
-            .change_context(ScannerError::SetupError)?;
-
-        let binary_path = cli.factorio.join("bin/x64/run");
-        let dump_out = Command::new(cli.factorio_bin.unwrap_or(binary_path))
-            .arg("--dump-data")
-            .output()
-            .change_context(ScannerError::SetupError)?;
-
-        if dump_out.status.success() {
-            debug!("prototype dump success");
-        } else {
-            return Err(report!(ScannerError::SetupError)
-                .attach_printable(format!(
-                    "prototype dump failed with exit code {}",
-                    dump_out.status.code().unwrap_or(-1)
-                ))
-                .attach_printable(String::from_utf8_lossy(&dump_out.stderr).to_string()));
-        }
-
-        let dump_path = cli.factorio.join("script-output/data-raw-dump.json");
-        DataRaw::load(&dump_path).change_context(ScannerError::SetupError)?
+        get_protodump(
+            factorio,
+            factorio_bin,
+            &mod_list,
+            (
+                bp_helper::get_used_startup_settings(bp).unwrap_or(&HashMap::new()),
+                bp.info.version,
+            ),
+        )?
     };
 
     info!("loaded prototype data");
-
-    // =====[  RENDER TEST  ]=====
-    let data = DataUtil::new(data_raw);
+    let data = DataUtil::new(data);
 
     let active_mods = mod_list.active_mods();
     debug!(
@@ -210,10 +406,11 @@ fn full_process(cli: Cli) -> Result<(), ScannerError> {
         active_mods.keys().collect::<Vec<_>>()
     );
 
-    let size = calculate_target_size(bp, &data, cli.target_res, 0.5).unwrap();
-    debug!("target size: {size:?}");
+    let size =
+        calculate_target_size(bp, &data, target_res, 0.5).ok_or(ScannerError::RenderError)?;
+    info!("target size: {size}");
 
-    let img = render_bp(
+    let (img, unknown) = render_bp(
         bp,
         &data,
         &active_mods,
@@ -222,18 +419,31 @@ fn full_process(cli: Cli) -> Result<(), ScannerError> {
     );
     info!("render completed");
 
-    let out = fs::File::create(&cli.out).change_context(ScannerError::RenderError)?;
+    let mut res = Vec::new();
     let enc = png::PngEncoder::new_with_quality(
-        out,
+        &mut res,
         png::CompressionType::Best,
         png::FilterType::default(),
     );
 
     enc.write_image(img.as_bytes(), img.width(), img.height(), img.color())
         .change_context(ScannerError::RenderError)?;
+    Ok((res, unknown))
+}
 
-    info!("saved to {:?}", cli.out);
-    Ok(())
+#[derive(Debug)]
+struct ServerError;
+
+impl Context for ServerError {}
+
+impl std::fmt::Display for ServerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "server error")
+    }
+}
+
+fn run_server() -> Result<(), ServerError> {
+    todo!()
 }
 
 fn calculate_target_size(
@@ -249,11 +459,8 @@ fn calculate_target_size(
     let mut max_x = f64::MIN;
     let mut max_y = f64::MIN;
 
-    let mut unknown = HashSet::new();
-
     for entity in &bp.entities {
         let Some(e_proto) = data.get_entity(&entity.name) else {
-            unknown.insert(entity.name.as_str());
             continue;
         };
 
@@ -286,10 +493,6 @@ fn calculate_target_size(
     //         continue;
     //     };
     // }
-
-    if !unknown.is_empty() {
-        warn!("unknown entities: {unknown:?}");
-    }
 
     let min_x = (min_x - 0.5).floor();
     let min_y = (min_y - 0.5).floor();
@@ -357,11 +560,18 @@ fn render_bp(
     used_mods: &UsedMods,
     mut render_layers: RenderLayerBuffer,
     image_cache: &mut ImageCache,
-) -> image::DynamicImage {
+) -> (image::DynamicImage, HashSet<String>) {
+    let mut unknown = HashSet::new();
+
     let rendered_count = bp
         .entities
         .iter()
         .filter_map(|e| {
+            if !data.contains_entity(&e.name) {
+                unknown.insert(e.name.clone());
+                return None;
+            }
+
             let mut connected_gates: Vec<Direction> = Vec::new();
             let mut draw_gate_patch = false;
             let connections = data.get_type(&e.name).and_then(|entity_type| {
@@ -504,27 +714,30 @@ fn render_bp(
             render_opts.connected_gates = connected_gates;
             render_opts.draw_gate_patch = draw_gate_patch;
 
-            if !e.recipe.is_empty() {
-                if let Some(icon) = data.get_recipe_icon(
-                    &e.recipe,
-                    render_layers.scale() * 0.75,
-                    used_mods,
-                    image_cache,
-                ) {
-                    debug!(
-                        "rendering recipe icon for {} at {:?} [{}]",
-                        e.recipe, e.position, e.name
-                    );
-                    render_layers.add(
-                        icon,
-                        &render_opts.position,
-                        InternalRenderLayer::RecipeOverlay,
-                    );
-                } else {
-                    warn!(
-                        "failed to render recipe icon for {} at {:?} [{}]",
-                        e.recipe, e.position, e.name
-                    );
+            'recipe_icon: {
+                if !e.recipe.is_empty() {
+                    if !data.contains_recipe(&e.recipe) {
+                        unknown.insert(e.recipe.clone());
+                        break 'recipe_icon;
+                    }
+
+                    if let Some(icon) = data.get_recipe_icon(
+                        &e.recipe,
+                        render_layers.scale() * 0.75,
+                        used_mods,
+                        image_cache,
+                    ) {
+                        render_layers.add(
+                            icon,
+                            &render_opts.position,
+                            InternalRenderLayer::RecipeOverlay,
+                        );
+                    } else {
+                        warn!(
+                            "failed to render recipe icon for {} at {:?} [{}]",
+                            e.recipe, e.position, e.name
+                        );
+                    }
                 }
             }
 
@@ -541,7 +754,7 @@ fn render_bp(
     info!("entities: {}, layers: {rendered_count}", bp.entities.len());
 
     render_layers.generate_background();
-    render_layers.combine()
+    (render_layers.combine(), unknown)
 }
 
 #[derive(Debug, thiserror::Error)]

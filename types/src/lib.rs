@@ -1396,6 +1396,14 @@ impl MapPosition {
     }
 }
 
+impl std::fmt::Display for MapPosition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let (x, y) = self.as_tuple();
+
+        write!(f, "({x}, {y})")
+    }
+}
+
 impl Default for MapPosition {
     fn default() -> Self {
         Self::Tuple(Default::default(), Default::default())
