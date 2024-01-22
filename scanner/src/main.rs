@@ -9,10 +9,13 @@ use std::{
     net::IpAddr,
     path::{Path, PathBuf},
     process::{Command, ExitCode},
+    sync::Arc,
 };
 
 #[cfg(feature = "server")]
 use actix::StreamHandler;
+use actix::{ActorFutureExt, AsyncContext, Handler, Message, ResponseActFuture, WrapFuture};
+use actix_web::web::Bytes;
 #[cfg(feature = "server")]
 use actix_web::{
     get,
@@ -28,11 +31,9 @@ use capnp::{
 };
 #[cfg(feature = "server")]
 use strum::IntoEnumIterator;
+use tokio::sync::Mutex;
 #[cfg(feature = "server")]
-use tokio::{
-    sync::{mpsc, oneshot, Mutex},
-    task::JoinSet,
-};
+use tokio::sync::{mpsc, oneshot};
 
 use clap::{Parser, Subcommand};
 use error_stack::{ensure, report, Context, Result, ResultExt};
@@ -239,6 +240,14 @@ fn main() -> ExitCode {
         eprintln!("{logger_err:?}");
         return ExitCode::FAILURE;
     };
+
+    info!(
+        "starting {} v{} with prototypes v{} & types v{}",
+        env!("CARGO_PKG_NAME"),
+        env!("CARGO_PKG_VERSION"),
+        prototypes::targeted_engine_version(),
+        types::targeted_engine_version()
+    );
 
     let factorio_bin = cli
         .factorio_bin
@@ -563,18 +572,15 @@ fn run_server(
     info!("starting server on {address}:{port}");
 
     let (input_tx, mut input_rx) = mpsc::channel(max_queue);
-    let server_data = web::Data::new(ServerData { input: input_tx });
+    let server_data = web::Data::new(Arc::new(Mutex::new(ServerData { input: input_tx })));
 
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
         .change_context(ServerError)?;
 
-    let res = rt.block_on(async move {
-        let mut set = JoinSet::new();
-        let local = tokio::task::LocalSet::new();
-
-        set.spawn_local_on(
+    rt.block_on(async move {
+        let server = {
             async move {
                 HttpServer::new(move || {
                     App::new()
@@ -587,100 +593,109 @@ fn run_server(
                 .run()
                 .await
                 .change_context(ServerError)
-            },
-            &local,
-        );
+            }
+        };
 
         let factorio = factorio.to_owned();
         let factorio_bin = factorio_bin.to_owned();
 
-        set.spawn(async move {
-            debug!("ready to process requests");
-            loop {
-                let Some((req, res_tx)) = input_rx.recv().await else {
-                    continue;
-                };
+        let processor = {
+            async move {
+                info!("ready to process requests");
+                loop {
+                    let Some((req, res_tx)) = input_rx.recv().await else {
+                        continue;
+                    };
 
-                let id = req.get_id();
+                    let id = req.get_id();
 
-                let mut message = Builder::new_default();
-                let mut response = message.init_root::<api_capnp::response::Builder>();
-                response.set_id(id);
+                    let mut message = Builder::new_default();
+                    let mut response = message.init_root::<api_capnp::response::Builder>();
+                    response.set_id(id);
 
-                let close = match req {
-                    ApiRequest::Quit { .. } => true,
-                    ApiRequest::GetPresets { .. } => {
-                        let mut p = Vec::new();
+                    let close = match req {
+                        ApiRequest::Quit { .. } => true,
+                        ApiRequest::GetPresets { .. } => {
+                            let mut p = Vec::new();
 
-                        for preset in preset::Preset::iter() {
-                            p.push(preset.to_string());
-                        }
-
-                        if let Err(err) = response.set_presets(p.as_slice()) {
-                            error!("{err:?}");
-                            response
-                                .set_request_error(api_capnp::response::ErrorType::ProcessingError);
-                            false
-                        } else {
-                            true
-                        }
-                    }
-                    ApiRequest::RenderBP {
-                        bp_string, preset, ..
-                    } => {
-                        match render(
-                            bp_string,
-                            &factorio,
-                            &factorio_bin,
-                            preset.parse().ok(),
-                            None,
-                            2048.0,
-                        ) {
-                            Ok((img, missing)) => {
-                                let mut rendered = response.init_rendered_bp();
-                                rendered.set_image(&img);
-
-                                if let Err(err) = rendered
-                                    .set_missing(missing.iter().collect::<Vec<_>>().as_slice())
-                                {
-                                    error!("{err:?}");
-                                    //response.set_request_error(api_capnp::response::ErrorType::ProcessingError);
-                                }
-
-                                false
+                            for preset in preset::Preset::iter() {
+                                p.push(preset.to_string());
                             }
-                            Err(err) => {
+
+                            if let Err(err) = response.set_presets(p.as_slice()) {
                                 error!("{err:?}");
                                 response.set_request_error(
                                     api_capnp::response::ErrorType::ProcessingError,
                                 );
                                 false
+                            } else {
+                                true
                             }
                         }
-                    }
-                };
+                        ApiRequest::RenderBP {
+                            bp_string, preset, ..
+                        } => {
+                            match render(
+                                bp_string,
+                                &factorio,
+                                &factorio_bin,
+                                preset.parse().ok(),
+                                None,
+                                2048.0,
+                            ) {
+                                Ok((img, missing)) => {
+                                    let mut rendered = response.init_rendered_bp();
+                                    rendered.set_image(&img);
 
-                res_tx
-                    .send((serialize::write_message_segments_to_words(&message), close))
-                    .map_err(|err| {
-                        report!(ServerError).attach_printable(format!(
-                            "failed to send result for {id} back to websocket handler"
-                        ))
-                    })?;
+                                    if let Err(err) = rendered
+                                        .set_missing(missing.iter().collect::<Vec<_>>().as_slice())
+                                    {
+                                        error!("{err:?}");
+                                        //response.set_request_error(api_capnp::response::ErrorType::ProcessingError);
+                                    }
+
+                                    false
+                                }
+                                Err(err) => {
+                                    error!("{err:?}");
+                                    response.set_request_error(
+                                        api_capnp::response::ErrorType::ProcessingError,
+                                    );
+                                    false
+                                }
+                            }
+                        }
+                    };
+
+                    if let Err(err) = res_tx
+                        .send((serialize::write_message_segments_to_words(&message), close))
+                        .map_err(|err| {
+                            report!(ServerError).attach_printable(format!(
+                                "failed to send result for {id} back to websocket handler"
+                            ))
+                        })
+                    {
+                        error!("{err:?}");
+                        return;
+                    };
+                }
             }
-        });
+        };
 
-        set.join_next().await
+        pin_utils::pin_mut!(server, processor);
+        futures_util::future::select(server, processor).await;
     });
 
-    match res {
-        None => Err(ServerError).attach_printable("server exited unexpectedly"),
-        Some(Err(err)) => Err(err)
-            .change_context(ServerError)
-            .attach_printable("unexpected server process error"),
-        Some(Ok(Err(err))) => Err(err),
-        Some(Ok(Ok(()))) => Ok(()),
-    }
+    Ok(())
+
+    // match res {
+    //     None => Err(ServerError).attach_printable("server exited unexpectedly"),
+    //     Some(Err(err)) => Err(err)
+    //         .change_context(ServerError)
+    //         .attach_printable("unexpected server process error"),
+    //     Some(Ok(Err(err))) => Err(err),
+    //     Some(Ok(Ok(()))) => Ok(()),
+    // }
 }
 
 #[cfg(feature = "server")]
@@ -698,13 +713,13 @@ async fn index() -> impl Responder {
 async fn ws_entry(
     req: HttpRequest,
     stream: web::Payload,
-    data: web::Data<Mutex<ServerData>>,
+    data: web::Data<Arc<Mutex<ServerData>>>,
 ) -> impl Responder {
     ws::start(ScannerWs(data), &req, stream)
 }
 
 #[cfg(feature = "server")]
-struct ScannerWs(web::Data<Mutex<ServerData>>);
+struct ScannerWs(web::Data<Arc<Mutex<ServerData>>>);
 
 #[cfg(feature = "server")]
 impl actix::Actor for ScannerWs {
@@ -724,16 +739,33 @@ impl StreamHandler<std::result::Result<ws::Message, ws::ProtocolError>> for Scan
 
         match msg {
             ws::Message::Ping(msg) => ctx.pong(&msg),
-            ws::Message::Binary(data) => {
-                let Some(req) = ApiRequest::deserialize(data.reader()) else {
-                    return ctx.close(None);
+            ws::Message::Binary(data) => ctx.notify(RequestRunner(data)),
+            _ => (),
+        }
+    }
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+struct RequestRunner(Bytes);
+
+impl Handler<RequestRunner> for ScannerWs {
+    type Result = ResponseActFuture<Self, ()>;
+
+    fn handle(&mut self, msg: RequestRunner, ctx: &mut Self::Context) -> Self::Result {
+        let data = self.0.clone();
+
+        Box::pin(
+            async move {
+                let Some(req) = ApiRequest::deserialize(msg.0.reader()) else {
+                    return (None, true);
                 };
 
                 let id = req.get_id();
                 let (res_tx, res_rx) = oneshot::channel();
 
                 {
-                    let app_data = self.0.blocking_lock();
+                    let app_data = data.lock().await;
 
                     if app_data.input.capacity() == 0 {
                         // queue is full
@@ -742,12 +774,16 @@ impl StreamHandler<std::result::Result<ws::Message, ws::ProtocolError>> for Scan
                         err.set_id(id);
                         err.set_request_error(api_capnp::response::ErrorType::QueueFull);
 
-                        return ctx.binary(serialize::write_message_segments_to_words(&message));
+                        return (
+                            Some(serialize::write_message_segments_to_words(&message)),
+                            false,
+                        );
                     }
 
                     if let Err(err) = app_data
                         .input
-                        .blocking_send((req, res_tx))
+                        .send((req, res_tx))
+                        .await
                         .change_context(ServerError)
                     {
                         error!("{err:?}");
@@ -757,16 +793,19 @@ impl StreamHandler<std::result::Result<ws::Message, ws::ProtocolError>> for Scan
                         err.set_id(id);
                         err.set_request_error(api_capnp::response::ErrorType::ProcessingError);
 
-                        return ctx.binary(serialize::write_message_segments_to_words(&message));
+                        return (
+                            Some(serialize::write_message_segments_to_words(&message)),
+                            false,
+                        );
                     }
                 }
 
-                match res_rx.blocking_recv() {
+                match res_rx.await {
                     Ok((msg, close)) => {
                         if close {
-                            ctx.close(None);
+                            (None, true)
                         } else {
-                            ctx.binary(msg);
+                            (Some(msg), false)
                         }
                     }
                     Err(err) => {
@@ -777,12 +816,24 @@ impl StreamHandler<std::result::Result<ws::Message, ws::ProtocolError>> for Scan
                         err.set_id(id);
                         err.set_request_error(api_capnp::response::ErrorType::ProcessingError);
 
-                        ctx.binary(serialize::write_message_segments_to_words(&message));
+                        (
+                            Some(serialize::write_message_segments_to_words(&message)),
+                            false,
+                        )
                     }
                 }
             }
-            _ => (),
-        }
+            .into_actor(self)
+            .map(|(send, close), _act, ctx| {
+                if let Some(send) = send {
+                    ctx.binary(send);
+                }
+
+                if close {
+                    ctx.close(None);
+                }
+            }),
+        )
     }
 }
 
