@@ -621,10 +621,9 @@ pub mod server {
                                     response.set_request_error(
                                         api_capnp::response::ErrorType::ProcessingError,
                                     );
-                                    false
-                                } else {
-                                    true
                                 }
+
+                                false
                             }
                             ApiRequest::RenderBP {
                                 bp_string, preset, ..
@@ -826,6 +825,7 @@ pub mod server {
         }
     }
 }
+
 fn calculate_target_size(
     bp: &blueprint::Blueprint,
     data: &DataUtil,
