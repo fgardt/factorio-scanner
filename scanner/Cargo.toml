@@ -8,6 +8,15 @@ build = "build.rs"
 [lints]
 workspace = true
 
+[features]
+server = [
+    "dep:actix",
+    "dep:actix-web",
+    "dep:actix-web-actors",
+    "dep:tokio",
+    "dep:capnp",
+]
+
 [dependencies]
 blueprint.workspace = true
 clap.workspace = true
@@ -27,12 +36,12 @@ thiserror.workspace = true
 types.workspace = true
 dotenv = "0.15"
 rustc-hash = "1.1"
-tokio = "1.35"
-capnp = "0.19"
-actix-web = "4.4"
-actix-web-actors = "4.2"
-actix = "0.13"
+tokio = { version = "1.35", optional = true }
+capnp = { version = "0.19", optional = true }
+actix-web = { version = "4.4", optional = true }
+actix-web-actors = { version = "4.2", optional = true }
+actix = { version = "0.13", optional = true }
 strum = { version = "0.25", features = ["derive"] }
 
 [build-dependencies]
-capnpc = "0.19.0"
+capnpc = { version = "0.19.0", optional = true }

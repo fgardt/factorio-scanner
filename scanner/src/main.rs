@@ -11,24 +11,35 @@ use std::{
     process::{Command, ExitCode},
 };
 
+#[cfg(feature = "server")]
 use actix::StreamHandler;
+#[cfg(feature = "server")]
 use actix_web::{
     get,
     web::{self, Buf},
     App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
+#[cfg(feature = "server")]
 use actix_web_actors::ws::{self};
+#[cfg(feature = "server")]
 use capnp::{
     message::{Builder, ReaderOptions},
     serialize,
 };
+#[cfg(feature = "server")]
+use strum::IntoEnumIterator;
+#[cfg(feature = "server")]
+use tokio::{
+    sync::{mpsc, oneshot, Mutex},
+    task::JoinSet,
+};
+
 use clap::{Parser, Subcommand};
 use error_stack::{ensure, report, Context, Result, ResultExt};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder};
 use image::{codecs::png, ImageEncoder};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use strum::IntoEnumIterator;
 
 #[macro_use]
 extern crate log;
@@ -39,19 +50,17 @@ use mod_util::{
 };
 use prototypes::{entity::Type as EntityType, InternalRenderLayer};
 use prototypes::{DataRaw, DataUtil, RenderLayerBuffer, TargetSize};
-use tokio::{
-    sync::{mpsc, oneshot, Mutex},
-    task::JoinSet,
-};
 use types::{ConnectedDirections, Direction, ImageCache, MapPosition};
 
 mod bp_helper;
 mod preset;
 
+#[cfg(feature = "server")]
 pub mod api_capnp {
     include!(concat!(env!("OUT_DIR"), "/schemas/api_capnp.rs"));
 }
 
+#[cfg(feature = "server")]
 pub enum ApiRequest {
     Quit {
         id: u64,
@@ -66,6 +75,7 @@ pub enum ApiRequest {
     },
 }
 
+#[cfg(feature = "server")]
 impl ApiRequest {
     fn deserialize<R: Read>(data: R) -> Option<Self> {
         let reader = serialize::read_message(data, ReaderOptions::new()).ok()?;
@@ -251,12 +261,19 @@ fn main() -> ExitCode {
             target_res,
             &out,
         ),
+        #[cfg(feature = "server")]
         Commands::Server {
             address,
             port,
             max_queue,
         } => run_server(&cli.factorio, &factorio_bin, address, port, max_queue)
             .change_context(ScannerError::ServerError),
+
+        #[cfg(not(feature = "server"))]
+        Commands::Server { .. } => {
+            error!("server feature was not enabled during compilation");
+            return ExitCode::FAILURE;
+        }
     } {
         error!("{err:#?}");
         ExitCode::FAILURE
@@ -515,21 +532,26 @@ fn render(
     Ok((res, unknown))
 }
 
+#[cfg(feature = "server")]
 #[derive(Debug)]
 struct ServerError;
 
+#[cfg(feature = "server")]
 impl Context for ServerError {}
 
+#[cfg(feature = "server")]
 impl std::fmt::Display for ServerError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "server error")
     }
 }
 
+#[cfg(feature = "server")]
 struct ServerData {
     input: mpsc::Sender<(ApiRequest, oneshot::Sender<(Vec<u8>, bool)>)>,
 }
 
+#[cfg(feature = "server")]
 #[allow(clippy::too_many_lines)]
 fn run_server(
     factorio: &Path,
@@ -661,6 +683,7 @@ fn run_server(
     }
 }
 
+#[cfg(feature = "server")]
 #[get("/")]
 async fn index() -> impl Responder {
     HttpResponse::Ok().body(format!(
@@ -670,6 +693,7 @@ async fn index() -> impl Responder {
     ))
 }
 
+#[cfg(feature = "server")]
 #[get("/ws/")]
 async fn ws_entry(
     req: HttpRequest,
@@ -679,12 +703,15 @@ async fn ws_entry(
     ws::start(ScannerWs(data), &req, stream)
 }
 
+#[cfg(feature = "server")]
 struct ScannerWs(web::Data<Mutex<ServerData>>);
 
+#[cfg(feature = "server")]
 impl actix::Actor for ScannerWs {
     type Context = ws::WebsocketContext<Self>;
 }
 
+#[cfg(feature = "server")]
 impl StreamHandler<std::result::Result<ws::Message, ws::ProtocolError>> for ScannerWs {
     fn handle(
         &mut self,

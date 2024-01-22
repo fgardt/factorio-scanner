@@ -1,5 +1,7 @@
+#[cfg(feature = "server")]
 extern crate capnpc;
 
+#[cfg(feature = "server")]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     capnpc::CompilerCommand::new()
         .file("schemas/api.capnp")
@@ -7,3 +9,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+fn main() {}
