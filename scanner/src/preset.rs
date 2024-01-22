@@ -1,8 +1,9 @@
 use clap::builder::PossibleValue;
 use mod_util::{mod_info::Version, UsedVersions};
+use strum::EnumIter;
 
 #[allow(clippy::module_name_repetitions)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter)]
 pub enum Preset {
     K2,
     SE,
@@ -27,6 +28,32 @@ impl Preset {
     }
 
     // TODO: used settings
+}
+
+impl ToString for Preset {
+    fn to_string(&self) -> String {
+        match self {
+            Self::K2 => "K2",
+            Self::SE => "SE",
+            Self::K2SE => "K2SE",
+            Self::SeaBlock => "SeaBlock",
+        }
+        .to_owned()
+    }
+}
+
+impl std::str::FromStr for Preset {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "k2" => Ok(Self::K2),
+            "se" => Ok(Self::SE),
+            "k2se" | "k2+se" | "sek2" | "se+k2" => Ok(Self::K2SE),
+            "seablock" | "sb" => Ok(Self::SeaBlock),
+            _ => Err(format!("unknown preset: {s}")),
+        }
+    }
 }
 
 impl clap::ValueEnum for Preset {

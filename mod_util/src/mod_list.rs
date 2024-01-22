@@ -25,7 +25,7 @@ pub enum ModListError {
     ModListDeserializationError(#[from] serde_json::Error),
 
     #[error("failed to load wube mod {0}: {1}")]
-    WubeModLoadError(String, String),
+    WubeModLoadError(String, #[source] crate::mod_loader::ModError),
 
     #[error("dependency solver could not find info about {0}")]
     SolverMissingInfo(String),
@@ -168,10 +168,10 @@ impl<'a> ModList<'a> {
                     );
                 }
                 Err(e) => {
-                    return Err(ModListError::WubeModLoadError(
-                        w_mod.to_string(),
-                        e.to_string(),
-                    ));
+                    // core and base should always be available
+                    if w_mod == "core" || w_mod == "base" {
+                        return Err(ModListError::WubeModLoadError(w_mod.to_string(), e));
+                    }
                 }
             }
         }

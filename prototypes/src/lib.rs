@@ -88,7 +88,11 @@ impl DataRaw {
     pub fn load(dump_path: &Path) -> Result<Self, Error> {
         let mut bytes = Vec::new();
         File::open(dump_path)?.read_to_end(&mut bytes)?;
-        Ok(serde_json::from_slice(&bytes)?)
+        Self::load_from_bytes(&bytes)
+    }
+
+    pub fn load_from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        Ok(serde_json::from_slice(bytes)?)
     }
 }
 
@@ -398,6 +402,16 @@ impl DataUtil {
     #[must_use]
     pub fn get_type(&self, name: &str) -> Option<&entity::Type> {
         self.entities.get(name)
+    }
+
+    #[must_use]
+    pub fn contains_entity(&self, name: &str) -> bool {
+        self.entities.contains_key(name)
+    }
+
+    #[must_use]
+    pub fn contains_recipe(&self, name: &str) -> bool {
+        self.raw.recipe.recipe.contains_key(name)
     }
 
     #[allow(clippy::too_many_lines)]
@@ -934,6 +948,16 @@ impl TargetSize {
         let py = f64::from(height).mul_add(-0.5, (y + shift_y - tl_y) * self.tile_res);
 
         (px.round() as i64, py.round() as i64)
+    }
+}
+
+impl std::fmt::Display for TargetSize {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}x{} @ {} ({} - {} @ {} px/tile)",
+            self.width, self.height, self.scale, self.top_left, self.bottom_right, self.tile_res
+        )
     }
 }
 
