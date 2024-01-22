@@ -6,16 +6,29 @@ use std::{
     fs::{self},
     hash::{Hash, Hasher},
     io::{Read, Write},
+    net::IpAddr,
     path::{Path, PathBuf},
     process::{Command, ExitCode},
 };
 
+use actix::StreamHandler;
+use actix_web::{
+    get,
+    web::{self, Buf},
+    App, HttpRequest, HttpResponse, HttpServer, Responder,
+};
+use actix_web_actors::ws::{self};
+use capnp::{
+    message::{Builder, ReaderOptions},
+    serialize,
+};
 use clap::{Parser, Subcommand};
 use error_stack::{ensure, report, Context, Result, ResultExt};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder};
 use image::{codecs::png, ImageEncoder};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
+use strum::IntoEnumIterator;
 
 #[macro_use]
 extern crate log;
@@ -26,10 +39,61 @@ use mod_util::{
 };
 use prototypes::{entity::Type as EntityType, InternalRenderLayer};
 use prototypes::{DataRaw, DataUtil, RenderLayerBuffer, TargetSize};
+use tokio::{
+    sync::{mpsc, oneshot, Mutex},
+    task::JoinSet,
+};
 use types::{ConnectedDirections, Direction, ImageCache, MapPosition};
 
 mod bp_helper;
 mod preset;
+
+pub mod api_capnp {
+    include!(concat!(env!("OUT_DIR"), "/schemas/api_capnp.rs"));
+}
+
+pub enum ApiRequest {
+    Quit {
+        id: u64,
+    },
+    GetPresets {
+        id: u64,
+    },
+    RenderBP {
+        id: u64,
+        bp_string: String,
+        preset: String,
+    },
+}
+
+impl ApiRequest {
+    fn deserialize<R: Read>(data: R) -> Option<Self> {
+        let reader = serialize::read_message(data, ReaderOptions::new()).ok()?;
+        let req = reader.get_root::<api_capnp::request::Reader>().ok()?;
+        let id = req.get_id();
+
+        match req.which().ok()? {
+            api_capnp::request::Quit(()) => Some(Self::Quit { id }),
+            api_capnp::request::GetPresets(()) => Some(Self::GetPresets { id }),
+            api_capnp::request::RenderBp(r) => {
+                let bp_string = r.get_bp_string().ok()?.to_string().ok()?;
+                let preset = r.get_preset().ok()?.to_string().ok()?;
+
+                Some(Self::RenderBP {
+                    id,
+                    bp_string,
+                    preset,
+                })
+            }
+        }
+    }
+
+    const fn get_id(&self) -> u64 {
+        match self {
+            Self::Quit { id } | Self::GetPresets { id } | Self::RenderBP { id, .. } => *id,
+        }
+    }
+}
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -82,7 +146,19 @@ enum Commands {
     },
 
     /// Run scanner as a server so that other applications can use it through its WebSocket API
-    Server,
+    Server {
+        /// IP address to bind to
+        #[clap(short, long, default_value = "0.0.0.0", value_parser)]
+        address: IpAddr,
+
+        /// Port to listen on
+        #[clap(short, long, default_value = "3800")]
+        port: u16,
+
+        /// Maximum queue size for incoming requests
+        #[clap(long, default_value = "20")]
+        max_queue: usize,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -154,6 +230,10 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     };
 
+    let factorio_bin = cli
+        .factorio_bin
+        .unwrap_or_else(|| cli.factorio.join("bin/x64/factorio"));
+
     if let Err(err) = match cli.command {
         Commands::Render {
             input,
@@ -165,13 +245,18 @@ fn main() -> ExitCode {
         } => render_command(
             input,
             &cli.factorio,
-            cli.factorio_bin,
+            &factorio_bin,
             preset,
             prototype_dump,
             target_res,
             &out,
         ),
-        Commands::Server => run_server().change_context(ScannerError::ServerError),
+        Commands::Server {
+            address,
+            port,
+            max_queue,
+        } => run_server(&cli.factorio, &factorio_bin, address, port, max_queue)
+            .change_context(ScannerError::ServerError),
     } {
         error!("{err:#?}");
         ExitCode::FAILURE
@@ -183,7 +268,7 @@ fn main() -> ExitCode {
 #[allow(clippy::too_many_lines)]
 fn get_protodump(
     factorio: &Path,
-    factorio_bin: Option<PathBuf>,
+    factorio_bin: &Path,
     mod_list: &ModList,
     (bp_settings, bp_version): (&HashMap<String, AnyBasic>, u64),
 ) -> Result<DataRaw, ScannerError> {
@@ -257,9 +342,8 @@ fn get_protodump(
     .change_context(ScannerError::SetupError)?;
     debug!("updated mod-settings.dat");
 
-    let binary_path = factorio_bin.unwrap_or_else(|| factorio.join("bin/x64/factorio"));
-    debug!("executing {binary_path:?} with --dump-data");
-    let dump_out = Command::new(binary_path)
+    debug!("executing {factorio_bin:?} with --dump-data");
+    let dump_out = Command::new(factorio_bin)
         .arg("--dump-data")
         .output()
         .change_context(ScannerError::SetupError)?;
@@ -313,14 +397,18 @@ fn get_protodump(
 fn render_command(
     input: Input,
     factorio: &Path,
-    factorio_bin: Option<PathBuf>,
+    factorio_bin: &Path,
     preset: Option<preset::Preset>,
     prototype_dump: Option<PathBuf>,
     target_res: f64,
     out: &Path,
 ) -> Result<(), ScannerError> {
+    let bp_string = input
+        .get_bp_string()
+        .change_context(ScannerError::NoBlueprint)?;
+
     let (res, missing) = render(
-        input,
+        bp_string,
         factorio,
         factorio_bin,
         preset,
@@ -339,17 +427,13 @@ fn render_command(
 }
 
 fn render(
-    input: Input,
+    bp_string: String,
     factorio: &Path,
-    factorio_bin: Option<PathBuf>,
+    factorio_bin: &Path,
     preset: Option<preset::Preset>,
     prototype_dump: Option<PathBuf>,
     target_res: f64,
 ) -> Result<(Vec<u8>, HashSet<String>), ScannerError> {
-    let bp_string = input
-        .get_bp_string()
-        .change_context(ScannerError::NoBlueprint)?;
-
     let bp = blueprint::Data::try_from(bp_string).change_context(ScannerError::NoBlueprint)?;
     let bp = bp
         .as_blueprint()
@@ -442,8 +526,237 @@ impl std::fmt::Display for ServerError {
     }
 }
 
-fn run_server() -> Result<(), ServerError> {
-    todo!()
+struct ServerData {
+    input: mpsc::Sender<(ApiRequest, oneshot::Sender<(Vec<u8>, bool)>)>,
+}
+
+#[allow(clippy::too_many_lines)]
+fn run_server(
+    factorio: &Path,
+    factorio_bin: &Path,
+    address: IpAddr,
+    port: u16,
+    max_queue: usize,
+) -> Result<(), ServerError> {
+    info!("starting server on {address}:{port}");
+
+    let (input_tx, mut input_rx) = mpsc::channel(max_queue);
+    let server_data = web::Data::new(ServerData { input: input_tx });
+
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .change_context(ServerError)?;
+
+    let res = rt.block_on(async move {
+        let mut set = JoinSet::new();
+        let local = tokio::task::LocalSet::new();
+
+        set.spawn_local_on(
+            async move {
+                HttpServer::new(move || {
+                    App::new()
+                        .app_data(server_data.clone())
+                        .service(index)
+                        .service(ws_entry)
+                })
+                .bind((address, port))
+                .change_context(ServerError)?
+                .run()
+                .await
+                .change_context(ServerError)
+            },
+            &local,
+        );
+
+        let factorio = factorio.to_owned();
+        let factorio_bin = factorio_bin.to_owned();
+
+        set.spawn(async move {
+            debug!("ready to process requests");
+            loop {
+                let Some((req, res_tx)) = input_rx.recv().await else {
+                    continue;
+                };
+
+                let id = req.get_id();
+
+                let mut message = Builder::new_default();
+                let mut response = message.init_root::<api_capnp::response::Builder>();
+                response.set_id(id);
+
+                let close = match req {
+                    ApiRequest::Quit { .. } => true,
+                    ApiRequest::GetPresets { .. } => {
+                        let mut p = Vec::new();
+
+                        for preset in preset::Preset::iter() {
+                            p.push(preset.to_string());
+                        }
+
+                        if let Err(err) = response.set_presets(p.as_slice()) {
+                            error!("{err:?}");
+                            response
+                                .set_request_error(api_capnp::response::ErrorType::ProcessingError);
+                            false
+                        } else {
+                            true
+                        }
+                    }
+                    ApiRequest::RenderBP {
+                        bp_string, preset, ..
+                    } => {
+                        match render(
+                            bp_string,
+                            &factorio,
+                            &factorio_bin,
+                            preset.parse().ok(),
+                            None,
+                            2048.0,
+                        ) {
+                            Ok((img, missing)) => {
+                                let mut rendered = response.init_rendered_bp();
+                                rendered.set_image(&img);
+
+                                if let Err(err) = rendered
+                                    .set_missing(missing.iter().collect::<Vec<_>>().as_slice())
+                                {
+                                    error!("{err:?}");
+                                    //response.set_request_error(api_capnp::response::ErrorType::ProcessingError);
+                                }
+
+                                false
+                            }
+                            Err(err) => {
+                                error!("{err:?}");
+                                response.set_request_error(
+                                    api_capnp::response::ErrorType::ProcessingError,
+                                );
+                                false
+                            }
+                        }
+                    }
+                };
+
+                res_tx
+                    .send((serialize::write_message_segments_to_words(&message), close))
+                    .map_err(|err| {
+                        report!(ServerError).attach_printable(format!(
+                            "failed to send result for {id} back to websocket handler"
+                        ))
+                    })?;
+            }
+        });
+
+        set.join_next().await
+    });
+
+    match res {
+        None => Err(ServerError).attach_printable("server exited unexpectedly"),
+        Some(Err(err)) => Err(err)
+            .change_context(ServerError)
+            .attach_printable("unexpected server process error"),
+        Some(Ok(Err(err))) => Err(err),
+        Some(Ok(Ok(()))) => Ok(()),
+    }
+}
+
+#[get("/")]
+async fn index() -> impl Responder {
+    HttpResponse::Ok().body(format!(
+        "{} server v{}",
+        env!("CARGO_PKG_NAME"),
+        env!("CARGO_PKG_VERSION")
+    ))
+}
+
+#[get("/ws/")]
+async fn ws_entry(
+    req: HttpRequest,
+    stream: web::Payload,
+    data: web::Data<Mutex<ServerData>>,
+) -> impl Responder {
+    ws::start(ScannerWs(data), &req, stream)
+}
+
+struct ScannerWs(web::Data<Mutex<ServerData>>);
+
+impl actix::Actor for ScannerWs {
+    type Context = ws::WebsocketContext<Self>;
+}
+
+impl StreamHandler<std::result::Result<ws::Message, ws::ProtocolError>> for ScannerWs {
+    fn handle(
+        &mut self,
+        item: std::result::Result<ws::Message, ws::ProtocolError>,
+        ctx: &mut Self::Context,
+    ) {
+        let Ok(msg) = item else {
+            return ctx.close(None);
+        };
+
+        match msg {
+            ws::Message::Ping(msg) => ctx.pong(&msg),
+            ws::Message::Binary(data) => {
+                let Some(req) = ApiRequest::deserialize(data.reader()) else {
+                    return ctx.close(None);
+                };
+
+                let id = req.get_id();
+                let (res_tx, res_rx) = oneshot::channel();
+
+                {
+                    let app_data = self.0.blocking_lock();
+
+                    if app_data.input.capacity() == 0 {
+                        // queue is full
+                        let mut message = Builder::new_default();
+                        let mut err = message.init_root::<api_capnp::response::Builder>();
+                        err.set_id(id);
+                        err.set_request_error(api_capnp::response::ErrorType::QueueFull);
+
+                        return ctx.binary(serialize::write_message_segments_to_words(&message));
+                    }
+
+                    if let Err(err) = app_data
+                        .input
+                        .blocking_send((req, res_tx))
+                        .change_context(ServerError)
+                    {
+                        error!("{err:?}");
+
+                        let mut message = Builder::new_default();
+                        let mut err = message.init_root::<api_capnp::response::Builder>();
+                        err.set_id(id);
+                        err.set_request_error(api_capnp::response::ErrorType::ProcessingError);
+
+                        return ctx.binary(serialize::write_message_segments_to_words(&message));
+                    }
+                }
+
+                match res_rx.blocking_recv() {
+                    Ok((msg, close)) => {
+                        if close {
+                            ctx.close(None);
+                        } else {
+                            ctx.binary(msg);
+                        }
+                    }
+                    Err(err) => {
+                        error!("{err:?}");
+
+                        let mut message = Builder::new_default();
+                        let mut err = message.init_root::<api_capnp::response::Builder>();
+                        err.set_id(id);
+                        err.set_request_error(api_capnp::response::ErrorType::ProcessingError);
+
+                        ctx.binary(serialize::write_message_segments_to_words(&message));
+                    }
+                }
+            }
+            _ => (),
+        }
+    }
 }
 
 fn calculate_target_size(
