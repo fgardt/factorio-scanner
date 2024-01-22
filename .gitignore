@@ -1,7 +1,6 @@
 .vscode/launch.json
 
 /target
-dumps
 
 *.png
 test_bp/

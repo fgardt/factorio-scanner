@@ -8,7 +8,6 @@ edition.workspace = true
 workspace = true
 
 [dependencies]
-anyhow.workspace = true
 image.workspace = true
 konst.workspace = true
 mod_util.workspace = true

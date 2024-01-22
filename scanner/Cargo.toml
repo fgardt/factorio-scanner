@@ -3,20 +3,45 @@ name = "scanner"
 version = "0.3.0"
 authors.workspace = true
 edition.workspace = true
+build = "build.rs"
 
 [lints]
 workspace = true
 
+[features]
+server = [
+    "dep:actix",
+    "dep:actix-web",
+    "dep:actix-web-actors",
+    "dep:tokio",
+    "dep:capnp",
+]
+
 [dependencies]
-anyhow.workspace = true
 blueprint.workspace = true
 clap.workspace = true
+error-stack = "0.4"
 factorio_api = { workspace = true, features = ["blocking"] }
+flate2.workspace = true
 image.workspace = true
+log.workspace = true
 locale.workspace = true
 mod_util = { workspace = true, features = ["bp_meta_info"] }
+pretty_logging.workspace = true
 prototypes.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 serde_with.workspace = true
+thiserror.workspace = true
 types.workspace = true
+dotenv = "0.15"
+rustc-hash = "1.1"
+tokio = { version = "1.35", optional = true }
+capnp = { version = "0.19", optional = true }
+actix-web = { version = "4.4", optional = true }
+actix-web-actors = { version = "4.2", optional = true }
+actix = { version = "0.13", optional = true }
+strum = { version = "0.25", features = ["derive"] }
+
+[build-dependencies]
+capnpc = { version = "0.19.0", optional = true }
