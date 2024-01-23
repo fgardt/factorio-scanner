@@ -706,7 +706,9 @@ pub mod server {
         stream: web::Payload,
         data: web::Data<Arc<Mutex<ServerData>>>,
     ) -> impl Responder {
-        ws::start(ScannerWs(data), &req, stream)
+        ws::WsResponseBuilder::new(ScannerWs(data), &req, stream)
+            .frame_size(52_428_800) // 50 MB max frame size
+            .start()
     }
 
     struct ScannerWs(web::Data<Arc<Mutex<ServerData>>>);
@@ -745,7 +747,10 @@ pub mod server {
 
             Box::pin(
                 async move {
+                    debug!("received request");
+
                     let Some(req) = ApiRequest::deserialize(msg.0.reader()) else {
+                        warn!("request deserialization failed");
                         return (None, true);
                     };
 
@@ -757,6 +762,8 @@ pub mod server {
 
                         if app_data.input.capacity() == 0 {
                             // queue is full
+                            warn!("queue is full");
+
                             let mut message = Builder::new_default();
                             let mut err = message.init_root::<api_capnp::response::Builder>();
                             err.set_id(id);
