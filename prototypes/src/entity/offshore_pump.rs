@@ -41,27 +41,8 @@ pub struct OffshorePumpData {
 
     pub check_bounding_box_collides_with_tiles: Option<bool>,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
-    pub circuit_wire_connection_points: Option<(
-        WireConnectionPoint,
-        WireConnectionPoint,
-        WireConnectionPoint,
-        WireConnectionPoint,
-    )>,
-    pub circuit_connector_sprites: Option<(
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-    )>,
+    #[serde(flatten)]
+    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for OffshorePumpData {

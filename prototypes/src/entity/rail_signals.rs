@@ -3,8 +3,6 @@ use std::ops::{Deref, Rem};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use serde_helper as helper;
-
 use super::EntityWithOwnerPrototype;
 use mod_util::UsedMods;
 use types::*;
@@ -22,20 +20,8 @@ pub struct RailSignalBaseData {
     pub default_green_output_signal: Option<SignalIDConnector>,
     pub default_orange_output_signal: Option<SignalIDConnector>,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub circuit_wire_connection_points: FactorioArray<WireConnectionPoint>,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub circuit_connector_sprites: FactorioArray<CircuitConnectorSprites>,
+    #[serde(flatten)]
+    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for RailSignalBaseData {

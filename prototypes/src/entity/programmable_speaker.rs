@@ -26,18 +26,8 @@ pub struct ProgrammableSpeakerData {
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub audible_distance_modifier: f64, // docs specify single precision float
 
-    pub circuit_wire_connection_point: Option<WireConnectionPoint>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
-    pub circuit_connector_sprites: Option<CircuitConnectorSprites>,
+    #[serde(flatten)]
+    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for ProgrammableSpeakerData {

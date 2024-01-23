@@ -45,19 +45,6 @@ pub struct RoboportData {
     pub default_available_construction_output_signal: Option<SignalIDConnector>,
     pub default_total_construction_output_signal: Option<SignalIDConnector>,
 
-    pub circuit_wire_connection_point: Option<WireConnectionPoint>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
-    pub circuit_connector_sprites: Option<CircuitConnectorSprites>,
-
     // docs specify single precision float
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub spawn_and_station_shadow_height_offset: f64,
@@ -107,6 +94,9 @@ pub struct RoboportData {
 
     // docs specify single precision float
     pub logistics_connection_distance: Option<f64>,
+
+    #[serde(flatten)]
+    pub wire_connection_data: WireConnectionData,
     // not implemented
     // pub open_door_trigger_effect: Option<TriggerEffect>,
     // pub close_door_trigger_effect: Option<TriggerEffect>,

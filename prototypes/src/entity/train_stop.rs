@@ -25,28 +25,6 @@ pub struct TrainStopData {
     pub default_trains_count_signal: Option<SignalIDConnector>,
     pub default_trains_limit_signal: Option<SignalIDConnector>,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
-    pub circuit_wire_connection_points: Option<(
-        WireConnectionPoint,
-        WireConnectionPoint,
-        WireConnectionPoint,
-        WireConnectionPoint,
-    )>,
-    pub circuit_connector_sprites: Option<(
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-    )>,
-
     pub color: Option<Color>,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -56,6 +34,9 @@ pub struct TrainStopData {
     pub light2: Option<TrainStopLight>,
 
     pub drawing_boxes: Option<TrainStopDrawingBoxes>,
+
+    #[serde(flatten)]
+    pub wire_connection_data: WireConnectionData,
     // TODO: overrides build_grid_size to 2
 }
 

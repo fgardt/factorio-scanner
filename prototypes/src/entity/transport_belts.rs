@@ -358,23 +358,10 @@ pub type TransportBeltPrototype =
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TransportBeltData {
     pub connector_frame_sprites: TransportBeltConnectorFrame,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub circuit_wire_connection_points: FactorioArray<WireConnectionPoint>,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub circuit_connector_sprites: FactorioArray<CircuitConnectorSprites>,
-
     pub related_underground_belt: Option<EntityID>,
+
+    #[serde(flatten)]
+    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for TransportBeltData {

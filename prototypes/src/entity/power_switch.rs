@@ -21,18 +21,8 @@ pub struct PowerSwitchData {
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub overlay_start_delay: u8,
 
-    pub circuit_wire_connection_point: WireConnectionPoint,
-    pub left_wire_connection_point: WireConnectionPoint,
-    pub right_wire_connection_point: WireConnectionPoint,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
+    #[serde(flatten)]
+    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for PowerSwitchData {

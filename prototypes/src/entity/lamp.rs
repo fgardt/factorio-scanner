@@ -21,18 +21,6 @@ pub struct LampData {
 
     pub light: Option<LightDefinition>,
     pub light_when_colored: Option<LightDefinition>,
-    pub circuit_wire_connection_point: Option<WireConnectionPoint>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
-    pub circuit_connector_sprites: Option<CircuitConnectorSprites>,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub glow_size: f64,
@@ -57,6 +45,9 @@ pub struct LampData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub glow_render_mode: GlowRenderMode,
+
+    #[serde(flatten)]
+    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for LampData {

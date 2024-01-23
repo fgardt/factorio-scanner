@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use serde_helper as helper;
-
 use super::EntityWithOwnerPrototype;
 use mod_util::UsedMods;
 use types::*;
@@ -16,24 +14,17 @@ pub type ElectricPolePrototype = EntityWithOwnerPrototype<ElectricPoleData>;
 pub struct ElectricPoleData {
     pub pictures: RotatedSprite,
     pub supply_area_distance: f64,
-    pub connection_points: FactorioArray<WireConnectionPoint>,
 
     pub radius_visualisation_picture: Option<Sprite>,
     pub active_picture: Option<Sprite>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub maximum_wire_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
 
     pub light: Option<LightDefinition>,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub track_coverage_during_build_by_moving: bool,
+
+    #[serde(flatten)]
+    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for ElectricPoleData {

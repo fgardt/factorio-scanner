@@ -61,15 +61,6 @@ pub struct InserterData {
     )]
     pub hand_size: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
     pub default_stack_control_input_signal: Option<SignalIDConnector>,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -85,19 +76,8 @@ pub struct InserterData {
     )]
     pub stack_size_bonus: u8,
 
-    pub circuit_wire_connection_points: Option<(
-        WireConnectionPoint,
-        WireConnectionPoint,
-        WireConnectionPoint,
-        WireConnectionPoint,
-    )>,
-
-    pub circuit_connector_sprites: Option<(
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-    )>,
+    #[serde(flatten)]
+    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for InserterData {

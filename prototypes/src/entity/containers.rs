@@ -34,18 +34,8 @@ pub struct ContainerData {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub scale_info_icons: bool,
 
-    pub circuit_wire_connection_point: Option<WireConnectionPoint>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
-    pub circuit_connector_sprites: Option<CircuitConnectorSprites>,
+    #[serde(flatten)]
+    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for ContainerData {
@@ -214,18 +204,8 @@ pub struct LinkedContainerData {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub scale_info_icons: bool,
 
-    pub circuit_wire_connection_point: Option<WireConnectionPoint>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
-    pub circuit_connector_sprites: Option<CircuitConnectorSprites>,
+    #[serde(flatten)]
+    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for LinkedContainerData {
