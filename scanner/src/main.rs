@@ -11,29 +11,6 @@ use std::{
     process::{Command, ExitCode},
 };
 
-#[cfg(feature = "server")]
-use actix::StreamHandler;
-#[cfg(feature = "server")]
-use actix_web::{
-    get,
-    web::{self, Buf},
-    App, HttpRequest, HttpResponse, HttpServer, Responder,
-};
-#[cfg(feature = "server")]
-use actix_web_actors::ws::{self};
-#[cfg(feature = "server")]
-use capnp::{
-    message::{Builder, ReaderOptions},
-    serialize,
-};
-#[cfg(feature = "server")]
-use strum::IntoEnumIterator;
-#[cfg(feature = "server")]
-use tokio::{
-    sync::{mpsc, oneshot, Mutex},
-    task::JoinSet,
-};
-
 use clap::{Parser, Subcommand};
 use error_stack::{ensure, report, Context, Result, ResultExt};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder};
@@ -54,56 +31,6 @@ use types::{ConnectedDirections, Direction, ImageCache, MapPosition};
 
 mod bp_helper;
 mod preset;
-
-#[cfg(feature = "server")]
-pub mod api_capnp {
-    include!(concat!(env!("OUT_DIR"), "/schemas/api_capnp.rs"));
-}
-
-#[cfg(feature = "server")]
-pub enum ApiRequest {
-    Quit {
-        id: u64,
-    },
-    GetPresets {
-        id: u64,
-    },
-    RenderBP {
-        id: u64,
-        bp_string: String,
-        preset: String,
-    },
-}
-
-#[cfg(feature = "server")]
-impl ApiRequest {
-    fn deserialize<R: Read>(data: R) -> Option<Self> {
-        let reader = serialize::read_message(data, ReaderOptions::new()).ok()?;
-        let req = reader.get_root::<api_capnp::request::Reader>().ok()?;
-        let id = req.get_id();
-
-        match req.which().ok()? {
-            api_capnp::request::Quit(()) => Some(Self::Quit { id }),
-            api_capnp::request::GetPresets(()) => Some(Self::GetPresets { id }),
-            api_capnp::request::RenderBp(r) => {
-                let bp_string = r.get_bp_string().ok()?.to_string().ok()?;
-                let preset = r.get_preset().ok()?.to_string().ok()?;
-
-                Some(Self::RenderBP {
-                    id,
-                    bp_string,
-                    preset,
-                })
-            }
-        }
-    }
-
-    const fn get_id(&self) -> u64 {
-        match self {
-            Self::Quit { id } | Self::GetPresets { id } | Self::RenderBP { id, .. } => *id,
-        }
-    }
-}
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -240,6 +167,14 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     };
 
+    info!(
+        "starting {} v{} with prototypes v{} & types v{}",
+        env!("CARGO_PKG_NAME"),
+        env!("CARGO_PKG_VERSION"),
+        prototypes::targeted_engine_version(),
+        types::targeted_engine_version()
+    );
+
     let factorio_bin = cli
         .factorio_bin
         .unwrap_or_else(|| cli.factorio.join("bin/x64/factorio"));
@@ -266,7 +201,7 @@ fn main() -> ExitCode {
             address,
             port,
             max_queue,
-        } => run_server(&cli.factorio, &factorio_bin, address, port, max_queue)
+        } => server::run(&cli.factorio, &factorio_bin, address, port, max_queue)
             .change_context(ScannerError::ServerError),
 
         #[cfg(not(feature = "server"))]
@@ -533,255 +468,367 @@ fn render(
 }
 
 #[cfg(feature = "server")]
-#[derive(Debug)]
-struct ServerError;
+use server::api_capnp;
 
 #[cfg(feature = "server")]
-impl Context for ServerError {}
+pub mod server {
+    #[allow(clippy::wildcard_imports)]
+    use super::*;
+    use std::sync::Arc;
 
-#[cfg(feature = "server")]
-impl std::fmt::Display for ServerError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "server error")
+    use actix::{
+        ActorFutureExt, AsyncContext, Handler, Message, ResponseActFuture, StreamHandler,
+        WrapFuture,
+    };
+    use actix_web::{
+        get,
+        web::{self, Buf, Bytes},
+        App, HttpRequest, HttpResponse, HttpServer, Responder,
+    };
+    use actix_web_actors::ws;
+    use capnp::{
+        message::{Builder, ReaderOptions},
+        serialize,
+    };
+    use strum::IntoEnumIterator;
+    use tokio::sync::{mpsc, oneshot, Mutex};
+
+    pub mod api_capnp {
+        include!(concat!(env!("OUT_DIR"), "/schemas/api_capnp.rs"));
     }
-}
 
-#[cfg(feature = "server")]
-struct ServerData {
-    input: mpsc::Sender<(ApiRequest, oneshot::Sender<(Vec<u8>, bool)>)>,
-}
+    pub enum ApiRequest {
+        Quit {
+            id: u64,
+        },
+        GetPresets {
+            id: u64,
+        },
+        RenderBP {
+            id: u64,
+            bp_string: String,
+            preset: String,
+        },
+    }
 
-#[cfg(feature = "server")]
-#[allow(clippy::too_many_lines)]
-fn run_server(
-    factorio: &Path,
-    factorio_bin: &Path,
-    address: IpAddr,
-    port: u16,
-    max_queue: usize,
-) -> Result<(), ServerError> {
-    info!("starting server on {address}:{port}");
+    impl ApiRequest {
+        fn deserialize<R: Read>(data: R) -> Option<Self> {
+            let reader = serialize::read_message(data, ReaderOptions::new()).ok()?;
+            let req = reader.get_root::<api_capnp::request::Reader>().ok()?;
+            let id = req.get_id();
 
-    let (input_tx, mut input_rx) = mpsc::channel(max_queue);
-    let server_data = web::Data::new(ServerData { input: input_tx });
+            match req.which().ok()? {
+                api_capnp::request::Quit(()) => Some(Self::Quit { id }),
+                api_capnp::request::GetPresets(()) => Some(Self::GetPresets { id }),
+                api_capnp::request::RenderBp(r) => {
+                    let bp_string = r.get_bp_string().ok()?.to_string().ok()?;
+                    let preset = r.get_preset().ok()?.to_string().ok()?;
 
-    let rt = tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .change_context(ServerError)?;
+                    Some(Self::RenderBP {
+                        id,
+                        bp_string,
+                        preset,
+                    })
+                }
+            }
+        }
 
-    let res = rt.block_on(async move {
-        let mut set = JoinSet::new();
-        let local = tokio::task::LocalSet::new();
+        const fn get_id(&self) -> u64 {
+            match self {
+                Self::Quit { id } | Self::GetPresets { id } | Self::RenderBP { id, .. } => *id,
+            }
+        }
+    }
 
-        set.spawn_local_on(
-            async move {
-                HttpServer::new(move || {
-                    App::new()
-                        .app_data(server_data.clone())
-                        .service(index)
-                        .service(ws_entry)
-                })
-                .bind((address, port))
-                .change_context(ServerError)?
-                .run()
-                .await
-                .change_context(ServerError)
-            },
-            &local,
-        );
+    #[derive(Debug)]
+    pub struct Error;
 
-        let factorio = factorio.to_owned();
-        let factorio_bin = factorio_bin.to_owned();
+    impl Context for Error {}
 
-        set.spawn(async move {
-            debug!("ready to process requests");
-            loop {
-                let Some((req, res_tx)) = input_rx.recv().await else {
-                    continue;
-                };
+    impl std::fmt::Display for Error {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "server error")
+        }
+    }
 
-                let id = req.get_id();
+    struct ServerData {
+        input: mpsc::Sender<(ApiRequest, oneshot::Sender<(Vec<u8>, bool)>)>,
+    }
 
-                let mut message = Builder::new_default();
-                let mut response = message.init_root::<api_capnp::response::Builder>();
-                response.set_id(id);
+    #[allow(clippy::too_many_lines)]
+    pub fn run(
+        factorio: &Path,
+        factorio_bin: &Path,
+        address: IpAddr,
+        port: u16,
+        max_queue: usize,
+    ) -> Result<(), Error> {
+        info!("starting server on {address}:{port}");
 
-                let close = match req {
-                    ApiRequest::Quit { .. } => true,
-                    ApiRequest::GetPresets { .. } => {
-                        let mut p = Vec::new();
+        let (input_tx, mut input_rx) = mpsc::channel(max_queue);
+        let server_data = web::Data::new(Arc::new(Mutex::new(ServerData { input: input_tx })));
 
-                        for preset in preset::Preset::iter() {
-                            p.push(preset.to_string());
-                        }
+        let rt = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .change_context(Error)?;
 
-                        if let Err(err) = response.set_presets(p.as_slice()) {
-                            error!("{err:?}");
-                            response
-                                .set_request_error(api_capnp::response::ErrorType::ProcessingError);
-                            false
-                        } else {
-                            true
-                        }
-                    }
-                    ApiRequest::RenderBP {
-                        bp_string, preset, ..
-                    } => {
-                        match render(
-                            bp_string,
-                            &factorio,
-                            &factorio_bin,
-                            preset.parse().ok(),
-                            None,
-                            2048.0,
-                        ) {
-                            Ok((img, missing)) => {
-                                let mut rendered = response.init_rendered_bp();
-                                rendered.set_image(&img);
+        rt.block_on(async move {
+            let server = {
+                async move {
+                    HttpServer::new(move || {
+                        App::new()
+                            .app_data(server_data.clone())
+                            .service(index)
+                            .service(ws_entry)
+                    })
+                    .bind((address, port))
+                    .change_context(Error)?
+                    .run()
+                    .await
+                    .change_context(Error)
+                }
+            };
 
-                                if let Err(err) = rendered
-                                    .set_missing(missing.iter().collect::<Vec<_>>().as_slice())
-                                {
+            let factorio = factorio.to_owned();
+            let factorio_bin = factorio_bin.to_owned();
+
+            let processor = {
+                async move {
+                    info!("ready to process requests");
+                    loop {
+                        let Some((req, res_tx)) = input_rx.recv().await else {
+                            continue;
+                        };
+
+                        let id = req.get_id();
+
+                        let mut message = Builder::new_default();
+                        let mut response = message.init_root::<api_capnp::response::Builder>();
+                        response.set_id(id);
+
+                        let close = match req {
+                            ApiRequest::Quit { .. } => true,
+                            ApiRequest::GetPresets { .. } => {
+                                let mut p = Vec::new();
+
+                                for preset in preset::Preset::iter() {
+                                    p.push(preset.to_string());
+                                }
+
+                                if let Err(err) = response.set_presets(p.as_slice()) {
                                     error!("{err:?}");
-                                    //response.set_request_error(api_capnp::response::ErrorType::ProcessingError);
+                                    response.set_request_error(
+                                        api_capnp::response::ErrorType::ProcessingError,
+                                    );
                                 }
 
                                 false
                             }
-                            Err(err) => {
-                                error!("{err:?}");
-                                response.set_request_error(
-                                    api_capnp::response::ErrorType::ProcessingError,
-                                );
-                                false
-                            }
-                        }
-                    }
-                };
+                            ApiRequest::RenderBP {
+                                bp_string, preset, ..
+                            } => {
+                                match render(
+                                    bp_string,
+                                    &factorio,
+                                    &factorio_bin,
+                                    preset.parse().ok(),
+                                    None,
+                                    2048.0,
+                                ) {
+                                    Ok((img, missing)) => {
+                                        let mut rendered = response.init_rendered_bp();
+                                        rendered.set_image(&img);
 
-                res_tx
-                    .send((serialize::write_message_segments_to_words(&message), close))
-                    .map_err(|err| {
-                        report!(ServerError).attach_printable(format!(
-                            "failed to send result for {id} back to websocket handler"
-                        ))
-                    })?;
-            }
+                                        if let Err(err) = rendered.set_missing(
+                                            missing.iter().collect::<Vec<_>>().as_slice(),
+                                        ) {
+                                            error!("{err:?}");
+                                            //response.set_request_error(api_capnp::response::ErrorType::ProcessingError);
+                                        }
+
+                                        false
+                                    }
+                                    Err(err) => {
+                                        error!("{err:?}");
+                                        response.set_request_error(
+                                            api_capnp::response::ErrorType::ProcessingError,
+                                        );
+                                        false
+                                    }
+                                }
+                            }
+                        };
+
+                        if let Err(err) = res_tx
+                            .send((serialize::write_message_segments_to_words(&message), close))
+                            .map_err(|err| {
+                                report!(Error).attach_printable(format!(
+                                    "failed to send result for {id} back to websocket handler"
+                                ))
+                            })
+                        {
+                            error!("{err:?}");
+                            return;
+                        };
+                    }
+                }
+            };
+
+            pin_utils::pin_mut!(server, processor);
+            futures_util::future::select(server, processor).await;
         });
 
-        set.join_next().await
-    });
+        Ok(())
 
-    match res {
-        None => Err(ServerError).attach_printable("server exited unexpectedly"),
-        Some(Err(err)) => Err(err)
-            .change_context(ServerError)
-            .attach_printable("unexpected server process error"),
-        Some(Ok(Err(err))) => Err(err),
-        Some(Ok(Ok(()))) => Ok(()),
+        // match res {
+        //     None => Err(ServerError).attach_printable("server exited unexpectedly"),
+        //     Some(Err(err)) => Err(err)
+        //         .change_context(ServerError)
+        //         .attach_printable("unexpected server process error"),
+        //     Some(Ok(Err(err))) => Err(err),
+        //     Some(Ok(Ok(()))) => Ok(()),
+        // }
     }
-}
 
-#[cfg(feature = "server")]
-#[get("/")]
-async fn index() -> impl Responder {
-    HttpResponse::Ok().body(format!(
-        "{} server v{}",
-        env!("CARGO_PKG_NAME"),
-        env!("CARGO_PKG_VERSION")
-    ))
-}
+    #[get("/")]
+    async fn index() -> impl Responder {
+        HttpResponse::Ok().body(format!(
+            "{} server v{}",
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION")
+        ))
+    }
 
-#[cfg(feature = "server")]
-#[get("/ws/")]
-async fn ws_entry(
-    req: HttpRequest,
-    stream: web::Payload,
-    data: web::Data<Mutex<ServerData>>,
-) -> impl Responder {
-    ws::start(ScannerWs(data), &req, stream)
-}
+    #[get("/ws/")]
+    async fn ws_entry(
+        req: HttpRequest,
+        stream: web::Payload,
+        data: web::Data<Arc<Mutex<ServerData>>>,
+    ) -> impl Responder {
+        ws::WsResponseBuilder::new(ScannerWs(data), &req, stream)
+            .frame_size(52_428_800) // 50 MB max frame size
+            .start()
+    }
 
-#[cfg(feature = "server")]
-struct ScannerWs(web::Data<Mutex<ServerData>>);
+    struct ScannerWs(web::Data<Arc<Mutex<ServerData>>>);
 
-#[cfg(feature = "server")]
-impl actix::Actor for ScannerWs {
-    type Context = ws::WebsocketContext<Self>;
-}
+    impl actix::Actor for ScannerWs {
+        type Context = ws::WebsocketContext<Self>;
+    }
 
-#[cfg(feature = "server")]
-impl StreamHandler<std::result::Result<ws::Message, ws::ProtocolError>> for ScannerWs {
-    fn handle(
-        &mut self,
-        item: std::result::Result<ws::Message, ws::ProtocolError>,
-        ctx: &mut Self::Context,
-    ) {
-        let Ok(msg) = item else {
-            return ctx.close(None);
-        };
+    impl StreamHandler<std::result::Result<ws::Message, ws::ProtocolError>> for ScannerWs {
+        fn handle(
+            &mut self,
+            item: std::result::Result<ws::Message, ws::ProtocolError>,
+            ctx: &mut Self::Context,
+        ) {
+            let Ok(msg) = item else {
+                return ctx.close(None);
+            };
 
-        match msg {
-            ws::Message::Ping(msg) => ctx.pong(&msg),
-            ws::Message::Binary(data) => {
-                let Some(req) = ApiRequest::deserialize(data.reader()) else {
-                    return ctx.close(None);
-                };
+            match msg {
+                ws::Message::Ping(msg) => ctx.pong(&msg),
+                ws::Message::Binary(data) => ctx.notify(RequestRunner(data)),
+                _ => (),
+            }
+        }
+    }
 
-                let id = req.get_id();
-                let (res_tx, res_rx) = oneshot::channel();
+    #[derive(Message)]
+    #[rtype(result = "()")]
+    struct RequestRunner(Bytes);
 
-                {
-                    let app_data = self.0.blocking_lock();
+    impl Handler<RequestRunner> for ScannerWs {
+        type Result = ResponseActFuture<Self, ()>;
 
-                    if app_data.input.capacity() == 0 {
-                        // queue is full
-                        let mut message = Builder::new_default();
-                        let mut err = message.init_root::<api_capnp::response::Builder>();
-                        err.set_id(id);
-                        err.set_request_error(api_capnp::response::ErrorType::QueueFull);
+        fn handle(&mut self, msg: RequestRunner, ctx: &mut Self::Context) -> Self::Result {
+            let data = self.0.clone();
 
-                        return ctx.binary(serialize::write_message_segments_to_words(&message));
-                    }
+            Box::pin(
+                async move {
+                    debug!("received request");
 
-                    if let Err(err) = app_data
-                        .input
-                        .blocking_send((req, res_tx))
-                        .change_context(ServerError)
+                    let Some(req) = ApiRequest::deserialize(msg.0.reader()) else {
+                        warn!("request deserialization failed");
+                        return (None, true);
+                    };
+
+                    let id = req.get_id();
+                    let (res_tx, res_rx) = oneshot::channel();
+
                     {
-                        error!("{err:?}");
+                        let app_data = data.lock().await;
 
-                        let mut message = Builder::new_default();
-                        let mut err = message.init_root::<api_capnp::response::Builder>();
-                        err.set_id(id);
-                        err.set_request_error(api_capnp::response::ErrorType::ProcessingError);
+                        if app_data.input.capacity() == 0 {
+                            // queue is full
+                            warn!("queue is full");
 
-                        return ctx.binary(serialize::write_message_segments_to_words(&message));
-                    }
-                }
+                            let mut message = Builder::new_default();
+                            let mut err = message.init_root::<api_capnp::response::Builder>();
+                            err.set_id(id);
+                            err.set_request_error(api_capnp::response::ErrorType::QueueFull);
 
-                match res_rx.blocking_recv() {
-                    Ok((msg, close)) => {
-                        if close {
-                            ctx.close(None);
-                        } else {
-                            ctx.binary(msg);
+                            return (
+                                Some(serialize::write_message_segments_to_words(&message)),
+                                false,
+                            );
+                        }
+
+                        if let Err(err) = app_data
+                            .input
+                            .send((req, res_tx))
+                            .await
+                            .change_context(Error)
+                        {
+                            error!("{err:?}");
+
+                            let mut message = Builder::new_default();
+                            let mut err = message.init_root::<api_capnp::response::Builder>();
+                            err.set_id(id);
+                            err.set_request_error(api_capnp::response::ErrorType::ProcessingError);
+
+                            return (
+                                Some(serialize::write_message_segments_to_words(&message)),
+                                false,
+                            );
                         }
                     }
-                    Err(err) => {
-                        error!("{err:?}");
 
-                        let mut message = Builder::new_default();
-                        let mut err = message.init_root::<api_capnp::response::Builder>();
-                        err.set_id(id);
-                        err.set_request_error(api_capnp::response::ErrorType::ProcessingError);
+                    match res_rx.await {
+                        Ok((msg, close)) => {
+                            if close {
+                                (None, true)
+                            } else {
+                                (Some(msg), false)
+                            }
+                        }
+                        Err(err) => {
+                            error!("{err:?}");
 
-                        ctx.binary(serialize::write_message_segments_to_words(&message));
+                            let mut message = Builder::new_default();
+                            let mut err = message.init_root::<api_capnp::response::Builder>();
+                            err.set_id(id);
+                            err.set_request_error(api_capnp::response::ErrorType::ProcessingError);
+
+                            (
+                                Some(serialize::write_message_segments_to_words(&message)),
+                                false,
+                            )
+                        }
                     }
                 }
-            }
-            _ => (),
+                .into_actor(self)
+                .map(|(send, close), _act, ctx| {
+                    if let Some(send) = send {
+                        ctx.binary(send);
+                    }
+
+                    if close {
+                        ctx.close(None);
+                    }
+                }),
+            )
         }
     }
 }
