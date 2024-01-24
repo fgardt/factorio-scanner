@@ -937,7 +937,7 @@ fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::entity::Rende
                 .map(blueprint::DeciderData::operation)
         }),
         runtime_tint: value.color.as_ref().map(std::convert::Into::into),
-        circuit_connected: false,
+        circuit_connected: value.connections.is_some(),
     }
 }
 
