@@ -1,9 +1,11 @@
+use std::ops::Rem;
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use crate::{FactorioArray, LightDefinition, Sprite, Vector};
+use crate::{FactorioArray, LightDefinition, RealOrientation, Sprite, Vector};
 
 /// [`Types/WirePosition`](https://lua-api.factorio.com/latest/types/WirePosition.html)
 #[skip_serializing_none]
@@ -94,17 +96,7 @@ pub enum WireConnectionData {
         #[serde(flatten)]
         draw_flags: WireDrawFlags,
     },
-    OrientedCardinal {
-        circuit_wire_connection_point: Option<Box<[WireConnectionPoint; 4]>>,
-        circuit_connector_sprites: Option<Box<[CircuitConnectorSprites; 4]>>,
-
-        #[serde(default, skip_serializing_if = "helper::is_default")]
-        circuit_wire_max_distance: f64,
-
-        #[serde(flatten)]
-        draw_flags: WireDrawFlags,
-    },
-    OrientedAny {
+    Oriented {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         circuit_wire_connection_points: FactorioArray<WireConnectionPoint>,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -116,4 +108,116 @@ pub enum WireConnectionData {
         #[serde(flatten)]
         draw_flags: WireDrawFlags,
     },
+}
+
+impl WireConnectionData {
+    #[must_use]
+    pub const fn get_flags(&self) -> &WireDrawFlags {
+        match self {
+            Self::PowerPole { draw_flags, .. }
+            | Self::PowerSwitch { draw_flags, .. }
+            | Self::Combinator { draw_flags, .. }
+            | Self::Single { draw_flags, .. }
+            | Self::Oriented { draw_flags, .. } => draw_flags,
+        }
+    }
+
+    #[must_use]
+    pub const fn get_max_distance(&self) -> f64 {
+        match self {
+            Self::PowerPole {
+                maximum_wire_distance,
+                ..
+            } => *maximum_wire_distance,
+            Self::PowerSwitch {
+                wire_max_distance, ..
+            } => *wire_max_distance,
+            Self::Combinator {
+                circuit_wire_max_distance,
+                ..
+            }
+            | Self::Single {
+                circuit_wire_max_distance,
+                ..
+            }
+            | Self::Oriented {
+                circuit_wire_max_distance,
+                ..
+            } => *circuit_wire_max_distance,
+        }
+    }
+
+    #[must_use]
+    pub fn get_connection_point(
+        &self,
+        orientation: RealOrientation,
+    ) -> Option<&WireConnectionPoint> {
+        match self {
+            Self::PowerSwitch {
+                left_wire_connection_point,
+                right_wire_connection_point,
+                circuit_wire_connection_point,
+                ..
+            } => todo!(),
+            Self::Combinator {
+                input_connection_points,
+                output_connection_points,
+                ..
+            } => todo!(),
+            Self::Single {
+                circuit_wire_connection_point: point,
+                ..
+            } => point.as_deref(),
+            Self::PowerPole {
+                connection_points: points,
+                ..
+            }
+            | Self::Oriented {
+                circuit_wire_connection_points: points,
+                ..
+            } => {
+                let directions = points.len();
+
+                if directions == 0 {
+                    None
+                } else {
+                    let directions = directions as f64;
+                    let index =
+                        ((orientation + (0.5 / directions)).rem(1.0) * directions).floor() as usize;
+
+                    points.get(index)
+                }
+            }
+        }
+    }
+
+    #[must_use]
+    pub fn get_connector_sprites(
+        &self,
+        orientation: RealOrientation,
+    ) -> Option<&CircuitConnectorSprites> {
+        match self {
+            Self::PowerPole { .. } | Self::PowerSwitch { .. } | Self::Combinator { .. } => None,
+            Self::Single {
+                circuit_connector_sprites,
+                ..
+            } => circuit_connector_sprites.as_deref(),
+            Self::Oriented {
+                circuit_connector_sprites,
+                ..
+            } => {
+                let directions = circuit_connector_sprites.len();
+
+                if directions == 0 {
+                    None
+                } else {
+                    let directions = directions as f64;
+                    let index =
+                        ((orientation + (0.5 / directions)).rem(1.0) * directions).floor() as usize;
+
+                    circuit_connector_sprites.get(index)
+                }
+            }
+        }
+    }
 }
