@@ -3,12 +3,12 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/TrainStopPrototype`](https://lua-api.factorio.com/latest/prototypes/TrainStopPrototype.html)
-pub type TrainStopPrototype = EntityWithOwnerPrototype<TrainStopData>;
+pub type TrainStopPrototype = EntityWithOwnerPrototype<WireEntityData<TrainStopData>>;
 
 /// [`Prototypes/TrainStopPrototype`](https://lua-api.factorio.com/latest/prototypes/TrainStopPrototype.html)
 #[skip_serializing_none]
@@ -34,9 +34,6 @@ pub struct TrainStopData {
     pub light2: Option<TrainStopLight>,
 
     pub drawing_boxes: Option<TrainStopDrawingBoxes>,
-
-    #[serde(flatten)]
-    pub wire_connection_data: WireConnectionData,
     // TODO: overrides build_grid_size to 2
 }
 

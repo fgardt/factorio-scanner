@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/ElectricPolePrototype`](https://lua-api.factorio.com/latest/prototypes/ElectricPolePrototype.html)
-pub type ElectricPolePrototype = EntityWithOwnerPrototype<ElectricPoleData>;
+pub type ElectricPolePrototype = EntityWithOwnerPrototype<WireEntityData<ElectricPoleData>>;
 
 /// [`Prototypes/ElectricPolePrototype`](https://lua-api.factorio.com/latest/prototypes/ElectricPolePrototype.html)
 #[skip_serializing_none]
@@ -22,9 +22,6 @@ pub struct ElectricPoleData {
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub track_coverage_during_build_by_moving: bool,
-
-    #[serde(flatten)]
-    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for ElectricPoleData {

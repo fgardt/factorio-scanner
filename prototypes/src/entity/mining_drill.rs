@@ -85,6 +85,18 @@ impl super::Renderable for MiningDrillData {
 
         render_layers.add_entity(res, &options.position);
 
+        if options.circuit_connected {
+            let orientation = options.orientation.unwrap_or_default();
+            if let Some(c) = self.wire_connection_data.render_connector(
+                orientation,
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+            ) {
+                render_layers.add_entity(c, &options.position);
+            }
+        }
+
         Some(())
     }
 }

@@ -3,7 +3,7 @@ use std::ops::{Deref, Rem};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
@@ -19,9 +19,6 @@ pub struct RailSignalBaseData {
     pub default_red_output_signal: Option<SignalIDConnector>,
     pub default_green_output_signal: Option<SignalIDConnector>,
     pub default_orange_output_signal: Option<SignalIDConnector>,
-
-    #[serde(flatten)]
-    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for RailSignalBaseData {
@@ -85,7 +82,7 @@ impl super::Renderable for RailSignalBaseData {
 }
 
 /// [`Prototypes/RailChainSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailChainSignalPrototype.html)
-pub type RailChainSignalPrototype = EntityWithOwnerPrototype<RailChainSignalData>;
+pub type RailChainSignalPrototype = EntityWithOwnerPrototype<WireEntityData<RailChainSignalData>>;
 
 /// [`Prototypes/RailChainSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailChainSignalPrototype.html)
 #[skip_serializing_none]
@@ -157,7 +154,7 @@ impl super::Renderable for RailChainSignalData {
 }
 
 /// [`Prototypes/RailSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalPrototype.html)
-pub type RailSignalPrototype = EntityWithOwnerPrototype<RailSignalData>;
+pub type RailSignalPrototype = EntityWithOwnerPrototype<WireEntityData<RailSignalData>>;
 
 /// [`Prototypes/RailSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalPrototype.html)
 #[derive(Debug, Serialize, Deserialize)]

@@ -53,8 +53,23 @@ impl super::Renderable for OffshorePumpData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        self.graphics
-            .render(options, used_mods, render_layers, image_cache)
+        let res = self
+            .graphics
+            .render(options, used_mods, render_layers, image_cache);
+
+        if options.circuit_connected {
+            let orientation = options.orientation.unwrap_or_default();
+            if let Some(c) = self.wire_connection_data.render_connector(
+                orientation,
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+            ) {
+                render_layers.add_entity(c, &options.position);
+            }
+        }
+
+        res
     }
 }
 

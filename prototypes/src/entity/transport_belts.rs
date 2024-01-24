@@ -359,9 +359,6 @@ pub type TransportBeltPrototype =
 pub struct TransportBeltData {
     pub connector_frame_sprites: TransportBeltConnectorFrame,
     pub related_underground_belt: Option<EntityID>,
-
-    #[serde(flatten)]
-    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for TransportBeltData {

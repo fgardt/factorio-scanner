@@ -3,12 +3,12 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/WallPrototype`](https://lua-api.factorio.com/latest/prototypes/WallPrototype.html)
-pub type WallPrototype = EntityWithOwnerPrototype<WallData>;
+pub type WallPrototype = EntityWithOwnerPrototype<WireEntityData<WallData>>;
 
 /// [`Prototypes/WallPrototype`](https://lua-api.factorio.com/latest/prototypes/WallPrototype.html)
 #[skip_serializing_none]

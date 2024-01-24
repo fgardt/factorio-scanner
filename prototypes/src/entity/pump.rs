@@ -3,12 +3,12 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/PumpPrototype`](https://lua-api.factorio.com/latest/prototypes/PumpPrototype.html)
-pub type PumpPrototype = EntityWithOwnerPrototype<PumpData>;
+pub type PumpPrototype = EntityWithOwnerPrototype<WireEntityData<PumpData>>;
 
 /// [`Prototypes/PumpPrototype`](https://lua-api.factorio.com/latest/prototypes/PumpPrototype.html)
 #[skip_serializing_none]
@@ -42,9 +42,6 @@ pub struct PumpData {
     pub fluid_animation: Option<Animation4Way>,
     pub glass_pictures: Option<Sprite4Way>,
     pub fluid_wagon_connector_graphics: Option<FluidWagonConnectorGraphics>,
-
-    #[serde(flatten)]
-    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for PumpData {

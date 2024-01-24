@@ -4,12 +4,12 @@ use serde::{Deserialize, Serialize};
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/CombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/CombinatorPrototype.html)
-pub type CombinatorPrototype<T> = EntityWithOwnerPrototype<CombinatorData<T>>;
+pub type CombinatorPrototype<T> = EntityWithOwnerPrototype<WireEntityData<CombinatorData<T>>>;
 
 /// [`Prototypes/CombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/CombinatorPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -32,9 +32,6 @@ pub struct CombinatorData<T: super::Renderable> {
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub activity_led_hold_time: u8,
-
-    #[serde(flatten)]
-    pub wire_connection_data: WireConnectionData,
 
     #[serde(flatten)]
     child: T,
@@ -188,7 +185,8 @@ impl super::Renderable for DeciderCombinatorData {
 }
 
 /// [`Prototypes/ConstantCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/ConstantCombinatorPrototype.html)
-pub type ConstantCombinatorPrototype = EntityWithOwnerPrototype<ConstantCombinatorData>;
+pub type ConstantCombinatorPrototype =
+    EntityWithOwnerPrototype<WireEntityData<ConstantCombinatorData>>;
 
 /// [`Prototypes/ConstantCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/ConstantCombinatorPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -200,9 +198,6 @@ pub struct ConstantCombinatorData {
     pub activity_led_sprites: Option<Sprite4Way>,
     pub activity_led_light_offsets: (Vector, Vector, Vector, Vector),
     pub activity_led_light: Option<LightDefinition>,
-
-    #[serde(flatten)]
-    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for ConstantCombinatorData {

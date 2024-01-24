@@ -3,12 +3,12 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/StorageTankPrototype`](https://lua-api.factorio.com/latest/prototypes/StorageTankPrototype.html)
-pub type StorageTankPrototype = EntityWithOwnerPrototype<StorageTankData>;
+pub type StorageTankPrototype = EntityWithOwnerPrototype<WireEntityData<StorageTankData>>;
 
 /// [`Prototypes/StorageTankPrototype`](https://lua-api.factorio.com/latest/prototypes/StorageTankPrototype.html)
 #[skip_serializing_none]
@@ -26,9 +26,6 @@ pub struct StorageTankData {
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub scale_info_icons: bool,
-
-    #[serde(flatten)]
-    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for StorageTankData {

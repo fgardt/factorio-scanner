@@ -3,12 +3,12 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/AccumulatorPrototype`](https://lua-api.factorio.com/latest/prototypes/AccumulatorPrototype.html)
-pub type AccumulatorPrototype = EntityWithOwnerPrototype<AccumulatorData>;
+pub type AccumulatorPrototype = EntityWithOwnerPrototype<WireEntityData<AccumulatorData>>;
 
 /// [`Prototypes/AccumulatorPrototype`](https://lua-api.factorio.com/latest/prototypes/AccumulatorPrototype.html)
 #[skip_serializing_none]
@@ -29,9 +29,6 @@ pub struct AccumulatorData {
     pub discharge_light: Option<LightDefinition>,
 
     pub default_output_signal: Option<SignalIDConnector>,
-
-    #[serde(flatten)]
-    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for AccumulatorData {

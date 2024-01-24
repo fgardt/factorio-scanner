@@ -3,12 +3,12 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/RoboportPrototype`](https://lua-api.factorio.com/latest/prototypes/RoboportPrototype.html)
-pub type RoboportPrototype = EntityWithOwnerPrototype<RoboportData>;
+pub type RoboportPrototype = EntityWithOwnerPrototype<WireEntityData<RoboportData>>;
 
 /// [`Prototypes/RoboportPrototype`](https://lua-api.factorio.com/latest/prototypes/RoboportPrototype.html)
 #[skip_serializing_none]
@@ -94,9 +94,6 @@ pub struct RoboportData {
 
     // docs specify single precision float
     pub logistics_connection_distance: Option<f64>,
-
-    #[serde(flatten)]
-    pub wire_connection_data: WireConnectionData,
     // not implemented
     // pub open_door_trigger_effect: Option<TriggerEffect>,
     // pub close_door_trigger_effect: Option<TriggerEffect>,
