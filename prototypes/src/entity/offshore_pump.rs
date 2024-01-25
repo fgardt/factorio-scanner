@@ -3,12 +3,12 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/OffshorePumpPrototype`](https://lua-api.factorio.com/latest/prototypes/OffshorePumpPrototype.html)
-pub type OffshorePumpPrototype = EntityWithOwnerPrototype<OffshorePumpData>;
+pub type OffshorePumpPrototype = EntityWithOwnerPrototype<WireEntityData<OffshorePumpData>>;
 
 /// [`Prototypes/OffshorePumpPrototype`](https://lua-api.factorio.com/latest/prototypes/OffshorePumpPrototype.html)
 #[skip_serializing_none]
@@ -40,28 +40,6 @@ pub struct OffshorePumpData {
     pub always_draw_fluid: bool,
 
     pub check_bounding_box_collides_with_tiles: Option<bool>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
-    pub circuit_wire_connection_points: Option<(
-        WireConnectionPoint,
-        WireConnectionPoint,
-        WireConnectionPoint,
-        WireConnectionPoint,
-    )>,
-    pub circuit_connector_sprites: Option<(
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-    )>,
 }
 
 impl super::Renderable for OffshorePumpData {

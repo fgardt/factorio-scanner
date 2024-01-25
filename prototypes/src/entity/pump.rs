@@ -3,12 +3,12 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/PumpPrototype`](https://lua-api.factorio.com/latest/prototypes/PumpPrototype.html)
-pub type PumpPrototype = EntityWithOwnerPrototype<PumpData>;
+pub type PumpPrototype = EntityWithOwnerPrototype<WireEntityData<PumpData>>;
 
 /// [`Prototypes/PumpPrototype`](https://lua-api.factorio.com/latest/prototypes/PumpPrototype.html)
 #[skip_serializing_none]
@@ -41,29 +41,6 @@ pub struct PumpData {
 
     pub fluid_animation: Option<Animation4Way>,
     pub glass_pictures: Option<Sprite4Way>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
-    pub circuit_wire_connection_points: Option<(
-        WireConnectionPoint,
-        WireConnectionPoint,
-        WireConnectionPoint,
-        WireConnectionPoint,
-    )>,
-    pub circuit_connector_sprites: Option<(
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-    )>,
-
     pub fluid_wagon_connector_graphics: Option<FluidWagonConnectorGraphics>,
 }
 

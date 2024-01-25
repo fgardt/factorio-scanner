@@ -3,12 +3,12 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/MiningDrillPrototype`](https://lua-api.factorio.com/latest/prototypes/MiningDrillPrototype.html)
-pub type MiningDrillPrototype = EntityWithOwnerPrototype<MiningDrillData>;
+pub type MiningDrillPrototype = EntityWithOwnerPrototype<WireEntityData<MiningDrillData>>;
 
 /// [`Prototypes/MiningDrillPrototype`](https://lua-api.factorio.com/latest/prototypes/MiningDrillPrototype.html)
 #[skip_serializing_none]
@@ -32,36 +32,12 @@ pub struct MiningDrillData {
     pub base_picture: Option<Sprite4Way>,
     pub allowed_effects: Option<EffectTypeLimitation>,
     pub radius_visualisation_picture: Option<Sprite>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
     pub base_render_layer: Option<RenderLayer>,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub base_productivity: f64,
 
     pub monitor_visualization_tint: Option<Color>,
-
-    pub circuit_wire_connection_points: Option<(
-        WireConnectionPoint,
-        WireConnectionPoint,
-        WireConnectionPoint,
-        WireConnectionPoint,
-    )>,
-    pub circuit_connector_sprites: Option<(
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-    )>,
-
     pub module_specification: Option<ModuleSpecification>,
 }
 

@@ -5,12 +5,12 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/ContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/ContainerPrototype.html)
-pub type ContainerPrototype = EntityWithOwnerPrototype<ContainerData>;
+pub type ContainerPrototype = EntityWithOwnerPrototype<WireEntityData<ContainerData>>;
 
 /// [`Prototypes/ContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/ContainerPrototype.html)
 #[skip_serializing_none]
@@ -33,19 +33,6 @@ pub struct ContainerData {
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub scale_info_icons: bool,
-
-    pub circuit_wire_connection_point: Option<WireConnectionPoint>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
-    pub circuit_connector_sprites: Option<CircuitConnectorSprites>,
 }
 
 impl super::Renderable for ContainerData {
@@ -80,7 +67,8 @@ pub enum InventoryType {
 }
 
 /// [`Prototypes/LogisticContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/LogisticContainerPrototype.html)
-pub type LogisticContainerPrototype = EntityWithOwnerPrototype<LogisticContainerData>;
+pub type LogisticContainerPrototype =
+    EntityWithOwnerPrototype<WireEntityData<LogisticContainerData>>;
 
 /// [`Prototypes/LogisticContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/LogisticContainerPrototype.html)
 #[skip_serializing_none]
@@ -157,7 +145,8 @@ pub enum LogisticMode {
 }
 
 /// [`Prototypes/InfinityContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityContainerPrototype.html)
-pub type InfinityContainerPrototype = EntityWithOwnerPrototype<InfinityContainerData>;
+pub type InfinityContainerPrototype =
+    EntityWithOwnerPrototype<WireEntityData<InfinityContainerData>>;
 
 /// [`Prototypes/InfinityContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityContainerPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -194,7 +183,7 @@ impl super::Renderable for InfinityContainerData {
 }
 
 /// [`Prototypes/LinkedContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/LinkedContainerPrototype.html)
-pub type LinkedContainerPrototype = EntityWithOwnerPrototype<LinkedContainerData>;
+pub type LinkedContainerPrototype = EntityWithOwnerPrototype<WireEntityData<LinkedContainerData>>;
 
 /// [`Prototypes/LinkedContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/LinkedContainerPrototype.html)
 #[skip_serializing_none]
@@ -213,19 +202,6 @@ pub struct LinkedContainerData {
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub scale_info_icons: bool,
-
-    pub circuit_wire_connection_point: Option<WireConnectionPoint>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
-    pub circuit_connector_sprites: Option<CircuitConnectorSprites>,
 }
 
 impl super::Renderable for LinkedContainerData {

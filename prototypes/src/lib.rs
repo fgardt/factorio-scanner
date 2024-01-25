@@ -5,16 +5,18 @@
     clippy::module_name_repetitions
 )]
 
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use std::{collections::HashMap, ops::Rem};
 
+use imageproc::geometric_transformations;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use entity::RenderableEntity;
-use image::{imageops, GenericImageView};
+use image::{imageops, DynamicImage, GenericImageView};
 use mod_util::mod_info::Version;
 
 use mod_util::UsedMods;
@@ -847,6 +849,12 @@ impl DataUtil {
             &self.raw.fluid,
         )
     }
+
+    #[must_use]
+    pub fn util_sprites(&self) -> Option<&utility_sprites::UtilitySprites> {
+        let key = self.raw.utility_sprites.keys().next()?;
+        self.raw.utility_sprites.get(key)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -965,7 +973,12 @@ impl std::fmt::Display for TargetSize {
 pub struct RenderLayerBuffer {
     target_size: TargetSize,
     layers: HashMap<InternalRenderLayer, image::DynamicImage>,
+
+    wire_connection_points: HashMap<u64, GenericWireConnectionPoint>,
 }
+
+pub type ConnectedEntities = HashMap<u64, [bool; 3]>;
+pub type EntityWireConnections = HashMap<u64, (MapPosition, ([ConnectedEntities; 3], bool))>;
 
 impl RenderLayerBuffer {
     #[must_use]
@@ -973,7 +986,14 @@ impl RenderLayerBuffer {
         Self {
             target_size,
             layers: HashMap::new(),
+            wire_connection_points: HashMap::new(),
         }
+    }
+
+    fn get_layer(&mut self, layer: InternalRenderLayer) -> &mut image::DynamicImage {
+        self.layers.entry(layer).or_insert_with(|| {
+            image::DynamicImage::new_rgba8(self.target_size.width, self.target_size.height)
+        })
     }
 
     pub fn add(
@@ -982,14 +1002,11 @@ impl RenderLayerBuffer {
         position: &MapPosition,
         layer: InternalRenderLayer,
     ) {
-        let layer = self.layers.entry(layer).or_insert_with(|| {
-            image::DynamicImage::new_rgba8(self.target_size.width, self.target_size.height)
-        });
-
         let (x, y) = self
             .target_size
             .get_pixel_pos(img.dimensions(), &shift, position);
 
+        let layer = self.get_layer(layer);
         imageops::overlay(layer, &img, x, y);
     }
 
@@ -1004,6 +1021,211 @@ impl RenderLayerBuffer {
     #[must_use]
     pub const fn scale(&self) -> f64 {
         self.target_size.scale
+    }
+
+    fn store_wire_connection_points(
+        &mut self,
+        bp_entity_id: u64,
+        wire_connection_points: GenericWireConnectionPoint,
+    ) {
+        self.wire_connection_points
+            .insert(bp_entity_id, wire_connection_points);
+    }
+
+    fn generate_wire_draw_data<'a>(
+        &mut self,
+        wire_data: &'a EntityWireConnections,
+    ) -> [Vec<[(&'a MapPosition, Vector); 2]>; 3] {
+        let mut already_drawn = HashSet::<((u64, usize), (u64, usize), usize)>::new();
+        let mut draw_data: [Vec<[(&MapPosition, Vector); 2]>; 3] = Default::default();
+
+        for (source, (s_pos, (s_wcps_cons, s_is_switch))) in wire_data {
+            let Some(s_wcps) = self.wire_connection_points.get(source) else {
+                continue;
+            };
+
+            s_wcps_cons
+                .iter()
+                .enumerate()
+                .for_each(|(s_cons_id, s_cons)| {
+                    let Some(s_wcp) = &s_wcps[s_cons_id] else {
+                        return;
+                    };
+
+                    for (target, s_con) in s_cons {
+                        // if already_drawn.contains(&(*source, *target)) {
+                        //     // println!("skipping {source}: {s_cons_id} -> {target}");
+                        //     return;
+                        // }
+
+                        let Some(t_wcps) = self.wire_connection_points.get(target) else {
+                            return;
+                        };
+
+                        let Some((t_pos, (t_wcps_cons, _))) = wire_data.get(target) else {
+                            return;
+                        };
+
+                        t_wcps_cons
+                            .iter()
+                            .enumerate()
+                            .for_each(|(t_cons_id, t_cons)| {
+                                let Some(t_con) = t_cons.get(source) else {
+                                    return;
+                                };
+
+                                let Some(t_wcp) = &t_wcps[t_cons_id] else {
+                                    return;
+                                };
+
+                                s_con
+                                    .iter()
+                                    .enumerate()
+                                    .zip(t_con.iter())
+                                    .filter(|((w, &s), &t)| s && t || *s_is_switch && s && *w == 0)
+                                    .for_each(|((wire_id, _), _)| {
+                                        let (s_offset, t_offset) = match wire_id {
+                                            0 => (s_wcp.wire.copper, t_wcp.wire.copper),
+                                            1 => (s_wcp.wire.red, t_wcp.wire.red),
+                                            2 => (s_wcp.wire.green, t_wcp.wire.green),
+                                            _ => unreachable!(),
+                                        };
+
+                                        let Some(s_offset) = s_offset else {
+                                            return;
+                                        };
+
+                                        let Some(t_offset) = t_offset else {
+                                            return;
+                                        };
+
+                                        // println!("drawing {source}: {s_cons_id} -> {target}: {t_cons_id} @ {wire_id}");
+
+                                        // skip if already drawn
+                                        if already_drawn.contains(&(
+                                            (*source, s_cons_id),
+                                            (*target, t_cons_id),
+                                            wire_id,
+                                        )) {
+                                            return;
+                                        }
+
+                                        let dd = &mut draw_data[wire_id];
+                                        dd.push([(s_pos, s_offset), (t_pos, t_offset)]);
+
+                                        already_drawn.insert((
+                                            (*source, s_cons_id),
+                                            (*target, t_cons_id),
+                                            wire_id,
+                                        ));
+
+                                        already_drawn.insert((
+                                            (*target, t_cons_id),
+                                            (*source, s_cons_id),
+                                            wire_id,
+                                        ));
+                                    });
+                            });
+                    }
+                });
+        }
+
+        draw_data
+    }
+
+    pub fn draw_wires(
+        &mut self,
+        wire_data: &EntityWireConnections,
+        util_sprites: &utility_sprites::UtilitySprites,
+        used_mods: &mod_util::UsedMods,
+        image_cache: &mut types::ImageCache,
+    ) {
+        let dd = self.generate_wire_draw_data(wire_data);
+
+        let target_size = self.target_size.clone();
+        let layer = self.get_layer(InternalRenderLayer::Wire);
+
+        for i in 0..3u8 {
+            let d = &dd[usize::from(i)];
+
+            if d.is_empty() {
+                continue;
+            }
+
+            let Some((base_wire, _)) = match i {
+                0 => &util_sprites.wires.copper_wire,
+                1 => &util_sprites.wires.red_wire,
+                2 => &util_sprites.wires.green_wire,
+                _ => unreachable!(),
+            }
+            .render(
+                self.scale(),
+                used_mods,
+                image_cache,
+                &SimpleGraphicsRenderOpts::default(),
+            ) else {
+                continue;
+            };
+
+            let (base_wire_width, base_wire_height) = base_wire.dimensions();
+            let base_length = (f64::from(base_wire_width) / 32.0) * self.scale();
+
+            for [(s_pos, s_offset), (t_pos, t_offset)] in d {
+                let start = *s_pos + &MapPosition::from(*s_offset);
+                let end = *t_pos + &MapPosition::from(*t_offset);
+                let length = start.distance_to(&end);
+
+                let mut orientation = start.rad_orientation_to(&end);
+                if orientation > std::f64::consts::FRAC_PI_2 {
+                    orientation -= std::f64::consts::PI;
+                } else if orientation < -std::f64::consts::FRAC_PI_2 {
+                    orientation += std::f64::consts::PI;
+                }
+
+                let offset = 3;
+                let horiz_crop_fac = orientation.cos() * (length / 3.0).min(1.0);
+                let cropped_width =
+                    f64::from(base_wire_width - offset).mul_add(horiz_crop_fac, f64::from(offset));
+
+                // magic numbers :)
+                let vert_crop_fac = 5.6f64.mul_add(
+                    (horiz_crop_fac / 2.0).powi(4),
+                    2.6 * (horiz_crop_fac / 2.0).powi(2),
+                );
+                let cropped_height =
+                    f64::from(base_wire_height - offset).mul_add(vert_crop_fac, f64::from(offset));
+
+                let base_wire = base_wire.crop_imm(
+                    ((f64::from(base_wire_width) - cropped_width) / 2.0).floor() as u32,
+                    (f64::from(base_wire_height) - cropped_height).floor() as u32,
+                    cropped_width.ceil() as u32,
+                    cropped_height.ceil() as u32,
+                );
+
+                let wire = base_wire.resize_exact(
+                    (f64::from(base_wire_width) * (length / base_length)).ceil() as u32,
+                    cropped_height.ceil() as u32,
+                    image::imageops::FilterType::CatmullRom,
+                );
+
+                let (w, h) = wire.dimensions();
+                let mut wire_square = DynamicImage::new_rgba8(w, w);
+                image::imageops::overlay(&mut wire_square, &wire, 0, i64::from((w - h) / 2));
+
+                let rotated = geometric_transformations::rotate_about_center(
+                    &wire_square.to_rgba8(),
+                    orientation as f32,
+                    geometric_transformations::Interpolation::Bicubic,
+                    image::Rgba([0, 0, 0, 0]),
+                );
+
+                self.add(
+                    (rotated.into(), Vector::default()),
+                    &start.center_to(&end),
+                    InternalRenderLayer::Wire,
+                );
+            }
+        }
     }
 
     pub fn generate_background(&mut self) {
@@ -1064,6 +1286,7 @@ pub const fn targeted_engine_version() -> Version {
 
 #[cfg(test)]
 mod test {
+    #![allow(clippy::unwrap_used)]
     use super::*;
 
     #[must_use]

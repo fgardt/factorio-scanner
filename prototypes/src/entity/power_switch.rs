@@ -2,12 +2,12 @@ use serde::{Deserialize, Serialize};
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/PowerSwitchPrototype`](https://lua-api.factorio.com/latest/prototypes/PowerSwitchPrototype.html)
-pub type PowerSwitchPrototype = EntityWithOwnerPrototype<PowerSwitchData>;
+pub type PowerSwitchPrototype = EntityWithOwnerPrototype<WireEntityData<PowerSwitchData>>;
 
 /// [`Prototypes/PowerSwitchPrototype`](https://lua-api.factorio.com/latest/prototypes/PowerSwitchPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -20,19 +20,6 @@ pub struct PowerSwitchData {
 
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub overlay_start_delay: u8,
-
-    pub circuit_wire_connection_point: WireConnectionPoint,
-    pub left_wire_connection_point: WireConnectionPoint,
-    pub right_wire_connection_point: WireConnectionPoint,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
 }
 
 impl super::Renderable for PowerSwitchData {
