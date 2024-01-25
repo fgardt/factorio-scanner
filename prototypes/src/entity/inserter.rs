@@ -5,12 +5,12 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/InserterPrototype`](https://lua-api.factorio.com/latest/prototypes/InserterPrototype.html)
-pub type InserterPrototype = EntityWithOwnerPrototype<InserterData>;
+pub type InserterPrototype = EntityWithOwnerPrototype<WireEntityData<InserterData>>;
 
 /// [`Prototypes/InserterPrototype`](https://lua-api.factorio.com/latest/prototypes/InserterPrototype.html)
 #[skip_serializing_none]
@@ -61,15 +61,6 @@ pub struct InserterData {
     )]
     pub hand_size: f64,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
     pub default_stack_control_input_signal: Option<SignalIDConnector>,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -84,20 +75,6 @@ pub struct InserterData {
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub stack_size_bonus: u8,
-
-    pub circuit_wire_connection_points: Option<(
-        WireConnectionPoint,
-        WireConnectionPoint,
-        WireConnectionPoint,
-        WireConnectionPoint,
-    )>,
-
-    pub circuit_connector_sprites: Option<(
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-        CircuitConnectorSprites,
-    )>,
 }
 
 impl super::Renderable for InserterData {
@@ -125,7 +102,7 @@ impl super::Renderable for InserterData {
                 let pickup_pos = direction.rotate_vector(raw_pickup_pos);
 
                 let length = pickup_pos.x().hypot(pickup_pos.y());
-                let angle = pickup_pos.y().atan2(pickup_pos.x()) + (std::f64::consts::PI / 2.0);
+                let angle = pickup_pos.y().atan2(pickup_pos.x()) + std::f64::consts::FRAC_PI_2;
 
                 let (width, height) = img.dimensions();
                 let diagonal = f64::from(width).hypot(f64::from(height));

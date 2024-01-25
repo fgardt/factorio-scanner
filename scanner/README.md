@@ -4,7 +4,6 @@ Commandline tool to render factorio blueprints with mod support.
 
 ## Current limitations
 
-- wires are not rendered
 - very limited "alt-mode" (recipes are supported (without a black background tho), anything else is still missing)
 - only blueprints will be rendered (or only the selected blueprint from a book), no upgrade/deconstructon planners
 
@@ -64,4 +63,3 @@ Alternatively you can install my [blueprint meta info mod](https://mods.factorio
   - [ ] draw fluid box arrows
   - [ ] draw modules
   - [ ] draw filters (splitters, inserters)
-- draw wires (copper & circuits)

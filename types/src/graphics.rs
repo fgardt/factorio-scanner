@@ -2082,10 +2082,9 @@ impl RenderableGraphics for RotatedAnimation {
                     }
                 }
 
-                let orientation_index = match opts.override_index {
-                    Some(index) => u32::from(index),
-                    None => data.orientation_index(opts.orientation),
-                };
+                let orientation_index = opts
+                    .override_index
+                    .map_or_else(|| data.orientation_index(opts.orientation), u32::from);
                 let file_index = orientation_index / data.lines_per_file.unwrap_or(1);
                 let frame_index = data.animation_params.frame_index(opts.progress);
                 let line_length = data.animation_params.line_length();
@@ -2114,10 +2113,9 @@ impl RenderableGraphics for RotatedAnimation {
                     }
                 }
 
-                let orientation_index = match opts.override_index {
-                    Some(index) => u32::from(index),
-                    None => data.orientation_index(opts.orientation),
-                };
+                let orientation_index = opts
+                    .override_index
+                    .map_or_else(|| data.orientation_index(opts.orientation), u32::from);
                 let frame_index = data.animation_params.frame_index(opts.progress);
                 let line_length = data.animation_params.line_length();
 

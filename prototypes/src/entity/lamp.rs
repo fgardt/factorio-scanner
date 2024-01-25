@@ -3,12 +3,12 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/LampPrototype`](https://lua-api.factorio.com/latest/prototypes/LampPrototype.html)
-pub type LampPrototype = EntityWithOwnerPrototype<LampData>;
+pub type LampPrototype = EntityWithOwnerPrototype<WireEntityData<LampData>>;
 
 /// [`Prototypes/LampPrototype`](https://lua-api.factorio.com/latest/prototypes/LampPrototype.html)
 #[skip_serializing_none]
@@ -21,18 +21,6 @@ pub struct LampData {
 
     pub light: Option<LightDefinition>,
     pub light_when_colored: Option<LightDefinition>,
-    pub circuit_wire_connection_point: Option<WireConnectionPoint>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
-
-    pub circuit_connector_sprites: Option<CircuitConnectorSprites>,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub glow_size: f64,

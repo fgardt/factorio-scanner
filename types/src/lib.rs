@@ -31,6 +31,7 @@ mod graphics;
 mod icon;
 mod item;
 mod module;
+mod wire;
 
 pub use empty_array_fix::*;
 pub use energy::*;
@@ -38,6 +39,7 @@ pub use graphics::*;
 pub use icon::*;
 pub use item::*;
 pub use module::*;
+pub use wire::*;
 
 /// [`Types/AmmoCategoryID`](https://lua-api.factorio.com/latest/types/AmmoCategoryID.html)
 pub type AmmoCategoryID = String;
@@ -626,22 +628,6 @@ impl std::ops::DivAssign<f64> for Vector {
 pub enum Vector3D {
     Struct { x: f64, y: f64, z: f64 },
     Tuple(f64, f64, f64),
-}
-
-/// [`Types/WirePosition`](https://lua-api.factorio.com/latest/types/WirePosition.html)
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct WirePosition {
-    pub copper: Option<Vector>,
-    pub green: Option<Vector>,
-    pub red: Option<Vector>,
-}
-
-/// [`Types/WireConnectionPoint`](https://lua-api.factorio.com/latest/types/WireConnectionPoint.html)
-#[derive(Debug, Serialize, Deserialize)]
-pub struct WireConnectionPoint {
-    pub wire: WirePosition,
-    pub shadow: WirePosition,
 }
 
 /// [`Types/FileName`](https://lua-api.factorio.com/latest/types/FileName.html)
@@ -1394,6 +1380,34 @@ impl MapPosition {
 
         self.is_cardinal_neighbor_internal(other, CARDINAL_MAX, CARDINAL_MIN, SHEAR_MAX)
     }
+
+    #[must_use]
+    pub fn distance_to(&self, other: &Self) -> f64 {
+        let (dx, dy) = (self - other).as_tuple();
+        dx.hypot(dy)
+    }
+
+    #[must_use]
+    pub fn center_to(&self, other: &Self) -> Self {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = other.as_tuple();
+
+        Self::Tuple((x1 + x2) / 2.0, (y1 + y2) / 2.0)
+    }
+
+    #[must_use]
+    pub fn rad_orientation_to(&self, other: &Self) -> f64 {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = other.as_tuple();
+
+        (y2 - y1).atan2(x2 - x1)
+    }
+
+    #[must_use]
+    pub fn orientation_to(&self, other: &Self) -> RealOrientation {
+        let res = self.rad_orientation_to(other) / std::f64::consts::TAU;
+        RealOrientation::new((res + 1.0) % 1.0)
+    }
 }
 
 impl std::fmt::Display for MapPosition {
@@ -1796,26 +1810,6 @@ pub struct LightDefinitionData {
 pub enum LightDefinition {
     Struct(LightDefinitionData),
     Array(FactorioArray<LightDefinitionData>),
-}
-
-/// [`Types/CircuitConnectorSprites`](https://lua-api.factorio.com/latest/types/CircuitConnectorSprites.html)
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CircuitConnectorSprites {
-    pub led_red: Sprite,
-    pub led_green: Sprite,
-    pub led_blue: Sprite,
-    pub led_light: LightDefinition,
-
-    pub connector_main: Option<Sprite>,
-    pub connector_shadow: Option<Sprite>,
-
-    pub wire_pins: Option<Sprite>,
-    pub wire_pins_shadow: Option<Sprite>,
-
-    pub led_blue_off: Option<Sprite>,
-    pub led_blue_light_offset: Option<Vector>,
-    pub red_green_led_light_offset: Option<Vector>,
 }
 
 /// [`Types/BoxSpecification`](https://lua-api.factorio.com/latest/types/BoxSpecification.html)

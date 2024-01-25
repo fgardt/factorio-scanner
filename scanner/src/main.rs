@@ -11,6 +11,7 @@ use std::{
     process::{Command, ExitCode},
 };
 
+use blueprint::ConnectionDataExt;
 use clap::{Parser, Subcommand};
 use error_stack::{ensure, report, Context, Result, ResultExt};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder};
@@ -25,7 +26,9 @@ use mod_util::{
     mod_info::Version, mod_list::ModList, mod_loader::Mod, mod_settings::SettingsDat, AnyBasic,
     UsedMods, UsedVersions,
 };
-use prototypes::{entity::Type as EntityType, InternalRenderLayer};
+use prototypes::{
+    entity::Type as EntityType, ConnectedEntities, EntityWireConnections, InternalRenderLayer,
+};
 use prototypes::{DataRaw, DataUtil, RenderLayerBuffer, TargetSize};
 use types::{ConnectedDirections, Direction, ImageCache, MapPosition};
 
@@ -937,6 +940,12 @@ fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::entity::Rende
                 .map(blueprint::DeciderData::operation)
         }),
         runtime_tint: value.color.as_ref().map(std::convert::Into::into),
+        entity_id: value.entity_number,
+        circuit_connected: value.connections.is_some() || !value.neighbours.is_empty(),
+        logistic_connected: value
+            .control_behavior
+            .as_ref()
+            .is_some_and(|c| c.connect_to_logistic_network.unwrap_or_default()),
     }
 }
 
@@ -949,6 +958,7 @@ fn render_bp(
     image_cache: &mut ImageCache,
 ) -> (image::DynamicImage, HashSet<String>) {
     let mut unknown = HashSet::new();
+    let mut wire_connections = EntityWireConnections::new();
 
     let rendered_count = bp
         .entities
@@ -1128,6 +1138,43 @@ fn render_bp(
                 }
             }
 
+            // store wire connections for wire rendering
+            let mut wires0 = e
+                .neighbours
+                .iter()
+                .map(|n| (*n, [true, false, false]))
+                .collect::<ConnectedEntities>();
+            let mut wires1 = ConnectedEntities::new();
+            let mut wires2 = ConnectedEntities::new();
+            let mut is_switch = false;
+
+            if let Some(circuit_cons) = &e.connections {
+                match circuit_cons {
+                    blueprint::Connection::SingleOne { one } => one.transform(&mut wires0),
+                    blueprint::Connection::SingleTwo { two } => two.transform(&mut wires1),
+                    blueprint::Connection::Double { one, two } => {
+                        one.transform(&mut wires0);
+                        two.transform(&mut wires1);
+                    }
+                    blueprint::Connection::Switch { one, cu0, cu1 } => {
+                        one.transform(&mut wires0);
+                        cu0.transform(&mut wires1);
+                        cu1.transform(&mut wires2);
+                        is_switch = true;
+                    }
+                }
+            }
+
+            if !wires0.is_empty() || !wires1.is_empty() | !wires2.is_empty() {
+                wire_connections.insert(
+                    e.entity_number,
+                    (
+                        e.position.clone().into(),
+                        ([wires0, wires1, wires2], is_switch),
+                    ),
+                );
+            }
+
             data.render_entity(
                 &e.name,
                 &render_opts,
@@ -1139,6 +1186,15 @@ fn render_bp(
         .count();
 
     info!("entities: {}, layers: {rendered_count}", bp.entities.len());
+
+    data.util_sprites().map_or_else(
+        || {
+            warn!("failed to load util sprites, no wire rendering");
+        },
+        |util_sprites| {
+            render_layers.draw_wires(&wire_connections, util_sprites, used_mods, image_cache);
+        },
+    );
 
     render_layers.generate_background();
     (render_layers.combine(), unknown)

@@ -48,6 +48,9 @@ mod transport_belts;
 mod turrets;
 mod vehicles;
 mod wall;
+mod wire_entity;
+
+use wire_entity::*;
 
 pub use accumulator::*;
 pub use artillery_turret::*;
@@ -109,6 +112,10 @@ pub struct RenderOpts {
     pub decider_operation: Option<Comparator>,
 
     pub runtime_tint: Option<Color>,
+
+    pub entity_id: u64,
+    pub circuit_connected: bool,
+    pub logistic_connected: bool,
 }
 
 // From impls for RenderOpts variants from types
