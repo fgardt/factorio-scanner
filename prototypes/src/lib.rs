@@ -11,12 +11,12 @@ use std::io::Read;
 use std::path::Path;
 use std::{collections::HashMap, ops::Rem};
 
-use imageproc::drawing::draw_line_segment_mut;
+use imageproc::geometric_transformations;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use entity::RenderableEntity;
-use image::{imageops, GenericImageView, Rgba};
+use image::{imageops, DynamicImage, GenericImageView};
 use mod_util::mod_info::Version;
 
 use mod_util::UsedMods;
@@ -849,6 +849,12 @@ impl DataUtil {
             &self.raw.fluid,
         )
     }
+
+    #[must_use]
+    pub fn util_sprites(&self) -> Option<&utility_sprites::UtilitySprites> {
+        let key = self.raw.utility_sprites.keys().next()?;
+        self.raw.utility_sprites.get(key)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -1022,21 +1028,19 @@ impl RenderLayerBuffer {
         bp_entity_id: u64,
         wire_connection_points: GenericWireConnectionPoint,
     ) {
-        // println!("storing WCPs for {bp_entity_id}");
         self.wire_connection_points
             .insert(bp_entity_id, wire_connection_points);
     }
 
     fn generate_wire_draw_data<'a>(
         &mut self,
-        data: &'a EntityWireConnections,
+        wire_data: &'a EntityWireConnections,
     ) -> [Vec<[(&'a MapPosition, Vector); 2]>; 3] {
         let mut already_drawn = HashSet::<((u64, usize), (u64, usize), usize)>::new();
         let mut draw_data: [Vec<[(&MapPosition, Vector); 2]>; 3] = Default::default();
 
-        for (source, (s_pos, (s_wcps_cons, s_is_switch))) in data {
+        for (source, (s_pos, (s_wcps_cons, s_is_switch))) in wire_data {
             let Some(s_wcps) = self.wire_connection_points.get(source) else {
-                println!("no s_wcps {source}");
                 continue;
             };
 
@@ -1058,7 +1062,7 @@ impl RenderLayerBuffer {
                             return;
                         };
 
-                        let Some((t_pos, (t_wcps_cons, _))) = data.get(target) else {
+                        let Some((t_pos, (t_wcps_cons, _))) = wire_data.get(target) else {
                             return;
                         };
 
@@ -1129,33 +1133,96 @@ impl RenderLayerBuffer {
         draw_data
     }
 
-    pub fn draw_wires(&mut self, data: &EntityWireConnections) {
-        let dd = self.generate_wire_draw_data(data);
-
-        // println!("Wire draw data: {dd:#?}");
+    pub fn draw_wires(
+        &mut self,
+        wire_data: &EntityWireConnections,
+        util_sprites: &utility_sprites::UtilitySprites,
+        used_mods: &mod_util::UsedMods,
+        image_cache: &mut types::ImageCache,
+    ) {
+        let dd = self.generate_wire_draw_data(wire_data);
 
         let target_size = self.target_size.clone();
         let layer = self.get_layer(InternalRenderLayer::Wire);
 
         for i in 0..3u8 {
-            let color: Rgba<u8> = match i {
-                0 => Rgba([0xD9, 0x73, 0x21, 0xFF]),
-                1 => Rgba([0xFF, 0x00, 0x00, 0xFF]),
-                2 => Rgba([0x00, 0xFF, 0x00, 0xFF]),
-                _ => unreachable!(),
-            };
-
             let d = &dd[usize::from(i)];
 
-            for [(s_pos, s_offset), (t_pos, t_offset)] in d {
-                let (s_x, s_y) = target_size.get_pixel_pos((1, 1), s_offset, s_pos);
-                let (t_x, t_y) = target_size.get_pixel_pos((1, 1), t_offset, t_pos);
+            if d.is_empty() {
+                continue;
+            }
 
-                draw_line_segment_mut(
-                    layer,
-                    (s_x as f32, s_y as f32),
-                    (t_x as f32, t_y as f32),
-                    color,
+            let Some((base_wire, _)) = match i {
+                0 => &util_sprites.wires.copper_wire,
+                1 => &util_sprites.wires.red_wire,
+                2 => &util_sprites.wires.green_wire,
+                _ => unreachable!(),
+            }
+            .render(
+                self.scale(),
+                used_mods,
+                image_cache,
+                &SimpleGraphicsRenderOpts::default(),
+            ) else {
+                continue;
+            };
+
+            let (base_wire_width, base_wire_height) = base_wire.dimensions();
+            let base_length = (f64::from(base_wire_width) / 32.0) * self.scale();
+
+            for [(s_pos, s_offset), (t_pos, t_offset)] in d {
+                let start = *s_pos + &MapPosition::from(*s_offset);
+                let end = *t_pos + &MapPosition::from(*t_offset);
+                let length = start.distance_to(&end);
+
+                let mut orientation = start.rad_orientation_to(&end);
+                if orientation > std::f64::consts::FRAC_PI_2 {
+                    orientation -= std::f64::consts::PI;
+                } else if orientation < -std::f64::consts::FRAC_PI_2 {
+                    orientation += std::f64::consts::PI;
+                }
+
+                let offset = 3;
+                let horiz_crop_fac = orientation.cos() * (length / 3.0).min(1.0);
+                let cropped_width =
+                    f64::from(base_wire_width - offset) * horiz_crop_fac + f64::from(offset);
+
+                // magic numbers :)
+                let vert_crop_fac = 5.6f64.mul_add(
+                    (horiz_crop_fac / 2.0).powi(4),
+                    2.6 * (horiz_crop_fac / 2.0).powi(2),
+                );
+                let cropped_height =
+                    f64::from(base_wire_height - offset) * vert_crop_fac + f64::from(offset);
+
+                let base_wire = base_wire.crop_imm(
+                    ((f64::from(base_wire_width) - cropped_width) / 2.0).floor() as u32,
+                    (f64::from(base_wire_height) - cropped_height).floor() as u32,
+                    cropped_width.ceil() as u32,
+                    cropped_height.ceil() as u32,
+                );
+
+                let wire = base_wire.resize_exact(
+                    (f64::from(base_wire_width) * (length / base_length)).ceil() as u32,
+                    cropped_height.ceil() as u32,
+                    image::imageops::FilterType::CatmullRom,
+                );
+
+                let (w, h) = wire.dimensions();
+                let mut wire_square = DynamicImage::new_rgba8(w, w);
+                image::imageops::overlay(&mut wire_square, &wire, 0, i64::from((w - h) / 2));
+
+                let rotated = geometric_transformations::rotate_about_center(
+                    &wire_square.to_rgba8(),
+                    orientation as f32,
+                    geometric_transformations::Interpolation::Bicubic,
+                    image::Rgba([0, 0, 0, 0]),
+                );
+
+                self.add(
+                    (rotated.into(), Vector::default()),
+                    &start.center_to(&end),
+                    InternalRenderLayer::Wire,
                 );
             }
         }

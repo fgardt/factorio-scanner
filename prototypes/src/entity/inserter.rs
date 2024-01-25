@@ -102,7 +102,7 @@ impl super::Renderable for InserterData {
                 let pickup_pos = direction.rotate_vector(raw_pickup_pos);
 
                 let length = pickup_pos.x().hypot(pickup_pos.y());
-                let angle = pickup_pos.y().atan2(pickup_pos.x()) + (std::f64::consts::PI / 2.0);
+                let angle = pickup_pos.y().atan2(pickup_pos.x()) + std::f64::consts::FRAC_PI_2;
 
                 let (width, height) = img.dimensions();
                 let diagonal = f64::from(width).hypot(f64::from(height));

@@ -1380,6 +1380,34 @@ impl MapPosition {
 
         self.is_cardinal_neighbor_internal(other, CARDINAL_MAX, CARDINAL_MIN, SHEAR_MAX)
     }
+
+    #[must_use]
+    pub fn distance_to(&self, other: &Self) -> f64 {
+        let (dx, dy) = (self - other).as_tuple();
+        dx.hypot(dy)
+    }
+
+    #[must_use]
+    pub fn center_to(&self, other: &Self) -> Self {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = other.as_tuple();
+
+        Self::Tuple((x1 + x2) / 2.0, (y1 + y2) / 2.0)
+    }
+
+    #[must_use]
+    pub fn rad_orientation_to(&self, other: &Self) -> f64 {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = other.as_tuple();
+
+        (y2 - y1).atan2(x2 - x1)
+    }
+
+    #[must_use]
+    pub fn orientation_to(&self, other: &Self) -> RealOrientation {
+        let res = self.rad_orientation_to(other) / std::f64::consts::TAU;
+        RealOrientation::new((res + 1.0) % 1.0)
+    }
 }
 
 impl std::fmt::Display for MapPosition {

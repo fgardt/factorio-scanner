@@ -1187,7 +1187,15 @@ fn render_bp(
 
     info!("entities: {}, layers: {rendered_count}", bp.entities.len());
 
-    render_layers.draw_wires(&wire_connections);
+    data.util_sprites().map_or_else(
+        || {
+            warn!("failed to load util sprites, no wire rendering");
+        },
+        |util_sprites| {
+            render_layers.draw_wires(&wire_connections, util_sprites, used_mods, image_cache);
+        },
+    );
+
     render_layers.generate_background();
     (render_layers.combine(), unknown)
 }

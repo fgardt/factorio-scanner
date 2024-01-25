@@ -164,14 +164,11 @@ impl WireConnectionData {
                 right_wire_connection_point: right_cp,
                 circuit_wire_connection_point: circuit_cp,
                 ..
-            } => {
-                println!("storing WCPS: power-switch\n{left_cp:?}\n{right_cp:?}\n{circuit_cp:?}");
-                Some([
-                    Some(circuit_cp.clone()),
-                    Some(left_cp.clone()),
-                    Some(right_cp.clone()),
-                ])
-            }
+            } => Some([
+                Some(circuit_cp.clone()),
+                Some(left_cp.clone()),
+                Some(right_cp.clone()),
+            ]),
             Self::Combinator {
                 input_connection_points: in_cp,
                 output_connection_points: out_cp,

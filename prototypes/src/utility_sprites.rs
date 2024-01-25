@@ -16,6 +16,9 @@ pub struct UtilitySpritesData {
     pub refresh_white: Animation,
 
     #[serde(flatten)]
+    pub wires: WireSprites,
+
+    #[serde(flatten)]
     pub sprites: HashMap<String, Sprite>,
 }
 
@@ -30,4 +33,18 @@ pub struct CursorBoxSpecification {
     pub pair: FactorioArray<BoxSpecification>,
     pub train_visualization: FactorioArray<BoxSpecification>,
     pub blueprint_snap_rectangle: FactorioArray<BoxSpecification>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WireSprites {
+    pub copper_wire: Sprite,
+    pub green_wire: Sprite,
+    pub red_wire: Sprite,
+
+    pub wire_shadow: Sprite,
+
+    #[serde(rename = "green_wire_hightlight", alias = "green_wire_highlight")]
+    pub green_wire_highlight: Sprite,
+    #[serde(rename = "red_wire_hightlight", alias = "red_wire_highlight")]
+    pub red_wire_highlight: Sprite,
 }
