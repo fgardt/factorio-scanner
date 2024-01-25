@@ -890,12 +890,12 @@ pub enum ArithmeticData {
 
 impl ArithmeticData {
     #[must_use]
-    pub fn operation(&self) -> ArithmeticOperation {
+    pub const fn operation(&self) -> ArithmeticOperation {
         match self {
             Self::SignalSignal { operation, .. }
             | Self::SignalConstant { operation, .. }
             | Self::ConstantSignal { operation, .. }
-            | Self::ConstantConstant { operation, .. } => operation.clone(),
+            | Self::ConstantConstant { operation, .. } => *operation,
         }
     }
 }
@@ -930,11 +930,9 @@ pub enum DeciderData {
 
 impl DeciderData {
     #[must_use]
-    pub fn operation(&self) -> Comparator {
+    pub const fn operation(&self) -> Comparator {
         match self {
-            Self::Signal { comparator, .. } | Self::Constant { comparator, .. } => {
-                comparator.clone()
-            }
+            Self::Signal { comparator, .. } | Self::Constant { comparator, .. } => *comparator,
         }
     }
 }

@@ -1185,7 +1185,7 @@ impl RenderLayerBuffer {
                 let offset = 3;
                 let horiz_crop_fac = orientation.cos() * (length / 3.0).min(1.0);
                 let cropped_width =
-                    f64::from(base_wire_width - offset) * horiz_crop_fac + f64::from(offset);
+                    f64::from(base_wire_width - offset).mul_add(horiz_crop_fac, f64::from(offset));
 
                 // magic numbers :)
                 let vert_crop_fac = 5.6f64.mul_add(
@@ -1193,7 +1193,7 @@ impl RenderLayerBuffer {
                     2.6 * (horiz_crop_fac / 2.0).powi(2),
                 );
                 let cropped_height =
-                    f64::from(base_wire_height - offset) * vert_crop_fac + f64::from(offset);
+                    f64::from(base_wire_height - offset).mul_add(vert_crop_fac, f64::from(offset));
 
                 let base_wire = base_wire.crop_imm(
                     ((f64::from(base_wire_width) - cropped_width) / 2.0).floor() as u32,
@@ -1286,6 +1286,7 @@ pub const fn targeted_engine_version() -> Version {
 
 #[cfg(test)]
 mod test {
+    #![allow(clippy::unwrap_used)]
     use super::*;
 
     #[must_use]
