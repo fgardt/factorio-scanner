@@ -32,8 +32,10 @@ impl<T: Renderable> Renderable for WireEntityData<T> {
             .child
             .render(options, used_mods, render_layers, image_cache);
 
-        if options.circuit_connected {
-            let orientation = options.orientation.unwrap_or_default();
+        if options.circuit_connected || options.logistic_connected {
+            let orientation = options
+                .orientation
+                .unwrap_or_else(|| options.direction.to_orientation());
             if let Some(c) = self.wire_connection_data.render_connector(
                 orientation,
                 render_layers.scale(),
@@ -41,6 +43,22 @@ impl<T: Renderable> Renderable for WireEntityData<T> {
                 image_cache,
             ) {
                 render_layers.add_entity(c, &options.position);
+            }
+
+            if options.circuit_connected {
+                if let Some(p) = self.wire_connection_data.render_pins(
+                    orientation,
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                ) {
+                    render_layers.add_entity(p, &options.position);
+                }
+
+                // cache connection point
+                if let Some(c) = self.wire_connection_data.get_connection_point(orientation) {
+                    render_layers.store_wire_connection_points(options.entity_id, c);
+                }
             }
         }
 

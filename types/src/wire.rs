@@ -13,7 +13,7 @@ use crate::{
 
 /// [`Types/WirePosition`](https://lua-api.factorio.com/latest/types/WirePosition.html)
 #[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct WirePosition {
     pub copper: Option<Vector>,
     pub green: Option<Vector>,
@@ -21,7 +21,7 @@ pub struct WirePosition {
 }
 
 /// [`Types/WireConnectionPoint`](https://lua-api.factorio.com/latest/types/WireConnectionPoint.html)
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct WireConnectionPoint {
     pub wire: WirePosition,
     pub shadow: WirePosition,
@@ -90,16 +90,6 @@ pub enum WireConnectionData {
         #[serde(flatten)]
         draw_flags: WireDrawFlags,
     },
-    Single {
-        circuit_wire_connection_point: Option<Box<WireConnectionPoint>>,
-        circuit_connector_sprites: Option<Box<CircuitConnectorSprites>>,
-
-        #[serde(default, skip_serializing_if = "helper::is_default")]
-        circuit_wire_max_distance: f64,
-
-        #[serde(flatten)]
-        draw_flags: WireDrawFlags,
-    },
     Oriented {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         circuit_wire_connection_points: FactorioArray<WireConnectionPoint>,
@@ -112,7 +102,19 @@ pub enum WireConnectionData {
         #[serde(flatten)]
         draw_flags: WireDrawFlags,
     },
+    Single {
+        circuit_wire_connection_point: Option<Box<WireConnectionPoint>>,
+        circuit_connector_sprites: Option<Box<CircuitConnectorSprites>>,
+
+        #[serde(default, skip_serializing_if = "helper::is_default")]
+        circuit_wire_max_distance: f64,
+
+        #[serde(flatten)]
+        draw_flags: WireDrawFlags,
+    },
 }
+
+pub type GenericWireConnectionPoint = [Option<Box<WireConnectionPoint>>; 3];
 
 impl WireConnectionData {
     #[must_use]
@@ -155,23 +157,37 @@ impl WireConnectionData {
     pub fn get_connection_point(
         &self,
         orientation: RealOrientation,
-    ) -> Option<&WireConnectionPoint> {
+    ) -> Option<GenericWireConnectionPoint> {
         match self {
             Self::PowerSwitch {
-                left_wire_connection_point,
-                right_wire_connection_point,
-                circuit_wire_connection_point,
+                left_wire_connection_point: left_cp,
+                right_wire_connection_point: right_cp,
+                circuit_wire_connection_point: circuit_cp,
                 ..
-            } => todo!(),
+            } => {
+                println!("storing WCPS: power-switch\n{left_cp:?}\n{right_cp:?}\n{circuit_cp:?}");
+                Some([
+                    Some(circuit_cp.clone()),
+                    Some(left_cp.clone()),
+                    Some(right_cp.clone()),
+                ])
+            }
             Self::Combinator {
-                input_connection_points,
-                output_connection_points,
+                input_connection_points: in_cp,
+                output_connection_points: out_cp,
                 ..
-            } => todo!(),
+            } => {
+                let index = ((orientation + 0.125).rem(1.0) * 4.0).floor() as usize;
+                Some([
+                    Some(Box::new(in_cp[index])),
+                    Some(Box::new(out_cp[index])),
+                    None,
+                ])
+            }
             Self::Single {
                 circuit_wire_connection_point: point,
                 ..
-            } => point.as_deref(),
+            } => point.as_ref().map(|p| [Some(p.clone()), None, None]),
             Self::PowerPole {
                 connection_points: points,
                 ..
@@ -189,7 +205,7 @@ impl WireConnectionData {
                     let index =
                         ((orientation + (0.5 / directions)).rem(1.0) * directions).floor() as usize;
 
-                    points.get(index)
+                    points.get(index).map(|p| [Some(Box::new(*p)), None, None])
                 }
             }
         }
@@ -235,6 +251,26 @@ impl WireConnectionData {
     ) -> Option<GraphicsOutput> {
         self.get_connector_sprites(orientation)
             .and_then(|s| s.connector_main.as_ref())
+            .and_then(|s| {
+                s.render(
+                    scale,
+                    used_mods,
+                    image_cache,
+                    &SimpleGraphicsRenderOpts::default(),
+                )
+            })
+    }
+
+    #[must_use]
+    pub fn render_pins(
+        &self,
+        orientation: RealOrientation,
+        scale: f64,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+    ) -> Option<GraphicsOutput> {
+        self.get_connector_sprites(orientation)
+            .and_then(|s| s.wire_pins.as_ref())
             .and_then(|s| {
                 s.render(
                     scale,

@@ -3,12 +3,13 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/ProgrammableSpeakerPrototype`](https://lua-api.factorio.com/latest/prototypes/ProgrammableSpeakerPrototype.html)
-pub type ProgrammableSpeakerPrototype = EntityWithOwnerPrototype<ProgrammableSpeakerData>;
+pub type ProgrammableSpeakerPrototype =
+    EntityWithOwnerPrototype<WireEntityData<ProgrammableSpeakerData>>;
 
 /// [`Prototypes/ProgrammableSpeakerPrototype`](https://lua-api.factorio.com/latest/prototypes/ProgrammableSpeakerPrototype.html)
 #[skip_serializing_none]
@@ -25,9 +26,6 @@ pub struct ProgrammableSpeakerData {
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub audible_distance_modifier: f64, // docs specify single precision float
-
-    #[serde(flatten)]
-    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for ProgrammableSpeakerData {
@@ -46,18 +44,6 @@ impl super::Renderable for ProgrammableSpeakerData {
         )?;
 
         render_layers.add_entity(res, &options.position);
-
-        if options.circuit_connected {
-            let orientation = options.orientation.unwrap_or_default();
-            if let Some(c) = self.wire_connection_data.render_connector(
-                orientation,
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-            ) {
-                render_layers.add_entity(c, &options.position);
-            }
-        }
 
         Some(())
     }

@@ -5,16 +5,18 @@
     clippy::module_name_repetitions
 )]
 
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use std::{collections::HashMap, ops::Rem};
 
+use imageproc::drawing::draw_line_segment_mut;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use entity::RenderableEntity;
-use image::{imageops, GenericImageView};
+use image::{imageops, GenericImageView, Rgba};
 use mod_util::mod_info::Version;
 
 use mod_util::UsedMods;
@@ -965,7 +967,12 @@ impl std::fmt::Display for TargetSize {
 pub struct RenderLayerBuffer {
     target_size: TargetSize,
     layers: HashMap<InternalRenderLayer, image::DynamicImage>,
+
+    wire_connection_points: HashMap<u64, GenericWireConnectionPoint>,
 }
+
+pub type ConnectedEntities = HashMap<u64, [bool; 3]>;
+pub type EntityWireConnections = HashMap<u64, (MapPosition, ([ConnectedEntities; 3], bool))>;
 
 impl RenderLayerBuffer {
     #[must_use]
@@ -973,7 +980,14 @@ impl RenderLayerBuffer {
         Self {
             target_size,
             layers: HashMap::new(),
+            wire_connection_points: HashMap::new(),
         }
+    }
+
+    fn get_layer(&mut self, layer: InternalRenderLayer) -> &mut image::DynamicImage {
+        self.layers.entry(layer).or_insert_with(|| {
+            image::DynamicImage::new_rgba8(self.target_size.width, self.target_size.height)
+        })
     }
 
     pub fn add(
@@ -982,14 +996,11 @@ impl RenderLayerBuffer {
         position: &MapPosition,
         layer: InternalRenderLayer,
     ) {
-        let layer = self.layers.entry(layer).or_insert_with(|| {
-            image::DynamicImage::new_rgba8(self.target_size.width, self.target_size.height)
-        });
-
         let (x, y) = self
             .target_size
             .get_pixel_pos(img.dimensions(), &shift, position);
 
+        let layer = self.get_layer(layer);
         imageops::overlay(layer, &img, x, y);
     }
 
@@ -1004,6 +1015,150 @@ impl RenderLayerBuffer {
     #[must_use]
     pub const fn scale(&self) -> f64 {
         self.target_size.scale
+    }
+
+    fn store_wire_connection_points(
+        &mut self,
+        bp_entity_id: u64,
+        wire_connection_points: GenericWireConnectionPoint,
+    ) {
+        // println!("storing WCPs for {bp_entity_id}");
+        self.wire_connection_points
+            .insert(bp_entity_id, wire_connection_points);
+    }
+
+    fn generate_wire_draw_data<'a>(
+        &mut self,
+        data: &'a EntityWireConnections,
+    ) -> [Vec<[(&'a MapPosition, Vector); 2]>; 3] {
+        let mut already_drawn = HashSet::<((u64, usize), (u64, usize), usize)>::new();
+        let mut draw_data: [Vec<[(&MapPosition, Vector); 2]>; 3] = Default::default();
+
+        for (source, (s_pos, (s_wcps_cons, s_is_switch))) in data {
+            let Some(s_wcps) = self.wire_connection_points.get(source) else {
+                println!("no s_wcps {source}");
+                continue;
+            };
+
+            s_wcps_cons
+                .iter()
+                .enumerate()
+                .for_each(|(s_cons_id, s_cons)| {
+                    let Some(s_wcp) = &s_wcps[s_cons_id] else {
+                        return;
+                    };
+
+                    for (target, s_con) in s_cons {
+                        // if already_drawn.contains(&(*source, *target)) {
+                        //     // println!("skipping {source}: {s_cons_id} -> {target}");
+                        //     return;
+                        // }
+
+                        let Some(t_wcps) = self.wire_connection_points.get(target) else {
+                            return;
+                        };
+
+                        let Some((t_pos, (t_wcps_cons, _))) = data.get(target) else {
+                            return;
+                        };
+
+                        t_wcps_cons
+                            .iter()
+                            .enumerate()
+                            .for_each(|(t_cons_id, t_cons)| {
+                                let Some(t_con) = t_cons.get(source) else {
+                                    return;
+                                };
+
+                                let Some(t_wcp) = &t_wcps[t_cons_id] else {
+                                    return;
+                                };
+
+                                s_con
+                                    .iter()
+                                    .enumerate()
+                                    .zip(t_con.iter())
+                                    .filter(|((w, &s), &t)| s && t || *s_is_switch && s && *w == 0)
+                                    .for_each(|((wire_id, _), _)| {
+                                        let (s_offset, t_offset) = match wire_id {
+                                            0 => (s_wcp.wire.copper, t_wcp.wire.copper),
+                                            1 => (s_wcp.wire.red, t_wcp.wire.red),
+                                            2 => (s_wcp.wire.green, t_wcp.wire.green),
+                                            _ => unreachable!(),
+                                        };
+
+                                        let Some(s_offset) = s_offset else {
+                                            return;
+                                        };
+
+                                        let Some(t_offset) = t_offset else {
+                                            return;
+                                        };
+
+                                        // println!("drawing {source}: {s_cons_id} -> {target}: {t_cons_id} @ {wire_id}");
+
+                                        // skip if already drawn
+                                        if already_drawn.contains(&(
+                                            (*source, s_cons_id),
+                                            (*target, t_cons_id),
+                                            wire_id,
+                                        )) {
+                                            return;
+                                        }
+
+                                        let dd = &mut draw_data[wire_id];
+                                        dd.push([(s_pos, s_offset), (t_pos, t_offset)]);
+
+                                        already_drawn.insert((
+                                            (*source, s_cons_id),
+                                            (*target, t_cons_id),
+                                            wire_id,
+                                        ));
+
+                                        already_drawn.insert((
+                                            (*target, t_cons_id),
+                                            (*source, s_cons_id),
+                                            wire_id,
+                                        ));
+                                    });
+                            });
+                    }
+                });
+        }
+
+        draw_data
+    }
+
+    pub fn draw_wires(&mut self, data: &EntityWireConnections) {
+        let dd = self.generate_wire_draw_data(data);
+
+        // println!("Wire draw data: {dd:#?}");
+
+        let target_size = self.target_size.clone();
+        let layer = self.get_layer(InternalRenderLayer::Wire);
+
+        for i in 0..3u8 {
+            let color: Rgba<u8> = match i {
+                0 => Rgba([0xD9, 0x73, 0x21, 0xFF]),
+                1 => Rgba([0xFF, 0x00, 0x00, 0xFF]),
+                2 => Rgba([0x00, 0xFF, 0x00, 0xFF]),
+                _ => unreachable!(),
+            };
+
+            let d = &dd[usize::from(i)];
+
+            for [(s_pos, s_offset), (t_pos, t_offset)] in d {
+                let (s_x, s_y) = target_size.get_pixel_pos((1, 1), s_offset, s_pos);
+                let (t_x, t_y) = target_size.get_pixel_pos((1, 1), t_offset, t_pos);
+
+                draw_line_segment_mut(
+                    layer,
+                    (s_x as f32, s_y as f32),
+                    (t_x as f32, t_y as f32),
+                    color,
+                );
+            }
+        }
     }
 
     pub fn generate_background(&mut self) {

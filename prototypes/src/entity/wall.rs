@@ -37,9 +37,6 @@ pub struct WallData {
     pub wall_diode_red_light_left: Option<LightDefinition>,
 
     pub connected_gate_visualization: Option<Sprite>,
-
-    #[serde(flatten)]
-    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for WallData {

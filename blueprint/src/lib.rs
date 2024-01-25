@@ -609,6 +609,15 @@ pub enum Connection {
         #[serde(rename = "2")]
         two: ConnectionPoint,
     },
+    Switch {
+        #[serde(rename = "1")]
+        one: ConnectionPoint,
+
+        #[serde(rename = "Cu0", default, skip_serializing_if = "Vec::is_empty")]
+        cu0: Vec<ConnectionData>,
+        #[serde(rename = "Cu1", default, skip_serializing_if = "Vec::is_empty")]
+        cu1: Vec<ConnectionData>,
+    },
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -621,6 +630,22 @@ pub struct ConnectionPoint {
     pub green: Vec<ConnectionData>,
 }
 
+impl ConnectionPoint {
+    pub fn transform(&self, map: &mut HashMap<EntityNumber, [bool; 3]>) {
+        for r in &self.red {
+            map.entry(r.entity_id())
+                .and_modify(|[_, x, _]| *x = true)
+                .or_insert([false, true, false]);
+        }
+
+        for g in &self.green {
+            map.entry(g.entity_id())
+                .and_modify(|[_, _, x]| *x = true)
+                .or_insert([false, false, true]);
+        }
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged, deny_unknown_fields)]
 pub enum ConnectionData {
@@ -628,9 +653,40 @@ pub enum ConnectionData {
         entity_id: EntityNumber,
         circuit_id: u8,
     },
+    Switch {
+        entity_id: EntityNumber,
+        wire_id: u8,
+    },
     NoConnector {
         entity_id: EntityNumber,
     },
+}
+
+impl ConnectionData {
+    #[must_use]
+    pub const fn entity_id(&self) -> EntityNumber {
+        match self {
+            Self::Connector { entity_id, .. }
+            | Self::Switch { entity_id, .. }
+            | Self::NoConnector { entity_id } => *entity_id,
+        }
+    }
+}
+
+pub trait ConnectionDataExt {
+    fn transform(&self, map: &mut HashMap<EntityNumber, [bool; 3]>);
+}
+
+impl ConnectionDataExt for Vec<ConnectionData> {
+    fn transform(&self, map: &mut HashMap<EntityNumber, [bool; 3]>) {
+        for data in self {
+            if let ConnectionData::Switch { entity_id, .. } = data {
+                map.entry(*entity_id)
+                    .and_modify(|[x, _, _]| *x = true)
+                    .or_insert([true, false, false]);
+            }
+        }
+    }
 }
 
 pub type ItemRequest = HashMap<String, ItemCountType>;
@@ -698,7 +754,7 @@ pub struct SpeakerParameter {
 pub struct SpeakerAlertParameter {
     pub show_alert: bool,
     pub show_on_map: bool,
-    pub icon_signal_id: SignalID,
+    pub icon_signal_id: Option<SignalID>, // can be missing if not set
     pub alert_message: String,
 }
 

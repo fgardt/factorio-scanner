@@ -113,7 +113,9 @@ pub struct RenderOpts {
 
     pub runtime_tint: Option<Color>,
 
+    pub entity_id: u64,
     pub circuit_connected: bool,
+    pub logistic_connected: bool,
 }
 
 // From impls for RenderOpts variants from types

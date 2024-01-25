@@ -2,12 +2,12 @@ use serde::{Deserialize, Serialize};
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/PowerSwitchPrototype`](https://lua-api.factorio.com/latest/prototypes/PowerSwitchPrototype.html)
-pub type PowerSwitchPrototype = EntityWithOwnerPrototype<PowerSwitchData>;
+pub type PowerSwitchPrototype = EntityWithOwnerPrototype<WireEntityData<PowerSwitchData>>;
 
 /// [`Prototypes/PowerSwitchPrototype`](https://lua-api.factorio.com/latest/prototypes/PowerSwitchPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -20,9 +20,6 @@ pub struct PowerSwitchData {
 
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub overlay_start_delay: u8,
-
-    #[serde(flatten)]
-    pub wire_connection_data: WireConnectionData,
 }
 
 impl super::Renderable for PowerSwitchData {
@@ -41,18 +38,6 @@ impl super::Renderable for PowerSwitchData {
         )?;
 
         render_layers.add_entity(res, &options.position);
-
-        if options.circuit_connected {
-            let orientation = options.orientation.unwrap_or_default();
-            if let Some(c) = self.wire_connection_data.render_connector(
-                orientation,
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-            ) {
-                render_layers.add_entity(c, &options.position);
-            }
-        }
 
         Some(())
 
