@@ -4,3 +4,5 @@
 
 *.png
 test_bp/
+
+*.code-workspace
