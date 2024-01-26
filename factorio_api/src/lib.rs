@@ -2,6 +2,8 @@
 
 use mod_util::mod_info::Version;
 
+static DEFAULT_ENDPOINT: &str = "https://mods.factorio.com";
+
 #[cfg(feature = "blocking")]
 pub mod blocking {
     use mod_util::mod_info::Version;
@@ -34,12 +36,16 @@ pub mod blocking {
 
     pub use portal::*;
     mod portal {
+        use crate::DEFAULT_ENDPOINT;
+
         #[must_use]
         pub fn portal_list(params: crate::PortalListParams) -> Option<crate::PortalListResponse> {
+            let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
             let client = reqwest::blocking::Client::new();
             let res = client
                 .get(format!(
-                    "https://mods.factorio.com/api/mods?{}",
+                    "{}?{}",
+                    endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned()),
                     params.build()
                 ))
                 .send()
@@ -50,9 +56,13 @@ pub mod blocking {
 
         #[must_use]
         pub fn short_info(mod_name: &str) -> Option<crate::PortalShortEntry> {
+            let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
             let client = reqwest::blocking::Client::new();
             let res = client
-                .get(format!("https://mods.factorio.com/api/mods/{mod_name}"))
+                .get(format!(
+                    "{}{mod_name}",
+                    endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
+                ))
                 .send()
                 .ok()?;
 
@@ -61,8 +71,12 @@ pub mod blocking {
 
         #[must_use]
         pub fn full_info(mod_name: &str) -> Option<crate::PortalLongEntry> {
+            let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
             let client = reqwest::blocking::Client::new();
-            let url = format!("https://mods.factorio.com/api/mods/{mod_name}/full");
+            let url = format!(
+                "{}{mod_name}/full",
+                endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
+            );
             let mut res = client.get(&url).send().ok()?;
 
             if !res.status().is_success() {
@@ -319,6 +333,8 @@ mod portal {
 
     use mod_util::mod_info::Version;
     use serde::{Deserialize, Serialize};
+
+    use crate::DEFAULT_ENDPOINT;
 
     #[derive(Debug, Copy, Clone, Deserialize)]
     #[serde(untagged)]
@@ -585,10 +601,12 @@ mod portal {
 
     #[must_use]
     pub async fn portal_list(params: PortalListParams) -> Option<PortalListResponse> {
+        let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
         let client = reqwest::Client::new();
         let res = client
             .get(format!(
-                "https://mods.factorio.com/api/mods?{}",
+                "{}?{}",
+                endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned()),
                 params.build()
             ))
             .send()
@@ -614,9 +632,13 @@ mod portal {
 
     #[must_use]
     pub async fn short_info(mod_name: &str) -> Option<PortalShortEntry> {
+        let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
         let client = reqwest::Client::new();
         let res = client
-            .get(format!("https://mods.factorio.com/api/mods/{mod_name}"))
+            .get(format!(
+                "{}{mod_name}",
+                endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
+            ))
             .send()
             .await
             .ok()?;
@@ -697,10 +719,12 @@ mod portal {
 
     #[must_use]
     pub async fn full_info(mod_name: &str) -> Option<PortalLongEntry> {
+        let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
         let client = reqwest::Client::new();
         let res = client
             .get(format!(
-                "https://mods.factorio.com/api/mods/{mod_name}/full"
+                "{}{mod_name}/full",
+                endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
             ))
             .send()
             .await
