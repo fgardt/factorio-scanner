@@ -195,7 +195,8 @@ pub mod blocking {
         #[test]
         fn portal_list_single() {
             let result = portal_list(
-                crate::PortalListParams::new().namelist(vec!["fgardt-internal-test-mod"]),
+                crate::PortalListParams::new()
+                    .namelist(vec!["fgardt-internal-test-mod".to_owned()]),
             );
 
             match result {
@@ -213,10 +214,10 @@ pub mod blocking {
         #[test]
         fn portal_list_multiple() {
             let result = portal_list(crate::PortalListParams::new().namelist(vec![
-                "fgardt-internal-test-mod",
-                "underground-storage-tank",
-                "flamethrower-wagon",
-                "rail-decon-planner",
+                "fgardt-internal-test-mod".to_owned(),
+                "underground-storage-tank".to_owned(),
+                "flamethrower-wagon".to_owned(),
+                "rail-decon-planner".to_owned(),
             ]));
 
             match result {
@@ -236,7 +237,7 @@ pub mod blocking {
             let result = portal_list(
                 crate::PortalListParams::new()
                     .hide_deprecated(true)
-                    .namelist(vec!["fgardt-internal-test-mod"]),
+                    .namelist(vec!["fgardt-internal-test-mod".to_owned()]),
             );
 
             match result {
@@ -256,7 +257,7 @@ pub mod blocking {
             let result = portal_list(
                 crate::PortalListParams::new()
                     .version(crate::PortalSearchVersion::V0_13)
-                    .namelist(vec!["fgardt-internal-test-mod"]),
+                    .namelist(vec!["fgardt-internal-test-mod".to_owned()]),
             );
 
             match result {
@@ -319,8 +320,10 @@ mod portal {
     use mod_util::mod_info::Version;
     use serde::{Deserialize, Serialize};
 
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Copy, Clone, Deserialize)]
+    #[serde(untagged)]
     pub enum PortalSearchPageSize {
+        #[serde(rename = "max")]
         Max,
         Custom(u16),
     }
@@ -334,7 +337,8 @@ mod portal {
         }
     }
 
-    #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+    #[derive(Debug, Copy, Clone, PartialEq, Eq, Deserialize)]
+    #[serde(rename_all = "snake_case")]
     pub enum PortalSearchSortBy {
         Name,
         CreatedAt,
@@ -353,13 +357,28 @@ mod portal {
 
     #[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum PortalSearchVersion {
+        #[serde(rename = "0.13")]
         V0_13,
+
+        #[serde(rename = "0.14")]
         V0_14,
+
+        #[serde(rename = "0.15")]
         V0_15,
+
+        #[serde(rename = "0.16")]
         V0_16,
+
+        #[serde(rename = "0.17")]
         V0_17,
+
+        #[serde(rename = "0.18")]
         V0_18,
+
+        #[serde(rename = "1.0")]
         V1_0,
+
+        #[serde(rename = "1.1")]
         V1_1,
     }
 
@@ -378,8 +397,8 @@ mod portal {
         }
     }
 
-    #[derive(Debug, Default, Clone)]
-    pub struct PortalListParams<'a> {
+    #[derive(Debug, Default, Clone, Deserialize)]
+    pub struct PortalListParams {
         pub hide_deprecated: Option<bool>,
 
         pub page: Option<u16>,
@@ -388,12 +407,12 @@ mod portal {
         pub sort: Option<PortalSearchSortBy>,
         pub sort_asc: Option<bool>,
 
-        pub namelist: Option<Vec<&'a str>>,
+        pub namelist: Option<Vec<String>>,
 
         pub version: Option<PortalSearchVersion>,
     }
 
-    impl<'a> PortalListParams<'a> {
+    impl PortalListParams {
         #[must_use]
         pub fn new() -> Self {
             Self::default()
@@ -430,7 +449,7 @@ mod portal {
         }
 
         #[must_use]
-        pub fn namelist(mut self, namelist: Vec<&'a str>) -> Self {
+        pub fn namelist(mut self, namelist: Vec<String>) -> Self {
             self.namelist = Some(namelist);
             self
         }
@@ -548,7 +567,7 @@ mod portal {
         pub downloads_count: u32,
 
         #[serde(flatten)]
-        pub release: PortalSearchReleaseKind,
+        pub release: Option<PortalSearchReleaseKind>,
 
         pub name: String,
         pub owner: String,
@@ -565,7 +584,7 @@ mod portal {
     }
 
     #[must_use]
-    pub async fn portal_list(params: PortalListParams<'_>) -> Option<PortalListResponse> {
+    pub async fn portal_list(params: PortalListParams) -> Option<PortalListResponse> {
         let client = reqwest::Client::new();
         let res = client
             .get(format!(
@@ -800,7 +819,7 @@ mod tests {
     #[test]
     fn portal_list_single() {
         let result = tokio_test::block_on(portal_list(
-            PortalListParams::new().namelist(vec!["fgardt-internal-test-mod"]),
+            PortalListParams::new().namelist(vec!["fgardt-internal-test-mod".to_owned()]),
         ));
 
         match result {
@@ -818,10 +837,10 @@ mod tests {
     #[test]
     fn portal_list_multiple() {
         let result = tokio_test::block_on(portal_list(PortalListParams::new().namelist(vec![
-            "fgardt-internal-test-mod",
-            "underground-storage-tank",
-            "flamethrower-wagon",
-            "rail-decon-planner",
+            "fgardt-internal-test-mod".to_owned(),
+            "underground-storage-tank".to_owned(),
+            "flamethrower-wagon".to_owned(),
+            "rail-decon-planner".to_owned(),
         ])));
 
         match result {
@@ -841,7 +860,7 @@ mod tests {
         let result = tokio_test::block_on(portal_list(
             PortalListParams::new()
                 .hide_deprecated(true)
-                .namelist(vec!["fgardt-internal-test-mod"]),
+                .namelist(vec!["fgardt-internal-test-mod".to_owned()]),
         ));
 
         match result {
@@ -861,7 +880,7 @@ mod tests {
         let result = tokio_test::block_on(portal_list(
             PortalListParams::new()
                 .version(PortalSearchVersion::V0_13)
-                .namelist(vec!["fgardt-internal-test-mod"]),
+                .namelist(vec!["fgardt-internal-test-mod".to_owned()]),
         ));
 
         match result {
