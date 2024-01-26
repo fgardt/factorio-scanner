@@ -97,7 +97,7 @@ impl super::Renderable for InserterData {
                 image_cache,
                 &options.into(),
             )
-            .map(|(img, shift)| {
+            .and_then(|(img, shift)| {
                 let raw_pickup_pos = options.pickup_position.unwrap_or(self.pickup_position);
                 let pickup_pos = direction.rotate_vector(raw_pickup_pos);
 
@@ -121,6 +121,11 @@ impl super::Renderable for InserterData {
                     (size / 2.0 - stretch_lentgh / 2.0).round() as i64,
                 );
 
+                let (w, h) = hand.dimensions();
+                if w == 0 || h == 0 {
+                    return None;
+                }
+
                 let rotated_hand = rotate_about_center(
                     &hand.to_rgba8(),
                     angle as f32,
@@ -130,10 +135,10 @@ impl super::Renderable for InserterData {
 
                 let shift_amount = stretch_lentgh / 2.0 / (TILE_RES / render_layers.scale());
 
-                (
+                Some((
                     rotated_hand.into(),
                     (shift_amount * angle.sin(), shift_amount * -angle.cos()).into(),
-                )
+                ))
             });
 
         let mut empty = true;

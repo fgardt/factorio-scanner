@@ -1209,6 +1209,11 @@ impl RenderLayerBuffer {
                 );
 
                 let (w, h) = wire.dimensions();
+
+                if w == 0 || h == 0 {
+                    continue;
+                }
+
                 let mut wire_square = DynamicImage::new_rgba8(w, w);
                 image::imageops::overlay(&mut wire_square, &wire, 0, i64::from((w - h) / 2));
 
