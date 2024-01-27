@@ -597,7 +597,7 @@ impl<'de> Visitor<'de> for DependencyVisitor {
         let name_end = if dep_version.is_ok() && part_count > (2 + name_start) {
             part_count - 2
         } else {
-            part_count - 1
+            part_count
         };
 
         let name = parts[name_start..name_end].join(" ");
