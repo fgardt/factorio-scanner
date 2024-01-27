@@ -1,6 +1,35 @@
 #![allow(clippy::module_name_repetitions)]
 
+use serde::{Deserialize, Serialize};
+
 use mod_util::mod_info::Version;
+
+static DEFAULT_ENDPOINT: &str = "https://mods.factorio.com";
+
+#[derive(Debug, thiserror::Error)]
+pub enum FactorioApiError {
+    #[error("reqwest error: {0}")]
+    Reqwest(#[from] reqwest::Error),
+
+    #[error("json error: {0}")]
+    Json(#[from] serde_json::Error),
+
+    #[error("io error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("mod download failed: {0} has no releases")]
+    NoRelease(String),
+
+    #[error("factorio api error: {0}")]
+    ApiError(String),
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(untagged)]
+enum PortalResponse<T> {
+    Ok(T),
+    Err { message: String },
+}
 
 #[cfg(feature = "blocking")]
 pub mod blocking {
@@ -10,8 +39,10 @@ pub mod blocking {
     mod auth {
         use std::collections::HashMap;
 
-        #[must_use]
-        pub fn auth(username: &str, password: &str) -> Option<crate::AuthResult> {
+        pub fn auth(
+            username: &str,
+            password: &str,
+        ) -> Result<crate::AuthDetails, crate::FactorioApiError> {
             let body: HashMap<&str, &str> = [
                 ("username", username),
                 ("password", password),
@@ -25,91 +56,93 @@ pub mod blocking {
             let res = client
                 .post("https://auth.factorio.com/api-login")
                 .form(&body)
-                .send()
-                .ok()?;
+                .send()?;
 
-            serde_json::from_str(&res.text().ok()?).ok()
+            Ok(serde_json::from_str(&res.text()?)?)
         }
     }
 
     pub use portal::*;
     mod portal {
-        #[must_use]
-        pub fn portal_list(params: crate::PortalListParams) -> Option<crate::PortalListResponse> {
+        use crate::{PortalResponse, DEFAULT_ENDPOINT};
+
+        pub fn portal_list(
+            params: crate::PortalListParams,
+        ) -> Result<crate::PortalListResponse, crate::FactorioApiError> {
+            let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
             let client = reqwest::blocking::Client::new();
             let res = client
                 .get(format!(
-                    "https://mods.factorio.com/api/mods?{}",
+                    "{}/api/mods?{}",
+                    endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned()),
                     params.build()
                 ))
-                .send()
-                .ok()?;
+                .send()?;
 
-            serde_json::from_str(&res.text().ok()?).ok()
+            match serde_json::from_slice(&res.bytes()?)? {
+                PortalResponse::Ok(res) => Ok(res),
+                PortalResponse::Err { message } => Err(crate::FactorioApiError::ApiError(message)),
+            }
         }
 
-        #[must_use]
-        pub fn short_info(mod_name: &str) -> Option<crate::PortalShortEntry> {
+        pub fn short_info(
+            mod_name: &str,
+        ) -> Result<crate::PortalShortEntry, crate::FactorioApiError> {
+            let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
             let client = reqwest::blocking::Client::new();
             let res = client
-                .get(format!("https://mods.factorio.com/api/mods/{mod_name}"))
-                .send()
-                .ok()?;
+                .get(format!(
+                    "{}/api/mods/{mod_name}",
+                    endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
+                ))
+                .send()?;
 
-            serde_json::from_str(&res.text().ok()?).ok()
+            match serde_json::from_slice(&res.bytes()?)? {
+                PortalResponse::Ok(res) => Ok(res),
+                PortalResponse::Err { message } => Err(crate::FactorioApiError::ApiError(message)),
+            }
         }
 
-        #[must_use]
-        pub fn full_info(mod_name: &str) -> Option<crate::PortalLongEntry> {
+        pub fn full_info(
+            mod_name: &str,
+        ) -> Result<crate::PortalLongEntry, crate::FactorioApiError> {
+            let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
             let client = reqwest::blocking::Client::new();
-            let url = format!("https://mods.factorio.com/api/mods/{mod_name}/full");
-            let mut res = client.get(&url).send().ok()?;
+            let res = client
+                .get(format!(
+                    "{}/api/mods/{mod_name}/full",
+                    endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
+                ))
+                .send()?;
 
-            if !res.status().is_success() {
-                println!(
-                    "error fetching {mod_name} info [{url}]: {}",
-                    res.text().ok()?
-                );
-                return None;
+            match serde_json::from_slice(&res.bytes()?)? {
+                PortalResponse::Ok(res) => Ok(res),
+                PortalResponse::Err { message } => Err(crate::FactorioApiError::ApiError(message)),
             }
-
-            //let output = res.text().ok()?;
-            let mut data = Vec::new();
-            res.copy_to(&mut data).ok()?;
-            let tmp = serde_json::from_slice(&data);
-
-            match tmp {
-                Ok(val) => Some(val),
-                Err(e) => {
-                    println!("{e}");
-                    None
-                }
-            }
-
-            //serde_json::from_str(&res.text().ok()?).ok()
         }
     }
 
-    #[must_use]
-    pub fn fetch_mod_raw(download_url: &str, username: &str, token: &str) -> Option<Vec<u8>> {
+    pub fn fetch_mod_raw(
+        download_url: &str,
+        username: &str,
+        token: &str,
+    ) -> Result<Vec<u8>, crate::FactorioApiError> {
         let client = reqwest::blocking::Client::new();
         let res = client
             .get(format!(
                 "https://mods.factorio.com{download_url}?username={username}&token={token}",
             ))
-            .send()
-            .ok()?;
+            .send()?;
 
-        Some(res.bytes().ok()?.to_vec())
+        Ok(res.bytes()?.to_vec())
     }
 
-    #[must_use]
     pub fn fetch_mod(
         mod_name: &str,
         version: &Version,
         username: &str,
         token: &str,
-    ) -> Option<Vec<u8>> {
+    ) -> Result<Vec<u8>, crate::FactorioApiError> {
         let mod_info = short_info(mod_name)?;
 
         for release in mod_info.releases {
@@ -120,16 +153,15 @@ pub mod blocking {
             return fetch_mod_raw(&release.download_url, username, token);
         }
 
-        None
+        Err(crate::FactorioApiError::NoRelease(mod_name.to_owned()))
     }
 
-    #[must_use]
     pub fn fetch_mod_with_password(
         mod_name: &str,
         version: &Version,
         username: &str,
         password: &str,
-    ) -> Option<Vec<u8>> {
+    ) -> Result<Vec<u8>, crate::FactorioApiError> {
         let auth_res = auth(username, password)?;
         fetch_mod(mod_name, version, &auth_res.username, &auth_res.token)
     }
@@ -142,7 +174,7 @@ pub mod blocking {
         fn invalid_auth() {
             let result = auth("test_user", "this_is_a_fake_password_that_should_not_work");
 
-            assert!(result.is_none());
+            assert!(result.is_err());
         }
 
         #[test]
@@ -150,7 +182,7 @@ pub mod blocking {
             let result = short_info("fgardt-internal-test-mod");
 
             match result {
-                Some(info) => {
+                Ok(info) => {
                     assert!(
                         info.owner == "fgardt",
                         "expected fgardt as owner, got {}",
@@ -162,7 +194,7 @@ pub mod blocking {
                         info.name
                     );
                 }
-                None => panic!("short mod info error"),
+                Err(err) => panic!("short mod info error: {err}"),
             }
         }
 
@@ -171,7 +203,7 @@ pub mod blocking {
             let result = full_info("fgardt-internal-test-mod");
 
             match result {
-                Some(info) => {
+                Ok(info) => {
                     assert!(
                         info.owner == "fgardt",
                         "expected fgardt as owner, got {}",
@@ -188,7 +220,7 @@ pub mod blocking {
                         info.deprecated
                     );
                 }
-                None => panic!("full mod info error"),
+                Err(err) => panic!("full mod info error: {err}"),
             }
         }
 
@@ -200,14 +232,14 @@ pub mod blocking {
             );
 
             match result {
-                Some(info) => {
+                Ok(info) => {
                     assert!(
                         info.results.len() == 1,
                         "expected 1 result, got {}",
                         info.results.len()
                     );
                 }
-                None => panic!("portal list error"),
+                Err(err) => panic!("portal list error: {err}"),
             }
         }
 
@@ -221,14 +253,14 @@ pub mod blocking {
             ]));
 
             match result {
-                Some(info) => {
+                Ok(info) => {
                     assert!(
                         info.results.len() == 4,
                         "expected 4 results, got {}",
                         info.results.len()
                     );
                 }
-                None => panic!("portal list error"),
+                Err(err) => panic!("portal list error: {err}"),
             }
         }
 
@@ -241,14 +273,14 @@ pub mod blocking {
             );
 
             match result {
-                Some(info) => {
+                Ok(info) => {
                     assert!(
                         info.results.is_empty(),
                         "expected 0 results, got {}",
                         info.results.len()
                     );
                 }
-                None => panic!("portal list error"),
+                Err(err) => panic!("portal list error: {err}"),
             }
         }
 
@@ -261,14 +293,14 @@ pub mod blocking {
             );
 
             match result {
-                Some(info) => {
+                Ok(info) => {
                     assert!(
                         info.results.is_empty(),
                         "expected 0 results, got {}",
                         info.results.len()
                     );
                 }
-                None => panic!("portal list error"),
+                Err(err) => panic!("portal list error: {err}"),
             }
         }
     }
@@ -281,13 +313,15 @@ mod auth {
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Deserialize, Serialize, Clone)]
-    pub struct AuthResult {
+    pub struct AuthDetails {
         pub token: String,
         pub username: String,
     }
 
-    #[must_use]
-    pub async fn auth(username: &str, password: &str) -> Option<AuthResult> {
+    pub async fn auth(
+        username: &str,
+        password: &str,
+    ) -> Result<AuthDetails, crate::FactorioApiError> {
         let body: HashMap<&str, &str> = [
             ("username", username),
             ("password", password),
@@ -297,19 +331,14 @@ mod auth {
         .copied()
         .collect();
 
-        // println!("{body:?}");
-
-        // return None;
-
         let client = reqwest::Client::new();
         let res = client
             .post("https://auth.factorio.com/api-login")
             .form(&body)
             .send()
-            .await
-            .ok()?;
+            .await?;
 
-        serde_json::from_str(&res.text().await.ok()?).ok()
+        Ok(serde_json::from_slice(&res.bytes().await?)?)
     }
 }
 
@@ -319,6 +348,8 @@ mod portal {
 
     use mod_util::mod_info::Version;
     use serde::{Deserialize, Serialize};
+
+    use crate::{PortalResponse, DEFAULT_ENDPOINT};
 
     #[derive(Debug, Copy, Clone, Deserialize)]
     #[serde(untagged)]
@@ -583,19 +614,24 @@ mod portal {
         pub results: Vec<PortalSearchResultEntry>,
     }
 
-    #[must_use]
-    pub async fn portal_list(params: PortalListParams) -> Option<PortalListResponse> {
+    pub async fn portal_list(
+        params: PortalListParams,
+    ) -> Result<PortalListResponse, crate::FactorioApiError> {
+        let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
         let client = reqwest::Client::new();
         let res = client
             .get(format!(
-                "https://mods.factorio.com/api/mods?{}",
+                "{}/api/mods?{}",
+                endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned()),
                 params.build()
             ))
             .send()
-            .await
-            .ok()?;
+            .await?;
 
-        serde_json::from_str(&res.text().await.ok()?).ok()
+        match serde_json::from_slice(&res.bytes().await?)? {
+            PortalResponse::Ok(res) => Ok(res),
+            PortalResponse::Err { message } => Err(crate::FactorioApiError::ApiError(message)),
+        }
     }
 
     #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -612,16 +648,21 @@ mod portal {
         pub category: Option<PortalCategory>, // not sure if this is actually optional
     }
 
-    #[must_use]
-    pub async fn short_info(mod_name: &str) -> Option<PortalShortEntry> {
+    pub async fn short_info(mod_name: &str) -> Result<PortalShortEntry, crate::FactorioApiError> {
+        let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
         let client = reqwest::Client::new();
         let res = client
-            .get(format!("https://mods.factorio.com/api/mods/{mod_name}"))
+            .get(format!(
+                "{}/api/mods/{mod_name}",
+                endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
+            ))
             .send()
-            .await
-            .ok()?;
+            .await?;
 
-        serde_json::from_str(&res.text().await.ok()?).ok()
+        match serde_json::from_slice(&res.bytes().await?)? {
+            PortalResponse::Ok(res) => Ok(res),
+            PortalResponse::Err { message } => Err(crate::FactorioApiError::ApiError(message)),
+        }
     }
 
     #[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -695,42 +736,46 @@ mod portal {
         pub license: PortalLicense,
     }
 
-    #[must_use]
-    pub async fn full_info(mod_name: &str) -> Option<PortalLongEntry> {
+    pub async fn full_info(mod_name: &str) -> Result<PortalLongEntry, crate::FactorioApiError> {
+        let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
         let client = reqwest::Client::new();
         let res = client
             .get(format!(
-                "https://mods.factorio.com/api/mods/{mod_name}/full"
+                "{}/api/mods/{mod_name}/full",
+                endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
             ))
             .send()
-            .await
-            .ok()?;
+            .await?;
 
-        serde_json::from_str(&res.text().await.ok()?).ok()
+        match serde_json::from_slice(&res.bytes().await?)? {
+            PortalResponse::Ok(res) => Ok(res),
+            PortalResponse::Err { message } => Err(crate::FactorioApiError::ApiError(message)),
+        }
     }
 }
 
-#[must_use]
-pub async fn fetch_mod_raw(download_url: &str, username: &str, token: &str) -> Option<Vec<u8>> {
+pub async fn fetch_mod_raw(
+    download_url: &str,
+    username: &str,
+    token: &str,
+) -> Result<Vec<u8>, FactorioApiError> {
     let client = reqwest::Client::new();
     let res = client
         .get(format!(
             "https://mods.factorio.com{download_url}?username={username}&token={token}"
         ))
         .send()
-        .await
-        .ok()?;
+        .await?;
 
-    Some(res.bytes().await.ok()?.to_vec())
+    Ok(res.bytes().await?.to_vec())
 }
 
-#[must_use]
 pub async fn fetch_mod(
     mod_name: &str,
     version: &Version,
     username: &str,
     token: &str,
-) -> Option<Vec<u8>> {
+) -> Result<Vec<u8>, FactorioApiError> {
     let mod_info = short_info(mod_name).await?;
 
     for release in mod_info.releases {
@@ -741,16 +786,15 @@ pub async fn fetch_mod(
         return fetch_mod_raw(&release.download_url, username, token).await;
     }
 
-    None
+    Err(FactorioApiError::NoRelease(mod_name.to_owned()))
 }
 
-#[must_use]
 pub async fn fetch_mod_with_password(
     mod_name: &str,
     version: &Version,
     username: &str,
     password: &str,
-) -> Option<Vec<u8>> {
+) -> Result<Vec<u8>, FactorioApiError> {
     let auth_res = auth(username, password).await?;
     fetch_mod(mod_name, version, &auth_res.username, &auth_res.token).await
 }
@@ -766,7 +810,7 @@ mod tests {
             "this_is_a_fake_password_that_should_not_work",
         ));
 
-        assert!(result.is_none());
+        assert!(result.is_err());
     }
 
     #[test]
@@ -774,7 +818,7 @@ mod tests {
         let result = tokio_test::block_on(short_info("fgardt-internal-test-mod"));
 
         match result {
-            Some(info) => {
+            Ok(info) => {
                 assert!(
                     info.owner == "fgardt",
                     "expected fgardt as owner, got {}",
@@ -786,7 +830,7 @@ mod tests {
                     info.name
                 );
             }
-            None => panic!("short mod info error"),
+            Err(err) => panic!("short mod info error: {err}"),
         }
     }
 
@@ -795,7 +839,7 @@ mod tests {
         let result = tokio_test::block_on(full_info("fgardt-internal-test-mod"));
 
         match result {
-            Some(info) => {
+            Ok(info) => {
                 assert!(
                     info.owner == "fgardt",
                     "expected fgardt as owner, got {}",
@@ -812,7 +856,7 @@ mod tests {
                     info.deprecated
                 );
             }
-            None => panic!("full mod info error"),
+            Err(err) => panic!("full mod info error: {err}"),
         }
     }
 
@@ -823,14 +867,14 @@ mod tests {
         ));
 
         match result {
-            Some(info) => {
+            Ok(info) => {
                 assert!(
                     info.results.len() == 1,
                     "expected 1 result, got {}",
                     info.results.len()
                 );
             }
-            None => panic!("portal list error"),
+            Err(err) => panic!("portal list error: {err}"),
         }
     }
 
@@ -844,14 +888,14 @@ mod tests {
         ])));
 
         match result {
-            Some(info) => {
+            Ok(info) => {
                 assert!(
                     info.results.len() == 4,
                     "expected 4 results, got {}",
                     info.results.len()
                 );
             }
-            None => panic!("portal list error"),
+            Err(err) => panic!("portal list error: {err}"),
         }
     }
 
@@ -864,14 +908,14 @@ mod tests {
         ));
 
         match result {
-            Some(info) => {
+            Ok(info) => {
                 assert!(
                     info.results.is_empty(),
                     "expected 0 results, got {}",
                     info.results.len()
                 );
             }
-            None => panic!("portal list error"),
+            Err(err) => panic!("portal list error: {err}"),
         }
     }
 
@@ -884,14 +928,14 @@ mod tests {
         ));
 
         match result {
-            Some(info) => {
+            Ok(info) => {
                 assert!(
                     info.results.is_empty(),
                     "expected 0 results, got {}",
                     info.results.len()
                 );
             }
-            None => panic!("portal list error"),
+            Err(err) => panic!("portal list error: {err}"),
         }
     }
 }
