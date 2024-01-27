@@ -732,7 +732,7 @@ mod portal {
         pub homepage: String,
         pub deprecated: Option<bool>,
 
-        pub tags: Vec<PortalTag>,
+        pub tags: Option<Vec<PortalTag>>,
         pub license: PortalLicense,
     }
 
