@@ -409,6 +409,7 @@ fn render(
     if !required_mods.is_empty() {
         debug!("checking mod dependencies");
 
+        mod_list.load_local_dependency_info(&required_mods);
         let used_mods = resolve_mod_dependencies(&required_mods, &mut mod_list)
             .change_context(ScannerError::SetupError)?;
 
@@ -1228,11 +1229,11 @@ impl PlayerData {
 }
 
 #[derive(Debug)]
-struct DependencyResoutionError;
+struct DependencyResolutionError;
 
-impl Context for DependencyResoutionError {}
+impl Context for DependencyResolutionError {}
 
-impl std::fmt::Display for DependencyResoutionError {
+impl std::fmt::Display for DependencyResolutionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "mod dependency resolving error")
     }
@@ -1241,10 +1242,10 @@ impl std::fmt::Display for DependencyResoutionError {
 fn resolve_mod_dependencies(
     required: &UsedVersions,
     mod_list: &mut ModList,
-) -> Result<UsedVersions, DependencyResoutionError> {
+) -> Result<UsedVersions, DependencyResolutionError> {
     match mod_list
         .solve_dependencies(required)
-        .change_context(DependencyResoutionError)
+        .change_context(DependencyResolutionError)
         .attach_printable_lazy(|| "could not resolve dependencies with local mods")
     {
         Ok(res) => return Ok(res),
@@ -1262,10 +1263,9 @@ fn resolve_mod_dependencies(
             continue;
         }
 
-        let Some(info) = factorio_api::blocking::full_info(&name) else {
-            warn!("fetching mod info for {name} failed");
-            continue;
-        };
+        let info = factorio_api::blocking::full_info(&name)
+            .change_context(DependencyResolutionError)
+            .attach_printable_lazy(|| format!("fetching mod info for {name} failed"))?;
 
         let deps_info = info
             .releases
@@ -1297,7 +1297,7 @@ fn resolve_mod_dependencies(
 
     mod_list
         .solve_dependencies(required)
-        .change_context(DependencyResoutionError)
+        .change_context(DependencyResolutionError)
 }
 
 #[derive(Debug)]
@@ -1361,9 +1361,8 @@ fn download_mods(missing: UsedVersions, factorio_dir: &Path) -> Result<(), ModDo
         );
 
         info!("downloading {name} v{version}");
-        let dl = factorio_api::blocking::fetch_mod(&name, &version, &username, &token).ok_or(
-            report!(ModDownloadError::DownloadFailed(name.clone(), version)),
-        )?;
+        let dl = factorio_api::blocking::fetch_mod(&name, &version, &username, &token)
+            .change_context(ModDownloadError::DownloadFailed(name.clone(), version))?;
 
         fs::write(mods_path.join(format!("{name}_{version}.zip")), dl)
             .change_context(ModDownloadError::SaveFailed(name, version))?;
