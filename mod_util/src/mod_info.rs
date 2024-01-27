@@ -555,38 +555,53 @@ impl<'de> Visitor<'de> for DependencyVisitor {
     where
         E: DeError,
     {
-        #[allow(clippy::unwrap_used)] // The regex is hardcoded and will always compile
-        let extractor =
-            regex::Regex::new(r"^\s*(?:(!|\?|\(\?\)|~)\s*)?([a-zA-Z\d_\-\s]{3,50})(?:\s*(?:(>=?|<=?|=)\s*(\d+(?:\.\d+)?(?:\.\d+)?)))?\s*$")
-                .unwrap();
+        let v = v.trim();
 
-        let Some(captures) = extractor.captures(v) else {
-            return Err(DeError::custom(format!(
-                "Invalid dependency: does not match expected format: {v}"
-            )));
+        if v.is_empty() {
+            return Err(DeError::custom("Invalid dependency: empty string"));
+        }
+
+        let mut kind: DependencyType = DependencyType::Required;
+
+        if v.starts_with('!') {
+            kind = DependencyType::Incompatible;
+        } else if v.starts_with('?') {
+            kind = DependencyType::Optional;
+        } else if v.starts_with("(?)") {
+            kind = DependencyType::HiddenOptional;
+        } else if v.starts_with('~') {
+            kind = DependencyType::RequiredLazy;
+        }
+
+        let parts = v.split(' ').collect::<Vec<_>>();
+        let part_count = parts.len();
+
+        if part_count == 1 && kind == DependencyType::Required {
+            return Ok(Self::Value {
+                kind,
+                name: v.to_owned(),
+                version: DependencyVersion::Any,
+            });
+        }
+
+        let dep_version = DependencyVersionVisitor::visit_str::<E>(
+            DependencyVersionVisitor,
+            &[parts[part_count - 2], parts[part_count - 1]].join(" "),
+        );
+
+        let name_start = usize::from(kind != DependencyType::Required);
+        let name_end = if dep_version.is_ok() {
+            part_count - 2
+        } else {
+            part_count - 1
         };
 
-        let kind = captures.get(1).map_or("", |k| k.as_str());
-        let kind = DependencyTypeVisitor::visit_str::<E>(DependencyTypeVisitor, kind)?;
-
-        let name = captures
-            .get(2)
-            .ok_or_else(|| DeError::custom("Invalid dependency: failed to get name"))?
-            .as_str()
-            .trim()
-            .to_owned();
-
-        let version_comparator = captures.get(3).map_or("", |v| v.as_str());
-        let version = captures.get(4).map_or("", |v| v.as_str());
-        let version = DependencyVersionVisitor::visit_str::<E>(
-            DependencyVersionVisitor,
-            format!("{version_comparator} {version}").as_str(),
-        )?;
+        let name = parts[name_start..name_end].join(" ");
 
         Ok(Self::Value {
             kind,
             name,
-            version,
+            version: dep_version.unwrap_or(DependencyVersion::Any),
         })
     }
 
