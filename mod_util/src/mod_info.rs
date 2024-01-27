@@ -584,7 +584,8 @@ impl<'de> Visitor<'de> for DependencyVisitor {
             });
         }
 
-        let dep_version = if part_count > 2 {
+        let name_start = usize::from(kind != DependencyType::Required);
+        let dep_version = if part_count > (2 + name_start) {
             DependencyVersionVisitor::visit_str::<E>(
                 DependencyVersionVisitor,
                 &[parts[part_count - 2], parts[part_count - 1]].join(" "),
@@ -593,8 +594,7 @@ impl<'de> Visitor<'de> for DependencyVisitor {
             Ok(DependencyVersion::Any)
         };
 
-        let name_start = usize::from(kind != DependencyType::Required);
-        let name_end = if dep_version.is_ok() && part_count > 2 {
+        let name_end = if dep_version.is_ok() && part_count > (2 + name_start) {
             part_count - 2
         } else {
             part_count - 1
