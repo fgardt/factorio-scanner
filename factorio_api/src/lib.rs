@@ -1,5 +1,7 @@
 #![allow(clippy::module_name_repetitions)]
 
+use serde::{Deserialize, Serialize};
+
 use mod_util::mod_info::Version;
 
 static DEFAULT_ENDPOINT: &str = "https://mods.factorio.com";
@@ -17,6 +19,16 @@ pub enum FactorioApiError {
 
     #[error("mod download failed: {0} has no releases")]
     NoRelease(String),
+
+    #[error("factorio api error: {0}")]
+    ApiError(String),
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(untagged)]
+enum PortalResponse<T> {
+    Ok(T),
+    Err { message: String },
 }
 
 #[cfg(feature = "blocking")]
@@ -52,7 +64,7 @@ pub mod blocking {
 
     pub use portal::*;
     mod portal {
-        use crate::DEFAULT_ENDPOINT;
+        use crate::{PortalResponse, DEFAULT_ENDPOINT};
 
         pub fn portal_list(
             params: crate::PortalListParams,
@@ -61,13 +73,16 @@ pub mod blocking {
             let client = reqwest::blocking::Client::new();
             let res = client
                 .get(format!(
-                    "{}?{}",
+                    "{}/api/mods?{}",
                     endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned()),
                     params.build()
                 ))
                 .send()?;
 
-            Ok(serde_json::from_slice(&res.bytes()?)?)
+            match serde_json::from_slice(&res.bytes()?)? {
+                PortalResponse::Ok(res) => Ok(res),
+                PortalResponse::Err { message } => Err(crate::FactorioApiError::ApiError(message)),
+            }
         }
 
         pub fn short_info(
@@ -77,12 +92,15 @@ pub mod blocking {
             let client = reqwest::blocking::Client::new();
             let res = client
                 .get(format!(
-                    "{}{mod_name}",
+                    "{}/api/mods/{mod_name}",
                     endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
                 ))
                 .send()?;
 
-            Ok(serde_json::from_slice(&res.bytes()?)?)
+            match serde_json::from_slice(&res.bytes()?)? {
+                PortalResponse::Ok(res) => Ok(res),
+                PortalResponse::Err { message } => Err(crate::FactorioApiError::ApiError(message)),
+            }
         }
 
         pub fn full_info(
@@ -90,13 +108,17 @@ pub mod blocking {
         ) -> Result<crate::PortalLongEntry, crate::FactorioApiError> {
             let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
             let client = reqwest::blocking::Client::new();
-            let url = format!(
-                "{}{mod_name}/full",
-                endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
-            );
+            let res = client
+                .get(format!(
+                    "{}/api/mods/{mod_name}/full",
+                    endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
+                ))
+                .send()?;
 
-            let res = client.get(url).send()?;
-            Ok(serde_json::from_slice(&res.bytes()?)?)
+            match serde_json::from_slice(&res.bytes()?)? {
+                PortalResponse::Ok(res) => Ok(res),
+                PortalResponse::Err { message } => Err(crate::FactorioApiError::ApiError(message)),
+            }
         }
     }
 
@@ -327,7 +349,7 @@ mod portal {
     use mod_util::mod_info::Version;
     use serde::{Deserialize, Serialize};
 
-    use crate::DEFAULT_ENDPOINT;
+    use crate::{PortalResponse, DEFAULT_ENDPOINT};
 
     #[derive(Debug, Copy, Clone, Deserialize)]
     #[serde(untagged)]
@@ -599,14 +621,17 @@ mod portal {
         let client = reqwest::Client::new();
         let res = client
             .get(format!(
-                "{}/?{}",
+                "{}/api/mods?{}",
                 endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned()),
                 params.build()
             ))
             .send()
             .await?;
 
-        Ok(serde_json::from_slice(&res.bytes().await?)?)
+        match serde_json::from_slice(&res.bytes().await?)? {
+            PortalResponse::Ok(res) => Ok(res),
+            PortalResponse::Err { message } => Err(crate::FactorioApiError::ApiError(message)),
+        }
     }
 
     #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -628,13 +653,16 @@ mod portal {
         let client = reqwest::Client::new();
         let res = client
             .get(format!(
-                "{}{mod_name}",
+                "{}/api/mods/{mod_name}",
                 endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
             ))
             .send()
             .await?;
 
-        Ok(serde_json::from_slice(&res.bytes().await?)?)
+        match serde_json::from_slice(&res.bytes().await?)? {
+            PortalResponse::Ok(res) => Ok(res),
+            PortalResponse::Err { message } => Err(crate::FactorioApiError::ApiError(message)),
+        }
     }
 
     #[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -713,13 +741,16 @@ mod portal {
         let client = reqwest::Client::new();
         let res = client
             .get(format!(
-                "{}{mod_name}/full",
+                "{}/api/mods/{mod_name}/full",
                 endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
             ))
             .send()
             .await?;
 
-        Ok(serde_json::from_slice(&res.bytes().await?)?)
+        match serde_json::from_slice(&res.bytes().await?)? {
+            PortalResponse::Ok(res) => Ok(res),
+            PortalResponse::Err { message } => Err(crate::FactorioApiError::ApiError(message)),
+        }
     }
 }
 
