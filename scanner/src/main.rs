@@ -409,6 +409,7 @@ fn render(
     if !required_mods.is_empty() {
         debug!("checking mod dependencies");
 
+        mod_list.load_local_dependency_info(&required_mods);
         let used_mods = resolve_mod_dependencies(&required_mods, &mut mod_list)
             .change_context(ScannerError::SetupError)?;
 

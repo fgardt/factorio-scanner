@@ -202,35 +202,24 @@ impl<'a> ModList<'a> {
                 //println!("skipping invalid name: {path:?}");
                 continue;
             };
-            let path_version = extracted
-                .get(2)
-                .map_or_else(String::new, |v| v.as_str().to_owned());
 
-            let m = match Mod::load(factorio_dir, filename) {
-                Ok(m) => m,
-                Err(e) => {
-                    println!("failed to load mod {name} at {path:?}: {e}");
-                    // make sure the mod is disabled if its the only version
-                    list.entry(name).or_default();
+            let version: Version = if let Some(v) = extracted.get(2) {
+                let Ok(version) = v.as_str().try_into() else {
                     continue;
-                }
+                };
+                version
+            } else {
+                let Ok(version) = Mod::load(factorio_dir, filename).map(|m| m.info.version) else {
+                    continue;
+                };
+                version
             };
 
-            if let Ok(path_version) = path_version.try_into() {
-                if m.info.version != path_version {
-                    println!(
-                        "Version mismatch for mod {name} at {path:?}: {path_version} != {}",
-                        m.info.version
-                    );
-                    continue;
-                }
-            }
-
             let entry = list.entry(name).or_default();
-            entry.versions.insert(m.info.version, filename.into());
-            entry
-                .known_dependencies
-                .insert(m.info.version, m.info.dependencies);
+            entry.versions.insert(version, filename.into());
+            // entry
+            //     .known_dependencies
+            //     .insert(m.info.version, m.info.dependencies);
         }
 
         Ok(Self { factorio_dir, list })
@@ -323,6 +312,34 @@ impl<'a> ModList<'a> {
                 }
             })
             .collect()
+    }
+
+    pub fn load_local_dependency_info(&mut self, mods: &UsedVersions) {
+        for (name, version) in mods {
+            let Some(entry) = self.list.get_mut(name) else {
+                continue;
+            };
+
+            let Some(filename) = entry.versions.get(version) else {
+                continue;
+            };
+
+            let Ok(m) = Mod::load(self.factorio_dir, filename) else {
+                continue;
+            };
+
+            if version != &m.info.version {
+                println!(
+                    "Version mismatch for {name}: {version} != {}",
+                    m.info.version
+                );
+                continue;
+            }
+
+            entry
+                .known_dependencies
+                .insert(m.info.version, m.info.dependencies);
+        }
     }
 
     pub fn set_dependency_info(
