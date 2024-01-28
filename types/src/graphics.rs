@@ -189,6 +189,71 @@ pub trait FetchSprite {
     fn get_size(&self) -> (i16, i16);
 }
 
+// blocked until specialization is stabilized
+// impl<S, T> FetchSprite for S
+// where
+//     S: std::ops::Deref<Target = T>,
+//     T: FetchSprite,
+// {
+//     fn fetch(
+//         &self,
+//         scale: f64,
+//         filename: &FileName,
+//         used_mods: &UsedMods,
+//         image_cache: &mut ImageCache,
+//         runtime_tint: Option<Color>,
+//     ) -> Option<GraphicsOutput> {
+//         self.deref()
+//             .fetch(scale, filename, used_mods, image_cache, runtime_tint)
+//     }
+//
+//     fn fetch_offset(
+//         &self,
+//         scale: f64,
+//         filename: &FileName,
+//         used_mods: &UsedMods,
+//         image_cache: &mut ImageCache,
+//         runtime_tint: Option<Color>,
+//         offset: (i16, i16),
+//     ) -> Option<GraphicsOutput> {
+//         self.fetch_offset(
+//             scale,
+//             filename,
+//             used_mods,
+//             image_cache,
+//             runtime_tint,
+//             offset,
+//         )
+//     }
+//
+//     fn fetch_offset_by_pixels(
+//         &self,
+//         scale: f64,
+//         filename: &FileName,
+//         used_mods: &UsedMods,
+//         image_cache: &mut ImageCache,
+//         runtime_tint: Option<Color>,
+//         offset: (i16, i16),
+//     ) -> Option<GraphicsOutput> {
+//         self.fetch_offset_by_pixels(
+//             scale,
+//             filename,
+//             used_mods,
+//             image_cache,
+//             runtime_tint,
+//             offset,
+//         )
+//     }
+//
+//     fn get_position(&self) -> (i16, i16) {
+//         self.get_position()
+//     }
+//
+//     fn get_size(&self) -> (i16, i16) {
+//         self.get_size()
+//     }
+// }
+
 pub type GraphicsOutput = (DynamicImage, Vector);
 pub trait RenderableGraphics {
     type RenderOpts;
@@ -280,6 +345,17 @@ pub fn merge_renders(renders: &[Option<GraphicsOutput>], scale: f64) -> Option<G
 pub trait Scale {
     fn scale(&self) -> f64;
 }
+
+// blocked until specialization is stabilized
+// impl<S, T> Scale for S
+// where
+//     S: std::ops::Deref<Target = T>,
+//     T: Scale,
+// {
+//     fn scale(&self) -> f64 {
+//         self.deref().scale()
+//     }
+// }
 
 /// [`Types/SpriteParameters`](https://lua-api.factorio.com/latest/types/SpriteParameters.html)
 ///
@@ -611,42 +687,50 @@ pub type Sprite = SimpleGraphics<SpriteParams>;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RotatedSpriteParams {
-    filename: FileName,
+    pub filename: FileName,
 
     #[serde(deserialize_with = "helper::truncating_deserializer")]
-    direction_count: u16,
+    pub direction_count: u16,
 
     #[serde(
         default,
         skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
-    lines_per_file: u64,
+    pub lines_per_file: u64,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    axially_symmetrical: bool,
+    pub axially_symmetrical: bool,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    back_equals_front: bool,
+    pub back_equals_front: bool,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    apply_projection: bool,
+    pub apply_projection: bool,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    counterclockwise: bool,
+    pub counterclockwise: bool,
 
     #[serde(
         default,
         skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
-    line_length: u32,
+    pub line_length: u32,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    allow_low_quality_rotation: bool,
+    pub allow_low_quality_rotation: bool,
 
     #[serde(flatten)]
-    pub sprite_params: SpriteParams,
+    sprite_params: SpriteParams,
+}
+
+impl std::ops::Deref for RotatedSpriteParams {
+    type Target = SpriteParams;
+
+    fn deref(&self) -> &Self::Target {
+        &self.sprite_params
+    }
 }
 
 impl Scale for RotatedSpriteParams {
@@ -705,7 +789,7 @@ impl RenderableGraphics for RotatedSpriteParams {
         let row = index / line_length;
         let column = index % line_length;
 
-        self.sprite_params.fetch_offset(
+        self.fetch_offset(
             scale,
             &self.filename,
             used_mods,
@@ -718,38 +802,46 @@ impl RenderableGraphics for RotatedSpriteParams {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RotatedSpriteParamsMultiFile {
-    filenames: FactorioArray<FileName>,
+    pub filenames: FactorioArray<FileName>,
 
     #[serde(deserialize_with = "helper::truncating_deserializer")]
-    direction_count: u16,
+    pub direction_count: u16,
 
     #[serde(deserialize_with = "helper::truncating_deserializer")]
-    lines_per_file: u64,
+    pub lines_per_file: u64,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    axially_symmetrical: bool,
+    pub axially_symmetrical: bool,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    back_equals_front: bool,
+    pub back_equals_front: bool,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    apply_projection: bool,
+    pub apply_projection: bool,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    counterclockwise: bool,
+    pub counterclockwise: bool,
 
     #[serde(
         default,
         skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
-    line_length: u32,
+    pub line_length: u32,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    allow_low_quality_rotation: bool,
+    pub allow_low_quality_rotation: bool,
 
     #[serde(flatten)]
-    pub sprite_params: SpriteParams,
+    sprite_params: SpriteParams,
+}
+
+impl std::ops::Deref for RotatedSpriteParamsMultiFile {
+    type Target = SpriteParams;
+
+    fn deref(&self) -> &Self::Target {
+        &self.sprite_params
+    }
 }
 
 impl Scale for RotatedSpriteParamsMultiFile {
@@ -823,7 +915,15 @@ pub struct Sprite4WaySheet {
     pub hr_version: Option<Box<Self>>,
 
     #[serde(flatten)]
-    pub sprite_params: SpriteParams,
+    sprite_params: SpriteParams,
+}
+
+impl std::ops::Deref for Sprite4WaySheet {
+    type Target = SpriteParams;
+
+    fn deref(&self) -> &Self::Target {
+        &self.sprite_params
+    }
 }
 
 impl Scale for Sprite4WaySheet {
@@ -901,7 +1001,15 @@ pub struct Sprite8WaySheet {
     pub hr_version: Option<Box<Self>>,
 
     #[serde(flatten)]
-    pub sprite_params: SpriteParams,
+    sprite_params: SpriteParams,
+}
+
+impl std::ops::Deref for Sprite8WaySheet {
+    type Target = SpriteParams;
+
+    fn deref(&self) -> &Self::Target {
+        &self.sprite_params
+    }
 }
 
 impl Scale for Sprite8WaySheet {
@@ -1076,7 +1184,15 @@ pub struct SpriteSheetParams {
     pub line_length: Option<u32>,
 
     #[serde(flatten)]
-    pub sprite_params: SpriteParams,
+    sprite_params: SpriteParams,
+}
+
+impl std::ops::Deref for SpriteSheetParams {
+    type Target = SpriteParams;
+
+    fn deref(&self) -> &Self::Target {
+        &self.sprite_params
+    }
 }
 
 impl FetchSprite for SpriteSheetParams {
@@ -1213,17 +1329,51 @@ pub struct WaterReflectionDefinition {
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TileGraphics<T> {
-    pub data: Box<T>,
+pub struct TileGraphics<T: FetchSprite> {
+    pub picture: FileName,
+
+    #[serde(flatten)]
+    data: Box<T>,
+
     pub hr_version: Option<Box<Self>>,
+}
+
+impl<T: FetchSprite> std::ops::Deref for TileGraphics<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.data
+    }
+}
+
+impl<T: FetchSprite> RenderableGraphics for TileGraphics<T> {
+    type RenderOpts = SimpleGraphicsRenderOpts;
+
+    fn render(
+        &self,
+        scale: f64,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        opts: &Self::RenderOpts,
+    ) -> Option<GraphicsOutput> {
+        self.fetch(
+            scale,
+            &self.picture,
+            used_mods,
+            image_cache,
+            opts.runtime_tint,
+        )
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TileSpriteParams {
-    #[serde(deserialize_with = "helper::truncating_deserializer")]
+    #[serde(
+        default,
+        deserialize_with = "helper::truncating_deserializer",
+        skip_serializing_if = "helper::is_default"
+    )]
     pub count: u32,
-
-    pub picture: FileName,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub scale: f64,
@@ -1250,14 +1400,110 @@ pub struct TileSpriteParams {
     pub line_length: u32,
 }
 
+impl FetchSprite for TileSpriteParams {
+    fn fetch(
+        &self,
+        scale: f64,
+        filename: &FileName,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        runtime_tint: Option<Color>,
+    ) -> Option<GraphicsOutput> {
+        self.fetch_offset_by_pixels(
+            scale,
+            filename,
+            used_mods,
+            image_cache,
+            runtime_tint,
+            (0, 0),
+        )
+    }
+
+    fn fetch_offset(
+        &self,
+        scale: f64,
+        filename: &FileName,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        runtime_tint: Option<Color>,
+        offset: (i16, i16),
+    ) -> Option<GraphicsOutput> {
+        let (width, height) = self.get_size();
+        self.fetch_offset_by_pixels(
+            scale,
+            filename,
+            used_mods,
+            image_cache,
+            runtime_tint,
+            (offset.0 * width, offset.1 * height),
+        )
+    }
+
+    fn fetch_offset_by_pixels(
+        &self,
+        scale: f64,
+        filename: &FileName,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        runtime_tint: Option<Color>,
+        offset: (i16, i16),
+    ) -> Option<GraphicsOutput> {
+        let (x, y) = self.get_position();
+        let (offset_x, offset_y) = offset;
+        let (width, height) = self.get_size();
+
+        let img = filename.load(used_mods, image_cache)?.crop_imm(
+            (x + offset_x) as u32,
+            (y + offset_y) as u32,
+            width as u32,
+            height as u32,
+        );
+
+        let mut img = img.resize(
+            (f64::from(img.width()) * self.scale / scale).round() as u32,
+            (f64::from(img.height()) * self.scale / scale).round() as u32,
+            image::imageops::FilterType::Nearest,
+        );
+
+        if let Some(tint) = runtime_tint {
+            if !Color::is_white(&tint) {
+                let mut img_buf = img.to_rgba8();
+                let [tint_r, tint_g, tint_b, tint_a] = tint.to_rgba();
+
+                for Rgba([r, g, b, a]) in img_buf.pixels_mut() {
+                    *r = (f64::from(*r) * tint_r).round() as u8;
+                    *g = (f64::from(*g) * tint_g).round() as u8;
+                    *b = (f64::from(*b) * tint_b).round() as u8;
+                    *a = (f64::from(*a) * tint_a).round() as u8;
+                }
+                img = img_buf.into();
+            }
+        }
+
+        Some((img, Vector::default()))
+    }
+
+    fn get_position(&self) -> (i16, i16) {
+        (self.x, self.y)
+    }
+
+    fn get_size(&self) -> (i16, i16) {
+        let size = (32.0 / self.scale).round() as i16;
+        (size, size)
+    }
+}
+
+impl Scale for TileSpriteParams {
+    fn scale(&self) -> f64 {
+        self.scale
+    }
+}
+
 /// [`Types/TileSprite`](https://lua-api.factorio.com/latest/types/TileSprite.html)
 pub type TileSprite = TileGraphics<TileSpriteParams>;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TileSpriteProbabilityParams {
-    #[serde(flatten)]
-    pub tile_sprite_params: TileSpriteParams,
-
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub size: u32,
 
@@ -1266,6 +1512,117 @@ pub struct TileSpriteProbabilityParams {
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub weights: FactorioArray<f64>,
+
+    #[serde(flatten)]
+    tile_sprite_params: TileSpriteParams,
+}
+
+impl FetchSprite for TileSpriteProbabilityParams {
+    fn fetch(
+        &self,
+        scale: f64,
+        filename: &FileName,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        runtime_tint: Option<Color>,
+    ) -> Option<GraphicsOutput> {
+        self.fetch_offset_by_pixels(
+            scale,
+            filename,
+            used_mods,
+            image_cache,
+            runtime_tint,
+            (0, 0),
+        )
+    }
+
+    fn fetch_offset(
+        &self,
+        scale: f64,
+        filename: &FileName,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        runtime_tint: Option<Color>,
+        offset: (i16, i16),
+    ) -> Option<GraphicsOutput> {
+        let (width, height) = self.get_size();
+        self.fetch_offset_by_pixels(
+            scale,
+            filename,
+            used_mods,
+            image_cache,
+            runtime_tint,
+            (offset.0 * width, offset.1 * height),
+        )
+    }
+
+    fn fetch_offset_by_pixels(
+        &self,
+        scale: f64,
+        filename: &FileName,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        runtime_tint: Option<Color>,
+        offset: (i16, i16),
+    ) -> Option<GraphicsOutput> {
+        let (x, y) = self.get_position();
+        let (offset_x, offset_y) = offset;
+        let (width, height) = self.get_size();
+
+        let img = filename.load(used_mods, image_cache)?.crop_imm(
+            (x + offset_x) as u32,
+            (y + offset_y) as u32,
+            width as u32,
+            height as u32,
+        );
+
+        let mut img = img.resize(
+            (f64::from(img.width()) * self.scale / scale).round() as u32,
+            (f64::from(img.height()) * self.scale / scale).round() as u32,
+            image::imageops::FilterType::Nearest,
+        );
+
+        if let Some(tint) = runtime_tint {
+            if !Color::is_white(&tint) {
+                let mut img_buf = img.to_rgba8();
+                let [tint_r, tint_g, tint_b, tint_a] = tint.to_rgba();
+
+                for Rgba([r, g, b, a]) in img_buf.pixels_mut() {
+                    *r = (f64::from(*r) * tint_r).round() as u8;
+                    *g = (f64::from(*g) * tint_g).round() as u8;
+                    *b = (f64::from(*b) * tint_b).round() as u8;
+                    *a = (f64::from(*a) * tint_a).round() as u8;
+                }
+                img = img_buf.into();
+            }
+        }
+
+        Some((img, Vector::default()))
+    }
+
+    fn get_position(&self) -> (i16, i16) {
+        self.tile_sprite_params.get_position()
+    }
+
+    fn get_size(&self) -> (i16, i16) {
+        let size = self.size as i16;
+        let (w, h) = self.tile_sprite_params.get_size();
+        (w * size, h * size)
+    }
+}
+
+impl Scale for TileSpriteProbabilityParams {
+    fn scale(&self) -> f64 {
+        self.tile_sprite_params.scale()
+    }
+}
+
+impl std::ops::Deref for TileSpriteProbabilityParams {
+    type Target = TileSpriteParams;
+
+    fn deref(&self) -> &Self::Target {
+        &self.tile_sprite_params
+    }
 }
 
 /// [`Types/TileSpriteWithProbability`](https://lua-api.factorio.com/latest/types/TileSpriteWithProbability.html)
@@ -1273,11 +1630,19 @@ pub type TileSpriteWithProbability = TileGraphics<TileSpriteProbabilityParams>;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TileTransitionSpriteParams {
-    #[serde(flatten)]
-    pub tile_sprite_params: TileSpriteParams,
-
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub tall: bool,
+
+    #[serde(flatten)]
+    tile_sprite_params: TileSpriteParams,
+}
+
+impl std::ops::Deref for TileTransitionSpriteParams {
+    type Target = TileSpriteParams;
+
+    fn deref(&self) -> &Self::Target {
+        &self.tile_sprite_params
+    }
 }
 
 /// [`Types/TileTransitionSprite`](https://lua-api.factorio.com/latest/types/TileTransitionSprite.html)
@@ -1344,9 +1709,6 @@ impl Stripe {
 /// [`Types/AnimationParameters`](https://lua-api.factorio.com/latest/types/AnimationParameters.html)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnimationParams {
-    #[serde(flatten)]
-    pub sprite_params: SpriteParams,
-
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub run_mode: AnimationRunMode,
 
@@ -1386,6 +1748,17 @@ pub struct AnimationParams {
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub frame_sequence: AnimationFrameSequence,
+
+    #[serde(flatten)]
+    sprite_params: SpriteParams,
+}
+
+impl std::ops::Deref for AnimationParams {
+    type Target = SpriteParams;
+
+    fn deref(&self) -> &Self::Target {
+        &self.sprite_params
+    }
 }
 
 impl FetchSprite for AnimationParams {
@@ -1795,7 +2168,15 @@ pub struct AnimationSheet {
     pub hr_version: Option<Box<Self>>,
 
     #[serde(flatten)]
-    pub animation_params: AnimationParams,
+    animation_params: AnimationParams,
+}
+
+impl std::ops::Deref for AnimationSheet {
+    type Target = AnimationParams;
+
+    fn deref(&self) -> &Self::Target {
+        &self.animation_params
+    }
 }
 
 /// [`Types/AnimationVariations`](https://lua-api.factorio.com/latest/types/AnimationVariations.html)
@@ -1909,7 +2290,15 @@ pub struct RotatedAnimationParams {
     pub apply_projection: bool,
 
     #[serde(flatten)]
-    pub animation_params: AnimationParams,
+    animation_params: AnimationParams,
+}
+
+impl std::ops::Deref for RotatedAnimationParams {
+    type Target = AnimationParams;
+
+    fn deref(&self) -> &Self::Target {
+        &self.animation_params
+    }
 }
 
 impl Scale for RotatedAnimationParams {
