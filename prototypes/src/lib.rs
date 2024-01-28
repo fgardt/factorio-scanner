@@ -26,6 +26,7 @@ pub mod entity;
 pub mod fluid;
 pub mod item;
 pub mod recipe;
+pub mod tile;
 pub mod utility_sprites;
 
 /// [`Prototypes/PrototypeBase`](https://lua-api.factorio.com/latest/PrototypeBase.html)
@@ -82,6 +83,8 @@ pub struct DataRaw {
     #[serde(flatten)]
     pub recipe: recipe::AllTypes,
     pub recipe_category: PrototypeMap<recipe::RecipeCategory>,
+
+    pub tile: PrototypeMap<tile::TilePrototype>,
 
     pub utility_sprites: PrototypeMap<utility_sprites::UtilitySprites>,
 }
@@ -831,6 +834,20 @@ impl DataUtil {
     ) -> entity::RenderOutput {
         self.get_entity(entity_name)?
             .render(render_opts, used_mods, render_layers, image_cache)
+    }
+
+    pub fn render_tile(
+        &self,
+        tile_name: &str,
+        position: &MapPosition,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+        image_cache: &mut ImageCache,
+    ) -> Option<()> {
+        self.raw
+            .tile
+            .get(tile_name)
+            .and_then(|t| t.render(position, used_mods, render_layers, image_cache))
     }
 
     pub fn get_recipe_icon(
