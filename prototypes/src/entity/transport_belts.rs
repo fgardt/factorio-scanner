@@ -5,21 +5,16 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/TransportBeltConnectablePrototype`](https://lua-api.factorio.com/latest/prototypes/TransportBeltConnectablePrototype.html)
-pub type TransportBeltConnectablePrototype<G, T> =
-    EntityWithOwnerPrototype<TransportBeltConnectableData<G, T>>;
-
-/// [`Prototypes/TransportBeltConnectablePrototype`](https://lua-api.factorio.com/latest/prototypes/TransportBeltConnectablePrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TransportBeltConnectableData<G, T>
+pub struct TransportBeltConnectableData<G>
 where
     G: super::Renderable,
-    T: super::Renderable,
 {
     pub speed: f64,
 
@@ -27,16 +22,23 @@ where
     pub animation_speed_coefficient: f64,
 
     #[serde(flatten)]
-    pub graphics_set: G,
-
-    #[serde(flatten)]
-    child: T,
+    graphics_set: G,
 }
 
-impl<G, T> super::Renderable for TransportBeltConnectableData<G, T>
+impl<G> Deref for TransportBeltConnectableData<G>
 where
     G: super::Renderable,
-    T: super::Renderable,
+{
+    type Target = G;
+
+    fn deref(&self) -> &Self::Target {
+        &self.graphics_set
+    }
+}
+
+impl<G> super::Renderable for TransportBeltConnectableData<G>
+where
+    G: super::Renderable,
 {
     fn render(
         &self,
@@ -45,19 +47,8 @@ where
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        let a = self
-            .graphics_set
-            .render(options, used_mods, render_layers, image_cache);
-
-        let b = self
-            .child
-            .render(options, used_mods, render_layers, image_cache);
-
-        if a.is_none() && b.is_none() {
-            None
-        } else {
-            Some(())
-        }
+        self.graphics_set
+            .render(options, used_mods, render_layers, image_cache)
     }
 }
 
@@ -111,7 +102,7 @@ impl super::Renderable for BeltGraphics {
 }
 
 /// [`Prototypes/LinkedBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/LinkedBeltPrototype.html)
-pub type LinkedBeltPrototype = TransportBeltConnectablePrototype<BeltGraphics, LinkedBeltData>;
+pub type LinkedBeltPrototype = EntityWithOwnerPrototype<LinkedBeltData>;
 
 /// [`Prototypes/LinkedBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/LinkedBeltPrototype.html)
 #[skip_serializing_none]
@@ -130,6 +121,16 @@ pub struct LinkedBeltData {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub allow_side_loading: bool,
     // TODO: collision_mask overridden
+    #[serde(flatten)]
+    parent: TransportBeltConnectableData<BeltGraphics>,
+}
+
+impl Deref for LinkedBeltData {
+    type Target = TransportBeltConnectableData<BeltGraphics>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
 }
 
 impl super::Renderable for LinkedBeltData {
@@ -140,6 +141,9 @@ impl super::Renderable for LinkedBeltData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
+        self.parent
+            .render(options, used_mods, render_layers, image_cache);
+
         let res = if options.underground_in.unwrap_or_default() {
             self.structure.direction_in.render(
                 render_layers.scale(),
@@ -180,12 +184,9 @@ pub struct LinkedBeltStructure {
 }
 
 /// [`Prototypes/LoaderPrototype`](https://lua-api.factorio.com/latest/prototypes/LoaderPrototype.html)
-pub type LoaderPrototype<T> = TransportBeltConnectablePrototype<BeltGraphics, LoaderData<T>>;
-
-/// [`Prototypes/LoaderPrototype`](https://lua-api.factorio.com/latest/prototypes/LoaderPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct LoaderData<T: super::Renderable> {
+pub struct LoaderData {
     pub structure: LoaderStructure,
 
     #[serde(deserialize_with = "helper::truncating_deserializer")]
@@ -211,18 +212,18 @@ pub struct LoaderData<T: super::Renderable> {
     pub energy_per_item: Option<Energy>,
 
     #[serde(flatten)]
-    child: T,
+    parent: TransportBeltConnectableData<BeltGraphics>,
 }
 
-impl<T: super::Renderable> Deref for LoaderData<T> {
-    type Target = T;
+impl Deref for LoaderData {
+    type Target = TransportBeltConnectableData<BeltGraphics>;
 
     fn deref(&self) -> &Self::Target {
-        &self.child
+        &self.parent
     }
 }
 
-impl<T: super::Renderable> super::Renderable for LoaderData<T> {
+impl super::Renderable for LoaderData {
     fn render(
         &self,
         options: &super::RenderOpts,
@@ -230,7 +231,28 @@ impl<T: super::Renderable> super::Renderable for LoaderData<T> {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        None
+        let res = if options.underground_in.unwrap_or_default() {
+            self.structure.direction_in.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        } else {
+            let flipped_opts = &super::RenderOpts {
+                direction: options.direction.flip(),
+                ..options.clone()
+            };
+            self.structure.direction_out.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &flipped_opts.into(),
+            )
+        }?;
+
+        render_layers.add_entity(res, &options.position);
+        Some(())
     }
 }
 
@@ -246,7 +268,7 @@ pub struct LoaderStructure {
 }
 
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
-pub type Loader1x1Prototype = LoaderPrototype<Loader1x1Data>;
+pub type Loader1x1Prototype = EntityWithOwnerPrototype<Loader1x1Data>;
 
 // TODO: loaders `belt_length` is not actually hardcoded but defaults to a internal hardcoded value instead..
 
@@ -256,6 +278,17 @@ pub struct Loader1x1Data {
     // hardcoded to 0, validate this?
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub belt_length: f64,
+
+    #[serde(flatten)]
+    parent: LoaderData,
+}
+
+impl Deref for Loader1x1Data {
+    type Target = LoaderData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
 }
 
 impl super::Renderable for Loader1x1Data {
@@ -266,12 +299,18 @@ impl super::Renderable for Loader1x1Data {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        None
+        // TODO: render short end piece instead of full belt
+        self.parent
+            .parent
+            .render(options, used_mods, render_layers, image_cache);
+
+        self.parent
+            .render(options, used_mods, render_layers, image_cache)
     }
 }
 
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
-pub type Loader1x2Prototype = LoaderPrototype<Loader1x2Data>;
+pub type Loader1x2Prototype = EntityWithOwnerPrototype<Loader1x2Data>;
 
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -282,6 +321,17 @@ pub struct Loader1x2Data {
         skip_serializing_if = "helper::is_half_f64"
     )]
     pub belt_length: f64,
+
+    #[serde(flatten)]
+    parent: LoaderData,
+}
+
+impl Deref for Loader1x2Data {
+    type Target = LoaderData;
+
+    fn deref(&self) -> &Self::Target {
+        unimplemented!()
+    }
 }
 
 impl super::Renderable for Loader1x2Data {
@@ -292,12 +342,39 @@ impl super::Renderable for Loader1x2Data {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        None
+        let offset = (options.direction.get_offset() * 0.5).into();
+        let pos_up = &options.position + &offset;
+        let pos_down = &options.position - &offset;
+
+        // TODO: render short end piece instead of 2 full belts
+
+        self.parent.parent.render(
+            &super::RenderOpts {
+                position: pos_up,
+                ..options.clone()
+            },
+            used_mods,
+            render_layers,
+            image_cache,
+        );
+
+        self.parent.parent.render(
+            &super::RenderOpts {
+                position: pos_down,
+                ..options.clone()
+            },
+            used_mods,
+            render_layers,
+            image_cache,
+        );
+
+        self.parent
+            .render(options, used_mods, render_layers, image_cache)
     }
 }
 
 /// [`Prototypes/SplitterPrototype`](https://lua-api.factorio.com/latest/prototypes/SplitterPrototype.html)
-pub type SplitterPrototype = TransportBeltConnectablePrototype<BeltGraphics, SplitterData>;
+pub type SplitterPrototype = EntityWithOwnerPrototype<SplitterData>;
 
 /// [`Prototypes/SplitterPrototype`](https://lua-api.factorio.com/latest/prototypes/SplitterPrototype.html)
 #[skip_serializing_none]
@@ -311,6 +388,17 @@ pub struct SplitterData {
 
     #[serde(default = "helper::u32_10", skip_serializing_if = "helper::is_10_u32")]
     pub structure_animation_movement_cooldown: u32,
+
+    #[serde(flatten)]
+    parent: TransportBeltConnectableData<BeltGraphics>,
+}
+
+impl Deref for SplitterData {
+    type Target = TransportBeltConnectableData<BeltGraphics>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
 }
 
 impl super::Renderable for SplitterData {
@@ -321,7 +409,29 @@ impl super::Renderable for SplitterData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        // TODO: figure out how to render the 2 belts below the splitter
+        let offset: MapPosition = (options.direction.right90().get_offset() * 0.5).into();
+        let left_pos = &options.position - &offset;
+        let right_pos = &options.position + &offset;
+
+        self.parent.render(
+            &super::RenderOpts {
+                position: left_pos,
+                ..options.clone()
+            },
+            used_mods,
+            render_layers,
+            image_cache,
+        );
+
+        self.parent.render(
+            &super::RenderOpts {
+                position: right_pos,
+                ..options.clone()
+            },
+            used_mods,
+            render_layers,
+            image_cache,
+        );
 
         let res = merge_renders(
             &[
@@ -350,8 +460,7 @@ impl super::Renderable for SplitterData {
 }
 
 /// [`Prototypes/TransportBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/TransportBeltPrototype.html)
-pub type TransportBeltPrototype =
-    TransportBeltConnectablePrototype<BeltGraphicsWithCorners, TransportBeltData>;
+pub type TransportBeltPrototype = EntityWithOwnerPrototype<WireEntityData<TransportBeltData>>;
 
 /// [`Prototypes/TransportBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/TransportBeltPrototype.html)
 #[skip_serializing_none]
@@ -359,6 +468,17 @@ pub type TransportBeltPrototype =
 pub struct TransportBeltData {
     pub connector_frame_sprites: TransportBeltConnectorFrame,
     pub related_underground_belt: Option<EntityID>,
+
+    #[serde(flatten)]
+    parent: TransportBeltConnectableData<BeltGraphicsWithCorners>,
+}
+
+impl Deref for TransportBeltData {
+    type Target = TransportBeltConnectableData<BeltGraphicsWithCorners>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
 }
 
 impl super::Renderable for TransportBeltData {
@@ -369,7 +489,23 @@ impl super::Renderable for TransportBeltData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        None
+        let res = self
+            .parent
+            .render(options, used_mods, render_layers, image_cache);
+
+        // TODO: render special corner frames & edge walls
+        if options.circuit_connected || options.logistic_connected {
+            let res = self.connector_frame_sprites.frame_main.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )?;
+
+            render_layers.add_entity(res, &options.position);
+        }
+
+        res
     }
 }
 
@@ -409,8 +545,7 @@ impl super::Renderable for BeltGraphicsWithCorners {
 }
 
 /// [`Prototypes/UndergroundBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/UndergroundBeltPrototype.html)
-pub type UndergroundBeltPrototype =
-    TransportBeltConnectablePrototype<BeltGraphics, UndergroundBeltData>;
+pub type UndergroundBeltPrototype = EntityWithOwnerPrototype<UndergroundBeltData>;
 
 /// [`Prototypes/UndergroundBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/UndergroundBeltPrototype.html)
 #[skip_serializing_none]
@@ -422,6 +557,17 @@ pub struct UndergroundBeltData {
     pub structure: UndergroundBeltStructure,
     pub underground_sprite: Sprite,
     pub underground_remove_belts_sprite: Option<Sprite>,
+
+    #[serde(flatten)]
+    parent: TransportBeltConnectableData<BeltGraphics>,
+}
+
+impl Deref for UndergroundBeltData {
+    type Target = TransportBeltConnectableData<BeltGraphics>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
 }
 
 impl super::Renderable for UndergroundBeltData {
@@ -432,6 +578,10 @@ impl super::Renderable for UndergroundBeltData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
+        // TODO: only render visible half of the belt
+        self.parent
+            .render(options, used_mods, render_layers, image_cache);
+
         let res = if options.underground_in.unwrap_or_default() {
             self.structure.direction_in.render(
                 render_layers.scale(),
