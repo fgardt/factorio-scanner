@@ -1188,6 +1188,23 @@ fn render_bp(
 
     info!("entities: {}, layers: {rendered_count}", bp.entities.len());
 
+    let rendered_count = bp
+        .tiles
+        .iter()
+        .filter_map(|t| {
+            let position: MapPosition = (&t.position).into();
+            data.render_tile(
+                &t.name,
+                &(position + MapPosition::Tuple(0.5, 0.5)),
+                used_mods,
+                &mut render_layers,
+                image_cache,
+            )
+        })
+        .count();
+
+    info!("tiles: {}, layers: {rendered_count}", bp.tiles.len());
+
     data.util_sprites().map_or_else(
         || {
             warn!("failed to load util sprites, no wire rendering");
