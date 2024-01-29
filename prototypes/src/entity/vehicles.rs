@@ -73,6 +73,14 @@ impl<T: super::Renderable> super::Renderable for VehicleData<T> {
         self.child
             .render(options, used_mods, render_layers, image_cache)
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.child.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.child.heat_buffer_connections(options)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -163,6 +171,14 @@ impl super::Renderable for CarData {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         None
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 
@@ -313,6 +329,14 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
             Some(())
         }
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.child.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.child.heat_buffer_connections(options)
+    }
 }
 
 /// [`Prototypes/ArtilleryWagonPrototype`](https://lua-api.factorio.com/latest/prototypes/ArtilleryWagonPrototype.html)
@@ -439,6 +463,14 @@ impl super::Renderable for ArtilleryWagonData {
             Some(())
         }
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
 }
 
 /// [`Prototypes/CargoWagonPrototype`](https://lua-api.factorio.com/latest/prototypes/CargoWagonPrototype.html)
@@ -460,6 +492,14 @@ impl super::Renderable for CargoWagonData {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 
@@ -484,6 +524,14 @@ impl super::Renderable for FluidWagonData {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 
@@ -530,5 +578,13 @@ impl super::Renderable for LocomotiveData {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
     }
 }

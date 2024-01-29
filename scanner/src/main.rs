@@ -914,7 +914,10 @@ fn calculate_target_size(
     ))
 }
 
-fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::entity::RenderOpts {
+fn bp_entity2render_opts(
+    value: &blueprint::Entity,
+    data: &DataUtil,
+) -> prototypes::entity::RenderOpts {
     prototypes::entity::RenderOpts {
         position: (&value.position).into(),
         direction: value.direction,
@@ -947,6 +950,7 @@ fn bp_entity2render_opts(value: &blueprint::Entity) -> prototypes::entity::Rende
             .control_behavior
             .as_ref()
             .is_some_and(|c| c.connect_to_logistic_network.unwrap_or_default()),
+        fluid_recipe: data.recipe_has_fluid(&value.recipe),
     }
 }
 
@@ -1107,7 +1111,7 @@ fn render_bp(
                 }
             });
 
-            let mut render_opts = bp_entity2render_opts(e);
+            let mut render_opts = bp_entity2render_opts(e, data);
             render_opts.connections = connections;
             render_opts.connected_gates = connected_gates;
             render_opts.draw_gate_patch = draw_gate_patch;

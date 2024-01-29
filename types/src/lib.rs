@@ -1030,7 +1030,7 @@ pub enum PipeConnectionType {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PipeConnectionDefinition {
-    Multi {
+    Directional {
         positions: FactorioArray<Vector>,
 
         #[serde(
@@ -1043,7 +1043,7 @@ pub enum PipeConnectionDefinition {
         #[serde(default, rename = "type")]
         type_: PipeConnectionType,
     },
-    Single {
+    Static {
         position: Vector,
 
         #[serde(
@@ -1145,6 +1145,22 @@ pub struct FluidBox {
 
     #[serde(flatten)]
     pub secondary_draw_order: Option<FluidBoxSecondaryDrawOrders>,
+}
+
+impl FluidBox {
+    #[must_use]
+    pub fn connection_points(&self, direction: Direction) -> Vec<MapPosition> {
+        self.pipe_connections
+            .iter()
+            .filter_map(|c| match c {
+                PipeConnectionDefinition::Directional { positions, .. } => {
+                    let cardinal = direction as u8 / 2;
+                    positions.get(cardinal as usize).map(|v| (*v).into())
+                }
+                PipeConnectionDefinition::Static { position, .. } => Some((*position).into()),
+            })
+            .collect()
+    }
 }
 
 /// [`Types/RecipeID`](https://lua-api.factorio.com/latest/types/RecipeID.html)
@@ -2494,7 +2510,7 @@ impl GuiMode {
 }
 
 /// [`Types/HeatConnection`](https://lua-api.factorio.com/latest/types/HeatConnection.html)
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HeatConnection {
     pub position: MapPosition,
     pub direction: Direction,
@@ -2527,6 +2543,16 @@ pub struct HeatBuffer {
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub connections: FactorioArray<HeatConnection>,
+}
+
+impl HeatBuffer {
+    #[must_use]
+    pub fn connection_points(&self) -> Vec<MapPosition> {
+        self.connections
+            .iter()
+            .map(|c| c.position.clone())
+            .collect()
+    }
 }
 
 /// [`Types/ConnectableEntityGraphics`](https://lua-api.factorio.com/latest/types/ConnectableEntityGraphics.html)

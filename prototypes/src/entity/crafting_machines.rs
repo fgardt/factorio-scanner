@@ -119,6 +119,45 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
         self.child
             .render(options, used_mods, render_layers, image_cache)
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        let mut res = self
+            .fluid_boxes
+            .as_ref()
+            .map(|b| match b {
+                CraftingMachineFluidBoxHell::Array(fbs) => fbs
+                    .iter()
+                    .flat_map(|fb| fb.connection_points(options.direction))
+                    .collect(),
+                CraftingMachineFluidBoxHell::WHY(why) => {
+                    let mut res = Vec::new();
+                    for e in why.values() {
+                        match e {
+                            CraftingMachineFluidBoxCursedType::FluidBox(fb) => {
+                                res.append(&mut fb.connection_points(options.direction));
+                            }
+                            CraftingMachineFluidBoxCursedType::OffWhenNoFluidRecipe(
+                                no_recipe_disable,
+                            ) => {
+                                if options.fluid_recipe && *no_recipe_disable {
+                                    return Vec::with_capacity(0);
+                                }
+                            }
+                        }
+                    }
+
+                    res
+                }
+            })
+            .unwrap_or_default();
+
+        res.append(&mut self.child.fluid_box_connections(options));
+        res
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        self.child.heat_buffer_connections(options)
+    }
 }
 
 // TODO: find a better way to work around this abomination of a type
@@ -163,6 +202,14 @@ impl super::Renderable for FurnaceData {
     ) -> super::RenderOutput {
         None
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
 }
 
 /// [`Prototypes/AssemblingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/AssemblingMachinePrototype.html)
@@ -196,6 +243,14 @@ impl super::Renderable for AssemblingMachineData {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         None
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 
@@ -343,5 +398,13 @@ impl super::Renderable for RocketSiloData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
     }
 }

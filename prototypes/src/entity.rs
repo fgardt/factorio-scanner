@@ -9,6 +9,12 @@ use super::BasePrototype;
 use mod_util::UsedMods;
 use types::*;
 
+mod fluid_box_entity;
+mod wire_entity;
+
+use fluid_box_entity::*;
+use wire_entity::*;
+
 mod accumulator;
 mod artillery_turret;
 mod beacon;
@@ -48,9 +54,6 @@ mod transport_belts;
 mod turrets;
 mod vehicles;
 mod wall;
-mod wire_entity;
-
-use wire_entity::*;
 
 pub use accumulator::*;
 pub use artillery_turret::*;
@@ -116,6 +119,8 @@ pub struct RenderOpts {
     pub entity_id: u64,
     pub circuit_connected: bool,
     pub logistic_connected: bool,
+
+    pub fluid_recipe: bool,
 }
 
 // From impls for RenderOpts variants from types
@@ -247,6 +252,9 @@ pub trait Renderable {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> RenderOutput;
+
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition>;
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition>;
 }
 
 /// [`Prototypes/EntityPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityPrototype.html)
@@ -271,6 +279,14 @@ impl<T: Renderable> Renderable for EntityPrototype<T> {
     ) -> RenderOutput {
         self.child
             .render(options, used_mods, render_layers, image_cache)
+    }
+
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        self.child.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        self.child.heat_buffer_connections(options)
     }
 }
 
@@ -428,6 +444,14 @@ impl<T: Renderable> Renderable for EntityData<T> {
         self.child
             .render(options, used_mods, render_layers, image_cache)
     }
+
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        self.child.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        self.child.heat_buffer_connections(options)
+    }
 }
 
 #[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -503,6 +527,14 @@ impl<T: Renderable> Renderable for EntityWithHealthData<T> {
         self.child
             .render(options, used_mods, render_layers, image_cache)
     }
+
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        self.child.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        self.child.heat_buffer_connections(options)
+    }
 }
 
 /// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
@@ -539,6 +571,14 @@ impl<T: Renderable> Renderable for EntityWithOwnerData<T> {
     ) -> RenderOutput {
         self.child
             .render(options, used_mods, render_layers, image_cache)
+    }
+
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        self.child.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        self.child.heat_buffer_connections(options)
     }
 }
 

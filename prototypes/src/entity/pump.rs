@@ -3,18 +3,17 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::{EntityWithOwnerPrototype, WireEntityData};
+use super::{EntityWithOwnerPrototype, FluidBoxEntityData, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/PumpPrototype`](https://lua-api.factorio.com/latest/prototypes/PumpPrototype.html)
-pub type PumpPrototype = EntityWithOwnerPrototype<WireEntityData<PumpData>>;
+pub type PumpPrototype = EntityWithOwnerPrototype<WireEntityData<FluidBoxEntityData<PumpData>>>;
 
 /// [`Prototypes/PumpPrototype`](https://lua-api.factorio.com/latest/prototypes/PumpPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PumpData {
-    pub fluid_box: FluidBox,
     pub energy_source: AnyEnergySource,
     pub energy_usage: Energy,
     pub pumping_speed: f64,
@@ -62,6 +61,14 @@ impl super::Renderable for PumpData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 

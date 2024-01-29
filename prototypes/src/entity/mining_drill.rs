@@ -84,4 +84,23 @@ impl super::Renderable for MiningDrillData {
 
         Some(())
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        let mut input_cons = self.input_fluid_box.as_ref().map_or_else(
+            || Vec::with_capacity(0),
+            |b| b.connection_points(options.direction),
+        );
+
+        let mut output_cons = self.output_fluid_box.as_ref().map_or_else(
+            || Vec::with_capacity(0),
+            |b| b.connection_points(options.direction),
+        );
+
+        input_cons.append(&mut output_cons);
+        input_cons
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
 }

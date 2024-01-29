@@ -3,18 +3,17 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, FluidBoxEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/BoilerPrototype`](https://lua-api.factorio.com/latest/prototypes/BoilerPrototype.html)
-pub type BoilerPrototype = EntityWithOwnerPrototype<BoilerData>;
+pub type BoilerPrototype = EntityWithOwnerPrototype<FluidBoxEntityData<BoilerData>>;
 
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BoilerData {
     pub energy_source: AnyEnergySource,
-    pub fluid_box: FluidBox,
     pub output_fluid_box: FluidBox,
     pub energy_consumption: Energy,
 
@@ -56,6 +55,14 @@ impl super::Renderable for BoilerData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        self.output_fluid_box.connection_points(options.direction)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 

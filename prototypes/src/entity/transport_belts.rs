@@ -50,6 +50,14 @@ where
         self.graphics_set
             .render(options, used_mods, render_layers, image_cache)
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.graphics_set.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.graphics_set.heat_buffer_connections(options)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -98,6 +106,14 @@ impl super::Renderable for BeltGraphics {
         render_layers.add_entity(res, &options.position);
 
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 
@@ -167,6 +183,14 @@ impl super::Renderable for LinkedBeltData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.parent.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.parent.heat_buffer_connections(options)
     }
 }
 
@@ -254,6 +278,14 @@ impl super::Renderable for LoaderData {
         render_layers.add_entity(res, &options.position);
         Some(())
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.parent.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.parent.heat_buffer_connections(options)
+    }
 }
 
 /// [`Types/LoaderStructure`](https://lua-api.factorio.com/latest/types/LoaderStructure.html)
@@ -306,6 +338,14 @@ impl super::Renderable for Loader1x1Data {
 
         self.parent
             .render(options, used_mods, render_layers, image_cache)
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.parent.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.parent.heat_buffer_connections(options)
     }
 }
 
@@ -370,6 +410,14 @@ impl super::Renderable for Loader1x2Data {
 
         self.parent
             .render(options, used_mods, render_layers, image_cache)
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.parent.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.parent.heat_buffer_connections(options)
     }
 }
 
@@ -457,6 +505,14 @@ impl super::Renderable for SplitterData {
 
         Some(())
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.parent.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.parent.heat_buffer_connections(options)
+    }
 }
 
 /// [`Prototypes/TransportBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/TransportBeltPrototype.html)
@@ -507,6 +563,14 @@ impl super::Renderable for TransportBeltData {
 
         res
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.parent.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.parent.heat_buffer_connections(options)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -541,6 +605,14 @@ impl super::Renderable for BeltGraphicsWithCorners {
         render_layers.add_entity(res, &options.position);
 
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 
@@ -605,6 +677,14 @@ impl super::Renderable for UndergroundBeltData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.parent.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.parent.heat_buffer_connections(options)
     }
 }
 

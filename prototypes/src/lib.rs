@@ -868,6 +868,11 @@ impl DataUtil {
     }
 
     #[must_use]
+    pub fn recipe_has_fluid(&self, name: &str) -> bool {
+        self.raw.recipe.uses_fluid(name)
+    }
+
+    #[must_use]
     pub fn util_sprites(&self) -> Option<&utility_sprites::UtilitySprites> {
         let key = self.raw.utility_sprites.keys().next()?;
         self.raw.utility_sprites.get(key)

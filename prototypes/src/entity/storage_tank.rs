@@ -14,7 +14,6 @@ pub type StorageTankPrototype = EntityWithOwnerPrototype<WireEntityData<StorageT
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StorageTankData {
-    pub fluid_box: FluidBox,
     pub window_bounding_box: BoundingBox,
     pub pictures: StorageTankPictures,
 
@@ -76,6 +75,14 @@ impl super::Renderable for StorageTankData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 
