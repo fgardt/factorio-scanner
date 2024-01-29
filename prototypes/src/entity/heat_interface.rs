@@ -1,19 +1,17 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, HeatBufferEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/HeatInterfacePrototype`](https://lua-api.factorio.com/latest/prototypes/HeatInterfacePrototype.html)
-pub type HeatInterfacePrototype = EntityWithOwnerPrototype<HeatInterfaceData>;
+pub type HeatInterfacePrototype = EntityWithOwnerPrototype<HeatBufferEntityData<HeatInterfaceData>>;
 
 /// [`Prototypes/HeatInterfacePrototype`](https://lua-api.factorio.com/latest/prototypes/HeatInterfacePrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct HeatInterfaceData {
-    pub heat_buffer: HeatBuffer,
-
     pub picture: Option<Sprite>,
 
     #[serde(default = "GuiMode::all", skip_serializing_if = "GuiMode::is_all")]
@@ -45,6 +43,6 @@ impl super::Renderable for HeatInterfaceData {
     }
 
     fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        self.heat_buffer.connection_points()
+        Vec::with_capacity(0)
     }
 }

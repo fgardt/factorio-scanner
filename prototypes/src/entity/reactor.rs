@@ -3,19 +3,18 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, HeatBufferEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/ReactorPrototype`](https://lua-api.factorio.com/latest/prototypes/ReactorPrototype.html)
-pub type ReactorPrototype = EntityWithOwnerPrototype<ReactorData>;
+pub type ReactorPrototype = EntityWithOwnerPrototype<HeatBufferEntityData<ReactorData>>;
 
 /// [`Prototypes/ReactorPrototype`](https://lua-api.factorio.com/latest/prototypes/ReactorPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ReactorData {
     pub working_light_picture: Sprite,
-    pub heat_buffer: HeatBuffer,
     pub energy_source: AnyEnergySource, // may not be heat energy source
     pub consumption: Energy,
 
@@ -85,6 +84,6 @@ impl super::Renderable for ReactorData {
     }
 
     fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        self.heat_buffer.connection_points()
+        Vec::with_capacity(0)
     }
 }

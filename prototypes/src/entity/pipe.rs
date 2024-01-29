@@ -94,7 +94,7 @@ pub struct PipePictures {
 }
 
 /// [`Prototypes/InfinityPipePrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityPipePrototype.html)
-pub type InfinityPipePrototype = EntityWithOwnerPrototype<InfinityPipeData>;
+pub type InfinityPipePrototype = EntityWithOwnerPrototype<FluidBoxEntityData<InfinityPipeData>>;
 
 /// [`Prototypes/InfinityPipePrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityPipePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]

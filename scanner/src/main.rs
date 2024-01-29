@@ -964,6 +964,34 @@ fn render_bp(
 ) -> (image::DynamicImage, HashSet<String>) {
     let mut unknown = HashSet::new();
     let mut wire_connections = EntityWireConnections::new();
+    let mut pipe_connections = HashMap::<MapPosition, HashSet<Direction>>::new();
+    let mut heat_connections = HashMap::<MapPosition, HashSet<Direction>>::new();
+
+    bp.entities.iter().for_each(|e| {
+        let Some(e_data) = data.get_entity(&e.name) else {
+            return;
+        };
+
+        let options = bp_entity2render_opts(e, data);
+        e_data
+            .pipe_connections(&options)
+            .iter()
+            .for_each(|(pos, dir)| {
+                pipe_connections
+                    .entry(pos.clone())
+                    .or_default()
+                    .insert(*dir);
+            });
+        e_data
+            .heat_connections(&options)
+            .iter()
+            .for_each(|(pos, dir)| {
+                heat_connections
+                    .entry(pos.clone())
+                    .or_default()
+                    .insert(*dir);
+            });
+    });
 
     let rendered_count = bp
         .entities
@@ -985,123 +1013,117 @@ fn render_bp(
 
                     let pos: types::MapPosition = (&e.position).into();
 
-                    for other in &bp.entities {
-                        if other == e {
-                            continue;
-                        }
-
-                        let Some(other_type) = data.get_type(&other.name) else {
-                            continue;
-                        };
-
-                        if !entity_type.can_connect_to(other_type) {
-                            continue;
-                        }
-
-                        let other_pos: types::MapPosition = (&other.position).into();
-
-                        match entity_type {
-                            EntityType::Gate => match pos.is_cardinal_neighbor(&other_pos) {
-                                Some(dir) => {
-                                    if dir == Direction::South {
-                                        draw_gate_patch = true;
-                                    }
-                                }
-                                None => continue,
-                            },
-                            EntityType::Wall => match pos.is_cardinal_neighbor(&other_pos) {
-                                Some(dir) => {
-                                    if matches!(other_type, EntityType::Gate) {
-                                        if dir.is_straight(&other.direction) {
-                                            connected_gates.push(dir);
-                                        }
-                                    } else {
+                    match entity_type {
+                        EntityType::Pipe | EntityType::InfinityPipe | EntityType::PipeToGround => {
+                            for (p, dirs) in &pipe_connections {
+                                if p.is_close(&pos, 0.5) {
+                                    for dir in dirs {
                                         match dir {
                                             Direction::North => up = true,
                                             Direction::South => down = true,
                                             Direction::East => right = true,
                                             Direction::West => left = true,
-                                            _ => continue,
+                                            _ => {}
                                         }
                                     }
                                 }
-                                None => continue,
-                            },
-                            EntityType::Pipe | EntityType::InfinityPipe => {
-                                if !matches!(
-                                    &other_type,
-                                    EntityType::Pipe
-                                        | EntityType::InfinityPipe
-                                        | EntityType::PipeToGround
-                                ) {
-                                    continue;
-                                }
-
-                                if let Some(dir) = pos.is_cardinal_neighbor(&other_pos) {
-                                    if matches!(other_type, EntityType::PipeToGround)
-                                        && dir != other.direction.flip()
-                                    {
-                                        continue;
-                                    }
-
-                                    match dir {
-                                        Direction::North => up = true,
-                                        Direction::South => down = true,
-                                        Direction::East => right = true,
-                                        Direction::West => left = true,
-                                        _ => {}
+                            }
+                        }
+                        EntityType::HeatPipe | EntityType::HeatInterface => {
+                            for (p, dirs) in &heat_connections {
+                                if p.is_close(&pos, 0.5) {
+                                    for dir in dirs {
+                                        match dir {
+                                            Direction::North => up = true,
+                                            Direction::South => down = true,
+                                            Direction::East => right = true,
+                                            Direction::West => left = true,
+                                            _ => {}
+                                        }
                                     }
                                 }
                             }
-                            EntityType::HeatPipe | EntityType::HeatInterface => {
-                                if !matches!(
-                                    &other_type,
-                                    EntityType::HeatPipe | EntityType::HeatInterface
-                                ) {
+                        }
+                        _ => {
+                            for other in &bp.entities {
+                                if other == e {
                                     continue;
                                 }
 
-                                if let Some(dir) = pos.is_cardinal_neighbor(&other_pos) {
-                                    match dir {
-                                        Direction::North => up = true,
-                                        Direction::South => down = true,
-                                        Direction::East => right = true,
-                                        Direction::West => left = true,
-                                        _ => {}
-                                    }
-                                }
-                            }
-                            EntityType::TransportBelt => {
-                                let neighbor = match other_type {
-                                    EntityType::TransportBelt
-                                    | EntityType::UndergroundBelt
-                                    | EntityType::LinkedBelt => {
-                                        pos.is_cardinal_neighbor(&other_pos)
-                                    }
-                                    EntityType::Splitter => {
-                                        pos.is_2wide_cardinal_neighbor(&other_pos)
-                                    }
-                                    EntityType::Loader => {
-                                        pos.is_2long_cardinal_neighbor(&other_pos)
-                                    }
-                                    _ => continue,
+                                let Some(other_type) = data.get_type(&other.name) else {
+                                    continue;
                                 };
 
-                                if let Some(dir) = neighbor {
-                                    if dir != other.direction.flip() {
-                                        continue;
-                                    }
+                                if !entity_type.can_connect_to(other_type) {
+                                    continue;
+                                }
 
-                                    match dir {
-                                        Direction::North => up = true,
-                                        Direction::South => down = true,
-                                        Direction::East => right = true,
-                                        Direction::West => left = true,
-                                        _ => {}
+                                let other_pos: types::MapPosition = (&other.position).into();
+
+                                match entity_type {
+                                    EntityType::Gate => {
+                                        match pos.is_cardinal_neighbor(&other_pos) {
+                                            Some(dir) => {
+                                                if dir == Direction::South {
+                                                    draw_gate_patch = true;
+                                                }
+                                            }
+                                            None => continue,
+                                        }
                                     }
+                                    EntityType::Wall => {
+                                        match pos.is_cardinal_neighbor(&other_pos) {
+                                            Some(dir) => {
+                                                if matches!(other_type, EntityType::Gate) {
+                                                    if dir.is_straight(&other.direction) {
+                                                        connected_gates.push(dir);
+                                                    }
+                                                } else {
+                                                    match dir {
+                                                        Direction::North => up = true,
+                                                        Direction::South => down = true,
+                                                        Direction::East => right = true,
+                                                        Direction::West => left = true,
+                                                        _ => continue,
+                                                    }
+                                                }
+                                            }
+                                            None => continue,
+                                        }
+                                    }
+                                    EntityType::TransportBelt => {
+                                        let neighbor = match other_type {
+                                            EntityType::TransportBelt
+                                            | EntityType::UndergroundBelt
+                                            | EntityType::LinkedBelt => {
+                                                pos.is_cardinal_neighbor(&other_pos)
+                                            }
+                                            EntityType::Splitter => {
+                                                pos.is_2wide_cardinal_neighbor(&other_pos)
+                                            }
+                                            EntityType::Loader => {
+                                                pos.is_2long_cardinal_neighbor(&other_pos)
+                                            }
+                                            _ => continue,
+                                        };
+
+                                        if let Some(dir) = neighbor {
+                                            if dir != other.direction.flip() {
+                                                continue;
+                                            }
+
+                                            match dir {
+                                                Direction::North => up = true,
+                                                Direction::South => down = true,
+                                                Direction::East => right = true,
+                                                Direction::West => left = true,
+                                                _ => {}
+                                            }
+                                        }
+                                    }
+                                    _ => continue,
                                 }
                             }
-                            _ => continue,
                         }
                     }
 

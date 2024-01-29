@@ -9,11 +9,8 @@ use super::BasePrototype;
 use mod_util::UsedMods;
 use types::*;
 
-mod fluid_box_entity;
-mod wire_entity;
-
-use fluid_box_entity::*;
-use wire_entity::*;
+mod abstractions;
+use abstractions::*;
 
 mod accumulator;
 mod artillery_turret;
@@ -294,6 +291,9 @@ pub trait RenderableEntity: Renderable {
     fn collision_box(&self) -> BoundingBox;
     fn selection_box(&self) -> BoundingBox;
     fn drawing_box(&self) -> BoundingBox;
+
+    fn pipe_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)>;
+    fn heat_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)>;
 }
 
 impl<R, T> RenderableEntity for T
@@ -313,6 +313,86 @@ where
         self.drawing_box
             .clone()
             .unwrap_or_else(|| self.selection_box())
+    }
+
+    fn pipe_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
+        let raw_connections = self.fluid_box_connections(options);
+
+        if raw_connections.is_empty() {
+            return Vec::new();
+        }
+
+        let BoundingBox(tl, br) = self.collision_box();
+        let tl_vec: Vector = tl.into();
+        let br_vec: Vector = br.into();
+        let (left_x, top_y) = options.direction.rotate_vector(tl_vec).as_tuple();
+        let (right_x, bottom_y) = options.direction.rotate_vector(br_vec).as_tuple();
+
+        raw_connections
+            .iter()
+            .filter_map(|conn| {
+                let conn = conn.clone();
+                let (x, y) = conn.as_tuple();
+
+                let dir = if y <= top_y {
+                    Direction::South
+                } else if y >= bottom_y {
+                    Direction::North
+                } else if x <= left_x {
+                    Direction::East
+                } else if x >= right_x {
+                    Direction::West
+                } else {
+                    println!(
+                        "Invalid heat connection [{}] @ {:?}: {conn:?}",
+                        self.name, options.direction
+                    );
+                    return None;
+                };
+
+                Some((conn + &options.position, dir))
+            })
+            .collect()
+    }
+
+    fn heat_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
+        let raw_connections = self.heat_buffer_connections(options);
+
+        if raw_connections.is_empty() {
+            return Vec::new();
+        }
+
+        let BoundingBox(tl, br) = self.collision_box();
+        let tl_vec: Vector = tl.into();
+        let br_vec: Vector = br.into();
+        let (left_x, top_y) = options.direction.rotate_vector(tl_vec).as_tuple();
+        let (right_x, bottom_y) = options.direction.rotate_vector(br_vec).as_tuple();
+
+        raw_connections
+            .iter()
+            .filter_map(|conn| {
+                let conn = conn.clone();
+                let (x, y) = conn.as_tuple();
+
+                let dir = if y <= top_y {
+                    Direction::South
+                } else if y >= bottom_y {
+                    Direction::North
+                } else if x <= left_x {
+                    Direction::East
+                } else if x >= right_x {
+                    Direction::West
+                } else {
+                    println!(
+                        "Invalid heat connection [{}] @ {:?}: {conn:?}",
+                        self.name, options.direction
+                    );
+                    return None;
+                };
+
+                Some((conn + &options.position, dir))
+            })
+            .collect()
     }
 }
 

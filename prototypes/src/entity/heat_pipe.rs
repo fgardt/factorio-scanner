@@ -1,18 +1,17 @@
 use serde::{Deserialize, Serialize};
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, HeatBufferEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/HeatPipePrototype`](https://lua-api.factorio.com/latest/prototypes/HeatPipePrototype.html)
-pub type HeatPipePrototype = EntityWithOwnerPrototype<HeatPipeData>;
+pub type HeatPipePrototype = EntityWithOwnerPrototype<HeatBufferEntityData<HeatPipeData>>;
 
 /// [`Prototypes/HeatPipePrototype`](https://lua-api.factorio.com/latest/prototypes/HeatPipePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct HeatPipeData {
     pub connection_sprites: ConnectableEntityGraphics,
     pub heat_glow_sprites: ConnectableEntityGraphics,
-    pub heat_buffer: HeatBuffer,
 }
 
 impl super::Renderable for HeatPipeData {
@@ -43,6 +42,6 @@ impl super::Renderable for HeatPipeData {
     }
 
     fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        self.heat_buffer.connection_points()
+        Vec::with_capacity(0)
     }
 }
