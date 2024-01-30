@@ -1153,11 +1153,27 @@ impl FluidBox {
         self.pipe_connections
             .iter()
             .filter_map(|c| match c {
-                PipeConnectionDefinition::Directional { positions, .. } => {
+                PipeConnectionDefinition::Directional {
+                    positions,
+                    max_underground_distance,
+                    ..
+                } => {
+                    if *max_underground_distance != 0 {
+                        return None;
+                    }
+
                     let cardinal = direction as u8 / 2;
                     positions.get(cardinal as usize).map(|v| (*v).into())
                 }
-                PipeConnectionDefinition::Static { position, .. } => {
+                PipeConnectionDefinition::Static {
+                    position,
+                    max_underground_distance,
+                    ..
+                } => {
+                    if *max_underground_distance != 0 {
+                        return None;
+                    }
+
                     Some(direction.rotate_vector(*position).into())
                 }
             })
@@ -2582,7 +2598,7 @@ impl HeatBuffer {
         self.connections
             .iter()
             .map(|c| {
-                let offset: MapPosition = (c.direction.get_offset() * 0.5).into();
+                let offset: MapPosition = (c.direction.get_offset()).into();
                 c.position.clone() + offset
             })
             .collect()

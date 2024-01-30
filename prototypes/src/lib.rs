@@ -873,7 +873,7 @@ impl DataUtil {
     }
 
     #[must_use]
-    pub fn recipe_has_fluid(&self, name: &str) -> bool {
+    pub fn recipe_has_fluid(&self, name: &str) -> (bool, bool) {
         self.raw.recipe.uses_fluid(name)
     }
 

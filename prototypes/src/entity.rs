@@ -117,7 +117,7 @@ pub struct RenderOpts {
     pub circuit_connected: bool,
     pub logistic_connected: bool,
 
-    pub fluid_recipe: bool,
+    pub fluid_recipe: (bool, bool),
 }
 
 // From impls for RenderOpts variants from types
@@ -325,8 +325,13 @@ where
         let BoundingBox(tl, br) = self.collision_box();
         let tl_vec: Vector = tl.into();
         let br_vec: Vector = br.into();
-        let (left_x, top_y) = options.direction.rotate_vector(tl_vec).as_tuple();
-        let (right_x, bottom_y) = options.direction.rotate_vector(br_vec).as_tuple();
+        let (tl_x, tl_y) = options.direction.rotate_vector(tl_vec).as_tuple();
+        let (br_x, br_y) = options.direction.rotate_vector(br_vec).as_tuple();
+
+        let top_y = tl_y.min(br_y);
+        let bottom_y = tl_y.max(br_y);
+        let left_x = tl_x.min(br_x);
+        let right_x = tl_x.max(br_x);
 
         raw_connections
             .iter()
@@ -344,7 +349,7 @@ where
                     Direction::West
                 } else {
                     println!(
-                        "Invalid heat connection [{}] @ {:?}: {conn:?}",
+                        "Invalid pipe connection [{}] @ {:?}: {conn:?}",
                         self.name, options.direction
                     );
                     return None;
@@ -365,8 +370,13 @@ where
         let BoundingBox(tl, br) = self.collision_box();
         let tl_vec: Vector = tl.into();
         let br_vec: Vector = br.into();
-        let (left_x, top_y) = options.direction.rotate_vector(tl_vec).as_tuple();
-        let (right_x, bottom_y) = options.direction.rotate_vector(br_vec).as_tuple();
+        let (tl_x, tl_y) = options.direction.rotate_vector(tl_vec).as_tuple();
+        let (br_x, br_y) = options.direction.rotate_vector(br_vec).as_tuple();
+
+        let top_y = tl_y.min(br_y);
+        let bottom_y = tl_y.max(br_y);
+        let left_x = tl_x.min(br_x);
+        let right_x = tl_x.max(br_x);
 
         raw_connections
             .iter()

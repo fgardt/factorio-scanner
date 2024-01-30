@@ -112,7 +112,7 @@ impl RecipePrototypeData {
     }
 
     #[must_use]
-    pub fn uses_fluid(&self) -> bool {
+    pub fn uses_fluid(&self) -> (bool, bool) {
         self.recipe.uses_fluid()
     }
 }
@@ -174,10 +174,10 @@ impl DifficultyRecipeData {
     }
 
     #[must_use]
-    pub fn uses_fluid(&self) -> bool {
+    pub fn uses_fluid(&self) -> (bool, bool) {
         let data = self.get_data();
 
-        let fluid_ingredient = data.ingredients.iter().any(|ingredient| {
+        let input = data.ingredients.iter().any(|ingredient| {
             matches!(
                 ingredient,
                 IngredientPrototype::Specific(
@@ -186,21 +186,19 @@ impl DifficultyRecipeData {
             )
         });
 
-        if fluid_ingredient {
-            return true;
-        }
-
-        let RecipeDataResult::Multiple { results } = &data.results else {
-            // single result is always item
-            return false;
+        let output = match &data.results {
+            RecipeDataResult::Multiple { results } => results.iter().any(|result| {
+                matches!(
+                    result,
+                    ProductPrototype::Specific(
+                        SpecificProductPrototype::FluidProductPrototype { .. }
+                    )
+                )
+            }),
+            RecipeDataResult::Single { .. } => false,
         };
 
-        results.iter().any(|result| {
-            matches!(
-                result,
-                ProductPrototype::Specific(SpecificProductPrototype::FluidProductPrototype { .. })
-            )
-        })
+        (input, output)
     }
 }
 
@@ -481,10 +479,10 @@ impl AllTypes {
     }
 
     #[must_use]
-    pub fn uses_fluid(&self, name: &str) -> bool {
+    pub fn uses_fluid(&self, name: &str) -> (bool, bool) {
         self.recipe
             .get(name)
-            .map_or(false, |recipe| recipe.uses_fluid())
+            .map_or((false, false), |recipe| recipe.uses_fluid())
     }
 }
 
