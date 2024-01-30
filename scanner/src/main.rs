@@ -878,12 +878,30 @@ fn calculate_target_size(
         }
     }
 
-    // for tile in &bp.tiles {
-    //     let Some(t_proto) = data.get_tile(&tile.name) else {
-    //         unknown.insert(tile.name.as_str());
-    //         continue;
-    //     };
-    // }
+    for tile in &bp.tiles {
+        let Some(t_proto) = data.get_tile(&tile.name) else {
+            continue;
+        };
+
+        let t_pos: MapPosition = (&tile.position).into();
+        let (x, y) = t_pos.as_tuple();
+
+        if x < min_x {
+            min_x = x;
+        }
+
+        if y < min_y {
+            min_y = y;
+        }
+
+        if x > max_x {
+            max_x = x;
+        }
+
+        if y > max_y {
+            max_y = y;
+        }
+    }
 
     let min_x = (min_x - 0.5).floor();
     let min_y = (min_y - 0.5).floor();

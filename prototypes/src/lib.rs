@@ -819,6 +819,11 @@ impl DataUtil {
     }
 
     #[must_use]
+    pub fn get_tile(&self, name: &str) -> Option<&tile::TilePrototype> {
+        self.raw.tile.get(name)
+    }
+
+    #[must_use]
     pub fn entities(&self) -> std::collections::HashSet<&String> {
         self.entities.keys().collect()
     }
