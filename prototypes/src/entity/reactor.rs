@@ -3,21 +3,21 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EnergyEntityData, EntityWithOwnerPrototype, HeatBufferEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/ReactorPrototype`](https://lua-api.factorio.com/latest/prototypes/ReactorPrototype.html)
-pub type ReactorPrototype = EntityWithOwnerPrototype<ReactorData>;
+pub type ReactorPrototype =
+    EntityWithOwnerPrototype<HeatBufferEntityData<EnergyEntityData<ReactorData>>>;
 
 /// [`Prototypes/ReactorPrototype`](https://lua-api.factorio.com/latest/prototypes/ReactorPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ReactorData {
     pub working_light_picture: Sprite,
-    pub heat_buffer: HeatBuffer,
-    pub energy_source: AnyEnergySource, // may not be heat energy source
-    pub consumption: Energy,
+
+    pub consumption: Energy, // may not be heat energy source
 
     pub connection_patches_connected: Option<SpriteVariations>,
     pub connection_patches_disconnected: Option<SpriteVariations>,
@@ -78,5 +78,13 @@ impl super::Renderable for ReactorData {
         Some(())
 
         // TODO: include heatpipes (and maybe glow?)
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
     }
 }

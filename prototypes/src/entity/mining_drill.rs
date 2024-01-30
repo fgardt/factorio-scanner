@@ -3,12 +3,13 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::{EntityWithOwnerPrototype, WireEntityData};
+use super::{EnergyEntityData, EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/MiningDrillPrototype`](https://lua-api.factorio.com/latest/prototypes/MiningDrillPrototype.html)
-pub type MiningDrillPrototype = EntityWithOwnerPrototype<WireEntityData<MiningDrillData>>;
+pub type MiningDrillPrototype =
+    EntityWithOwnerPrototype<WireEntityData<EnergyEntityData<MiningDrillData>>>;
 
 /// [`Prototypes/MiningDrillPrototype`](https://lua-api.factorio.com/latest/prototypes/MiningDrillPrototype.html)
 #[skip_serializing_none]
@@ -18,7 +19,6 @@ pub struct MiningDrillData {
     pub resource_searching_radius: f64,
     pub mining_speed: f64,
     pub energy_usage: Energy,
-    pub energy_source: AnyEnergySource,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub resource_categories: FactorioArray<ResourceCategoryID>,
@@ -83,5 +83,24 @@ impl super::Renderable for MiningDrillData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        let mut input_cons = self.input_fluid_box.as_ref().map_or_else(
+            || Vec::with_capacity(0),
+            |b| b.connection_points(options.direction),
+        );
+
+        let mut output_cons = self.output_fluid_box.as_ref().map_or_else(
+            || Vec::with_capacity(0),
+            |b| b.connection_points(options.direction),
+        );
+
+        input_cons.append(&mut output_cons);
+        input_cons
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
     }
 }

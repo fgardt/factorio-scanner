@@ -56,6 +56,14 @@ impl super::Renderable for ContainerData {
 
         Some(())
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
 }
 
 #[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -100,7 +108,7 @@ pub struct LogisticContainerData {
     pub use_exact_mode: bool,
 
     #[serde(flatten)]
-    pub parent: ContainerData,
+    parent: ContainerData,
     // not implemented
     // pub animation_sound: Option<Sound>,
 }
@@ -132,6 +140,14 @@ impl super::Renderable for LogisticContainerData {
 
         Some(())
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -157,7 +173,7 @@ pub struct InfinityContainerData {
     pub gui_mode: GuiMode,
 
     #[serde(flatten)]
-    pub parent: LogisticContainerData,
+    parent: LogisticContainerData,
 }
 
 impl Deref for InfinityContainerData {
@@ -179,6 +195,14 @@ impl super::Renderable for InfinityContainerData {
         self.parent
             .parent
             .render(options, used_mods, render_layers, image_cache)
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 
@@ -224,5 +248,13 @@ impl super::Renderable for LinkedContainerData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
     }
 }

@@ -55,4 +55,12 @@ impl super::Renderable for BeaconData {
 
         Some(())
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
 }

@@ -9,6 +9,9 @@ use super::BasePrototype;
 use mod_util::UsedMods;
 use types::*;
 
+mod abstractions;
+use abstractions::*;
+
 mod accumulator;
 mod artillery_turret;
 mod beacon;
@@ -48,9 +51,6 @@ mod transport_belts;
 mod turrets;
 mod vehicles;
 mod wall;
-mod wire_entity;
-
-use wire_entity::*;
 
 pub use accumulator::*;
 pub use artillery_turret::*;
@@ -116,6 +116,8 @@ pub struct RenderOpts {
     pub entity_id: u64,
     pub circuit_connected: bool,
     pub logistic_connected: bool,
+
+    pub fluid_recipe: (bool, bool),
 }
 
 // From impls for RenderOpts variants from types
@@ -247,6 +249,9 @@ pub trait Renderable {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> RenderOutput;
+
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition>;
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition>;
 }
 
 /// [`Prototypes/EntityPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityPrototype.html)
@@ -272,12 +277,23 @@ impl<T: Renderable> Renderable for EntityPrototype<T> {
         self.child
             .render(options, used_mods, render_layers, image_cache)
     }
+
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        self.child.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        self.child.heat_buffer_connections(options)
+    }
 }
 
 pub trait RenderableEntity: Renderable {
     fn collision_box(&self) -> BoundingBox;
     fn selection_box(&self) -> BoundingBox;
     fn drawing_box(&self) -> BoundingBox;
+
+    fn pipe_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)>;
+    fn heat_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)>;
 }
 
 impl<R, T> RenderableEntity for T
@@ -297,6 +313,96 @@ where
         self.drawing_box
             .clone()
             .unwrap_or_else(|| self.selection_box())
+    }
+
+    fn pipe_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
+        let raw_connections = self.fluid_box_connections(options);
+
+        if raw_connections.is_empty() {
+            return Vec::new();
+        }
+
+        let BoundingBox(tl, br) = self.collision_box();
+        let tl_vec: Vector = tl.into();
+        let br_vec: Vector = br.into();
+        let (tl_x, tl_y) = options.direction.rotate_vector(tl_vec).as_tuple();
+        let (br_x, br_y) = options.direction.rotate_vector(br_vec).as_tuple();
+
+        let top_y = tl_y.min(br_y);
+        let bottom_y = tl_y.max(br_y);
+        let left_x = tl_x.min(br_x);
+        let right_x = tl_x.max(br_x);
+
+        raw_connections
+            .iter()
+            .filter_map(|conn| {
+                let conn = conn.clone();
+                let (x, y) = conn.as_tuple();
+
+                let dir = if y <= top_y {
+                    Direction::South
+                } else if y >= bottom_y {
+                    Direction::North
+                } else if x <= left_x {
+                    Direction::East
+                } else if x >= right_x {
+                    Direction::West
+                } else {
+                    println!(
+                        "Invalid pipe connection [{}] @ {:?}: {conn:?}",
+                        self.name, options.direction
+                    );
+                    return None;
+                };
+
+                Some((conn + &options.position, dir))
+            })
+            .collect()
+    }
+
+    fn heat_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
+        let raw_connections = self.heat_buffer_connections(options);
+
+        if raw_connections.is_empty() {
+            return Vec::new();
+        }
+
+        let BoundingBox(tl, br) = self.collision_box();
+        let tl_vec: Vector = tl.into();
+        let br_vec: Vector = br.into();
+        let (tl_x, tl_y) = options.direction.rotate_vector(tl_vec).as_tuple();
+        let (br_x, br_y) = options.direction.rotate_vector(br_vec).as_tuple();
+
+        let top_y = tl_y.min(br_y);
+        let bottom_y = tl_y.max(br_y);
+        let left_x = tl_x.min(br_x);
+        let right_x = tl_x.max(br_x);
+
+        raw_connections
+            .iter()
+            .filter_map(|conn| {
+                let conn = conn.clone();
+                let (x, y) = conn.as_tuple();
+
+                let dir = if y <= top_y {
+                    Direction::South
+                } else if y >= bottom_y {
+                    Direction::North
+                } else if x <= left_x {
+                    Direction::East
+                } else if x >= right_x {
+                    Direction::West
+                } else {
+                    println!(
+                        "Invalid heat connection [{}] @ {:?}: {conn:?}",
+                        self.name, options.direction
+                    );
+                    return None;
+                };
+
+                Some((conn + &options.position, dir))
+            })
+            .collect()
     }
 }
 
@@ -406,7 +512,7 @@ pub struct EntityData<T: Renderable> {
     // pub remains_when_mined: Option<RemainsWhenMined>,
     // pub autoplace: Option<AutoplaceSpecification>,
     #[serde(flatten)]
-    pub child: T,
+    child: T,
 }
 
 impl<T: Renderable> Deref for EntityData<T> {
@@ -427,6 +533,14 @@ impl<T: Renderable> Renderable for EntityData<T> {
     ) -> RenderOutput {
         self.child
             .render(options, used_mods, render_layers, image_cache)
+    }
+
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        self.child.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        self.child.heat_buffer_connections(options)
     }
 }
 
@@ -503,6 +617,14 @@ impl<T: Renderable> Renderable for EntityWithHealthData<T> {
         self.child
             .render(options, used_mods, render_layers, image_cache)
     }
+
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        self.child.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        self.child.heat_buffer_connections(options)
+    }
 }
 
 /// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
@@ -539,6 +661,14 @@ impl<T: Renderable> Renderable for EntityWithOwnerData<T> {
     ) -> RenderOutput {
         self.child
             .render(options, used_mods, render_layers, image_cache)
+    }
+
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        self.child.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        self.child.heat_buffer_connections(options)
     }
 }
 

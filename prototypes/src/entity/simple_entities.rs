@@ -46,6 +46,14 @@ impl super::Renderable for SimpleEntityData {
     ) -> super::RenderOutput {
         None
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -98,6 +106,14 @@ impl super::Renderable for SimpleEntityWithOwnerData {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         None
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 

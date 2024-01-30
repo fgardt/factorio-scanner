@@ -3,18 +3,18 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::{EntityWithOwnerPrototype, WireEntityData};
+use super::{EntityWithOwnerPrototype, FluidBoxEntityData, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/OffshorePumpPrototype`](https://lua-api.factorio.com/latest/prototypes/OffshorePumpPrototype.html)
-pub type OffshorePumpPrototype = EntityWithOwnerPrototype<WireEntityData<OffshorePumpData>>;
+pub type OffshorePumpPrototype =
+    EntityWithOwnerPrototype<WireEntityData<FluidBoxEntityData<OffshorePumpData>>>;
 
 /// [`Prototypes/OffshorePumpPrototype`](https://lua-api.factorio.com/latest/prototypes/OffshorePumpPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct OffshorePumpData {
-    pub fluid_box: FluidBox,
     pub pumping_speed: f64,
     pub fluid: FluidID,
 
@@ -52,6 +52,14 @@ impl super::Renderable for OffshorePumpData {
     ) -> super::RenderOutput {
         self.graphics
             .render(options, used_mods, render_layers, image_cache)
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 
@@ -92,6 +100,14 @@ impl super::Renderable for OffshorePumpGraphicsVariant {
                 Some(())
             }
         }
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 
@@ -155,5 +171,13 @@ impl super::Renderable for OffshorePumpGraphicsSet {
         render_layers.add_entity(res, &options.position);
 
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
     }
 }

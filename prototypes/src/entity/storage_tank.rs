@@ -3,18 +3,18 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::{EntityWithOwnerPrototype, WireEntityData};
+use super::{EntityWithOwnerPrototype, FluidBoxEntityData, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/StorageTankPrototype`](https://lua-api.factorio.com/latest/prototypes/StorageTankPrototype.html)
-pub type StorageTankPrototype = EntityWithOwnerPrototype<WireEntityData<StorageTankData>>;
+pub type StorageTankPrototype =
+    EntityWithOwnerPrototype<WireEntityData<FluidBoxEntityData<StorageTankData>>>;
 
 /// [`Prototypes/StorageTankPrototype`](https://lua-api.factorio.com/latest/prototypes/StorageTankPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StorageTankData {
-    pub fluid_box: FluidBox,
     pub window_bounding_box: BoundingBox,
     pub pictures: StorageTankPictures,
 
@@ -76,6 +76,14 @@ impl super::Renderable for StorageTankData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 

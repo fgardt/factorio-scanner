@@ -110,6 +110,11 @@ impl RecipePrototypeData {
             }
         }
     }
+
+    #[must_use]
+    pub fn uses_fluid(&self) -> (bool, bool) {
+        self.recipe.uses_fluid()
+    }
 }
 
 fn crafting_category() -> RecipeCategoryID {
@@ -166,6 +171,34 @@ impl DifficultyRecipeData {
             Self::ExpensiveOnly { expensive } | Self::NormalDisabled { expensive, .. } => expensive,
             Self::Simple { data } => data,
         }
+    }
+
+    #[must_use]
+    pub fn uses_fluid(&self) -> (bool, bool) {
+        let data = self.get_data();
+
+        let input = data.ingredients.iter().any(|ingredient| {
+            matches!(
+                ingredient,
+                IngredientPrototype::Specific(
+                    SpecificIngredientPrototype::FluidIngredientPrototype { .. },
+                )
+            )
+        });
+
+        let output = match &data.results {
+            RecipeDataResult::Multiple { results } => results.iter().any(|result| {
+                matches!(
+                    result,
+                    ProductPrototype::Specific(
+                        SpecificProductPrototype::FluidProductPrototype { .. }
+                    )
+                )
+            }),
+            RecipeDataResult::Single { .. } => false,
+        };
+
+        (input, output)
     }
 }
 
@@ -443,6 +476,13 @@ impl AllTypes {
         self.recipe
             .get(name)
             .and_then(|recipe| recipe.get_icon(scale, used_mods, image_cache, items, fluids))
+    }
+
+    #[must_use]
+    pub fn uses_fluid(&self, name: &str) -> (bool, bool) {
+        self.recipe
+            .get(name)
+            .map_or((false, false), |recipe| recipe.uses_fluid())
     }
 }
 

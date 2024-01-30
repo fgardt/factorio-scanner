@@ -5,7 +5,7 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, FluidBoxEntityData};
 use mod_util::UsedMods;
 use types::*;
 
@@ -169,6 +169,14 @@ impl super::Renderable for TurretData {
 
         Some(())
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
 }
 
 /// [`Prototypes/AmmoTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/AmmoTurretPrototype.html)
@@ -187,7 +195,7 @@ pub struct AmmoTurretData {
     pub entity_info_icon_shift: Option<Vector>,
 
     #[serde(flatten)]
-    pub parent: TurretData,
+    parent: TurretData,
 }
 
 impl Deref for AmmoTurretData {
@@ -209,6 +217,14 @@ impl super::Renderable for AmmoTurretData {
         self.parent
             .render(options, used_mods, render_layers, image_cache)
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        self.parent.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        self.parent.heat_buffer_connections(options)
+    }
 }
 
 /// [`Prototypes/ElectricTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/ElectricTurretPrototype.html)
@@ -221,7 +237,7 @@ pub struct ElectricTurretData {
     pub energy_source: AnyEnergySource, // electric or void
 
     #[serde(flatten)]
-    pub parent: TurretData,
+    parent: TurretData,
 }
 
 impl Deref for ElectricTurretData {
@@ -243,10 +259,18 @@ impl super::Renderable for ElectricTurretData {
         self.parent
             .render(options, used_mods, render_layers, image_cache)
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        self.parent.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        self.parent.heat_buffer_connections(options)
+    }
 }
 
 /// [`Prototypes/FluidTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/FluidTurretPrototype.html)
-pub type FluidTurretPrototype = EntityWithOwnerPrototype<FluidTurretData>;
+pub type FluidTurretPrototype = EntityWithOwnerPrototype<FluidBoxEntityData<FluidTurretData>>;
 
 /// [`Prototypes/FluidTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/FluidTurretPrototype.html)
 #[skip_serializing_none]
@@ -255,7 +279,6 @@ pub struct FluidTurretData {
     pub fluid_buffer_size: f64,       // docs specify single precision float
     pub fluid_buffer_input_flow: f64, // docs specify single precision float
     pub activation_buffer_ratio: f64, // docs specify single precision float
-    pub fluid_box: FluidBox,
 
     pub muzzle_light: Option<LightDefinition>,
     pub enough_fuel_indicator_light: Option<LightDefinition>,
@@ -264,7 +287,7 @@ pub struct FluidTurretData {
     pub folded_muzzle_animation_shift: Option<AnimatedVector>,
 
     #[serde(flatten)]
-    pub parent: TurretData,
+    parent: TurretData,
 }
 
 impl Deref for FluidTurretData {
@@ -285,6 +308,14 @@ impl super::Renderable for FluidTurretData {
     ) -> super::RenderOutput {
         self.parent
             .render(options, used_mods, render_layers, image_cache)
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        self.parent.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        self.parent.heat_buffer_connections(options)
     }
 }
 
