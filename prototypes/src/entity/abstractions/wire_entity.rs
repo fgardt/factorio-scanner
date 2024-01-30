@@ -9,7 +9,7 @@ pub struct WireEntityData<T: Renderable> {
     pub wire_connection_data: WireConnectionData,
 
     #[serde(flatten)]
-    pub child: T,
+    child: T,
 }
 
 impl<T: Renderable> std::ops::Deref for WireEntityData<T> {
@@ -63,5 +63,13 @@ impl<T: Renderable> Renderable for WireEntityData<T> {
         }
 
         res
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.child.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.child.heat_buffer_connections(options)
     }
 }

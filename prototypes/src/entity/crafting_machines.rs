@@ -7,12 +7,13 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EnergyEntityData, EntityWithOwnerPrototype};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/CraftingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/CraftingMachinePrototype.html)
-pub type CraftingMachinePrototype<T> = EntityWithOwnerPrototype<CraftingMachineData<T>>;
+pub type CraftingMachinePrototype<T> =
+    EntityWithOwnerPrototype<EnergyEntityData<CraftingMachineData<T>>>;
 
 /// [`Prototypes/CraftingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/CraftingMachinePrototype.html)
 #[skip_serializing_none]
@@ -21,7 +22,6 @@ pub struct CraftingMachineData<T: super::Renderable> {
     pub energy_usage: Energy,
     pub crafting_speed: f64,
     pub crafting_categories: FactorioArray<RecipeCategoryID>,
-    pub energy_source: AnyEnergySource,
 
     pub fluid_boxes: Option<CraftingMachineFluidBoxHell>, // THIS IS HORROR
     pub allowed_effects: Option<EffectTypeLimitation>,
@@ -119,6 +119,64 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
         self.child
             .render(options, used_mods, render_layers, image_cache)
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        let mut res = self
+            .fluid_boxes
+            .as_ref()
+            .map(|b| match b {
+                CraftingMachineFluidBoxHell::Array(fbs) => fbs
+                    .iter()
+                    .flat_map(|fb| fb.connection_points(options.direction))
+                    .collect(),
+                CraftingMachineFluidBoxHell::WHY(why) => {
+                    let mut inputs = Vec::new();
+                    let mut outputs = Vec::new();
+                    let mut res = Vec::new();
+                    let mut disable = false;
+
+                    for e in why.values() {
+                        match e {
+                            CraftingMachineFluidBoxCursedType::FluidBox(fb) => {
+                                match fb.production_type {
+                                    FluidBoxProductionType::None
+                                    | FluidBoxProductionType::None2
+                                    | FluidBoxProductionType::InputOutput => &mut res,
+                                    FluidBoxProductionType::Input => &mut inputs,
+                                    FluidBoxProductionType::Output => &mut outputs,
+                                }
+                                .append(&mut fb.connection_points(options.direction));
+                            }
+                            CraftingMachineFluidBoxCursedType::OffWhenNoFluidRecipe(
+                                no_recipe_disable,
+                            ) => {
+                                disable = *no_recipe_disable;
+                            }
+                        }
+                    }
+
+                    let (recipe_in, recipe_out) = options.fluid_recipe;
+
+                    if recipe_in || !disable {
+                        res.append(&mut inputs);
+                    }
+
+                    if recipe_out || !disable {
+                        res.append(&mut outputs);
+                    }
+
+                    res
+                }
+            })
+            .unwrap_or_default();
+
+        res.append(&mut self.child.fluid_box_connections(options));
+        res
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        self.child.heat_buffer_connections(options)
+    }
 }
 
 // TODO: find a better way to work around this abomination of a type
@@ -163,6 +221,14 @@ impl super::Renderable for FurnaceData {
     ) -> super::RenderOutput {
         None
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
 }
 
 /// [`Prototypes/AssemblingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/AssemblingMachinePrototype.html)
@@ -196,6 +262,14 @@ impl super::Renderable for AssemblingMachineData {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         None
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 
@@ -343,5 +417,13 @@ impl super::Renderable for RocketSiloData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
     }
 }

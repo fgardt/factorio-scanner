@@ -2,17 +2,16 @@ use std::ops::Deref;
 
 use serde::{Deserialize, Serialize};
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, FluidBoxEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/PipePrototype`](https://lua-api.factorio.com/latest/prototypes/PipePrototype.html)
-pub type PipePrototype = EntityWithOwnerPrototype<PipeData>;
+pub type PipePrototype = EntityWithOwnerPrototype<FluidBoxEntityData<PipeData>>;
 
 /// [`Prototypes/PipePrototype`](https://lua-api.factorio.com/latest/prototypes/PipePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PipeData {
-    pub fluid_box: FluidBox,
     pub horizontal_window_bounding_box: BoundingBox,
     pub vertical_window_bounding_box: BoundingBox,
     pub pictures: PipePictures,
@@ -55,6 +54,14 @@ impl super::Renderable for PipeData {
 
         Some(())
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -87,7 +94,7 @@ pub struct PipePictures {
 }
 
 /// [`Prototypes/InfinityPipePrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityPipePrototype.html)
-pub type InfinityPipePrototype = EntityWithOwnerPrototype<InfinityPipeData>;
+pub type InfinityPipePrototype = EntityWithOwnerPrototype<FluidBoxEntityData<InfinityPipeData>>;
 
 /// [`Prototypes/InfinityPipePrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityPipePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -96,7 +103,7 @@ pub struct InfinityPipeData {
     pub gui_mode: GuiMode,
 
     #[serde(flatten)]
-    pub parent: PipeData,
+    parent: PipeData,
 }
 
 impl Deref for InfinityPipeData {
@@ -118,15 +125,22 @@ impl super::Renderable for InfinityPipeData {
         self.parent
             .render(options, used_mods, render_layers, image_cache)
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        self.parent.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        self.parent.heat_buffer_connections(options)
+    }
 }
 
 /// [`Prototypes/PipeToGroundPrototype`](https://lua-api.factorio.com/latest/prototypes/PipeToGroundPrototype.html)
-pub type PipeToGroundPrototype = EntityWithOwnerPrototype<PipeToGroundData>;
+pub type PipeToGroundPrototype = EntityWithOwnerPrototype<FluidBoxEntityData<PipeToGroundData>>;
 
 /// [`Prototypes/PipeToGroundPrototype`](https://lua-api.factorio.com/latest/prototypes/PipeToGroundPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PipeToGroundData {
-    pub fluid_box: FluidBox,
     pub pictures: PipeToGroundPictures,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -158,6 +172,14 @@ impl super::Renderable for PipeToGroundData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 

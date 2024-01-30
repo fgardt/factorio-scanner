@@ -46,7 +46,7 @@ pub struct BasePrototype<T> {
     pub localised_description: Option<LocalisedString>,
 
     #[serde(flatten)]
-    pub child: T,
+    child: T,
 }
 
 impl<T> std::ops::Deref for BasePrototype<T> {
@@ -819,6 +819,11 @@ impl DataUtil {
     }
 
     #[must_use]
+    pub fn get_tile(&self, name: &str) -> Option<&tile::TilePrototype> {
+        self.raw.tile.get(name)
+    }
+
+    #[must_use]
     pub fn entities(&self) -> std::collections::HashSet<&String> {
         self.entities.keys().collect()
     }
@@ -865,6 +870,11 @@ impl DataUtil {
             &self.raw.item,
             &self.raw.fluid,
         )
+    }
+
+    #[must_use]
+    pub fn recipe_has_fluid(&self, name: &str) -> (bool, bool) {
+        self.raw.recipe.uses_fluid(name)
     }
 
     #[must_use]

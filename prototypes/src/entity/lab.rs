@@ -3,19 +3,18 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EnergyEntityData, EntityWithOwnerPrototype};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/LabPrototype`](https://lua-api.factorio.com/latest/prototypes/LabPrototype.html)
-pub type LabPrototype = EntityWithOwnerPrototype<LabData>;
+pub type LabPrototype = EntityWithOwnerPrototype<EnergyEntityData<LabData>>;
 
 /// [`Prototypes/LabPrototype`](https://lua-api.factorio.com/latest/prototypes/LabPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LabData {
     pub energy_usage: Energy,
-    pub energy_source: AnyEnergySource,
     pub on_animation: Animation,
     pub off_animation: Animation,
     pub inputs: FactorioArray<ItemID>,
@@ -51,5 +50,13 @@ impl super::Renderable for LabData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
     }
 }

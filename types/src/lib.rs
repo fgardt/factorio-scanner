@@ -5,7 +5,7 @@
     clippy::module_name_repetitions
 )]
 
-use std::{collections::HashMap, fmt};
+use std::{collections::HashMap, fmt, hash::Hash};
 
 use konst::{primitive::parse_u16, result::unwrap_ctx};
 
@@ -1030,7 +1030,7 @@ pub enum PipeConnectionType {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PipeConnectionDefinition {
-    Multi {
+    Directional {
         positions: FactorioArray<Vector>,
 
         #[serde(
@@ -1043,7 +1043,7 @@ pub enum PipeConnectionDefinition {
         #[serde(default, rename = "type")]
         type_: PipeConnectionType,
     },
-    Single {
+    Static {
         position: Vector,
 
         #[serde(
@@ -1145,6 +1145,40 @@ pub struct FluidBox {
 
     #[serde(flatten)]
     pub secondary_draw_order: Option<FluidBoxSecondaryDrawOrders>,
+}
+
+impl FluidBox {
+    #[must_use]
+    pub fn connection_points(&self, direction: Direction) -> Vec<MapPosition> {
+        self.pipe_connections
+            .iter()
+            .filter_map(|c| match c {
+                PipeConnectionDefinition::Directional {
+                    positions,
+                    max_underground_distance,
+                    ..
+                } => {
+                    if *max_underground_distance != 0 {
+                        return None;
+                    }
+
+                    let cardinal = direction as u8 / 2;
+                    positions.get(cardinal as usize).map(|v| (*v).into())
+                }
+                PipeConnectionDefinition::Static {
+                    position,
+                    max_underground_distance,
+                    ..
+                } => {
+                    if *max_underground_distance != 0 {
+                        return None;
+                    }
+
+                    Some(direction.rotate_vector(*position).into())
+                }
+            })
+            .collect()
+    }
 }
 
 /// [`Types/RecipeID`](https://lua-api.factorio.com/latest/types/RecipeID.html)
@@ -1279,7 +1313,7 @@ pub enum EntityPrototypeFlag {
 pub type EntityPrototypeFlags = FactorioArray<EntityPrototypeFlag>;
 
 /// [`Types/MapPosition`](https://lua-api.factorio.com/latest/types/MapPosition.html)
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum MapPosition {
     XY { x: f64, y: f64 },
@@ -1439,6 +1473,25 @@ impl PartialOrd for MapPosition {
     }
 }
 
+impl PartialEq for MapPosition {
+    fn eq(&self, other: &Self) -> bool {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = other.as_tuple();
+
+        x1 == x2 && y1 == y2
+    }
+}
+
+impl Eq for MapPosition {}
+
+impl Hash for MapPosition {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let (x, y) = self.as_tuple();
+        x.to_bits().hash(state);
+        y.to_bits().hash(state);
+    }
+}
+
 impl From<Vector> for MapPosition {
     fn from(vector: Vector) -> Self {
         let (x, y) = vector.as_tuple();
@@ -1589,7 +1642,17 @@ impl BoundingBox {
 
 /// [`Types/Direction`](https://lua-api.factorio.com/latest/types/Direction.html)
 #[derive(
-    Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Serialize_repr, Deserialize_repr,
+    Debug,
+    Clone,
+    Copy,
+    Default,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize_repr,
+    Deserialize_repr,
 )]
 #[repr(u8)]
 pub enum Direction {
@@ -2494,7 +2557,7 @@ impl GuiMode {
 }
 
 /// [`Types/HeatConnection`](https://lua-api.factorio.com/latest/types/HeatConnection.html)
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HeatConnection {
     pub position: MapPosition,
     pub direction: Direction,
@@ -2527,6 +2590,19 @@ pub struct HeatBuffer {
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub connections: FactorioArray<HeatConnection>,
+}
+
+impl HeatBuffer {
+    #[must_use]
+    pub fn connection_points(&self) -> Vec<MapPosition> {
+        self.connections
+            .iter()
+            .map(|c| {
+                let offset: MapPosition = (c.direction.get_offset()).into();
+                c.position.clone() + offset
+            })
+            .collect()
+    }
 }
 
 /// [`Types/ConnectableEntityGraphics`](https://lua-api.factorio.com/latest/types/ConnectableEntityGraphics.html)

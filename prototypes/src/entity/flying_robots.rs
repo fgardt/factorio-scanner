@@ -63,6 +63,14 @@ impl<T: super::Renderable> super::Renderable for FlyingRobotData<T> {
     ) -> super::RenderOutput {
         None
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
 }
 
 /// [`Prototypes/CombatRobotPrototype`](https://lua-api.factorio.com/latest/prototypes/CombatRobotPrototype.html)
@@ -105,6 +113,14 @@ impl super::Renderable for CombatRobotData {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         None
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
     }
 }
 
@@ -153,6 +169,14 @@ impl<T: super::Renderable> super::Renderable for RobotWithLogisticInterfaceData<
     ) -> super::RenderOutput {
         None
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.child.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.child.heat_buffer_connections(options)
+    }
 }
 
 /// [`Prototypes/ConstructionRobotPrototype`](https://lua-api.factorio.com/latest/prototypes/ConstructionRobotPrototype.html)
@@ -182,6 +206,14 @@ impl super::Renderable for ConstructionRobotData {
     ) -> super::RenderOutput {
         None
     }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
 }
 
 /// [`Prototypes/LogisticRobotPrototype`](https://lua-api.factorio.com/latest/prototypes/LogisticRobotPrototype.html)
@@ -206,5 +238,13 @@ impl super::Renderable for LogisticRobotData {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         None
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        Vec::with_capacity(0)
     }
 }

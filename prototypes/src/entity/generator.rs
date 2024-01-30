@@ -3,19 +3,18 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, FluidBoxEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/GeneratorPrototype`](https://lua-api.factorio.com/latest/prototypes/GeneratorPrototype.html)
-pub type GeneratorPrototype = EntityWithOwnerPrototype<GeneratorData>;
+pub type GeneratorPrototype = EntityWithOwnerPrototype<FluidBoxEntityData<GeneratorData>>;
 
 /// [`Prototypes/GeneratorPrototype`](https://lua-api.factorio.com/latest/prototypes/GeneratorPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GeneratorData {
     pub energy_source: ElectricEnergySource,
-    pub fluid_box: FluidBox,
     pub horizontal_animation: Option<Animation>,
     pub vertical_animation: Option<Animation>,
 
@@ -77,5 +76,13 @@ impl super::Renderable for GeneratorData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
     }
 }
