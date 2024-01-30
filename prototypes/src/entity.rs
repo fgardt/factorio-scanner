@@ -512,7 +512,7 @@ pub struct EntityData<T: Renderable> {
     // pub remains_when_mined: Option<RemainsWhenMined>,
     // pub autoplace: Option<AutoplaceSpecification>,
     #[serde(flatten)]
-    pub child: T,
+    child: T,
 }
 
 impl<T: Renderable> Deref for EntityData<T> {

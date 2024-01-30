@@ -3,12 +3,12 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EnergyEntityData, EntityWithOwnerPrototype};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/RadarPrototype`](https://lua-api.factorio.com/latest/prototypes/RadarPrototype.html)
-pub type RadarPrototype = EntityWithOwnerPrototype<RadarData>;
+pub type RadarPrototype = EntityWithOwnerPrototype<EnergyEntityData<RadarData>>;
 
 /// [`Prototypes/RadarPrototype`](https://lua-api.factorio.com/latest/prototypes/RadarPrototype.html)
 #[skip_serializing_none]
@@ -17,7 +17,6 @@ pub struct RadarData {
     pub energy_usage: Energy,
     pub energy_per_sector: Energy,
     pub energy_per_nearby_scan: Energy,
-    pub energy_source: AnyEnergySource,
     pub pictures: RotatedSprite,
 
     #[serde(deserialize_with = "helper::truncating_deserializer")]

@@ -108,7 +108,7 @@ pub struct LogisticContainerData {
     pub use_exact_mode: bool,
 
     #[serde(flatten)]
-    pub parent: ContainerData,
+    parent: ContainerData,
     // not implemented
     // pub animation_sound: Option<Sound>,
 }
@@ -173,7 +173,7 @@ pub struct InfinityContainerData {
     pub gui_mode: GuiMode,
 
     #[serde(flatten)]
-    pub parent: LogisticContainerData,
+    parent: LogisticContainerData,
 }
 
 impl Deref for InfinityContainerData {

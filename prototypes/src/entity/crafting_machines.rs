@@ -7,12 +7,13 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EnergyEntityData, EntityWithOwnerPrototype};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/CraftingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/CraftingMachinePrototype.html)
-pub type CraftingMachinePrototype<T> = EntityWithOwnerPrototype<CraftingMachineData<T>>;
+pub type CraftingMachinePrototype<T> =
+    EntityWithOwnerPrototype<EnergyEntityData<CraftingMachineData<T>>>;
 
 /// [`Prototypes/CraftingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/CraftingMachinePrototype.html)
 #[skip_serializing_none]
@@ -21,7 +22,6 @@ pub struct CraftingMachineData<T: super::Renderable> {
     pub energy_usage: Energy,
     pub crafting_speed: f64,
     pub crafting_categories: FactorioArray<RecipeCategoryID>,
-    pub energy_source: AnyEnergySource,
 
     pub fluid_boxes: Option<CraftingMachineFluidBoxHell>, // THIS IS HORROR
     pub allowed_effects: Option<EffectTypeLimitation>,

@@ -3,19 +3,18 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::{EntityWithOwnerPrototype, WireEntityData};
+use super::{EnergyEntityData, EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/ProgrammableSpeakerPrototype`](https://lua-api.factorio.com/latest/prototypes/ProgrammableSpeakerPrototype.html)
 pub type ProgrammableSpeakerPrototype =
-    EntityWithOwnerPrototype<WireEntityData<ProgrammableSpeakerData>>;
+    EntityWithOwnerPrototype<WireEntityData<EnergyEntityData<ProgrammableSpeakerData>>>;
 
 /// [`Prototypes/ProgrammableSpeakerPrototype`](https://lua-api.factorio.com/latest/prototypes/ProgrammableSpeakerPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProgrammableSpeakerData {
-    pub energy_source: AnyEnergySource,
     pub energy_usage_per_tick: Energy,
     pub sprite: Sprite,
 

@@ -46,7 +46,7 @@ pub struct BasePrototype<T> {
     pub localised_description: Option<LocalisedString>,
 
     #[serde(flatten)]
-    pub child: T,
+    child: T,
 }
 
 impl<T> std::ops::Deref for BasePrototype<T> {

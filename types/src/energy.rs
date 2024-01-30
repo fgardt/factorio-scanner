@@ -21,7 +21,15 @@ pub struct BaseEnergySource<T> {
     pub render_no_network_icon: bool,
 
     #[serde(flatten)]
-    pub child: T,
+    child: T,
+}
+
+impl<T> std::ops::Deref for BaseEnergySource<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.child
+    }
 }
 
 /// [`Types/BurnerEnergySource`](https://lua-api.factorio.com/latest/types/BurnerEnergySource.html)

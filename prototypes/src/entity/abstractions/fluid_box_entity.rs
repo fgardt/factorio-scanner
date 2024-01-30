@@ -8,7 +8,7 @@ pub struct FluidBoxEntityData<T: Renderable> {
     pub fluid_box: FluidBox,
 
     #[serde(flatten)]
-    pub child: T,
+    child: T,
 }
 
 impl<T: Renderable> std::ops::Deref for FluidBoxEntityData<T> {

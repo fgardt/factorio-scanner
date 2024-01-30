@@ -3,18 +3,18 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::{EntityWithOwnerPrototype, FluidBoxEntityData, WireEntityData};
+use super::{EnergyEntityData, EntityWithOwnerPrototype, FluidBoxEntityData, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/PumpPrototype`](https://lua-api.factorio.com/latest/prototypes/PumpPrototype.html)
-pub type PumpPrototype = EntityWithOwnerPrototype<WireEntityData<FluidBoxEntityData<PumpData>>>;
+pub type PumpPrototype =
+    EntityWithOwnerPrototype<WireEntityData<FluidBoxEntityData<EnergyEntityData<PumpData>>>>;
 
 /// [`Prototypes/PumpPrototype`](https://lua-api.factorio.com/latest/prototypes/PumpPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PumpData {
-    pub energy_source: AnyEnergySource,
     pub energy_usage: Energy,
     pub pumping_speed: f64,
     pub animations: Animation4Way,

@@ -5,12 +5,13 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::{EntityWithOwnerPrototype, WireEntityData};
+use super::{EnergyEntityData, EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/InserterPrototype`](https://lua-api.factorio.com/latest/prototypes/InserterPrototype.html)
-pub type InserterPrototype = EntityWithOwnerPrototype<WireEntityData<InserterData>>;
+pub type InserterPrototype =
+    EntityWithOwnerPrototype<WireEntityData<EnergyEntityData<InserterData>>>;
 
 /// [`Prototypes/InserterPrototype`](https://lua-api.factorio.com/latest/prototypes/InserterPrototype.html)
 #[skip_serializing_none]
@@ -29,7 +30,6 @@ pub struct InserterData {
     pub hand_open_shadow: Sprite,
     pub hand_closed_shadow: Sprite,
 
-    pub energy_source: AnyEnergySource,
     pub energy_per_movement: Option<Energy>,
     pub energy_per_rotation: Option<Energy>,
 

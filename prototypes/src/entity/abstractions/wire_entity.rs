@@ -9,7 +9,7 @@ pub struct WireEntityData<T: Renderable> {
     pub wire_connection_data: WireConnectionData,
 
     #[serde(flatten)]
-    pub child: T,
+    child: T,
 }
 
 impl<T: Renderable> std::ops::Deref for WireEntityData<T> {

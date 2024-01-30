@@ -3,17 +3,17 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::{EntityWithOwnerPrototype, FluidBoxEntityData};
+use super::{EnergyEntityData, EntityWithOwnerPrototype, FluidBoxEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/BoilerPrototype`](https://lua-api.factorio.com/latest/prototypes/BoilerPrototype.html)
-pub type BoilerPrototype = EntityWithOwnerPrototype<FluidBoxEntityData<BoilerData>>;
+pub type BoilerPrototype =
+    EntityWithOwnerPrototype<FluidBoxEntityData<EnergyEntityData<BoilerData>>>;
 
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BoilerData {
-    pub energy_source: AnyEnergySource,
     pub output_fluid_box: FluidBox,
     pub energy_consumption: Energy,
 

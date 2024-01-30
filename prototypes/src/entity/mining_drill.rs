@@ -3,12 +3,13 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::{EntityWithOwnerPrototype, WireEntityData};
+use super::{EnergyEntityData, EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/MiningDrillPrototype`](https://lua-api.factorio.com/latest/prototypes/MiningDrillPrototype.html)
-pub type MiningDrillPrototype = EntityWithOwnerPrototype<WireEntityData<MiningDrillData>>;
+pub type MiningDrillPrototype =
+    EntityWithOwnerPrototype<WireEntityData<EnergyEntityData<MiningDrillData>>>;
 
 /// [`Prototypes/MiningDrillPrototype`](https://lua-api.factorio.com/latest/prototypes/MiningDrillPrototype.html)
 #[skip_serializing_none]
@@ -18,7 +19,6 @@ pub struct MiningDrillData {
     pub resource_searching_radius: f64,
     pub mining_speed: f64,
     pub energy_usage: Energy,
-    pub energy_source: AnyEnergySource,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub resource_categories: FactorioArray<ResourceCategoryID>,

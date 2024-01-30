@@ -8,7 +8,7 @@ pub struct HeatBufferEntityData<T: Renderable> {
     pub heat_buffer: HeatBuffer,
 
     #[serde(flatten)]
-    pub child: T,
+    child: T,
 }
 
 impl<T: Renderable> std::ops::Deref for HeatBufferEntityData<T> {

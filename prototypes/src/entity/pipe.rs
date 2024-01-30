@@ -103,7 +103,7 @@ pub struct InfinityPipeData {
     pub gui_mode: GuiMode,
 
     #[serde(flatten)]
-    pub parent: PipeData,
+    parent: PipeData,
 }
 
 impl Deref for InfinityPipeData {
