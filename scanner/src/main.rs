@@ -1172,7 +1172,7 @@ fn render_bp(
                         render_layers.add(
                             icon,
                             &render_opts.position,
-                            InternalRenderLayer::RecipeOverlay,
+                            InternalRenderLayer::IconOverlay,
                         );
                     } else {
                         warn!(

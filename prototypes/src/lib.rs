@@ -11,12 +11,13 @@ use std::io::Read;
 use std::path::Path;
 use std::{collections::HashMap, ops::Rem};
 
+use image::{imageops, DynamicImage, GenericImageView};
 use imageproc::geometric_transformations;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
+use signed_distance_field::prelude::*;
 
 use entity::RenderableEntity;
-use image::{imageops, DynamicImage, GenericImageView};
 use mod_util::mod_info::Version;
 
 use mod_util::UsedMods;
@@ -907,12 +908,13 @@ pub enum InternalRenderLayer {
     Wire,
 
     DirectionOverlay,
-    RecipeOverlay,
+    IconOutline,
+    IconOverlay,
 }
 
 impl InternalRenderLayer {
     #[must_use]
-    pub const fn all() -> [Self; 17] {
+    pub const fn all() -> [Self; 18] {
         [
             Self::Background,
             Self::Ground,
@@ -930,7 +932,8 @@ impl InternalRenderLayer {
             Self::AboveEntity,
             Self::Wire,
             Self::DirectionOverlay,
-            Self::RecipeOverlay,
+            Self::IconOutline,
+            Self::IconOverlay,
         ]
     }
 }
@@ -1291,7 +1294,43 @@ impl RenderLayerBuffer {
     }
 
     #[must_use]
-    pub fn combine(self) -> image::DynamicImage {
+    pub fn combine(&mut self) -> image::DynamicImage {
+        if let Some(icons) = self.layers.get(&InternalRenderLayer::IconOverlay) {
+            let (width, height) = icons.dimensions();
+            let mask = image::ImageBuffer::from_fn(width, height, |x, y| {
+                let alpha = icons.get_pixel(x, y).0[3];
+                image::Luma([alpha])
+            });
+
+            let sdf = compute_f32_distance_field(&binary_image::of_byte_slice_with_threshold(
+                &mask,
+                width as u16,
+                height as u16,
+                1,
+            ));
+
+            let normalized = sdf
+                .normalize_clamped_distances(0.0, (10.0 / self.scale()) as f32)
+                .unwrap()
+                .to_u8()
+                .iter()
+                .flat_map(|&x| {
+                    if x == 255 {
+                        [0, 0]
+                    } else {
+                        [0, 255 - (f64::from(x).powi(2) / 255f64).round() as u8]
+                    }
+                })
+                .collect::<Vec<_>>();
+            let outline_img: DynamicImage =
+                image::GrayAlphaImage::from_vec(width, height, normalized)
+                    .unwrap()
+                    .into();
+
+            let outline = self.get_layer(InternalRenderLayer::IconOutline);
+            outline.clone_from(&outline_img);
+        }
+
         let mut combined =
             image::DynamicImage::new_rgba8(self.target_size.width, self.target_size.height);
 
