@@ -17,5 +17,6 @@ serde_helper.workspace = true
 serde_json.workspace = true
 serde_repr.workspace = true
 serde_with.workspace = true
+signed-distance-field = { version = "0.6.3", features = ["image"] }
 thiserror.workspace = true
 types.workspace = true
