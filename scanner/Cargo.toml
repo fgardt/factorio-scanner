@@ -41,7 +41,7 @@ capnp = { version = "0.19", optional = true }
 actix-web = { version = "4.4", optional = true }
 actix-web-actors = { version = "4.2", optional = true }
 actix = { version = "0.13", optional = true }
-strum = { version = "0.25", features = ["derive"] }
+strum = { version = "0.26", features = ["derive"] }
 futures-util = "0.3.30"
 pin-utils = "0.1.0"
 
