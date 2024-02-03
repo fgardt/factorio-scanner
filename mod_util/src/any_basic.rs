@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
 /// <https://lua-api.factorio.com/latest/concepts.html#Tags>
-pub type TagTable = HashMap<String, AnyBasic>;
+pub type TagTable = BTreeMap<String, AnyBasic>;
 
 /// <https://lua-api.factorio.com/latest/concepts.html#AnyBasic>
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
