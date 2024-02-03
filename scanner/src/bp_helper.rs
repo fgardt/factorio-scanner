@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use mod_util::{AnyBasic, UsedVersions};
 
@@ -40,7 +40,7 @@ pub fn get_used_versions(bp: &blueprint::Blueprint) -> Option<UsedVersions> {
 }
 
 #[must_use]
-pub fn get_used_startup_settings(bp: &blueprint::Blueprint) -> Option<&HashMap<String, AnyBasic>> {
+pub fn get_used_startup_settings(bp: &blueprint::Blueprint) -> Option<&BTreeMap<String, AnyBasic>> {
     for entity in &bp.entities {
         if entity.tags.contains_key("bp_meta_info") {
             let info = entity.tags.get("bp_meta_info")?;

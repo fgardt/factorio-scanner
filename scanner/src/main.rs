@@ -1,7 +1,7 @@
 #![allow(dead_code, clippy::upper_case_acronyms, unused_variables)]
 
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{BTreeMap, HashMap, HashSet},
     env,
     fs::{self},
     hash::{Hash, Hasher},
@@ -225,7 +225,7 @@ fn get_protodump(
     factorio: &Path,
     factorio_bin: &Path,
     mod_list: &ModList,
-    (bp_settings, bp_version): (&HashMap<String, AnyBasic>, u64),
+    (bp_settings, bp_version): (&BTreeMap<String, AnyBasic>, u64),
 ) -> Result<DataRaw, ScannerError> {
     // check if cached dump exists and load it if available
     let cached_path = {
@@ -430,7 +430,7 @@ fn render(
             factorio_bin,
             &mod_list,
             (
-                bp_helper::get_used_startup_settings(bp).unwrap_or(&HashMap::new()),
+                bp_helper::get_used_startup_settings(bp).unwrap_or(&BTreeMap::new()),
                 bp.info.version,
             ),
         )?

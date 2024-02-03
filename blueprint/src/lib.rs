@@ -1,6 +1,9 @@
 #![allow(dead_code)]
 
-use std::{collections::HashMap, io::prelude::*};
+use std::{
+    collections::{BTreeMap, HashMap},
+    io::prelude::*,
+};
 
 use base64::{engine::general_purpose, Engine};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder};
@@ -441,7 +444,7 @@ pub struct Entity {
     pub temperature: Option<f64>,
     pub mode: Option<String>,
 
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub tags: mod_util::TagTable,
 }
 
