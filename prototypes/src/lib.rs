@@ -1392,4 +1392,9 @@ mod test {
     fn deserialize_seablock() {
         let _ = load_data("seablock");
     }
+
+    #[test]
+    fn deserialize_pyanodon() {
+        let _ = load_data("py");
+    }
 }
