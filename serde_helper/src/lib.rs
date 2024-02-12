@@ -7,47 +7,101 @@ mod integer;
 pub use float::*;
 pub use integer::*;
 
+struct TruncatingVisitor<T> {
+    _marker: std::marker::PhantomData<T>,
+}
+
+impl<'de, T> serde::de::Visitor<'de> for TruncatingVisitor<T>
+where
+    T: Bounded + Integer + ToPrimitive + FromPrimitive,
+{
+    type Value = T;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("a integer value")
+    }
+
+    fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        self.visit_f64(v as f64)
+    }
+
+    fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        self.visit_f64(v as f64)
+    }
+
+    fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        let Some(min) = T::min_value().to_f64() else {
+            return Err(E::custom(format!(
+                "unable to convert {} min value to f64",
+                std::any::type_name::<T>()
+            )));
+        };
+        let Some(max) = T::max_value().to_f64() else {
+            return Err(E::custom(format!(
+                "unable to convert {} max value to f64",
+                std::any::type_name::<T>()
+            )));
+        };
+
+        if v < min || v > max {
+            return Err(E::custom(format!(
+                "{} out of range: {}",
+                std::any::type_name::<T>(),
+                v,
+            )));
+        }
+
+        T::from_f64(v).map_or_else(
+            || {
+                Err(E::custom(format!(
+                    "unable to truncate {} to {}",
+                    v,
+                    std::any::type_name::<T>(),
+                )))
+            },
+            |res| Ok(res),
+        )
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        match v.parse::<f64>() {
+            Ok(v) => self.visit_f64(v),
+            Err(err) => Err(E::invalid_type(
+                serde::de::Unexpected::Other(&err.to_string()),
+                &self,
+            )),
+        }
+    }
+
+    fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        self.visit_str(&v)
+    }
+}
+
 #[allow(clippy::missing_errors_doc)]
 pub fn truncating_deserializer<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: Deserializer<'de>,
     T: Bounded + Integer + ToPrimitive + FromPrimitive,
 {
-    use serde::{de::Error as deError, Deserialize};
-
-    let tmp = f64::deserialize(deserializer)?;
-
-    let Some(min) = T::min_value().to_f64() else {
-        return Err(deError::custom(format!(
-            "unable to convert {} min value to f64",
-            std::any::type_name::<T>()
-        )));
-    };
-    let Some(max) = T::max_value().to_f64() else {
-        return Err(deError::custom(format!(
-            "unable to convert {} max value to f64",
-            std::any::type_name::<T>()
-        )));
-    };
-
-    if tmp < min || tmp > max {
-        return Err(deError::custom(format!(
-            "{} out of range: {}",
-            std::any::type_name::<T>(),
-            tmp,
-        )));
-    }
-
-    T::from_f64(tmp).map_or_else(
-        || {
-            Err(deError::custom(format!(
-                "unable to truncate {} to {}",
-                tmp,
-                std::any::type_name::<T>(),
-            )))
-        },
-        |res| Ok(res),
-    )
+    deserializer.deserialize_any(TruncatingVisitor {
+        _marker: std::marker::PhantomData,
+    })
 }
 
 #[allow(clippy::missing_errors_doc)]

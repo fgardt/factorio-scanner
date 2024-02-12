@@ -544,13 +544,58 @@ impl<T: Renderable> Renderable for EntityData<T> {
     }
 }
 
-#[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub enum DecorativeRemoveMode {
     #[default]
     Automatic,
     True,
     False,
+}
+
+impl serde::ser::Serialize for DecorativeRemoveMode {
+    fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        match self {
+            Self::Automatic => serializer.serialize_str("automatic"),
+            Self::True => serializer.serialize_str("true"),
+            Self::False => serializer.serialize_str("false"),
+        }
+    }
+}
+
+struct DecorativeRemoveModeVisitor;
+
+impl<'de> serde::de::Visitor<'de> for DecorativeRemoveModeVisitor {
+    type Value = DecorativeRemoveMode;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("one of 'automatic', 'true' or 'false'")
+    }
+
+    fn visit_bool<E: serde::de::Error>(self, value: bool) -> Result<Self::Value, E> {
+        Ok(if value {
+            DecorativeRemoveMode::True
+        } else {
+            DecorativeRemoveMode::False
+        })
+    }
+
+    fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<Self::Value, E> {
+        match value {
+            "automatic" => Ok(DecorativeRemoveMode::Automatic),
+            "true" => Ok(DecorativeRemoveMode::True),
+            "false" => Ok(DecorativeRemoveMode::False),
+            _ => Err(serde::de::Error::unknown_variant(
+                value,
+                &["automatic", "true", "false"],
+            )),
+        }
+    }
+}
+
+impl<'de> serde::de::Deserialize<'de> for DecorativeRemoveMode {
+    fn deserialize<D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        deserializer.deserialize_any(DecorativeRemoveModeVisitor)
+    }
 }
 
 /// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
@@ -801,6 +846,15 @@ impl Type {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct EntityPrototypeMap<T: Renderable>(HashMap<String, T>);
+
+impl<T> Default for EntityPrototypeMap<T>
+where
+    T: Renderable,
+{
+    fn default() -> Self {
+        Self(HashMap::new())
+    }
+}
 
 impl<T: Renderable> Deref for EntityPrototypeMap<T> {
     type Target = HashMap<String, T>;
