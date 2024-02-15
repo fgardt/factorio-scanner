@@ -13,7 +13,7 @@ use serde_with::skip_serializing_none;
 use crate::{
     mod_info::{Dependency, DependencyExt, DependencyUtil, DependencyVersion, Version},
     mod_loader::Mod,
-    UsedMods, UsedVersions,
+    DependencyList, UsedMods, UsedVersions,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -83,7 +83,7 @@ impl ModListFormat {
 pub struct Entry {
     pub enabled: bool,
     pub active_version: Option<Version>,
-    pub versions: HashMap<Version, String>,
+    pub versions: HashMap<Version, Option<String>>,
     pub known_dependencies: HashMap<Version, Vec<Dependency>>,
 }
 
@@ -158,7 +158,8 @@ impl<'a> ModList<'a> {
                         Entry {
                             enabled: w_mod == "core",
                             active_version: None,
-                            versions: std::iter::once((m.info.version, w_mod.into())).collect(),
+                            versions: std::iter::once((m.info.version, Some(w_mod.into())))
+                                .collect(),
                             known_dependencies: std::iter::once((
                                 m.info.version,
                                 m.info.dependencies,
@@ -216,7 +217,7 @@ impl<'a> ModList<'a> {
             };
 
             let entry = list.entry(name).or_default();
-            entry.versions.insert(version, filename.into());
+            entry.versions.insert(version, Some(filename.into()));
             // entry
             //     .known_dependencies
             //     .insert(m.info.version, m.info.dependencies);
@@ -261,8 +262,11 @@ impl<'a> ModList<'a> {
                     e.enabled = true;
                     e.active_version = Some(*version);
 
-                    if !e.versions.contains_key(version) {
-                        missing.insert(name.clone(), *version);
+                    match e.versions.get(version) {
+                        Some(Some(_)) => {}
+                        _ => {
+                            missing.insert(name.clone(), *version);
+                        }
                     }
                 })
                 .or_insert_with(|| {
@@ -286,19 +290,20 @@ impl<'a> ModList<'a> {
             .iter()
             .filter_map(|(name, entry)| {
                 if entry.enabled {
-                    let file = if let Some(version) = entry.active_version {
-                        entry.versions.get(&version).cloned().unwrap_or_else(|| {
-                            let versioned = format!("{name}_{version}");
-                            if mods.join(versioned.clone() + ".zip").exists() {
-                                versioned + ".zip"
-                            } else if mods.join(versioned.clone()).exists() {
-                                versioned
-                            } else {
-                                name.clone()
-                            }
-                        })
-                    } else {
-                        entry.versions.values().next().cloned()?
+                    let file = {
+                        let mut versions = entry.versions.keys().copied().collect::<Vec<_>>();
+                        versions.sort_unstable();
+
+                        let version = entry.active_version.unwrap_or(versions.last().copied()?);
+
+                        let versioned = format!("{name}_{version}");
+                        if mods.join(versioned.clone() + ".zip").exists() {
+                            versioned + ".zip"
+                        } else if mods.join(versioned.clone()).exists() {
+                            versioned
+                        } else {
+                            name.clone()
+                        }
                     };
 
                     let Ok(m) = Mod::load(self.factorio_dir, &file) else {
@@ -314,13 +319,27 @@ impl<'a> ModList<'a> {
             .collect()
     }
 
-    pub fn load_local_dependency_info(&mut self, mods: &UsedVersions) {
+    pub fn load_local_dependency_info(&mut self, mods: &DependencyList) {
         for (name, version) in mods {
             let Some(entry) = self.list.get_mut(name) else {
                 continue;
             };
 
-            let Some(filename) = entry.versions.get(version) else {
+            let Some(version) = version
+                .get_allowed_version(
+                    entry
+                        .versions
+                        .keys()
+                        .copied()
+                        .collect::<Vec<_>>()
+                        .as_slice(),
+                )
+                .copied()
+            else {
+                continue;
+            };
+
+            let Some(Some(filename)) = entry.versions.get(&version) else {
                 continue;
             };
 
@@ -328,7 +347,7 @@ impl<'a> ModList<'a> {
                 continue;
             };
 
-            if version != &m.info.version {
+            if version != m.info.version {
                 println!(
                     "Version mismatch for {name}: {version} != {}",
                     m.info.version
@@ -344,24 +363,20 @@ impl<'a> ModList<'a> {
 
     pub fn set_dependency_info(
         &mut self,
-        name: &String,
+        name: &str,
         known_dependencies: HashMap<Version, Vec<Dependency>>,
     ) {
-        match self.list.get_mut(name) {
-            Some(e) => e.known_dependencies = known_dependencies,
-            None => {
-                self.list.insert(
-                    name.clone(),
-                    Entry {
-                        known_dependencies,
-                        ..Entry::default()
-                    },
-                );
-            }
+        let e = self.list.entry(name.to_owned()).or_default();
+
+        for version in known_dependencies.keys() {
+            e.versions.entry(*version).or_insert(None);
         }
+
+        e.known_dependencies = known_dependencies;
     }
 
-    pub fn solve_dependencies(&self, required: &UsedVersions) -> Result<UsedVersions> {
+    #[allow(clippy::too_many_lines)]
+    pub fn solve_dependencies(&self, required: &DependencyList) -> Result<UsedVersions> {
         if required.is_empty() {
             return Ok(UsedVersions::default());
         }
@@ -374,10 +389,20 @@ impl<'a> ModList<'a> {
             .iter()
             .map(|(name, entry)| (name.as_str(), &entry.known_dependencies))
             .collect::<HashMap<_, _>>();
-        let mut reqs = required
-            .iter()
-            .map(|(name, version)| (name.as_str(), *version))
-            .collect::<Vec<_>>();
+
+        let mut reqs = Vec::new();
+        for (name, version) in required {
+            let Some(info) = self.list.get(name) else {
+                return Err(ModListError::SolverMissingInfo(name.to_string()));
+            };
+
+            let info_versions = info.versions.keys().copied().collect::<Vec<_>>();
+            let Some(version) = version.get_allowed_version(&info_versions) else {
+                return Err(ModListError::SolverMissingInfo(name.to_string()));
+            };
+
+            reqs.push((name.as_str(), *version));
+        }
 
         // build all required mod nodes
         let mut node_map = HashMap::new();

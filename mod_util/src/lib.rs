@@ -11,7 +11,9 @@ pub mod mod_loader;
 pub mod mod_settings;
 pub mod property_tree;
 
-use mod_info::Version;
+use mod_info::{DependencyVersion, Version};
 use mod_loader::Mod;
+
 pub type UsedMods = HashMap<String, Mod>;
 pub type UsedVersions = HashMap<String, Version>;
+pub type DependencyList = HashMap<String, DependencyVersion>;

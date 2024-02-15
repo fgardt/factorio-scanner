@@ -367,6 +367,18 @@ impl DependencyVersion {
             | Self::Higher(v) => Some(v),
         }
     }
+
+    #[must_use]
+    pub fn get_allowed_version<'a>(&self, versions: &'a [Version]) -> Option<&'a Version> {
+        match self {
+            Self::Any => versions.iter().max(),
+            Self::Lower(v) => versions.iter().filter(|&x| x < v).max(),
+            Self::LowerOrEqual(v) => versions.iter().filter(|&x| x <= v).max(),
+            Self::Exact(v) => versions.iter().find(|&x| x == v),
+            Self::HigherOrEqual(v) => versions.iter().filter(|&x| x >= v).min(),
+            Self::Higher(v) => versions.iter().filter(|&x| x > v).min(),
+        }
+    }
 }
 
 impl From<Version> for DependencyVersion {
@@ -385,11 +397,11 @@ impl fmt::Display for DependencyVersion {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
             Self::Any => String::new(),
-            Self::Lower(version) => format!(" < {version}"),
-            Self::LowerOrEqual(version) => format!(" <= {version}"),
-            Self::Exact(version) => format!(" = {version}"),
-            Self::HigherOrEqual(version) => format!(" >= {version}"),
-            Self::Higher(version) => format!(" > {version}"),
+            Self::Lower(version) => format!("< {version}"),
+            Self::LowerOrEqual(version) => format!("<= {version}"),
+            Self::Exact(version) => format!("= {version}"),
+            Self::HigherOrEqual(version) => format!(">= {version}"),
+            Self::Higher(version) => format!("> {version}"),
         };
 
         write!(f, "{s}")
@@ -577,9 +589,10 @@ impl<'de> Visitor<'de> for DependencyVisitor {
         let part_count = parts.len();
 
         if part_count == 1 && kind == DependencyType::Required {
+            let trim_end = v.find(['<', '>', '='].as_ref()).unwrap_or(v.len());
             return Ok(Self::Value {
                 kind,
-                name: v.to_owned(),
+                name: v[..trim_end].to_owned(),
                 version: DependencyVersion::Any,
             });
         }
@@ -601,10 +614,11 @@ impl<'de> Visitor<'de> for DependencyVisitor {
         };
 
         let name = parts[name_start..name_end].join(" ");
+        let trim_end = name.find(['<', '>', '='].as_ref()).unwrap_or(name.len());
 
         Ok(Self::Value {
             kind,
-            name,
+            name: name[..trim_end].to_owned(),
             version: dep_version.unwrap_or(DependencyVersion::Any),
         })
     }
