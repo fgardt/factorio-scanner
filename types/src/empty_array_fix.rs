@@ -99,6 +99,13 @@ impl<T: Serialize> Serialize for FactorioArray<T> {
     }
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum ArrayEntry<T> {
+    Some(T),
+    None {},
+}
+
 struct FactorioArrayVisitor<T> {
     marker: std::marker::PhantomData<T>,
 }
@@ -126,8 +133,10 @@ where
         A: serde::de::SeqAccess<'de>,
     {
         let mut vec = Vec::with_capacity(seq.size_hint().unwrap_or(0));
-        while let Some(elem) = seq.next_element::<T>()? {
-            vec.push(elem);
+        while let Some(elem) = seq.next_element::<ArrayEntry<T>>()? {
+            if let ArrayEntry::Some(elem) = elem {
+                vec.push(elem);
+            }
         }
 
         Ok(FactorioArray(vec))
@@ -139,8 +148,10 @@ where
     {
         let mut vec = Vec::<(String, T)>::with_capacity(map.size_hint().unwrap_or(0));
 
-        while let Some((key, value)) = map.next_entry::<String, T>()? {
-            vec.push((key, value));
+        while let Some((key, value)) = map.next_entry::<String, ArrayEntry<T>>()? {
+            if let ArrayEntry::Some(value) = value {
+                vec.push((key, value));
+            }
         }
 
         vec.sort_unstable_by(|(a, _), (b, _)| a.cmp(b));
