@@ -309,19 +309,16 @@ impl<'de> serde::de::Visitor<'de> for BoolVisitor {
     where
         E: serde::de::Error,
     {
-        let num = value.parse::<i64>();
-
-        if let Ok(num) = num {
-            self.visit_i64(num)
-        } else {
-            match value {
+        value.parse::<i64>().map_or_else(
+            |_| match value {
                 "true" => Ok(true),
                 "false" | "" => Ok(false),
                 _ => Err(E::custom(format!(
                     "invalid string for boolean value: {value}"
                 ))),
-            }
-        }
+            },
+            |num| self.visit_i64(num),
+        )
     }
 }
 
