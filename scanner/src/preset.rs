@@ -1,6 +1,10 @@
 use clap::builder::PossibleValue;
-use mod_util::{mod_info::Version, UsedVersions};
 use strum::{EnumIter, VariantArray};
+
+use mod_util::{
+    mod_info::{DependencyVersion, Version},
+    DependencyList,
+};
 
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, VariantArray)]
@@ -18,29 +22,36 @@ pub enum Preset {
     Ultracube,
 }
 
+macro_rules! mod_p {
+    ( $( $name:literal $ver:literal:$ver2:literal:$ver3:literal ),* ) => {
+        vec![
+            $(
+                ($name.to_owned(), DependencyVersion::HigherOrEqual(Version::new($ver, $ver2, $ver3))),
+            )+
+        ]
+    };
+}
+
 impl Preset {
-    pub fn used_mods(self) -> UsedVersions {
+    pub fn used_mods(self) -> DependencyList {
         match self {
-            Self::K2 => vec![("Krastorio2".to_owned(), Version::new(1, 3, 23))],
-            Self::SE => vec![("space-exploration".to_owned(), Version::new(0, 6, 123))],
-            Self::K2SE => vec![
-                ("Krastorio2".to_owned(), Version::new(1, 3, 23)),
-                ("space-exploration".to_owned(), Version::new(0, 6, 123)),
+            Self::K2 => mod_p!["Krastorio2" 3:23:0],
+            Self::SE => mod_p!["space-exploration" 0:6:123],
+            Self::K2SE => mod_p![
+                "Krastorio2" 1:3:23,
+                "space-exploration" 0:6:123
             ],
-            Self::IR3 => vec![("IndustrialRevolution3".to_owned(), Version::new(3, 1, 20))],
-            Self::PyAE => vec![("pyalternativeenergy".to_owned(), Version::new(1, 2, 17))],
-            Self::FF => vec![("FreightForwardingPack".to_owned(), Version::new(1, 2, 1))],
-            Self::FFK2 => vec![
-                ("FreightForwardingPack".to_owned(), Version::new(1, 2, 1)),
-                ("Krastorio2".to_owned(), Version::new(1, 3, 23)),
+            Self::IR3 => mod_p!["IndustrialRevolution3" 3:1:20],
+            Self::PyAE => mod_p!["pyalternativeenergy" 1:2:17],
+            Self::FF => mod_p!["FreightForwardingPack" 1:2:1],
+            Self::FFK2 => mod_p![
+                "FreightForwardingPack" 1:2:1,
+                "Krastorio2" 1:3:23
             ],
-            Self::Nullius => vec![("nullius".to_owned(), Version::new(1, 9, 1))],
-            Self::SeaBlock => vec![("SeaBlockMetaPack".to_owned(), Version::new(1, 1, 4))],
-            Self::ExoticIndustries => vec![(
-                "exotic-industries-modpack".to_owned(),
-                Version::new(0, 5, 2),
-            )],
-            Self::Ultracube => vec![("Ultracube".to_owned(), Version::new(0, 4, 4))],
+            Self::Nullius => mod_p!["nullius" 1:9:1],
+            Self::SeaBlock => mod_p!["SeaBlockMetaPack" 1:1:4],
+            Self::ExoticIndustries => mod_p!["exotic-industries-modpack" 0:5:2],
+            Self::Ultracube => mod_p!["Ultracube" 0:4:4],
         }
         .iter()
         .cloned()
