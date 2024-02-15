@@ -1397,4 +1397,9 @@ mod test {
     fn deserialize_pyanodon() {
         let _ = load_data("py");
     }
+
+    #[test]
+    fn deserialize_exotic_industries() {
+        let _ = load_data("ei");
+    }
 }
