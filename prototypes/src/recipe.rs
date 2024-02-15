@@ -239,7 +239,11 @@ pub struct RecipeData {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub allow_inserter_overload: bool,
 
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    #[serde(
+        default = "helper::bool_true",
+        deserialize_with = "helper::bool_deserializer",
+        skip_serializing_if = "Clone::clone"
+    )]
     pub enabled: bool,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]

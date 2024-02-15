@@ -23,8 +23,11 @@ use serde_with::skip_serializing_none;
 extern crate log;
 
 use mod_util::{
-    mod_info::Version, mod_list::ModList, mod_loader::Mod, mod_settings::SettingsDat, AnyBasic,
-    UsedMods, UsedVersions,
+    mod_info::{DependencyVersion, Version},
+    mod_list::ModList,
+    mod_loader::Mod,
+    mod_settings::SettingsDat,
+    AnyBasic, DependencyList, UsedMods, UsedVersions,
 };
 use prototypes::{
     entity::Type as EntityType, ConnectedEntities, EntityWireConnections, InternalRenderLayer,
@@ -71,6 +74,10 @@ enum Commands {
         /// Preset to use
         #[clap(long, value_enum)]
         preset: Option<preset::Preset>,
+
+        /// List of additional mods to use
+        #[clap(long, value_parser, use_value_delimiter = true, value_delimiter = ',')]
+        mods: Vec<String>,
 
         /// Path to the output file
         #[clap(short, long, value_parser)]
@@ -187,6 +194,7 @@ fn main() -> ExitCode {
             input,
             prototype_dump,
             preset,
+            mods,
             out,
             target_res,
             min_scale,
@@ -195,6 +203,7 @@ fn main() -> ExitCode {
             &cli.factorio,
             &factorio_bin,
             preset,
+            &mods,
             prototype_dump,
             target_res,
             &out,
@@ -349,11 +358,13 @@ fn get_protodump(
     DataRaw::load_from_bytes(&dump_bytes).change_context(ScannerError::SetupError)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn render_command(
     input: Input,
     factorio: &Path,
     factorio_bin: &Path,
     preset: Option<preset::Preset>,
+    mods: &[String],
     prototype_dump: Option<PathBuf>,
     target_res: f64,
     out: &Path,
@@ -367,6 +378,7 @@ fn render_command(
         factorio,
         factorio_bin,
         preset,
+        mods,
         prototype_dump,
         target_res,
     )?;
@@ -386,6 +398,7 @@ fn render(
     factorio: &Path,
     factorio_bin: &Path,
     preset: Option<preset::Preset>,
+    mods: &[String],
     prototype_dump: Option<PathBuf>,
     target_res: f64,
 ) -> Result<(Vec<u8>, HashSet<String>), ScannerError> {
@@ -399,11 +412,24 @@ fn render(
     let mut mod_list = ModList::generate(factorio).change_context(ScannerError::SetupError)?;
 
     // get used mods from preset or detect from BP meta info
-    let required_mods = preset.as_ref().map_or(
-        bp_helper::get_used_versions(bp).unwrap_or_else(|| {
-            std::iter::once(("base".to_owned(), prototypes::targeted_engine_version())).collect()
-        }),
+    let mut required_mods = std::iter::once((
+        "base".to_owned(),
+        DependencyVersion::Exact(prototypes::targeted_engine_version()),
+    ))
+    .collect::<HashMap<_, _>>();
+    required_mods.extend(preset.as_ref().map_or_else(
+        || bp_helper::get_used_versions(bp).unwrap_or_default(),
         |p| p.used_mods(),
+    ));
+    required_mods.extend(mods.iter().map(|m| (m.clone(), DependencyVersion::Any)));
+
+    debug!(
+        "required mods: {}",
+        required_mods
+            .iter()
+            .map(|(n, v)| format!("{n} {v}"))
+            .collect::<Vec<_>>()
+            .join(", ")
     );
 
     if !required_mods.is_empty() {
@@ -422,6 +448,13 @@ fn render(
         }
     }
 
+    let active_mods = mod_list.active_mods();
+    debug!(
+        "{} mods active: {:?}",
+        active_mods.len(),
+        active_mods.keys().collect::<Vec<_>>()
+    );
+
     let data = if let Some(path) = prototype_dump {
         DataRaw::load(&path).change_context(ScannerError::SetupError)?
     } else {
@@ -438,13 +471,6 @@ fn render(
 
     info!("loaded prototype data");
     let data = DataUtil::new(data);
-
-    let active_mods = mod_list.active_mods();
-    debug!(
-        "{} mods active:\n{:?}",
-        active_mods.len(),
-        active_mods.keys().collect::<Vec<_>>()
-    );
 
     let size =
         calculate_target_size(bp, &data, target_res, 0.5).ok_or(ScannerError::RenderError)?;
@@ -512,6 +538,7 @@ pub mod server {
             id: u64,
             bp_string: String,
             preset: String,
+            mods: Vec<String>,
         },
     }
 
@@ -527,11 +554,18 @@ pub mod server {
                 api_capnp::request::RenderBp(r) => {
                     let bp_string = r.get_bp_string().ok()?.to_string().ok()?;
                     let preset = r.get_preset().ok()?.to_string().ok()?;
+                    let mods = r
+                        .get_mods()
+                        .ok()?
+                        .iter()
+                        .filter_map(|m| m.ok()?.to_string().ok())
+                        .collect();
 
                     Some(Self::RenderBP {
                         id,
                         bp_string,
                         preset,
+                        mods,
                     })
                 }
             }
@@ -630,13 +664,17 @@ pub mod server {
                                 false
                             }
                             ApiRequest::RenderBP {
-                                bp_string, preset, ..
+                                bp_string,
+                                preset,
+                                mods,
+                                ..
                             } => {
                                 match render(
                                     bp_string,
                                     &factorio,
                                     &factorio_bin,
                                     preset.parse().ok(),
+                                    &mods,
                                     None,
                                     2048.0,
                                 ) {
@@ -1301,7 +1339,7 @@ impl std::fmt::Display for DependencyResolutionError {
 }
 
 fn resolve_mod_dependencies(
-    required: &UsedVersions,
+    required: &DependencyList,
     mod_list: &mut ModList,
 ) -> Result<UsedVersions, DependencyResolutionError> {
     match mod_list

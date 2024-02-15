@@ -1,9 +1,9 @@
 use std::collections::{BTreeMap, HashMap};
 
-use mod_util::{AnyBasic, UsedVersions};
+use mod_util::{mod_info::DependencyVersion, AnyBasic, DependencyList};
 
 #[must_use]
-pub fn get_used_versions(bp: &blueprint::Blueprint) -> Option<UsedVersions> {
+pub fn get_used_versions(bp: &blueprint::Blueprint) -> Option<DependencyList> {
     for entity in &bp.entities {
         if entity.tags.contains_key("bp_meta_info") {
             let info = entity.tags.get("bp_meta_info")?;
@@ -29,7 +29,7 @@ pub fn get_used_versions(bp: &blueprint::Blueprint) -> Option<UsedVersions> {
                     continue;
                 };
 
-                result.insert(mod_name.clone(), version);
+                result.insert(mod_name.clone(), DependencyVersion::Exact(version));
             }
 
             return Some(result);

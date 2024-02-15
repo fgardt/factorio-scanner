@@ -13,6 +13,7 @@ struct Request {
         renderBp :group {
             bpString @3 :Text;
             preset @4 :Text;
+            mods @5 :List(Text);
         }
     }
 }

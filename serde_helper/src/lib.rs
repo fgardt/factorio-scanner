@@ -275,6 +275,61 @@ where
     }
 }
 
+struct BoolVisitor;
+
+impl<'de> serde::de::Visitor<'de> for BoolVisitor {
+    type Value = bool;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("a boolean value")
+    }
+
+    fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(value)
+    }
+
+    fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(value != 0)
+    }
+
+    fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(value != 0)
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        value.parse::<i64>().map_or_else(
+            |_| match value {
+                "true" => Ok(true),
+                "false" | "" => Ok(false),
+                _ => Err(E::custom(format!(
+                    "invalid string for boolean value: {value}"
+                ))),
+            },
+            |num| self.visit_i64(num),
+        )
+    }
+}
+
+#[allow(clippy::missing_errors_doc)]
+pub fn bool_deserializer<'de, D>(deserializer: D) -> Result<bool, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    deserializer.deserialize_any(BoolVisitor)
+}
+
 #[must_use]
 pub const fn bool_true() -> bool {
     true
