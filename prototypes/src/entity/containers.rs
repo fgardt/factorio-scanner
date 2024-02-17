@@ -129,12 +129,23 @@ impl super::Renderable for LogisticContainerData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        let res = self.animation.as_ref()?.render(
-            render_layers.scale(),
-            used_mods,
-            image_cache,
-            &options.into(),
-        )?;
+        let res = self
+            .animation
+            .as_ref()
+            .and_then(|a| {
+                a.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            })
+            .unwrap_or(self.picture.as_ref()?.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )?);
 
         render_layers.add_entity(res, &options.position);
 
