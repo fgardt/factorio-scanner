@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs::{self, File},
     io::Read,
     path::Path,
@@ -289,41 +289,54 @@ impl<'a> ModList<'a> {
         self.list
             .iter()
             .filter_map(|(name, entry)| {
-                if entry.enabled {
-                    let file = {
-                        let mut versions = entry.versions.keys().copied().collect::<Vec<_>>();
-                        versions.sort_unstable();
+                if !entry.enabled {
+                    return None;
+                }
 
-                        let version = entry.active_version.unwrap_or(versions.last().copied()?);
+                let file = {
+                    let mut versions = entry.versions.keys().copied().collect::<Vec<_>>();
+                    versions.sort_unstable();
 
-                        let versioned = format!("{name}_{version}");
-                        if mods.join(versioned.clone() + ".zip").exists() {
-                            versioned + ".zip"
-                        } else if mods.join(versioned.clone()).exists() {
-                            versioned
-                        } else {
-                            name.clone()
-                        }
-                    };
+                    let version = entry.active_version.unwrap_or(versions.last().copied()?);
 
-                    let Ok(m) = Mod::load(self.factorio_dir, &file) else {
-                        println!("Failed to load mod {name} at {file}");
+                    let versioned = format!("{name}_{version}");
+                    if mods.join(versioned.clone() + ".zip").exists() {
+                        versioned + ".zip"
+                    } else if mods.join(versioned.clone()).exists() {
+                        versioned
+                    } else {
+                        name.clone()
+                    }
+                };
 
-                        return None;
-                    };
-                    Some((name.clone(), m))
-                } else {
-                    None
+                match Mod::load(self.factorio_dir, &file) {
+                    Ok(m) => Some((name.clone(), m)),
+                    Err(e) => {
+                        println!("Failed to load mod {name} at {file}: {e}");
+                        None
+                    }
                 }
             })
             .collect()
     }
 
     pub fn load_local_dependency_info(&mut self, mods: &DependencyList) {
-        for (name, version) in mods {
-            let Some(entry) = self.list.get_mut(name) else {
+        let mut queue = mods
+            .iter()
+            .map(|(n, v)| (n.clone(), *v))
+            .collect::<Vec<_>>();
+        let mut loaded = HashSet::<(String, DependencyVersion)>::new();
+
+        while let Some((name, version)) = queue.pop() {
+            let Some(entry) = self.list.get_mut(&name) else {
                 continue;
             };
+
+            if loaded.contains(&(name.clone(), version)) {
+                continue;
+            }
+
+            loaded.insert((name.clone(), version));
 
             let Some(version) = version
                 .get_allowed_version(
@@ -353,6 +366,13 @@ impl<'a> ModList<'a> {
                     m.info.version
                 );
                 continue;
+            }
+
+            for dep in &m.info.dependencies {
+                let dep = (dep.name().clone(), *dep.version());
+                if !loaded.contains(&dep) {
+                    queue.push(dep);
+                }
             }
 
             entry
