@@ -856,6 +856,16 @@ impl DataUtil {
             .and_then(|t| t.render(position, used_mods, render_layers, image_cache))
     }
 
+    pub fn get_item_icon(
+        &self,
+        name: &str,
+        scale: f64,
+        used_mods: &mod_util::UsedMods,
+        image_cache: &mut types::ImageCache,
+    ) -> Option<types::GraphicsOutput> {
+        self.raw.item.get_icon(name, scale, used_mods, image_cache)
+    }
+
     pub fn get_recipe_icon(
         &self,
         name: &str,
@@ -1310,7 +1320,7 @@ impl RenderLayerBuffer {
                         height as u16,
                         1,
                     ))
-                    .normalize_clamped_distances(0.0, (10.0 / self.scale()) as f32)
+                    .normalize_clamped_distances(0.0, (6.0 / self.scale()) as f32)
                 else {
                     break 'sdf_outline;
                 };

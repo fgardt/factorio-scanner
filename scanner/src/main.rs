@@ -15,7 +15,7 @@ use blueprint::ConnectionDataExt;
 use clap::{Parser, Subcommand};
 use error_stack::{ensure, report, Context, Result, ResultExt};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder};
-use image::{codecs::png, ImageEncoder};
+use image::{codecs::png, imageops, ImageEncoder};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -33,7 +33,10 @@ use prototypes::{
     entity::Type as EntityType, ConnectedEntities, EntityWireConnections, InternalRenderLayer,
 };
 use prototypes::{DataRaw, DataUtil, RenderLayerBuffer, TargetSize};
-use types::{ConnectedDirections, Direction, ImageCache, MapPosition};
+use types::{
+    ConnectedDirections, Direction, ImageCache, MapPosition, RenderableGraphics,
+    SimpleGraphicsRenderOpts, Vector,
+};
 
 mod bp_helper;
 mod preset;
@@ -482,7 +485,8 @@ fn render(
         &active_mods,
         RenderLayerBuffer::new(size),
         &mut ImageCache::new(),
-    );
+    )
+    .ok_or(ScannerError::RenderError)?;
     info!("render completed");
 
     let mut res = Vec::new();
@@ -1017,12 +1021,28 @@ fn render_bp(
     used_mods: &UsedMods,
     mut render_layers: RenderLayerBuffer,
     image_cache: &mut ImageCache,
-) -> (image::DynamicImage, HashSet<String>) {
+) -> Option<(image::DynamicImage, HashSet<String>)> {
     let mut unknown = HashSet::new();
     let mut wire_connections = EntityWireConnections::new();
     let mut pipe_connections = HashMap::<MapPosition, HashSet<Direction>>::new();
     let mut heat_connections = HashMap::<MapPosition, HashSet<Direction>>::new();
 
+    let Some(util_sprites) = data.util_sprites() else {
+        warn!("failed to load util sprites, required for wire rendering & alt mode");
+        return None;
+    };
+
+    let Some(indicator_arrow) = util_sprites.indication_arrow.render(
+        render_layers.scale() * 1.5,
+        used_mods,
+        image_cache,
+        &SimpleGraphicsRenderOpts::default(),
+    ) else {
+        warn!("failed to load indicator arrow sprite, required for alt mode");
+        return None;
+    };
+
+    // pipe / heat connections
     bp.entities.iter().for_each(|e| {
         let Some(e_data) = data.get_entity(&e.name) else {
             return;
@@ -1049,6 +1069,7 @@ fn render_bp(
             });
     });
 
+    // render entities
     let rendered_count = bp
         .entities
         .iter()
@@ -1221,6 +1242,110 @@ fn render_bp(
                 }
             }
 
+            // filter icons / priority arrows
+            'filters_priority: {
+                if let Some(prio_in) = &e.input_priority {
+                    let offset = e.direction.rotate_vector(
+                        prio_in.as_vector() + Vector::Tuple(0.0, 0.25) + indicator_arrow.1,
+                    );
+
+                    let arrow = match e.direction {
+                        Direction::North => indicator_arrow.0.clone(),
+                        Direction::East => imageops::rotate90(&indicator_arrow.0).into(),
+                        Direction::South => imageops::rotate180(&indicator_arrow.0).into(),
+                        Direction::West => imageops::rotate270(&indicator_arrow.0).into(),
+                        _ => break 'filters_priority,
+                    };
+
+                    render_layers.add(
+                        (arrow, offset),
+                        &render_opts.position,
+                        InternalRenderLayer::DirectionOverlay,
+                    );
+                }
+
+                if let Some(prio_out) = &e.output_priority {
+                    if e.filter.is_empty() {
+                        let offset = e.direction.rotate_vector(
+                            prio_out.as_vector() + Vector::Tuple(0.0, -0.25) + indicator_arrow.1,
+                        );
+
+                        let arrow = match e.direction {
+                            Direction::North => indicator_arrow.0.clone(),
+                            Direction::East => imageops::rotate90(&indicator_arrow.0).into(),
+                            Direction::South => imageops::rotate180(&indicator_arrow.0).into(),
+                            Direction::West => imageops::rotate270(&indicator_arrow.0).into(),
+                            _ => break 'filters_priority,
+                        };
+
+                        render_layers.add(
+                            (arrow, offset),
+                            &render_opts.position,
+                            InternalRenderLayer::DirectionOverlay,
+                        );
+                    } else {
+                        let Some(filter) = data.get_item_icon(
+                            &e.filter,
+                            render_layers.scale() * 2.2,
+                            used_mods,
+                            image_cache,
+                        ) else {
+                            warn!(
+                                "failed to render filter icon for {} at {:?} [{}]",
+                                e.filter, e.position, e.name
+                            );
+                            break 'filters_priority;
+                        };
+
+                        let offset = e.direction.rotate_vector(prio_out.as_vector() + filter.1);
+
+                        render_layers.add(
+                            (filter.0, offset),
+                            &render_opts.position,
+                            InternalRenderLayer::IconOverlay,
+                        );
+                    }
+                }
+
+                if !e.filters.is_empty() {
+                    let filter_count = e.filters.len();
+                    let mut offset = if filter_count == 1 {
+                        Vector::Tuple(0.0, 0.0)
+                    } else if filter_count == 2 {
+                        Vector::Tuple(-0.25, 0.0)
+                    } else {
+                        Vector::Tuple(-0.25, -0.25)
+                    };
+
+                    for idx in 0..filter_count.min(4) {
+                        if idx == 2 {
+                            offset += Vector::Tuple(-1.0, 0.5);
+                        }
+
+                        let Some(filter) = data.get_item_icon(
+                            &e.filters[idx].name,
+                            render_layers.scale() * 2.2,
+                            used_mods,
+                            image_cache,
+                        ) else {
+                            warn!(
+                                "failed to render filter icon for {} at {:?} [{}]",
+                                e.filters[idx].name, e.position, e.name
+                            );
+                            continue;
+                        };
+
+                        render_layers.add(
+                            (filter.0, filter.1 + offset),
+                            &render_opts.position,
+                            InternalRenderLayer::IconOverlay,
+                        );
+
+                        offset += Vector::Tuple(0.5, 0.0);
+                    }
+                }
+            }
+
             // store wire connections for wire rendering
             let mut wires0 = e
                 .neighbours
@@ -1270,6 +1395,7 @@ fn render_bp(
 
     info!("entities: {}, layers: {rendered_count}", bp.entities.len());
 
+    // render tiles
     let rendered_count = bp
         .tiles
         .iter()
@@ -1287,17 +1413,9 @@ fn render_bp(
 
     info!("tiles: {}, layers: {rendered_count}", bp.tiles.len());
 
-    data.util_sprites().map_or_else(
-        || {
-            warn!("failed to load util sprites, no wire rendering");
-        },
-        |util_sprites| {
-            render_layers.draw_wires(&wire_connections, util_sprites, used_mods, image_cache);
-        },
-    );
-
+    render_layers.draw_wires(&wire_connections, util_sprites, used_mods, image_cache);
     render_layers.generate_background();
-    (render_layers.combine(), unknown)
+    Some((render_layers.combine(), unknown))
 }
 
 #[derive(Debug, thiserror::Error)]
