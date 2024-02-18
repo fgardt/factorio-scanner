@@ -1691,7 +1691,7 @@ impl Direction {
             Self::NorthEast => todo!(),
             Self::East => (-1.0, 1.0, true),
             Self::SouthEast => todo!(),
-            Self::South => (1.0, -1.0, false),
+            Self::South => (-1.0, -1.0, false),
             Self::SouthWest => todo!(),
             Self::West => (1.0, -1.0, true),
             Self::NorthWest => todo!(),

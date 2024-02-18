@@ -12,7 +12,7 @@ use serde_with::skip_serializing_none;
 
 use types::{
     ArithmeticOperation, Comparator, Direction, FilterMode, ItemCountType, ItemStackIndex,
-    RealOrientation,
+    RealOrientation, Vector,
 };
 
 #[skip_serializing_none]
@@ -466,6 +466,16 @@ pub enum UndergroundType {
 pub enum SplitterPriority {
     Left,
     Right,
+}
+
+impl SplitterPriority {
+    #[must_use]
+    pub const fn as_vector(&self) -> Vector {
+        match self {
+            Self::Left => Vector::Tuple(-0.5, 0.0),
+            Self::Right => Vector::Tuple(0.5, 0.0),
+        }
+    }
 }
 
 #[skip_serializing_none]
