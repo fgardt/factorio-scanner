@@ -18,6 +18,10 @@ pub struct UtilitySpritesData {
     #[serde(flatten)]
     pub wires: WireSprites,
 
+    pub indication_arrow: Sprite,
+    pub indication_line: Sprite,
+    pub short_indication_line: Sprite,
+
     #[serde(flatten)]
     pub sprites: HashMap<String, Sprite>,
 }
