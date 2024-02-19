@@ -413,11 +413,30 @@ impl<'a> ModList<'a> {
         let mut reqs = Vec::new();
         for (name, version) in required {
             let Some(info) = self.list.get(name) else {
+                println!("no info");
                 return Err(ModListError::SolverMissingInfo(name.to_string()));
             };
 
             let info_versions = info.versions.keys().copied().collect::<Vec<_>>();
+            if Mod::wube_mods().contains(&name.as_str()) {
+                let Some(version) = info_versions.first() else {
+                    return Err(ModListError::SolverMissingInfo(format!(
+                        "{name}, a static wube mod!"
+                    )));
+                };
+
+                reqs.push((name.as_str(), *version));
+                continue;
+            }
+
             let Some(version) = version.get_allowed_version(&info_versions) else {
+                println!(
+                    "no allowed version: {:?} {version} [{name}]",
+                    info_versions
+                        .iter()
+                        .map(std::string::ToString::to_string)
+                        .collect::<Vec<_>>()
+                );
                 return Err(ModListError::SolverMissingInfo(name.to_string()));
             };
 
@@ -434,6 +453,7 @@ impl<'a> ModList<'a> {
             node_map.insert(name, dep_graph.add_node((name, version)));
 
             let Some(info) = all_deps.get(name) else {
+                println!("no all_deps info");
                 return Err(ModListError::SolverMissingInfo(name.to_string()));
             };
 
