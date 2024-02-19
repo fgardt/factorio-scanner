@@ -41,14 +41,27 @@ impl super::Renderable for BeaconData {
                 &options.into(),
             )
         } else {
-            self.base_picture.as_ref().and_then(|g| {
-                g.render(
-                    render_layers.scale(),
-                    used_mods,
-                    image_cache,
-                    &options.into(),
-                )
-            })
+            merge_renders(
+                &[
+                    self.base_picture.as_ref().and_then(|g| {
+                        g.render(
+                            render_layers.scale(),
+                            used_mods,
+                            image_cache,
+                            &options.into(),
+                        )
+                    }),
+                    self.animation.as_ref().and_then(|a| {
+                        a.render(
+                            render_layers.scale(),
+                            used_mods,
+                            image_cache,
+                            &options.into(),
+                        )
+                    }),
+                ],
+                render_layers.scale(),
+            )
         }?;
 
         render_layers.add_entity(res, &options.position);
