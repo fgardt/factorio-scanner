@@ -1274,28 +1274,24 @@ impl RenderLayerBuffer {
     }
 
     pub fn generate_background(&mut self) {
-        let back_pxl = image::Luma([0x22u8]);
-        let line_pxl = image::Luma([0x33u8]);
+        let lab_tile_dark = image::Luma([0x1bu8]);
+        let lab_tile_light = image::Luma([0x31u8]);
 
         let (tl_x, tl_y) = self.target_size.top_left.as_tuple();
         let tile_res = self.target_size.tile_res;
-        let tile_p = 0.05;
 
         let background =
             image::ImageBuffer::from_fn(self.target_size.width, self.target_size.height, |x, y| {
-                let x = f64::from(x);
-                let y = f64::from(y);
+                let x = (f64::from(x) / tile_res) - tl_x;
+                let y = (f64::from(y) / tile_res) - tl_y;
 
-                let t_x = (x / tile_res) - tl_x;
-                let t_y = (y / tile_res) - tl_y;
+                let p_x = x.rem(2.0);
+                let p_y = y.rem(2.0);
 
-                let p_x = t_x.rem(1.0);
-                let p_y = t_y.rem(1.0);
-
-                if p_x < tile_p || p_x > (1.0 - tile_p) || p_y < tile_p || p_y > (1.0 - tile_p) {
-                    line_pxl
+                if p_x < 1.0 && p_y < 1.0 || p_x > 1.0 && p_y > 1.0 {
+                    lab_tile_dark
                 } else {
-                    back_pxl
+                    lab_tile_light
                 }
             });
 
