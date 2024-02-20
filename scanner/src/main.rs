@@ -420,10 +420,11 @@ fn render(
         DependencyVersion::Exact(prototypes::targeted_engine_version()),
     ))
     .collect::<HashMap<_, _>>();
-    required_mods.extend(preset.as_ref().map_or_else(
-        || bp_helper::get_used_versions(bp).unwrap_or_default(),
-        |p| p.used_mods(),
-    ));
+    required_mods.extend(
+        preset
+            .as_ref()
+            .map_or_else(|| bp_helper::get_used_versions(bp), |p| p.used_mods()),
+    );
     required_mods.extend(mods.iter().map(|m| (m.clone(), DependencyVersion::Any)));
 
     debug!(
