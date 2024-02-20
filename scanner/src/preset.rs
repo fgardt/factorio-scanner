@@ -35,7 +35,7 @@ macro_rules! mod_p {
 impl Preset {
     pub fn used_mods(self) -> DependencyList {
         match self {
-            Self::K2 => mod_p!["Krastorio2" 3:23:0],
+            Self::K2 => mod_p!["Krastorio2" 1:3:23],
             Self::SE => mod_p!["space-exploration" 0:6:123],
             Self::K2SE => mod_p![
                 "Krastorio2" 1:3:23,
@@ -59,6 +59,23 @@ impl Preset {
     }
 
     // TODO: used settings
+
+    pub const fn known_prefix(self) -> Option<&'static str> {
+        #[allow(clippy::match_same_arms)]
+        match self {
+            Self::K2 => Some("kr-"),
+            Self::SE => Some("se-"),
+            Self::K2SE => None,
+            Self::IR3 => None,
+            Self::PyAE => Some("py-"),
+            Self::FF => Some("ff-"),
+            Self::FFK2 => None,
+            Self::Nullius => Some("nullius-"),
+            Self::SeaBlock => None,
+            Self::ExoticIndustries => Some("ei_"),
+            Self::Ultracube => Some("cube-"),
+        }
+    }
 }
 
 impl ToString for Preset {
