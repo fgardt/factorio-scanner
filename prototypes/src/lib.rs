@@ -27,6 +27,7 @@ pub mod entity;
 pub mod fluid;
 pub mod item;
 pub mod recipe;
+pub mod signal;
 pub mod tile;
 pub mod utility_sprites;
 
@@ -80,6 +81,8 @@ pub struct DataRaw {
 
     #[serde(flatten)]
     pub fluid: fluid::AllTypes,
+
+    pub virtual_signal: PrototypeMap<signal::SignalPrototypeData>,
 
     #[serde(flatten)]
     pub recipe: recipe::AllTypes,
@@ -864,6 +867,29 @@ impl DataUtil {
         image_cache: &mut types::ImageCache,
     ) -> Option<types::GraphicsOutput> {
         self.raw.item.get_icon(name, scale, used_mods, image_cache)
+    }
+
+    pub fn get_fluid_icon(
+        &self,
+        name: &str,
+        scale: f64,
+        used_mods: &mod_util::UsedMods,
+        image_cache: &mut types::ImageCache,
+    ) -> Option<types::GraphicsOutput> {
+        self.raw.fluid.get_icon(name, scale, used_mods, image_cache)
+    }
+
+    pub fn get_signal_icon(
+        &self,
+        name: &str,
+        scale: f64,
+        used_mods: &mod_util::UsedMods,
+        image_cache: &mut types::ImageCache,
+    ) -> Option<types::GraphicsOutput> {
+        self.raw
+            .virtual_signal
+            .get(name)
+            .and_then(|x| x.get_icon(scale, used_mods, image_cache))
     }
 
     pub fn get_recipe_icon(

@@ -11,7 +11,7 @@ use std::{
     process::{Command, ExitCode},
 };
 
-use blueprint::ConnectionDataExt;
+use blueprint::{ConnectionDataExt, SignalID};
 use clap::{Parser, Subcommand};
 use error_stack::{ensure, report, Context, Result, ResultExt};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder};
@@ -376,7 +376,7 @@ fn render_command(
         .get_bp_string()
         .change_context(ScannerError::NoBlueprint)?;
 
-    let (res, missing) = render(
+    let (res, missing, thumb) = render(
         bp_string,
         factorio,
         factorio_bin,
@@ -393,6 +393,12 @@ fn render_command(
     fs::write(out, res).change_context(ScannerError::RenderError)?;
     info!("saved render to {out:?}");
 
+    if let Some(thumb) = thumb {
+        fs::write(out.with_extension("thumb.png"), thumb)
+            .change_context(ScannerError::RenderError)?;
+        info!("saved thumbnail to {:?}", out.with_extension("thumb.png"));
+    }
+
     Ok(())
 }
 
@@ -404,7 +410,7 @@ fn render(
     mods: &[String],
     prototype_dump: Option<PathBuf>,
     target_res: f64,
-) -> Result<(Vec<u8>, HashSet<String>), ScannerError> {
+) -> Result<(Vec<u8>, HashSet<String>, Option<Vec<u8>>), ScannerError> {
     let bp = blueprint::Data::try_from(bp_string).change_context(ScannerError::NoBlueprint)?;
     let bp = bp
         .as_blueprint()
@@ -480,7 +486,7 @@ fn render(
         calculate_target_size(bp, &data, target_res, 0.5).ok_or(ScannerError::RenderError)?;
     info!("target size: {size}");
 
-    let (img, unknown) = render_bp(
+    let (img, unknown, thumbnail) = render_bp(
         bp,
         &data,
         &active_mods,
@@ -499,7 +505,20 @@ fn render(
 
     enc.write_image(img.as_bytes(), img.width(), img.height(), img.color())
         .change_context(ScannerError::RenderError)?;
-    Ok((res, unknown))
+
+    let thumbnail = thumbnail.map(|t| {
+        let mut res = Vec::new();
+        let enc = png::PngEncoder::new_with_quality(
+            &mut res,
+            png::CompressionType::Best,
+            png::FilterType::default(),
+        );
+
+        let _ = enc.write_image(t.as_bytes(), t.width(), t.height(), t.color());
+        res
+    });
+
+    Ok((res, unknown, thumbnail))
 }
 
 #[cfg(feature = "server")]
@@ -683,7 +702,7 @@ pub mod server {
                                     None,
                                     2048.0,
                                 ) {
-                                    Ok((img, missing)) => {
+                                    Ok((img, missing, thumbnail)) => {
                                         let mut rendered = response.init_rendered_bp();
                                         rendered.set_image(&img);
 
@@ -692,6 +711,10 @@ pub mod server {
                                         ) {
                                             error!("{err:?}");
                                             //response.set_request_error(api_capnp::response::ErrorType::ProcessingError);
+                                        }
+
+                                        if let Some(thumbnail) = thumbnail {
+                                            rendered.set_thumbnail(&thumbnail);
                                         }
 
                                         false
@@ -1022,7 +1045,11 @@ fn render_bp(
     used_mods: &UsedMods,
     mut render_layers: RenderLayerBuffer,
     image_cache: &mut ImageCache,
-) -> Option<(image::DynamicImage, HashSet<String>)> {
+) -> Option<(
+    image::DynamicImage,
+    HashSet<String>,
+    Option<image::DynamicImage>,
+)> {
     let mut unknown = HashSet::new();
     let mut wire_connections = EntityWireConnections::new();
     let mut pipe_connections = HashMap::<MapPosition, HashSet<Direction>>::new();
@@ -1416,7 +1443,96 @@ fn render_bp(
 
     render_layers.draw_wires(&wire_connections, util_sprites, used_mods, image_cache);
     render_layers.generate_background();
-    Some((render_layers.combine(), unknown))
+
+    Some((
+        render_layers.combine(),
+        unknown,
+        render_thumbnail(bp, data, used_mods, image_cache),
+    ))
+}
+
+fn render_thumbnail(
+    bp: &blueprint::Blueprint,
+    data: &prototypes::DataUtil,
+    used_mods: &UsedMods,
+    image_cache: &mut ImageCache,
+) -> Option<image::DynamicImage> {
+    static BASE_SCALE: f64 = 0.125;
+    let size = (32.0 / BASE_SCALE).round() as u32;
+
+    let mut layers = RenderLayerBuffer::new(TargetSize::new(
+        size,
+        size,
+        BASE_SCALE,
+        MapPosition::Tuple(-1.0, -1.0),
+        MapPosition::Tuple(1.0, 1.0),
+    ));
+
+    layers.add(
+        (
+            data.get_item_icon(&bp.item, BASE_SCALE, used_mods, image_cache)?
+                .0,
+            Vector::Tuple(-0.5, -0.5),
+        ),
+        &MapPosition::default(),
+        InternalRenderLayer::Entity,
+    );
+
+    if bp.icons.is_empty() {
+        return Some(layers.combine());
+    }
+
+    let icon_count = bp.icons.len();
+    let (scale, s_x, s_y) = if icon_count == 1 {
+        (BASE_SCALE * 1.2, -0.5, -0.5)
+    } else if icon_count == 2 {
+        (BASE_SCALE * 2.2, -0.75, -0.5)
+    } else {
+        (BASE_SCALE * 2.2, -0.75, -0.75)
+    };
+
+    let mut offset = Vector::Tuple(s_x, s_y);
+
+    for idx in 0..icon_count.min(4) {
+        if idx == 2 {
+            offset += Vector::Tuple(-1.0, 0.5);
+        }
+
+        let res = match &bp.icons[idx].signal {
+            SignalID::Item { name } => data.get_item_icon(
+                name.clone().unwrap_or_default().as_str(),
+                scale,
+                used_mods,
+                image_cache,
+            ),
+            SignalID::Fluid { name } => data.get_fluid_icon(
+                name.clone().unwrap_or_default().as_str(),
+                scale,
+                used_mods,
+                image_cache,
+            ),
+            SignalID::Virtual { name } => data.get_signal_icon(
+                name.clone().unwrap_or_default().as_str(),
+                scale,
+                used_mods,
+                image_cache,
+            ),
+        };
+
+        let Some((res, _)) = res else {
+            continue;
+        };
+
+        layers.add(
+            (res, offset),
+            &MapPosition::default(),
+            InternalRenderLayer::AboveEntity,
+        );
+
+        offset += Vector::Tuple(0.5, 0.0);
+    }
+
+    Some(layers.combine())
 }
 
 #[derive(Debug, thiserror::Error)]
