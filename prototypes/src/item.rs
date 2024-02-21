@@ -48,6 +48,7 @@ impl std::ops::Deref for ItemPrototype {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ItemPrototypeData {
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub stack_size: ItemCountType,
 
     #[serde(flatten)]
