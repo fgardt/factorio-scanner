@@ -1434,4 +1434,9 @@ mod test {
     fn deserialize_exotic_industries() {
         let _ = load_data("ei");
     }
+
+    #[test]
+    fn deserialize_ultracube() {
+        let _ = load_data("ultracube");
+    }
 }
