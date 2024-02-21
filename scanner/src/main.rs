@@ -468,7 +468,7 @@ fn render(
             &mod_list,
             (
                 bp_helper::get_used_startup_settings(bp).unwrap_or(&BTreeMap::new()),
-                bp.info.version,
+                bp.version,
             ),
         )?
     };
@@ -1324,14 +1324,14 @@ fn render_bp(
                         }
 
                         let Some(filter) = data.get_item_icon(
-                            &e.filters[idx].name,
+                            &e.filters[idx],
                             render_layers.scale() * 2.2,
                             used_mods,
                             image_cache,
                         ) else {
                             warn!(
                                 "failed to render filter icon for {} at {:?} [{}]",
-                                e.filters[idx].name, e.position, e.name
+                                e.filters[idx], e.position, e.name
                             );
                             continue;
                         };
