@@ -1,6 +1,6 @@
 [package]
 name = "blueprint"
-version = "0.1.0"
+version = "0.2.0"
 authors.workspace = true
 edition.workspace = true
 
@@ -8,12 +8,13 @@ edition.workspace = true
 workspace = true
 
 [dependencies]
-base64 = "0.21.4"
+base64 = "0.21"
 flate2.workspace = true
 mod_util.workspace = true
 serde.workspace = true
 serde_helper.workspace = true
 serde_json.workspace = true
+serde_repr.workspace = true
 serde_with.workspace = true
 thiserror.workspace = true
 types.workspace = true
