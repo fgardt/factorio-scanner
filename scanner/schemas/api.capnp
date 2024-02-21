@@ -30,6 +30,7 @@ struct Response {
         renderedBp :group {
             image @4 :Data;
             missing @5 :List(Text);
+            thumbnail @6 :Data;
         }
     }
 
