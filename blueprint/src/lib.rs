@@ -16,10 +16,11 @@ pub use book::*;
 pub use planner::*;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
 pub struct CommonData<T> {
+    #[serde(flatten)]
+    data: T,
+
     pub item: String,
-    pub version: u64, // see https://wiki.factorio.com/Version_string_format
 
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub label: String,
@@ -27,8 +28,7 @@ pub struct CommonData<T> {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label_color: Option<Color>,
 
-    #[serde(flatten)]
-    data: T,
+    pub version: u64, // see https://wiki.factorio.com/Version_string_format
 }
 
 impl<T> CommonData<T> {
@@ -163,7 +163,8 @@ impl Data {
             Self::Blueprint(data) => Some(data),
             Self::BlueprintBook(book) if !book.blueprints.is_empty() => book
                 .blueprints
-                .get(book.active_index as usize)
+                .iter()
+                .find(|entry| entry.index == book.active_index)
                 .and_then(|entry| entry.data.as_blueprint()),
             _ => None,
         }
@@ -173,9 +174,10 @@ impl Data {
         match self {
             Self::Blueprint(data) => Some(data),
             Self::BlueprintBook(book) if !book.blueprints.is_empty() => {
-                let index = book.active_index as usize;
+                let index = book.active_index;
                 book.blueprints
-                    .get_mut(index)
+                    .iter_mut()
+                    .find(|entry| entry.index == index)
                     .and_then(|entry| entry.data.as_blueprint_mut())
             }
             _ => None,

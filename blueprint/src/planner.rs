@@ -8,8 +8,10 @@ pub use decon::*;
 pub use upgrade::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct PlannerData<T: Default + PartialEq> {
+pub struct PlannerData<T>
+where
+    T: Default + PartialEq,
+{
     #[serde(flatten, default, skip_serializing_if = "helper::is_default")]
     settings: T,
 }

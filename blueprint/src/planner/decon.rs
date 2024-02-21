@@ -23,6 +23,7 @@ pub enum TileSelectionMode {
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct DeconPlannerData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub entity_filter_mode: FilterMode,

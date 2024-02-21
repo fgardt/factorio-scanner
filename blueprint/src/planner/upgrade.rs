@@ -11,6 +11,7 @@ pub enum MappedValue {
 }
 
 impl MappedValue {
+    #[must_use]
     pub fn name(&self) -> &str {
         match self {
             Self::Entity { name } | Self::Item { name } => name,

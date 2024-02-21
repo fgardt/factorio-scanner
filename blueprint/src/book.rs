@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::IndexedVec;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct BookData {
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub description: String,
