@@ -43,6 +43,42 @@ impl<T> CommonData<T> {
     }
 }
 
+impl TryFrom<Blueprint> for String {
+    type Error = BlueprintEncodeError;
+
+    fn try_from(data: Blueprint) -> Result<Self, Self::Error> {
+        let json = serde_json::to_string(&Data::Blueprint(data))?;
+        json_to_bp_string(&json)
+    }
+}
+
+impl TryFrom<Book> for String {
+    type Error = BlueprintEncodeError;
+
+    fn try_from(data: Book) -> Result<Self, Self::Error> {
+        let json = serde_json::to_string(&Data::BlueprintBook(data))?;
+        json_to_bp_string(&json)
+    }
+}
+
+impl TryFrom<UpgradePlanner> for String {
+    type Error = BlueprintEncodeError;
+
+    fn try_from(data: UpgradePlanner) -> Result<Self, Self::Error> {
+        let json = serde_json::to_string(&Data::UpgradePlanner(data))?;
+        json_to_bp_string(&json)
+    }
+}
+
+impl TryFrom<DeconPlanner> for String {
+    type Error = BlueprintEncodeError;
+
+    fn try_from(data: DeconPlanner) -> Result<Self, Self::Error> {
+        let json = serde_json::to_string(&Data::DeconstructionPlanner(data))?;
+        json_to_bp_string(&json)
+    }
+}
+
 impl<T> std::ops::Deref for CommonData<T> {
     type Target = T;
 
