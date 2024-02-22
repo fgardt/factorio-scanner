@@ -376,15 +376,9 @@ fn render_command(
         .get_bp_string()
         .change_context(ScannerError::NoBlueprint)?;
 
-    let (res, missing, thumb) = render(
-        bp_string,
-        factorio,
-        factorio_bin,
-        preset,
-        mods,
-        prototype_dump,
-        target_res,
-    )?;
+    let bp = blueprint::Data::try_from(bp_string).change_context(ScannerError::NoBlueprint)?;
+    let (data, active_mods) = load_data(&bp, factorio, factorio_bin, preset, mods, prototype_dump)?;
+    let (res, missing, thumb) = render(&bp, &data, &active_mods, target_res)?;
 
     if !missing.is_empty() {
         warn!("missing prototypes: {missing:?}");
@@ -402,16 +396,14 @@ fn render_command(
     Ok(())
 }
 
-fn render(
-    bp_string: String,
+fn load_data(
+    bp: &blueprint::Data,
     factorio: &Path,
     factorio_bin: &Path,
     preset: Option<preset::Preset>,
     mods: &[String],
     prototype_dump: Option<PathBuf>,
-    target_res: f64,
-) -> Result<(Vec<u8>, HashSet<String>, Option<Vec<u8>>), ScannerError> {
-    let bp = blueprint::Data::try_from(bp_string).change_context(ScannerError::NoBlueprint)?;
+) -> Result<(DataUtil, UsedMods), ScannerError> {
     let bp = bp
         .as_blueprint()
         .ok_or(report!(ScannerError::NoBlueprint))?;
@@ -480,18 +472,29 @@ fn render(
     };
 
     info!("loaded prototype data");
-    let data = DataUtil::new(data);
+    Ok((DataUtil::new(data), active_mods))
+}
 
-    let size =
-        calculate_target_size(bp, &data, target_res, 0.5).ok_or(ScannerError::RenderError)?;
+fn render(
+    raw_bp: &blueprint::Data,
+    data: &DataUtil,
+    used_mods: &UsedMods,
+    target_res: f64,
+) -> Result<(Vec<u8>, HashSet<String>, Option<Vec<u8>>), ScannerError> {
+    let bp = raw_bp
+        .as_blueprint()
+        .ok_or(report!(ScannerError::NoBlueprint))?;
+
+    let size = calculate_target_size(bp, data, target_res, 0.5).ok_or(ScannerError::RenderError)?;
     info!("target size: {size}");
 
-    let (img, unknown, thumbnail) = render_bp(
+    let image_cache = &mut ImageCache::new();
+    let (img, unknown) = render_bp(
         bp,
-        &data,
-        &active_mods,
+        data,
+        used_mods,
         RenderLayerBuffer::new(size),
-        &mut ImageCache::new(),
+        image_cache,
     )
     .ok_or(ScannerError::RenderError)?;
     info!("render completed");
@@ -506,7 +509,7 @@ fn render(
     enc.write_image(img.as_bytes(), img.width(), img.height(), img.color())
         .change_context(ScannerError::RenderError)?;
 
-    let thumbnail = thumbnail.map(|t| {
+    let thumbnail = render_thumbnail(raw_bp, data, used_mods, image_cache).map(|t| {
         let mut res = Vec::new();
         let enc = png::PngEncoder::new_with_quality(
             &mut res,
@@ -564,6 +567,12 @@ pub mod server {
             preset: String,
             mods: Vec<String>,
         },
+        RenderThumbnail {
+            id: u64,
+            bp_string: String,
+            preset: String,
+            mods: Vec<String>,
+        },
     }
 
     impl ApiRequest {
@@ -592,12 +601,32 @@ pub mod server {
                         mods,
                     })
                 }
+                api_capnp::request::RenderThumbnail(r) => {
+                    let bp_string = r.get_bp_string().ok()?.to_string().ok()?;
+                    let preset = r.get_preset().ok()?.to_string().ok()?;
+                    let mods = r
+                        .get_mods()
+                        .ok()?
+                        .iter()
+                        .filter_map(|m| m.ok()?.to_string().ok())
+                        .collect();
+
+                    Some(Self::RenderBP {
+                        id,
+                        bp_string,
+                        preset,
+                        mods,
+                    })
+                }
             }
         }
 
         const fn get_id(&self) -> u64 {
             match self {
-                Self::Quit { id } | Self::GetPresets { id } | Self::RenderBP { id, .. } => *id,
+                Self::Quit { id }
+                | Self::GetPresets { id }
+                | Self::RenderBP { id, .. }
+                | Self::RenderThumbnail { id, .. } => *id,
             }
         }
     }
@@ -613,8 +642,10 @@ pub mod server {
         }
     }
 
+    type ReturnChannel = oneshot::Sender<(Vec<u8>, bool)>;
+
     struct ServerData {
-        input: mpsc::Sender<(ApiRequest, oneshot::Sender<(Vec<u8>, bool)>)>,
+        input: mpsc::Sender<(ApiRequest, ReturnChannel)>,
     }
 
     #[allow(clippy::too_many_lines)]
@@ -669,8 +700,8 @@ pub mod server {
                         let mut response = message.init_root::<api_capnp::response::Builder>();
                         response.set_id(id);
 
-                        let close = match req {
-                            ApiRequest::Quit { .. } => true,
+                        match &req {
+                            ApiRequest::Quit { .. } => {}
                             ApiRequest::GetPresets { .. } => {
                                 let mut p = Vec::new();
 
@@ -684,24 +715,43 @@ pub mod server {
                                         api_capnp::response::ErrorType::ProcessingError,
                                     );
                                 }
-
-                                false
                             }
                             ApiRequest::RenderBP {
                                 bp_string,
                                 preset,
                                 mods,
                                 ..
-                            } => {
-                                match render(
-                                    bp_string,
+                            } => 'render: {
+                                let bp = match blueprint::Data::try_from(bp_string.as_str()) {
+                                    Ok(bp) => bp,
+                                    Err(err) => {
+                                        warn!("{err:?}");
+                                        response.set_request_error(
+                                            api_capnp::response::ErrorType::ProcessingError,
+                                        );
+                                        break 'render;
+                                    }
+                                };
+
+                                let (data, used_mods) = match load_data(
+                                    &bp,
                                     &factorio,
                                     &factorio_bin,
                                     preset.parse().ok(),
-                                    &mods,
+                                    mods,
                                     None,
-                                    2048.0,
                                 ) {
+                                    Ok(d) => d,
+                                    Err(err) => {
+                                        error!("{err:?}");
+                                        response.set_request_error(
+                                            api_capnp::response::ErrorType::ProcessingError,
+                                        );
+                                        break 'render;
+                                    }
+                                };
+
+                                match render(&bp, &data, &used_mods, 2048.0) {
                                     Ok((img, missing, thumbnail)) => {
                                         let mut rendered = response.init_rendered_bp();
                                         rendered.set_image(&img);
@@ -716,22 +766,65 @@ pub mod server {
                                         if let Some(thumbnail) = thumbnail {
                                             rendered.set_thumbnail(&thumbnail);
                                         }
-
-                                        false
                                     }
                                     Err(err) => {
                                         error!("{err:?}");
                                         response.set_request_error(
                                             api_capnp::response::ErrorType::ProcessingError,
                                         );
-                                        false
                                     }
                                 }
+                            }
+                            ApiRequest::RenderThumbnail {
+                                bp_string,
+                                preset,
+                                mods,
+                                ..
+                            } => 'render: {
+                                let bp = match blueprint::Data::try_from(bp_string.as_str()) {
+                                    Ok(bp) => bp,
+                                    Err(err) => {
+                                        warn!("{err:?}");
+                                        response.set_request_error(
+                                            api_capnp::response::ErrorType::ProcessingError,
+                                        );
+                                        break 'render;
+                                    }
+                                };
+
+                                let (data, used_mods) = match load_data(
+                                    &bp,
+                                    &factorio,
+                                    &factorio_bin,
+                                    preset.parse().ok(),
+                                    mods,
+                                    None,
+                                ) {
+                                    Ok(d) => d,
+                                    Err(err) => {
+                                        error!("{err:?}");
+                                        response.set_request_error(
+                                            api_capnp::response::ErrorType::ProcessingError,
+                                        );
+                                        break 'render;
+                                    }
+                                };
+
+                                if let Some(thumbnail) =
+                                    render_thumbnail(&bp, &data, &used_mods, &mut ImageCache::new())
+                                {
+                                    response
+                                        .init_rendered_thumbnail()
+                                        .set_image(thumbnail.as_bytes());
+                                };
                             }
                         };
 
                         if let Err(err) = res_tx
-                            .send((serialize::write_message_segments_to_words(&message), close))
+                            .send((
+                                serialize::write_message_segments_to_words(&message),
+                                matches!(req, ApiRequest::Quit { .. }),
+                            ))
                             .map_err(|err| {
                                 report!(Error).attach_printable(format!(
                                     "failed to send result for {id} back to websocket handler"
@@ -1045,11 +1138,7 @@ fn render_bp(
     used_mods: &UsedMods,
     mut render_layers: RenderLayerBuffer,
     image_cache: &mut ImageCache,
-) -> Option<(
-    image::DynamicImage,
-    HashSet<String>,
-    Option<image::DynamicImage>,
-)> {
+) -> Option<(image::DynamicImage, HashSet<String>)> {
     let mut unknown = HashSet::new();
     let mut wire_connections = EntityWireConnections::new();
     let mut pipe_connections = HashMap::<MapPosition, HashSet<Direction>>::new();
@@ -1444,15 +1533,11 @@ fn render_bp(
     render_layers.draw_wires(&wire_connections, util_sprites, used_mods, image_cache);
     render_layers.generate_background();
 
-    Some((
-        render_layers.combine(),
-        unknown,
-        render_thumbnail(bp, data, used_mods, image_cache),
-    ))
+    Some((render_layers.combine(), unknown))
 }
 
 fn render_thumbnail(
-    bp: &blueprint::Blueprint,
+    bp: &blueprint::Data,
     data: &prototypes::DataUtil,
     used_mods: &UsedMods,
     image_cache: &mut ImageCache,
@@ -1470,7 +1555,7 @@ fn render_thumbnail(
 
     layers.add(
         (
-            data.get_item_icon(&bp.item, BASE_SCALE, used_mods, image_cache)?
+            data.get_item_icon(bp.item(), BASE_SCALE, used_mods, image_cache)?
                 .0,
             Vector::Tuple(-0.5, -0.5),
         ),
@@ -1478,11 +1563,12 @@ fn render_thumbnail(
         InternalRenderLayer::Entity,
     );
 
-    if bp.icons.is_empty() {
+    let icons = bp.icons();
+    if icons.is_empty() {
         return Some(layers.combine());
     }
 
-    let icon_count = bp.icons.len();
+    let icon_count = icons.len();
     let (scale, s_x, s_y) = if icon_count == 1 {
         (BASE_SCALE * 1.2, -0.5, -0.5)
     } else if icon_count == 2 {
@@ -1493,44 +1579,48 @@ fn render_thumbnail(
 
     let mut offset = Vector::Tuple(s_x, s_y);
 
-    for idx in 0..icon_count.min(4) {
-        if idx == 2 {
-            offset += Vector::Tuple(-1.0, 0.5);
-        }
+    icons
+        .iter()
+        .enumerate()
+        .take(icon_count.min(4))
+        .for_each(|(idx, icon)| {
+            if idx == 2 {
+                offset += Vector::Tuple(-1.0, 0.5);
+            }
 
-        let res = match &bp.icons[idx].signal {
-            SignalID::Item { name } => data.get_item_icon(
-                name.clone().unwrap_or_default().as_str(),
-                scale,
-                used_mods,
-                image_cache,
-            ),
-            SignalID::Fluid { name } => data.get_fluid_icon(
-                name.clone().unwrap_or_default().as_str(),
-                scale,
-                used_mods,
-                image_cache,
-            ),
-            SignalID::Virtual { name } => data.get_signal_icon(
-                name.clone().unwrap_or_default().as_str(),
-                scale,
-                used_mods,
-                image_cache,
-            ),
-        };
+            let res = match &icons[idx].signal {
+                SignalID::Item { name } => data.get_item_icon(
+                    name.clone().unwrap_or_default().as_str(),
+                    scale,
+                    used_mods,
+                    image_cache,
+                ),
+                SignalID::Fluid { name } => data.get_fluid_icon(
+                    name.clone().unwrap_or_default().as_str(),
+                    scale,
+                    used_mods,
+                    image_cache,
+                ),
+                SignalID::Virtual { name } => data.get_signal_icon(
+                    name.clone().unwrap_or_default().as_str(),
+                    scale,
+                    used_mods,
+                    image_cache,
+                ),
+            };
 
-        let Some((res, _)) = res else {
-            continue;
-        };
+            let Some((res, _)) = res else {
+                return;
+            };
 
-        layers.add(
-            (res, offset),
-            &MapPosition::default(),
-            InternalRenderLayer::AboveEntity,
-        );
+            layers.add(
+                (res, offset),
+                &MapPosition::default(),
+                InternalRenderLayer::AboveEntity,
+            );
 
-        offset += Vector::Tuple(0.5, 0.0);
-    }
+            offset += Vector::Tuple(0.5, 0.0);
+        });
 
     Some(layers.combine())
 }

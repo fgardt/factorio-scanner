@@ -15,6 +15,12 @@ struct Request {
             preset @4 :Text;
             mods @5 :List(Text);
         }
+
+        renderThumbnail :group {
+            bpString @6 :Text;
+            preset @7 :Text;
+            mods @8 :List(Text);
+        }
     }
 }
 
@@ -31,6 +37,10 @@ struct Response {
             image @4 :Data;
             missing @5 :List(Text);
             thumbnail @6 :Data;
+        }
+
+        renderedThumbnail :group {
+            image @7 :Data;
         }
     }
 
