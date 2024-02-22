@@ -133,6 +133,26 @@ impl Data {
     }
 
     #[must_use]
+    pub fn item(&self) -> &str {
+        match self {
+            Self::Blueprint(data) => &data.item,
+            Self::BlueprintBook(data) => &data.item,
+            Self::UpgradePlanner(data) => &data.item,
+            Self::DeconstructionPlanner(data) => &data.item,
+        }
+    }
+
+    #[must_use]
+    pub fn icons(&self) -> &[Indexed<Icon>] {
+        match self {
+            Self::Blueprint(data) => &data.icons,
+            Self::BlueprintBook(data) => &data.icons,
+            Self::UpgradePlanner(data) => &data.icons,
+            Self::DeconstructionPlanner(data) => &data.icons,
+        }
+    }
+
+    #[must_use]
     pub const fn is_book(&self) -> bool {
         matches!(self, Self::BlueprintBook { .. })
     }
