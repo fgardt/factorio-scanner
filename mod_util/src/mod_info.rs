@@ -375,8 +375,8 @@ impl DependencyVersion {
             Self::Lower(v) => versions.iter().filter(|&x| x < v).max(),
             Self::LowerOrEqual(v) => versions.iter().filter(|&x| x <= v).max(),
             Self::Exact(v) => versions.iter().find(|&x| x == v),
-            Self::HigherOrEqual(v) => versions.iter().filter(|&x| x >= v).min(),
-            Self::Higher(v) => versions.iter().filter(|&x| x > v).min(),
+            Self::HigherOrEqual(v) => versions.iter().filter(|&x| x >= v).max(),
+            Self::Higher(v) => versions.iter().filter(|&x| x > v).max(),
         }
     }
 }
