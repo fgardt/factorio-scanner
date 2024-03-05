@@ -1205,7 +1205,12 @@ pub enum SignalIDConnector {
 }
 
 /// [`Types/SelectionModeFlags`](https://lua-api.factorio.com/latest/types/SelectionModeFlags.html)
-pub type SelectionModeFlags = FactorioArray<SelectionModeFlagsUnion>;
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SelectionModeFlags {
+    Array(FactorioArray<SelectionModeFlagsUnion>),
+    Single(SelectionModeFlagsUnion),
+}
 
 /// [`Types/SelectionModeFlags`](https://lua-api.factorio.com/latest/types/SelectionModeFlags.html)
 #[derive(Debug, Serialize, Deserialize)]
