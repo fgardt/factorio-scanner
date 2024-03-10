@@ -4,7 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use mod_util::mod_info::Version;
 
-static DEFAULT_ENDPOINT: &str = "https://mods.factorio.com";
+static ENV_AGENT: &str = "FACTORIO_API_USER_AGENT";
+static ENV_ENDPOINT: &str = "FACTORIO_API_ENDPOINT";
 
 #[derive(Debug, thiserror::Error)]
 pub enum FactorioApiError {
@@ -33,6 +34,7 @@ enum PortalResponse<T> {
 
 #[cfg(feature = "blocking")]
 pub mod blocking {
+    use crate::FactorioApiError;
     use mod_util::mod_info::Version;
 
     pub use auth::*;
@@ -52,8 +54,7 @@ pub mod blocking {
             .copied()
             .collect();
 
-            let client = reqwest::blocking::Client::new();
-            let res = client
+            let res = super::client()?
                 .post("https://auth.factorio.com/api-login")
                 .form(&body)
                 .send()?;
@@ -64,60 +65,41 @@ pub mod blocking {
 
     pub use portal::*;
     mod portal {
-        use crate::{PortalResponse, DEFAULT_ENDPOINT};
+        use super::client;
+        use crate::{endpoint, FactorioApiError, PortalResponse};
 
         pub fn portal_list(
             params: crate::PortalListParams,
-        ) -> Result<crate::PortalListResponse, crate::FactorioApiError> {
-            let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
-            let client = reqwest::blocking::Client::new();
-            let res = client
-                .get(format!(
-                    "{}/api/mods?{}",
-                    endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned()),
-                    params.build()
-                ))
+        ) -> Result<crate::PortalListResponse, FactorioApiError> {
+            let res = client()?
+                .get(format!("{}/api/mods?{}", endpoint(), params.build()))
                 .send()?;
 
             match serde_json::from_slice(&res.bytes()?)? {
                 PortalResponse::Ok(res) => Ok(res),
-                PortalResponse::Err { message } => Err(crate::FactorioApiError::ApiError(message)),
+                PortalResponse::Err { message } => Err(FactorioApiError::ApiError(message)),
             }
         }
 
-        pub fn short_info(
-            mod_name: &str,
-        ) -> Result<crate::PortalShortEntry, crate::FactorioApiError> {
-            let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
-            let client = reqwest::blocking::Client::new();
-            let res = client
-                .get(format!(
-                    "{}/api/mods/{mod_name}",
-                    endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
-                ))
+        pub fn short_info(mod_name: &str) -> Result<crate::PortalShortEntry, FactorioApiError> {
+            let res = client()?
+                .get(format!("{}/api/mods/{mod_name}", endpoint()))
                 .send()?;
 
             match serde_json::from_slice(&res.bytes()?)? {
                 PortalResponse::Ok(res) => Ok(res),
-                PortalResponse::Err { message } => Err(crate::FactorioApiError::ApiError(message)),
+                PortalResponse::Err { message } => Err(FactorioApiError::ApiError(message)),
             }
         }
 
-        pub fn full_info(
-            mod_name: &str,
-        ) -> Result<crate::PortalLongEntry, crate::FactorioApiError> {
-            let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
-            let client = reqwest::blocking::Client::new();
-            let res = client
-                .get(format!(
-                    "{}/api/mods/{mod_name}/full",
-                    endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
-                ))
+        pub fn full_info(mod_name: &str) -> Result<crate::PortalLongEntry, FactorioApiError> {
+            let res = client()?
+                .get(format!("{}/api/mods/{mod_name}/full", endpoint()))
                 .send()?;
 
             match serde_json::from_slice(&res.bytes()?)? {
                 PortalResponse::Ok(res) => Ok(res),
-                PortalResponse::Err { message } => Err(crate::FactorioApiError::ApiError(message)),
+                PortalResponse::Err { message } => Err(FactorioApiError::ApiError(message)),
             }
         }
     }
@@ -126,9 +108,8 @@ pub mod blocking {
         download_url: &str,
         username: &str,
         token: &str,
-    ) -> Result<Vec<u8>, crate::FactorioApiError> {
-        let client = reqwest::blocking::Client::new();
-        let res = client
+    ) -> Result<Vec<u8>, FactorioApiError> {
+        let res = client()?
             .get(format!(
                 "https://mods.factorio.com{download_url}?username={username}&token={token}",
             ))
@@ -142,7 +123,7 @@ pub mod blocking {
         version: &Version,
         username: &str,
         token: &str,
-    ) -> Result<Vec<u8>, crate::FactorioApiError> {
+    ) -> Result<Vec<u8>, FactorioApiError> {
         let mod_info = short_info(mod_name)?;
 
         for release in mod_info.releases {
@@ -161,9 +142,19 @@ pub mod blocking {
         version: &Version,
         username: &str,
         password: &str,
-    ) -> Result<Vec<u8>, crate::FactorioApiError> {
+    ) -> Result<Vec<u8>, FactorioApiError> {
         let auth_res = auth(username, password)?;
         fetch_mod(mod_name, version, &auth_res.username, &auth_res.token)
+    }
+
+    fn client() -> Result<reqwest::blocking::Client, FactorioApiError> {
+        let Ok(agent) = std::env::var(crate::ENV_AGENT) else {
+            return Ok(reqwest::blocking::Client::new());
+        };
+
+        Ok(reqwest::blocking::ClientBuilder::new()
+            .user_agent(agent)
+            .build()?)
     }
 
     #[cfg(test)]
@@ -331,8 +322,7 @@ mod auth {
         .copied()
         .collect();
 
-        let client = reqwest::Client::new();
-        let res = client
+        let res = super::client()?
             .post("https://auth.factorio.com/api-login")
             .form(&body)
             .send()
@@ -349,7 +339,7 @@ mod portal {
     use mod_util::mod_info::Version;
     use serde::{Deserialize, Serialize};
 
-    use crate::{PortalResponse, DEFAULT_ENDPOINT};
+    use crate::{client, endpoint, PortalResponse};
 
     #[derive(Debug, Copy, Clone, Deserialize)]
     #[serde(untagged)]
@@ -617,14 +607,8 @@ mod portal {
     pub async fn portal_list(
         params: PortalListParams,
     ) -> Result<PortalListResponse, crate::FactorioApiError> {
-        let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
-        let client = reqwest::Client::new();
-        let res = client
-            .get(format!(
-                "{}/api/mods?{}",
-                endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned()),
-                params.build()
-            ))
+        let res = client()?
+            .get(format!("{}/api/mods?{}", endpoint(), params.build()))
             .send()
             .await?;
 
@@ -649,13 +633,8 @@ mod portal {
     }
 
     pub async fn short_info(mod_name: &str) -> Result<PortalShortEntry, crate::FactorioApiError> {
-        let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
-        let client = reqwest::Client::new();
-        let res = client
-            .get(format!(
-                "{}/api/mods/{mod_name}",
-                endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
-            ))
+        let res = client()?
+            .get(format!("{}/api/mods/{mod_name}", endpoint()))
             .send()
             .await?;
 
@@ -737,13 +716,8 @@ mod portal {
     }
 
     pub async fn full_info(mod_name: &str) -> Result<PortalLongEntry, crate::FactorioApiError> {
-        let endpoint = std::env::var("FACTORIO_API_ENDPOINT").ok();
-        let client = reqwest::Client::new();
-        let res = client
-            .get(format!(
-                "{}/api/mods/{mod_name}/full",
-                endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned())
-            ))
+        let res = client()?
+            .get(format!("{}/api/mods/{mod_name}/full", endpoint()))
             .send()
             .await?;
 
@@ -759,8 +733,7 @@ pub async fn fetch_mod_raw(
     username: &str,
     token: &str,
 ) -> Result<Vec<u8>, FactorioApiError> {
-    let client = reqwest::Client::new();
-    let res = client
+    let res = client()?
         .get(format!(
             "https://mods.factorio.com{download_url}?username={username}&token={token}"
         ))
@@ -797,6 +770,18 @@ pub async fn fetch_mod_with_password(
 ) -> Result<Vec<u8>, FactorioApiError> {
     let auth_res = auth(username, password).await?;
     fetch_mod(mod_name, version, &auth_res.username, &auth_res.token).await
+}
+
+fn client() -> Result<reqwest::Client, FactorioApiError> {
+    let Ok(agent) = std::env::var(ENV_AGENT) else {
+        return Ok(reqwest::Client::new());
+    };
+
+    Ok(reqwest::ClientBuilder::new().user_agent(agent).build()?)
+}
+
+fn endpoint() -> String {
+    std::env::var(ENV_ENDPOINT).unwrap_or_else(|_| "https://mods.factorio.com".to_owned())
 }
 
 #[cfg(test)]
