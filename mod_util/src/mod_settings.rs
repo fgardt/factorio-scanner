@@ -2,7 +2,7 @@ use std::{
     collections::HashMap,
     fs,
     io::{Cursor, Seek, SeekFrom},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
@@ -164,8 +164,8 @@ pub struct ModSettings {
 }
 
 #[derive(Debug, Clone)]
-pub struct SettingsDat<'a> {
-    path: &'a Path,
+pub struct SettingsDat {
+    path: PathBuf,
 
     pub version: u64, // https://wiki.factorio.com/Version_string_format
 
@@ -174,9 +174,9 @@ pub struct SettingsDat<'a> {
     pub runtime_per_user: HashMap<String, PropertyTree>,
 }
 
-impl<'a> SettingsDat<'a> {
-    pub fn load(path: &'a Path) -> Result<Self> {
-        let mut cursor = Cursor::new(fs::read(path)?);
+impl SettingsDat {
+    pub fn load<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let mut cursor = Cursor::new(fs::read(&path)?);
         let version = cursor.read_u64::<LittleEndian>()?;
         cursor.seek(SeekFrom::Current(1))?; // skip false bool
 
@@ -203,7 +203,7 @@ impl<'a> SettingsDat<'a> {
         };
 
         Ok(Self {
-            path,
+            path: path.as_ref().to_owned(),
             version,
             startup: startup.clone(),
             runtime_global: rt_g.clone(),
@@ -211,7 +211,7 @@ impl<'a> SettingsDat<'a> {
         })
     }
 
-    pub fn write(&self, path: &Path) -> Result<()> {
+    pub fn write<P: AsRef<Path>>(&self, path: P) -> Result<()> {
         let mut buf = Vec::new();
 
         buf.write_u64::<LittleEndian>(self.version)?;
@@ -244,14 +244,14 @@ impl<'a> SettingsDat<'a> {
     }
 
     pub fn save(&self) -> Result<()> {
-        self.write(self.path)
+        self.write(&self.path)
     }
 
     #[cfg(feature = "bp_meta_info")]
-    pub fn load_bp_settings(
+    pub fn load_bp_settings<P: AsRef<Path>>(
         settings: &crate::TagTable,
         version: u64,
-        path: &'a Path,
+        path: P,
     ) -> Result<Self> {
         let mut startup = HashMap::new();
 
@@ -261,7 +261,7 @@ impl<'a> SettingsDat<'a> {
         }
 
         Ok(Self {
-            path,
+            path: path.as_ref().to_owned(),
             version,
             startup,
             runtime_global: HashMap::new(),

@@ -52,11 +52,20 @@ pub struct Mod {
 }
 
 impl Mod {
-    pub fn load(factorio_dir: &Path, name: &str) -> Result<Self> {
+    pub fn load<P: AsRef<Path>>(factorio_dir: P, name: &str) -> Result<Self> {
+        Self::load_custom(&factorio_dir, factorio_dir.as_ref().join("mods"), name)
+    }
+
+    pub fn load_custom<FP: AsRef<Path>, MP: AsRef<Path>>(
+        factorio_dir: FP,
+        mod_dir: MP,
+        name: &str,
+    ) -> Result<Self> {
+        let factorio_dir = factorio_dir.as_ref();
         let path = if Self::wube_mods().contains(&name) {
             factorio_dir.join("data")
         } else {
-            factorio_dir.join("mods")
+            mod_dir.as_ref().to_owned()
         }
         .join(name);
 
@@ -119,22 +128,25 @@ enum ModType {
 }
 
 impl ModType {
-    fn load(path: PathBuf) -> Result<Self> {
+    fn load<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let path = path.as_ref();
         if !path.exists() {
-            return Err(ModError::PathDoesNotExist(path));
+            return Err(ModError::PathDoesNotExist(path.to_owned()));
         }
 
         if path.is_dir() {
-            Ok(Self::Folder { path })
+            Ok(Self::Folder {
+                path: path.to_owned(),
+            })
         } else if path.is_file() && path.extension().unwrap_or_default() == "zip" {
-            let zip = ZipArchive::new(File::open(&path)?)?;
+            let zip = ZipArchive::new(File::open(path)?)?;
             let internal_prefix = zip
                 .file_names()
                 .next()
-                .ok_or(ModError::ZipEmpty(path.clone()))?
+                .ok_or(ModError::ZipEmpty(path.to_owned()))?
                 .split('/')
                 .next()
-                .ok_or(ModError::UnknownInternalFolder(path))?
+                .ok_or(ModError::UnknownInternalFolder(path.to_owned()))?
                 .to_owned()
                 + "/";
 
@@ -143,7 +155,7 @@ impl ModType {
                 zip: RefCell::new(zip),
             })
         } else {
-            return Err(ModError::PathNotZipOrDir(path));
+            return Err(ModError::PathNotZipOrDir(path.to_owned()));
         }
     }
 
