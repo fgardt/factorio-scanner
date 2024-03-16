@@ -89,9 +89,9 @@ pub struct Entry {
 
 #[derive(Debug, Clone)]
 pub struct ModList {
-    factorio_dir: PathBuf,
-    mod_dir: PathBuf,
-    list: HashMap<String, Entry>,
+    pub factorio_dir: PathBuf,
+    pub mod_dir: PathBuf,
+    pub list: HashMap<String, Entry>,
 }
 
 impl From<&ModList> for ModListFormat {
@@ -242,24 +242,9 @@ impl ModList {
     pub fn save(&self) -> Result<()> {
         let format: ModListFormat = self.into();
         let bytes = serde_json::to_vec_pretty(&format)?;
-        std::fs::write(self.factorio_dir.join("mods/mod-list.json"), bytes)?;
+        std::fs::write(self.mod_dir.join("mod-list.json"), bytes)?;
 
         Ok(())
-    }
-
-    #[must_use]
-    pub fn contains(&self, name: &str) -> bool {
-        self.list.contains_key(name)
-    }
-
-    #[must_use]
-    pub const fn as_list(&self) -> &HashMap<String, Entry> {
-        &self.list
-    }
-
-    #[must_use]
-    pub fn as_list_mut(&mut self) -> &mut HashMap<String, Entry> {
-        &mut self.list
     }
 
     /// Marks the given mods as enabled and sets the active version to the given one.
@@ -298,7 +283,6 @@ impl ModList {
 
     #[must_use]
     pub fn active_mods(&self) -> UsedMods {
-        let mods = self.factorio_dir.join("mods");
         self.list
             .iter()
             .filter_map(|(name, entry)| {
@@ -313,9 +297,9 @@ impl ModList {
                     let version = entry.active_version.unwrap_or(versions.last().copied()?);
 
                     let versioned = format!("{name}_{version}");
-                    if mods.join(versioned.clone() + ".zip").exists() {
+                    if self.mod_dir.join(versioned.clone() + ".zip").exists() {
                         versioned + ".zip"
-                    } else if mods.join(versioned.clone()).exists() {
+                    } else if self.mod_dir.join(versioned.clone()).exists() {
                         versioned
                     } else {
                         name.clone()
