@@ -2,7 +2,7 @@ use std::{
     collections::{HashMap, HashSet},
     fs::{self, File},
     io::Read,
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use petgraph::prelude::DiGraph;
@@ -68,8 +68,8 @@ struct ModListFormat {
 }
 
 impl ModListFormat {
-    fn load(list_path: &Path) -> Result<Self> {
-        if !list_path.is_file() {
+    fn load<P: AsRef<Path>>(list_path: P) -> Result<Self> {
+        if !list_path.as_ref().is_file() {
             return Ok(Self { mods: Vec::new() });
         }
 
@@ -88,12 +88,13 @@ pub struct Entry {
 }
 
 #[derive(Debug, Clone)]
-pub struct ModList<'a> {
-    factorio_dir: &'a Path,
+pub struct ModList {
+    factorio_dir: PathBuf,
+    mod_dir: PathBuf,
     list: HashMap<String, Entry>,
 }
 
-impl<'a> From<&ModList<'a>> for ModListFormat {
+impl From<&ModList> for ModListFormat {
     fn from(list: &ModList) -> Self {
         let mut mods = Vec::new();
 
@@ -114,20 +115,19 @@ impl<'a> From<&ModList<'a>> for ModListFormat {
     }
 }
 
-impl<'a> From<ModList<'a>> for ModListFormat {
+impl From<ModList> for ModListFormat {
     fn from(list: ModList) -> Self {
         (&list).into()
     }
 }
 
-impl<'a> ModList<'a> {
-    pub fn load(factorio_dir: &'a Path) -> Result<Self> {
-        let mut res = Self::generate(factorio_dir)?;
-        let list = ModListFormat::load(&factorio_dir.join("mods/mod-list.json"))?;
+impl ModList {
+    pub fn load(&mut self) -> Result<&mut Self> {
+        let list = ModListFormat::load(self.mod_dir.join("mod-list.json").canonicalize()?)?;
 
         // enable mods (and set active version) if they were found in the folder
         for entry in list.mods {
-            res.list.entry(entry.name).and_modify(|e| {
+            self.list.entry(entry.name).and_modify(|e| {
                 if let Some(entry_v) = entry.version {
                     if !e.versions.contains_key(&entry_v) {
                         return;
@@ -140,10 +140,17 @@ impl<'a> ModList<'a> {
             });
         }
 
-        Ok(res)
+        Ok(self)
     }
 
-    pub fn generate(factorio_dir: &'a Path) -> Result<Self> {
+    pub fn generate<P: AsRef<Path>>(factorio_dir: P) -> Result<Self> {
+        Self::generate_custom(&factorio_dir, factorio_dir.as_ref().join("mods"))
+    }
+
+    pub fn generate_custom<FP: AsRef<Path>, MP: AsRef<Path>>(
+        factorio_dir: FP,
+        mod_dir: MP,
+    ) -> Result<Self> {
         #[allow(clippy::unwrap_used)]
         let filename_extractor = Regex::new(r"^(.+?)(?:_(\d+\.\d+\.\d+)(?:\.zip)?)?$").unwrap();
 
@@ -151,7 +158,7 @@ impl<'a> ModList<'a> {
 
         // add wube mods
         for w_mod in Mod::wube_mods() {
-            match Mod::load(factorio_dir, w_mod) {
+            match Mod::load_custom(&factorio_dir, &mod_dir, w_mod) {
                 Ok(m) => {
                     list.insert(
                         w_mod.to_string(),
@@ -178,7 +185,7 @@ impl<'a> ModList<'a> {
         }
 
         // add mods from mods folder
-        let paths = fs::read_dir(factorio_dir.join("mods"))?;
+        let paths = fs::read_dir(&mod_dir)?;
         for path in paths {
             let Ok(path) = path else {
                 continue;
@@ -210,7 +217,9 @@ impl<'a> ModList<'a> {
                 };
                 version
             } else {
-                let Ok(version) = Mod::load(factorio_dir, filename).map(|m| m.info.version) else {
+                let Ok(version) =
+                    Mod::load_custom(&factorio_dir, &mod_dir, filename).map(|m| m.info.version)
+                else {
                     continue;
                 };
                 version
@@ -223,7 +232,11 @@ impl<'a> ModList<'a> {
             //     .insert(m.info.version, m.info.dependencies);
         }
 
-        Ok(Self { factorio_dir, list })
+        Ok(Self {
+            factorio_dir: factorio_dir.as_ref().to_owned(),
+            mod_dir: mod_dir.as_ref().to_owned(),
+            list,
+        })
     }
 
     pub fn save(&self) -> Result<()> {
@@ -309,7 +322,7 @@ impl<'a> ModList<'a> {
                     }
                 };
 
-                match Mod::load(self.factorio_dir, &file) {
+                match Mod::load_custom(&self.factorio_dir, &self.mod_dir, &file) {
                     Ok(m) => Some((name.clone(), m)),
                     Err(e) => {
                         println!("Failed to load mod {name} at {file}: {e}");
@@ -356,7 +369,7 @@ impl<'a> ModList<'a> {
                 continue;
             };
 
-            let Ok(m) = Mod::load(self.factorio_dir, filename) else {
+            let Ok(m) = Mod::load_custom(&self.factorio_dir, &self.mod_dir, filename) else {
                 continue;
             };
 
