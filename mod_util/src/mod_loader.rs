@@ -47,6 +47,7 @@ type Result<T> = std::result::Result<T, ModError>;
 #[derive(Debug)]
 pub struct Mod {
     pub info: ModInfo,
+    pub path: PathBuf,
 
     internal: ModType,
 }
@@ -69,7 +70,7 @@ impl Mod {
         }
         .join(name);
 
-        let internal = ModType::load(path)?;
+        let internal = ModType::load(&path)?;
 
         // the special core "mod" has no version field -> grab it from base instead
         let info = if name == "core" {
@@ -103,7 +104,11 @@ impl Mod {
             });
         }
 
-        Ok(Self { info, internal })
+        Ok(Self {
+            info,
+            path,
+            internal,
+        })
     }
 
     pub fn get_file(&self, path: &str) -> Result<Vec<u8>> {
