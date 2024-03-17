@@ -9,6 +9,7 @@ use petgraph::prelude::DiGraph;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
+use tracing::{debug, instrument, warn};
 
 use crate::{
     mod_info::{Dependency, DependencyExt, DependencyUtil, DependencyVersion, Version},
@@ -68,6 +69,7 @@ struct ModListFormat {
 }
 
 impl ModListFormat {
+    #[instrument(skip_all)]
     fn load<P: AsRef<Path>>(list_path: P) -> Result<Self> {
         if !list_path.as_ref().is_file() {
             return Ok(Self { mods: Vec::new() });
@@ -147,6 +149,7 @@ impl ModList {
         Self::generate_custom(&factorio_dir, factorio_dir.as_ref().join("mods"))
     }
 
+    #[instrument(name = "generate", skip_all)]
     pub fn generate_custom<FP: AsRef<Path>, MP: AsRef<Path>>(
         factorio_dir: FP,
         mod_dir: MP,
@@ -198,16 +201,16 @@ impl ModList {
 
             let path = path.path();
             if path.is_file() && path.extension() != Some("zip".as_ref()) {
-                //println!("skipping {path:?}");
+                debug!("skipping {path:?}");
                 continue;
             }
 
             let Some(extracted) = filename_extractor.captures(filename) else {
-                //println!("skipping invalid match: {path:?}");
+                debug!("skipping invalid match: {path:?}");
                 continue;
             };
             let Some(name) = extracted.get(1).map(|n| n.as_str().to_owned()) else {
-                //println!("skipping invalid name: {path:?}");
+                debug!("skipping invalid name: {path:?}");
                 continue;
             };
 
@@ -250,6 +253,7 @@ impl ModList {
     /// Marks the given mods as enabled and sets the active version to the given one.
     ///
     /// Returns a list of mods that were not found in the mod list but got added.
+    #[instrument(skip_all)]
     pub fn enable_mods(&mut self, mods: &UsedVersions) -> UsedVersions {
         let mut missing = HashMap::new();
 
@@ -282,6 +286,7 @@ impl ModList {
     }
 
     #[must_use]
+    #[instrument(skip_all)]
     pub fn active_mods(&self) -> UsedMods {
         self.list
             .iter()
@@ -309,7 +314,7 @@ impl ModList {
                 match Mod::load_custom(&self.factorio_dir, &self.mod_dir, &file) {
                     Ok(m) => Some((name.clone(), m)),
                     Err(e) => {
-                        println!("Failed to load mod {name} at {file}: {e}");
+                        warn!("Failed to load mod {name} at {file}: {e}");
                         None
                     }
                 }
@@ -317,6 +322,7 @@ impl ModList {
             .collect()
     }
 
+    #[instrument(name = "load_local_dep_info", skip_all)]
     pub fn load_local_dependency_info(&mut self, mods: &DependencyList) {
         let mut queue = mods
             .iter()
@@ -358,7 +364,7 @@ impl ModList {
             };
 
             if version != m.info.version {
-                println!(
+                warn!(
                     "Version mismatch for {name}: {version} != {}",
                     m.info.version
                 );
@@ -392,6 +398,7 @@ impl ModList {
         e.known_dependencies = known_dependencies;
     }
 
+    #[instrument(name = "solve_deps", skip_all)]
     #[allow(clippy::too_many_lines)]
     pub fn solve_dependencies(&self, required: &DependencyList) -> Result<UsedVersions> {
         if required.is_empty() {

@@ -8,5 +8,5 @@ edition.workspace = true
 workspace = true
 
 [dependencies]
-num = "0.4.1"
+num = "0.4"
 serde.workspace = true

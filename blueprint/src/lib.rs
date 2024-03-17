@@ -6,6 +6,7 @@ use base64::{engine::general_purpose, Engine};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
+use tracing::{debug, instrument};
 
 mod blueprint;
 mod book;
@@ -285,7 +286,7 @@ impl Data {
                     offset_y - 1.0
                 };
 
-                println!("normalize offset: {offset_x}, {offset_y}");
+                debug!("normalize offset: {offset_x}, {offset_y}");
 
                 for entity in &mut data.entities {
                     entity.position.x -= offset_x;
@@ -392,6 +393,7 @@ pub fn json_to_bp_string(json: &str) -> Result<String, BlueprintEncodeError> {
 impl TryFrom<&str> for Data {
     type Error = BlueprintDecodeError;
 
+    #[instrument(name = "str2bp_data", skip(bp_string))]
     fn try_from(bp_string: &str) -> Result<Self, Self::Error> {
         let json = bp_string_to_json(bp_string)?;
         let mut data: Self = serde_json::from_str(&json)?;
@@ -414,6 +416,7 @@ impl TryFrom<String> for Data {
 impl TryFrom<Data> for String {
     type Error = BlueprintEncodeError;
 
+    #[instrument(name = "bp_data2str", skip(data))]
     fn try_from(data: Data) -> Result<Self, Self::Error> {
         let json = serde_json::to_string(&data)?;
 

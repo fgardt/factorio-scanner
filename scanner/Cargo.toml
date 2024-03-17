@@ -11,10 +11,9 @@ workspace = true
 blueprint.workspace = true
 clap.workspace = true
 error-stack = "0.4"
-factorio_api = { workspace = true, features = ["blocking"] }
+factorio_api.workspace = true
 flate2.workspace = true
 image.workspace = true
-log.workspace = true
 locale.workspace = true
 mod_util = { workspace = true, features = ["bp_meta_info"] }
 pretty_logging.workspace = true
@@ -27,6 +26,8 @@ types.workspace = true
 dotenv = "0.15"
 rustc-hash = "1.1"
 strum = { version = "0.26", features = ["derive"] }
+tracing.workspace = true
+tokio = { workspace = true, features = ["rt"] }
 
 [build-dependencies]
 capnpc = { version = "0.19.0" }

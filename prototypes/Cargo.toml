@@ -9,7 +9,7 @@ workspace = true
 
 [dependencies]
 image.workspace = true
-imageproc = "0.23"
+imageproc = "0.24"
 konst.workspace = true
 mod_util.workspace = true
 serde.workspace = true
@@ -19,4 +19,5 @@ serde_repr.workspace = true
 serde_with.workspace = true
 signed-distance-field = { version = "0.6", features = ["image"] }
 thiserror.workspace = true
+tracing.workspace = true
 types.workspace = true

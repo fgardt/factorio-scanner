@@ -1,5 +1,12 @@
 #![allow(clippy::module_name_repetitions)]
 
+use std::time::Instant;
+
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
+use reqwest_tracing::{
+    default_on_request_end, reqwest_otel_span, ReqwestOtelSpanBackend, TracingMiddleware,
+};
 use serde::{Deserialize, Serialize};
 
 use mod_util::mod_info::Version;
@@ -11,6 +18,9 @@ static ENV_ENDPOINT: &str = "FACTORIO_API_ENDPOINT";
 pub enum FactorioApiError {
     #[error("reqwest error: {0}")]
     Reqwest(#[from] reqwest::Error),
+
+    #[error("reqwest middleware error: {0}")]
+    ReqwestMiddleware(#[from] reqwest_middleware::Error),
 
     #[error("json error: {0}")]
     Json(#[from] serde_json::Error),
@@ -30,271 +40,6 @@ pub enum FactorioApiError {
 enum PortalResponse<T> {
     Ok(T),
     Err { message: String },
-}
-
-#[cfg(feature = "blocking")]
-pub mod blocking {
-    use crate::FactorioApiError;
-    use mod_util::mod_info::Version;
-
-    pub use auth::*;
-    mod auth {
-        use std::collections::HashMap;
-
-        pub fn auth(
-            username: &str,
-            password: &str,
-        ) -> Result<crate::AuthDetails, crate::FactorioApiError> {
-            let body: HashMap<&str, &str> = [
-                ("username", username),
-                ("password", password),
-                ("api_version", "4"),
-            ]
-            .iter()
-            .copied()
-            .collect();
-
-            let res = super::client()?
-                .post("https://auth.factorio.com/api-login")
-                .form(&body)
-                .send()?;
-
-            Ok(serde_json::from_str(&res.text()?)?)
-        }
-    }
-
-    pub use portal::*;
-    mod portal {
-        use super::client;
-        use crate::{endpoint, FactorioApiError, PortalResponse};
-
-        pub fn portal_list(
-            params: crate::PortalListParams,
-        ) -> Result<crate::PortalListResponse, FactorioApiError> {
-            let res = client()?
-                .get(format!("{}/api/mods?{}", endpoint(), params.build()))
-                .send()?;
-
-            match serde_json::from_slice(&res.bytes()?)? {
-                PortalResponse::Ok(res) => Ok(res),
-                PortalResponse::Err { message } => Err(FactorioApiError::ApiError(message)),
-            }
-        }
-
-        pub fn short_info(mod_name: &str) -> Result<crate::PortalShortEntry, FactorioApiError> {
-            let res = client()?
-                .get(format!("{}/api/mods/{mod_name}", endpoint()))
-                .send()?;
-
-            match serde_json::from_slice(&res.bytes()?)? {
-                PortalResponse::Ok(res) => Ok(res),
-                PortalResponse::Err { message } => Err(FactorioApiError::ApiError(message)),
-            }
-        }
-
-        pub fn full_info(mod_name: &str) -> Result<crate::PortalLongEntry, FactorioApiError> {
-            let res = client()?
-                .get(format!("{}/api/mods/{mod_name}/full", endpoint()))
-                .send()?;
-
-            match serde_json::from_slice(&res.bytes()?)? {
-                PortalResponse::Ok(res) => Ok(res),
-                PortalResponse::Err { message } => Err(FactorioApiError::ApiError(message)),
-            }
-        }
-    }
-
-    pub fn fetch_mod_raw(
-        download_url: &str,
-        username: &str,
-        token: &str,
-    ) -> Result<Vec<u8>, FactorioApiError> {
-        let res = client()?
-            .get(format!(
-                "https://mods.factorio.com{download_url}?username={username}&token={token}",
-            ))
-            .send()?;
-
-        Ok(res.bytes()?.to_vec())
-    }
-
-    pub fn fetch_mod(
-        mod_name: &str,
-        version: &Version,
-        username: &str,
-        token: &str,
-    ) -> Result<Vec<u8>, FactorioApiError> {
-        let mod_info = short_info(mod_name)?;
-
-        for release in mod_info.releases {
-            if release.version != *version {
-                continue;
-            }
-
-            return fetch_mod_raw(&release.download_url, username, token);
-        }
-
-        Err(crate::FactorioApiError::NoRelease(mod_name.to_owned()))
-    }
-
-    pub fn fetch_mod_with_password(
-        mod_name: &str,
-        version: &Version,
-        username: &str,
-        password: &str,
-    ) -> Result<Vec<u8>, FactorioApiError> {
-        let auth_res = auth(username, password)?;
-        fetch_mod(mod_name, version, &auth_res.username, &auth_res.token)
-    }
-
-    fn client() -> Result<reqwest::blocking::Client, FactorioApiError> {
-        let Ok(agent) = std::env::var(crate::ENV_AGENT) else {
-            return Ok(reqwest::blocking::Client::new());
-        };
-
-        Ok(reqwest::blocking::ClientBuilder::new()
-            .user_agent(agent)
-            .build()?)
-    }
-
-    #[cfg(test)]
-    mod tests {
-        use super::*;
-
-        #[test]
-        fn invalid_auth() {
-            let result = auth("test_user", "this_is_a_fake_password_that_should_not_work");
-
-            assert!(result.is_err());
-        }
-
-        #[test]
-        fn test_mod_short() {
-            let result = short_info("fgardt-internal-test-mod");
-
-            match result {
-                Ok(info) => {
-                    assert!(
-                        info.owner == "fgardt",
-                        "expected fgardt as owner, got {}",
-                        info.owner
-                    );
-                    assert!(
-                        info.name == "fgardt-internal-test-mod",
-                        "expected fgardt-internal-test-mod as name, got {}",
-                        info.name
-                    );
-                }
-                Err(err) => panic!("short mod info error: {err}"),
-            }
-        }
-
-        #[test]
-        fn test_mod_full() {
-            let result = full_info("fgardt-internal-test-mod");
-
-            match result {
-                Ok(info) => {
-                    assert!(
-                        info.owner == "fgardt",
-                        "expected fgardt as owner, got {}",
-                        info.owner
-                    );
-                    assert!(
-                        info.name == "fgardt-internal-test-mod",
-                        "expected fgardt-internal-test-mod as name, got {}",
-                        info.name
-                    );
-                    assert!(
-                        info.deprecated.unwrap_or_default(),
-                        "expected deprecated to be true, got {:?}",
-                        info.deprecated
-                    );
-                }
-                Err(err) => panic!("full mod info error: {err}"),
-            }
-        }
-
-        #[test]
-        fn portal_list_single() {
-            let result = portal_list(
-                crate::PortalListParams::new()
-                    .namelist(vec!["fgardt-internal-test-mod".to_owned()]),
-            );
-
-            match result {
-                Ok(info) => {
-                    assert!(
-                        info.results.len() == 1,
-                        "expected 1 result, got {}",
-                        info.results.len()
-                    );
-                }
-                Err(err) => panic!("portal list error: {err}"),
-            }
-        }
-
-        #[test]
-        fn portal_list_multiple() {
-            let result = portal_list(crate::PortalListParams::new().namelist(vec![
-                "fgardt-internal-test-mod".to_owned(),
-                "underground-storage-tank".to_owned(),
-                "flamethrower-wagon".to_owned(),
-                "rail-decon-planner".to_owned(),
-            ]));
-
-            match result {
-                Ok(info) => {
-                    assert!(
-                        info.results.len() == 4,
-                        "expected 4 results, got {}",
-                        info.results.len()
-                    );
-                }
-                Err(err) => panic!("portal list error: {err}"),
-            }
-        }
-
-        #[test]
-        fn portal_list_no_deprecated() {
-            let result = portal_list(
-                crate::PortalListParams::new()
-                    .hide_deprecated(true)
-                    .namelist(vec!["fgardt-internal-test-mod".to_owned()]),
-            );
-
-            match result {
-                Ok(info) => {
-                    assert!(
-                        info.results.is_empty(),
-                        "expected 0 results, got {}",
-                        info.results.len()
-                    );
-                }
-                Err(err) => panic!("portal list error: {err}"),
-            }
-        }
-
-        #[test]
-        fn portal_list_old_version() {
-            let result = portal_list(
-                crate::PortalListParams::new()
-                    .version(crate::PortalSearchVersion::V0_13)
-                    .namelist(vec!["fgardt-internal-test-mod".to_owned()]),
-            );
-
-            match result {
-                Ok(info) => {
-                    assert!(
-                        info.results.is_empty(),
-                        "expected 0 results, got {}",
-                        info.results.len()
-                    );
-                }
-                Err(err) => panic!("portal list error: {err}"),
-            }
-        }
-    }
 }
 
 pub use auth::*;
@@ -333,6 +78,7 @@ mod auth {
 }
 
 pub use portal::*;
+use task_local_extensions::Extensions;
 mod portal {
     use core::fmt;
 
@@ -772,12 +518,43 @@ pub async fn fetch_mod_with_password(
     fetch_mod(mod_name, version, &auth_res.username, &auth_res.token).await
 }
 
-fn client() -> Result<reqwest::Client, FactorioApiError> {
-    let Ok(agent) = std::env::var(ENV_AGENT) else {
-        return Ok(reqwest::Client::new());
+struct TimeTrace;
+
+impl ReqwestOtelSpanBackend for TimeTrace {
+    fn on_request_start(req: &reqwest::Request, extension: &mut Extensions) -> tracing::Span {
+        extension.insert(Instant::now());
+        reqwest_otel_span!(
+            name = "factorio_api_request",
+            req,
+            time_elapsed = tracing::field::Empty
+        )
+    }
+
+    fn on_request_end(
+        span: &tracing::Span,
+        outcome: &reqwest_middleware::Result<reqwest::Response>,
+        extension: &mut Extensions,
+    ) {
+        #[allow(clippy::unwrap_used)]
+        let time_elapsed = extension.get::<Instant>().unwrap().elapsed().as_millis() as i64;
+        default_on_request_end(span, outcome);
+        span.record("time_elapsed", time_elapsed);
+    }
+}
+
+fn client() -> Result<ClientWithMiddleware, FactorioApiError> {
+    let rqc = if let Ok(agent) = std::env::var(ENV_AGENT) {
+        reqwest::ClientBuilder::new().user_agent(agent).build()?
+    } else {
+        reqwest::Client::new()
     };
 
-    Ok(reqwest::ClientBuilder::new().user_agent(agent).build()?)
+    let tracer = TracingMiddleware::<TimeTrace>::new();
+    let retry = RetryTransientMiddleware::new_with_policy(
+        ExponentialBackoff::builder().build_with_max_retries(3),
+    );
+
+    Ok(ClientBuilder::new(rqc).with(tracer).with(retry).build())
 }
 
 fn endpoint() -> String {

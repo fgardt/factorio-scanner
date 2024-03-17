@@ -39,6 +39,7 @@ pub use graphics::*;
 pub use icon::*;
 pub use item::*;
 pub use module::*;
+use tracing::warn;
 pub use wire::*;
 
 /// [`Types/AmmoCategoryID`](https://lua-api.factorio.com/latest/types/AmmoCategoryID.html)
@@ -658,14 +659,14 @@ impl FileName {
         let sprite_path = &filename[(2 + mod_name.len() + 2 + 1)..]; // +1 to include the slash to prevent joining to interpret it as a absolute path
 
         let Some(m) = used_mods.get(mod_name) else {
-            println!("Mod {mod_name} not found");
+            warn!("Mod {mod_name} not found");
             return None;
         };
 
         let file_data = match m.get_file(sprite_path) {
             Ok(d) => d,
             Err(e) => {
-                println!("Error loading {filename}: {e}");
+                warn!("Error loading {filename}: {e}");
                 return None;
             }
         };
