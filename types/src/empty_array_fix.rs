@@ -156,8 +156,6 @@ where
 
         vec.sort_unstable_by(|(a, _), (b, _)| a.cmp(b));
 
-        //println!("stupid factorio array: {}", vec.len());
-
         Ok(FactorioArray(vec.into_iter().map(|(_, v)| v).collect()))
     }
 }
