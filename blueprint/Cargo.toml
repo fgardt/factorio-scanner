@@ -8,7 +8,7 @@ edition.workspace = true
 workspace = true
 
 [dependencies]
-base64 = "0.21"
+base64 = "0.22"
 flate2.workspace = true
 mod_util.workspace = true
 serde.workspace = true
@@ -17,4 +17,5 @@ serde_json.workspace = true
 serde_repr.workspace = true
 serde_with.workspace = true
 thiserror.workspace = true
+tracing.workspace = true
 types.workspace = true

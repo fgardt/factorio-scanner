@@ -105,7 +105,6 @@ impl RecipePrototypeData {
                 None
             }
             RecipeDataResult::Single { result, .. } => {
-                // println!("single result");
                 items.get_icon(result, scale, used_mods, image_cache)
             }
         }

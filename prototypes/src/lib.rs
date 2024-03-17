@@ -21,6 +21,7 @@ use entity::RenderableEntity;
 use mod_util::mod_info::Version;
 
 use mod_util::UsedMods;
+use tracing::instrument;
 use types::*;
 
 pub mod entity;
@@ -100,6 +101,7 @@ impl DataRaw {
         Self::load_from_bytes(&bytes)
     }
 
+    #[instrument(skip_all)]
     pub fn load_from_bytes(bytes: &[u8]) -> Result<Self, Error> {
         Ok(serde_json::from_slice(bytes)?)
     }
@@ -1098,6 +1100,7 @@ impl RenderLayerBuffer {
             .insert(bp_entity_id, wire_connection_points);
     }
 
+    #[instrument(skip_all)]
     fn generate_wire_draw_data<'a>(
         &mut self,
         wire_data: &'a EntityWireConnections,
@@ -1199,6 +1202,7 @@ impl RenderLayerBuffer {
         draw_data
     }
 
+    #[instrument(skip_all)]
     pub fn draw_wires(
         &mut self,
         wire_data: &EntityWireConnections,
@@ -1299,6 +1303,7 @@ impl RenderLayerBuffer {
         }
     }
 
+    #[instrument(skip_all)]
     pub fn generate_background(&mut self) {
         let lab_tile_dark = image::Luma([0x1bu8]);
         let lab_tile_light = image::Luma([0x31u8]);
@@ -1326,6 +1331,7 @@ impl RenderLayerBuffer {
     }
 
     #[must_use]
+    #[instrument(skip_all)]
     pub fn combine(&mut self) -> image::DynamicImage {
         'sdf_outline: {
             if let Some(icons) = self.layers.get(&InternalRenderLayer::IconOverlay) {

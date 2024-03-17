@@ -313,8 +313,6 @@ pub fn merge_renders(renders: &[Option<GraphicsOutput>], scale: f64) -> Option<G
         min_y = min_y.min(y);
         max_x = max_x.max(x + width);
         max_y = max_y.max(y + height);
-
-        //println!("{width}x{height} x{scale} ({shift_x}, {shift_y})");
     }
 
     let px_per_tile = TILE_RES / scale;
@@ -325,8 +323,6 @@ pub fn merge_renders(renders: &[Option<GraphicsOutput>], scale: f64) -> Option<G
         res_shift.0.mul_add(-px_per_tile, width / 2.0),
         res_shift.1.mul_add(-px_per_tile, height / 2.0),
     );
-
-    //println!("px/tile: {px_per_tile}\nborders: {min_x} {max_x} | {min_y} {max_y}\nsize: {width}, {height}\nshift: {res_shift:?}\ncenter: {center:?}");
 
     let mut combined = DynamicImage::new_rgba8(width.ceil() as u32, height.ceil() as u32);
 
@@ -475,8 +471,6 @@ impl FetchSprite for SpriteParams {
         runtime_tint: Option<Color>,
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
-        //println!("{data:?}");
-
         // TODO: add extra output for shadows
         // rendering shadows / glow / light is not supported
         if self.draw_as_shadow || self.draw_as_light {

@@ -1,7 +1,6 @@
 #![allow(dead_code, clippy::upper_case_acronyms, unused_variables)]
 
 use std::{
-    env,
     fs::{self},
     path::{Path, PathBuf},
     process::ExitCode,
@@ -9,12 +8,10 @@ use std::{
 
 use clap::{Parser, Subcommand};
 use error_stack::{Context, Result, ResultExt};
+use tracing::{error, info, warn, Level};
 
 #[allow(clippy::wildcard_imports)]
 use scanner::*;
-
-#[macro_use]
-extern crate log;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -24,7 +21,7 @@ struct Cli {
     /// For no logging don't set this option
     /// Note: the LOG_LEVEL environment variable overrides this option
     #[clap(long, value_parser, verbatim_doc_comment)]
-    log_level: Option<log::Level>,
+    log_level: Option<Level>,
 
     /// Path to the factorio directory that contains the data folder (path.read-data)
     #[clap(short, long, value_parser)]
@@ -131,6 +128,18 @@ fn main() -> ExitCode {
         .factorio_bin
         .unwrap_or_else(|| cli.factorio.join("bin/x64/factorio"));
 
+    let rt = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .change_context(ScannerError::ServerError)
+    {
+        Ok(rt) => rt,
+        Err(err) => {
+            error!("{err:#?}");
+            return ExitCode::FAILURE;
+        }
+    };
+
     if let Err(err) = match cli.command {
         Commands::Render {
             input,
@@ -140,7 +149,7 @@ fn main() -> ExitCode {
             out,
             target_res,
             min_scale,
-        } => render_command(
+        } => rt.block_on(render_command(
             input,
             &cli.factorio,
             &factorio_bin,
@@ -149,7 +158,7 @@ fn main() -> ExitCode {
             prototype_dump,
             target_res,
             &out,
-        ),
+        )),
     } {
         error!("{err:#?}");
         ExitCode::FAILURE
@@ -159,7 +168,7 @@ fn main() -> ExitCode {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn render_command(
+async fn render_command(
     input: Input,
     factorio: &Path,
     factorio_bin: &Path,
@@ -174,7 +183,8 @@ fn render_command(
         .change_context(ScannerError::NoBlueprint)?;
 
     let bp = blueprint::Data::try_from(bp_string).change_context(ScannerError::NoBlueprint)?;
-    let (data, active_mods) = load_data(&bp, factorio, factorio_bin, preset, mods, prototype_dump)?;
+    let (data, active_mods) =
+        load_data(&bp, factorio, factorio_bin, preset, mods, prototype_dump).await?;
     let (res, missing, thumb) = render(&bp, &data, &active_mods, target_res)?;
 
     if !missing.is_empty() {

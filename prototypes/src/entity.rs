@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
+use tracing::warn;
 
 use super::BasePrototype;
 use mod_util::UsedMods;
@@ -348,7 +349,7 @@ where
                 } else if x >= right_x {
                     Direction::West
                 } else {
-                    println!(
+                    warn!(
                         "Invalid pipe connection [{}] @ {:?}: {conn:?}",
                         self.name, options.direction
                     );
@@ -393,7 +394,7 @@ where
                 } else if x >= right_x {
                     Direction::West
                 } else {
-                    println!(
+                    warn!(
                         "Invalid heat connection [{}] @ {:?}: {conn:?}",
                         self.name, options.direction
                     );

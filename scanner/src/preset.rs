@@ -33,6 +33,7 @@ macro_rules! mod_p {
 }
 
 impl Preset {
+    #[must_use]
     pub fn used_mods(self) -> DependencyList {
         match self {
             Self::K2 => mod_p!["Krastorio2" 1:3:23],
@@ -60,6 +61,7 @@ impl Preset {
 
     // TODO: used settings
 
+    #[must_use]
     pub const fn known_prefix(self) -> Option<&'static str> {
         #[allow(clippy::match_same_arms)]
         match self {

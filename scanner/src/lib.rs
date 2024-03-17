@@ -7,16 +7,14 @@ use std::{
     process::Command,
 };
 
-#[macro_use]
-extern crate log;
-
-use blueprint::{ConnectionDataExt, SignalID};
 use error_stack::{ensure, report, Context, Result, ResultExt};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder};
 use image::{codecs::png, imageops, ImageEncoder};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
+use tracing::{debug, error, info, instrument, warn};
 
+use blueprint::{ConnectionDataExt, SignalID};
 use mod_util::{
     mod_info::{DependencyVersion, Version},
     mod_list::ModList,
@@ -58,6 +56,7 @@ impl std::fmt::Display for ScannerError {
 }
 
 #[allow(clippy::too_many_lines)]
+#[instrument(skip_all, fields(mod_count = mod_list.list.len(), mods = mod_list.list.keys().cloned().collect::<Vec<_>>().join(", ")))]
 pub fn get_protodump(
     factorio: &Path,
     factorio_bin: &Path,
@@ -127,7 +126,7 @@ pub fn get_protodump(
     SettingsDat::load_bp_settings(
         bp_settings,
         bp_version,
-        &factorio.join("mods/mod-settings.dat"),
+        factorio.join("mods/mod-settings.dat"),
     )
     .change_context(ScannerError::SetupError)?
     .save()
@@ -187,6 +186,7 @@ pub fn get_protodump(
 }
 
 #[must_use]
+#[instrument(skip_all, fields(entities = bp.entities.len(), tiles = bp.tiles.len()))]
 pub fn calculate_target_size(
     bp: &blueprint::Blueprint,
     data: &DataUtil,
@@ -322,7 +322,8 @@ pub fn bp_entity2render_opts(
     }
 }
 
-pub fn load_data(
+#[instrument(skip_all, fields(preset, mods))]
+pub async fn load_data(
     bp: &blueprint::Data,
     factorio: &Path,
     factorio_bin: &Path,
@@ -365,6 +366,7 @@ pub fn load_data(
 
         mod_list.load_local_dependency_info(&required_mods);
         let used_mods = resolve_mod_dependencies(&required_mods, &mut mod_list)
+            .await
             .change_context(ScannerError::SetupError)?;
 
         let missing = mod_list.enable_mods(&used_mods);
@@ -372,7 +374,9 @@ pub fn load_data(
             debug!("all mods are already installed");
         } else {
             info!("downloading missing mods from mod portal");
-            download_mods(missing, factorio).change_context(ScannerError::SetupError)?;
+            download_mods(missing, factorio)
+                .await
+                .change_context(ScannerError::SetupError)?;
         }
     }
 
@@ -401,6 +405,7 @@ pub fn load_data(
     Ok((DataUtil::new(data), active_mods))
 }
 
+#[instrument(skip_all)]
 pub fn render(
     raw_bp: &blueprint::Data,
     data: &DataUtil,
@@ -432,8 +437,13 @@ pub fn render(
         png::FilterType::default(),
     );
 
-    enc.write_image(img.as_bytes(), img.width(), img.height(), img.color())
-        .change_context(ScannerError::RenderError)?;
+    enc.write_image(
+        img.as_bytes(),
+        img.width(),
+        img.height(),
+        img.color().into(),
+    )
+    .change_context(ScannerError::RenderError)?;
 
     let thumbnail = render_thumbnail(raw_bp, data, used_mods, image_cache).map(|t| {
         let mut res = Vec::new();
@@ -443,13 +453,14 @@ pub fn render(
             png::FilterType::default(),
         );
 
-        let _ = enc.write_image(t.as_bytes(), t.width(), t.height(), t.color());
+        let _ = enc.write_image(t.as_bytes(), t.width(), t.height(), t.color().into());
         res
     });
 
     Ok((res, unknown, thumbnail))
 }
 
+#[instrument(skip_all)]
 #[allow(clippy::too_many_lines)]
 pub fn render_bp(
     bp: &blueprint::Blueprint,
@@ -855,6 +866,7 @@ pub fn render_bp(
     Some((render_layers.combine(), unknown))
 }
 
+#[instrument(skip_all)]
 pub fn render_thumbnail(
     bp: &blueprint::Data,
     data: &prototypes::DataUtil,
@@ -982,7 +994,8 @@ impl std::fmt::Display for DependencyResolutionError {
     }
 }
 
-pub fn resolve_mod_dependencies(
+#[instrument(skip_all, fields(required = required.keys().cloned().collect::<Vec<_>>().join(", ")))]
+pub async fn resolve_mod_dependencies(
     required: &DependencyList,
     mod_list: &mut ModList,
 ) -> Result<UsedVersions, DependencyResolutionError> {
@@ -1006,7 +1019,8 @@ pub fn resolve_mod_dependencies(
             continue;
         }
 
-        let info = factorio_api::blocking::full_info(&name)
+        let info = factorio_api::full_info(&name)
+            .await
             .change_context(DependencyResolutionError)
             .attach_printable_lazy(|| format!("fetching mod info for {name} failed"))?;
 
@@ -1070,7 +1084,11 @@ impl std::fmt::Display for ModDownloadError {
     }
 }
 
-pub fn download_mods(missing: UsedVersions, factorio_dir: &Path) -> Result<(), ModDownloadError> {
+#[instrument(skip_all, fields(count = missing.len()))]
+pub async fn download_mods(
+    missing: UsedVersions,
+    factorio_dir: &Path,
+) -> Result<(), ModDownloadError> {
     let mods_path = factorio_dir.join("mods");
 
     let (username, token) = {
@@ -1097,6 +1115,8 @@ pub fn download_mods(missing: UsedVersions, factorio_dir: &Path) -> Result<(), M
         }
     };
 
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(2));
+
     for (name, version) in missing {
         ensure!(
             !Mod::wube_mods().contains(&name.as_str()),
@@ -1104,11 +1124,14 @@ pub fn download_mods(missing: UsedVersions, factorio_dir: &Path) -> Result<(), M
         );
 
         info!("downloading {name} v{version}");
-        let dl = factorio_api::blocking::fetch_mod(&name, &version, &username, &token)
+        let dl = factorio_api::fetch_mod(&name, &version, &username, &token)
+            .await
             .change_context(ModDownloadError::DownloadFailed(name.clone(), version))?;
 
         fs::write(mods_path.join(format!("{name}_{version}.zip")), dl)
             .change_context(ModDownloadError::SaveFailed(name, version))?;
+
+        interval.tick().await;
     }
 
     Ok(())
