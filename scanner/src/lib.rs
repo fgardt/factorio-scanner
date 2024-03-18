@@ -12,7 +12,7 @@ use flate2::{read::ZlibDecoder, write::ZlibEncoder};
 use image::{codecs::png, imageops, ImageEncoder};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use tracing::{debug, error, info, instrument, warn};
+use tracing::{debug, error, field, info, info_span, instrument, warn};
 
 use blueprint::{ConnectionDataExt, SignalID};
 use mod_util::{
@@ -364,7 +364,6 @@ pub async fn load_data(
     if !required_mods.is_empty() {
         debug!("checking mod dependencies");
 
-        mod_list.load_local_dependency_info(&required_mods);
         let used_mods = resolve_mod_dependencies(&required_mods, &mut mod_list)
             .await
             .change_context(ScannerError::SetupError)?;
@@ -999,6 +998,36 @@ pub async fn resolve_mod_dependencies(
     required: &DependencyList,
     mod_list: &mut ModList,
 ) -> Result<UsedVersions, DependencyResolutionError> {
+    // load local dependency info of required mods and their dependencies
+    {
+        let span =
+            info_span!("loading local dependency info", loaded_mods = field::Empty).entered();
+        let mut queue = required
+            .iter()
+            .map(|(n, d)| (n.clone(), *d))
+            .collect::<Vec<_>>();
+        let mut completed = HashSet::new();
+
+        while let Some((name, dep_version)) = &queue.pop() {
+            if completed.contains(&(name.clone(), *dep_version)) {
+                continue;
+            }
+
+            completed.insert((name.clone(), *dep_version));
+
+            if let Some(deps) = mod_list.load_local_dependency_info(name, dep_version) {
+                for (dep_name, dep_version) in deps {
+                    if !completed.contains(&(dep_name.clone(), dep_version)) {
+                        queue.push((dep_name, dep_version));
+                    }
+                }
+            }
+        }
+
+        span.record("loaded_mods", completed.len());
+    }
+
+    // try to resolve dependencies with local mods
     match mod_list
         .solve_dependencies(required)
         .change_context(DependencyResolutionError)

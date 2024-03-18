@@ -5,7 +5,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use tracing::instrument;
 use zip::ZipArchive;
 
 use crate::mod_info::ModInfo;
@@ -58,7 +57,6 @@ impl Mod {
         Self::load_custom(&factorio_dir, factorio_dir.as_ref().join("mods"), name)
     }
 
-    #[instrument(name = "load", skip_all, fields(name))]
     pub fn load_custom<FP: AsRef<Path>, MP: AsRef<Path>>(
         factorio_dir: FP,
         mod_dir: MP,

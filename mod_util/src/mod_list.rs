@@ -253,7 +253,7 @@ impl ModList {
     /// Marks the given mods as enabled and sets the active version to the given one.
     ///
     /// Returns a list of mods that were not found in the mod list but got added.
-    #[instrument(skip_all)]
+    #[instrument(skip_all, fields(mod_count = mods.len()))]
     pub fn enable_mods(&mut self, mods: &UsedVersions) -> UsedVersions {
         let mut missing = HashMap::new();
 
@@ -322,8 +322,8 @@ impl ModList {
             .collect()
     }
 
-    #[instrument(name = "load_local_dep_info", skip_all)]
-    pub fn load_local_dependency_info(&mut self, mods: &DependencyList) {
+    #[instrument(name = "load_all_local_deps", skip_all)]
+    pub fn load_all_local_deps(&mut self, mods: &DependencyList) {
         let mut queue = mods
             .iter()
             .map(|(n, v)| (n.clone(), *v))
@@ -331,59 +331,70 @@ impl ModList {
         let mut loaded = HashSet::<(String, DependencyVersion)>::new();
 
         while let Some((name, version)) = queue.pop() {
-            let Some(entry) = self.list.get_mut(&name) else {
-                continue;
-            };
-
             if loaded.contains(&(name.clone(), version)) {
                 continue;
             }
 
             loaded.insert((name.clone(), version));
-
-            let Some(version) = version
-                .get_allowed_version(
-                    entry
-                        .versions
-                        .keys()
-                        .copied()
-                        .collect::<Vec<_>>()
-                        .as_slice(),
-                )
-                .copied()
-            else {
-                continue;
-            };
-
-            let Some(Some(filename)) = entry.versions.get(&version) else {
-                continue;
-            };
-
-            let Ok(m) = Mod::load_custom(&self.factorio_dir, &self.mod_dir, filename) else {
-                continue;
-            };
-
-            if version != m.info.version {
-                warn!(
-                    "Version mismatch for {name}: {version} != {}",
-                    m.info.version
-                );
-                continue;
-            }
-
-            for dep in &m.info.dependencies {
-                let dep = (dep.name().clone(), *dep.version());
-                if !loaded.contains(&dep) {
-                    queue.push(dep);
-                }
-            }
-
-            entry
-                .known_dependencies
-                .insert(m.info.version, m.info.dependencies);
+            self.load_local_dependency_info(name.as_str(), &version);
         }
     }
 
+    #[instrument(name = "load_local_deps", skip_all, fields(name))]
+    pub fn load_local_dependency_info(
+        &mut self,
+        name: &str,
+        version: &DependencyVersion,
+    ) -> Option<DependencyList> {
+        let Some(entry) = self.list.get_mut(name) else {
+            return None;
+        };
+
+        let Some(version) = version
+            .get_allowed_version(
+                entry
+                    .versions
+                    .keys()
+                    .copied()
+                    .collect::<Vec<_>>()
+                    .as_slice(),
+            )
+            .copied()
+        else {
+            return None;
+        };
+
+        let Some(Some(filename)) = entry.versions.get(&version) else {
+            return None;
+        };
+
+        let Ok(m) = Mod::load_custom(&self.factorio_dir, &self.mod_dir, filename) else {
+            return None;
+        };
+
+        if version != m.info.version {
+            warn!(
+                "Version mismatch for {name}: {version} != {}",
+                m.info.version
+            );
+            return None;
+        }
+
+        let res = m
+            .info
+            .dependencies
+            .iter()
+            .map(|d| (d.name().clone(), *d.version()))
+            .collect();
+
+        entry
+            .known_dependencies
+            .insert(m.info.version, m.info.dependencies);
+
+        Some(res)
+    }
+
+    #[instrument(name = "load_all_deps", skip_all, fields(name))]
     pub fn set_dependency_info(
         &mut self,
         name: &str,
