@@ -56,7 +56,7 @@ impl std::fmt::Display for ScannerError {
 }
 
 #[allow(clippy::too_many_lines)]
-#[instrument(skip_all, fields(mod_count = mod_list.list.len(), mods = mod_list.list.keys().cloned().collect::<Vec<_>>().join(", ")))]
+#[instrument(skip_all)]
 pub fn get_protodump(
     factorio: &Path,
     factorio_bin: &Path,
