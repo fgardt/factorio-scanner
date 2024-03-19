@@ -340,12 +340,11 @@ impl ModList {
         }
     }
 
-    #[instrument(name = "load_local_deps", skip_all, fields(name))]
     pub fn load_local_dependency_info(
         &mut self,
         name: &str,
         version: &DependencyVersion,
-    ) -> Option<DependencyList> {
+    ) -> Option<HashMap<String, Dependency>> {
         let Some(entry) = self.list.get_mut(name) else {
             return None;
         };
@@ -384,7 +383,7 @@ impl ModList {
             .info
             .dependencies
             .iter()
-            .map(|d| (d.name().clone(), *d.version()))
+            .map(|d| (d.name().clone(), d.clone()))
             .collect();
 
         entry
@@ -394,7 +393,6 @@ impl ModList {
         Some(res)
     }
 
-    #[instrument(name = "load_all_deps", skip_all, fields(name))]
     pub fn set_dependency_info(
         &mut self,
         name: &str,
