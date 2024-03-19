@@ -1000,8 +1000,7 @@ pub async fn resolve_mod_dependencies(
 ) -> Result<UsedVersions, DependencyResolutionError> {
     // load local dependency info of required mods and their dependencies
     {
-        let span =
-            info_span!("loading local dependency info", loaded_mods = field::Empty).entered();
+        let span = info_span!("load_local_deps", loaded_mods = field::Empty).entered();
         let mut queue = required
             .iter()
             .map(|(n, d)| (n.clone(), *d))
@@ -1009,22 +1008,27 @@ pub async fn resolve_mod_dependencies(
         let mut completed = HashSet::new();
 
         while let Some((name, dep_version)) = &queue.pop() {
-            if completed.contains(&(name.clone(), *dep_version)) {
+            if completed.contains(name) {
                 continue;
             }
 
-            completed.insert((name.clone(), *dep_version));
+            completed.insert(name.clone());
 
             if let Some(deps) = mod_list.load_local_dependency_info(name, dep_version) {
-                for (dep_name, dep_version) in deps {
-                    if !completed.contains(&(dep_name.clone(), dep_version)) {
-                        queue.push((dep_name, dep_version));
+                for (dep_name, dep) in deps {
+                    if !dep.is_required() {
+                        continue;
+                    }
+
+                    if !completed.contains(&dep_name) {
+                        queue.push((dep_name, *dep.version()));
                     }
                 }
             }
         }
 
         span.record("loaded_mods", completed.len());
+        span.exit();
     }
 
     // try to resolve dependencies with local mods
