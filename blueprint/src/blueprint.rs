@@ -615,7 +615,7 @@ pub enum DeciderData {
         comparator: Comparator,
         output_signal: Option<SignalID>,
 
-        #[serde(skip_serializing_if = "std::ops::Not::not")]
+        #[serde(default = "default_true", skip_serializing_if = "Clone::clone")]
         copy_count_from_input: bool,
     },
     Constant {
