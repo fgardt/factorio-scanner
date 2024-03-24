@@ -53,18 +53,21 @@ pub struct Mod {
 }
 
 impl Mod {
-    pub fn load<P: AsRef<Path>>(factorio_dir: P, name: &str) -> Result<Self> {
-        Self::load_custom(&factorio_dir, factorio_dir.as_ref().join("mods"), name)
+    pub fn load(factorio_dir: impl AsRef<Path>, name: &str) -> Result<Self> {
+        Self::load_custom(
+            factorio_dir.as_ref().join("data"),
+            factorio_dir.as_ref().join("mods"),
+            name,
+        )
     }
 
-    pub fn load_custom<FP: AsRef<Path>, MP: AsRef<Path>>(
-        factorio_dir: FP,
-        mod_dir: MP,
+    pub fn load_custom(
+        data_dir: impl AsRef<Path>,
+        mod_dir: impl AsRef<Path>,
         name: &str,
     ) -> Result<Self> {
-        let factorio_dir = factorio_dir.as_ref();
         let path = if Self::wube_mods().contains(&name) {
-            factorio_dir.join("data")
+            data_dir.as_ref().to_owned()
         } else {
             mod_dir.as_ref().to_owned()
         }
@@ -74,7 +77,7 @@ impl Mod {
 
         // the special core "mod" has no version field -> grab it from base instead
         let info = if name == "core" {
-            let internal_base = ModType::load(factorio_dir.join("data/base"))?;
+            let internal_base = ModType::load(data_dir.as_ref().join("base"))?;
             let info_file = internal_base.get_file("info.json")?;
             let mut info = serde_json::from_slice::<ModInfo>(&info_file)
                 .map_err(|err| ModError::InvalidInfoJson("base [to read core]".into(), err))?;
