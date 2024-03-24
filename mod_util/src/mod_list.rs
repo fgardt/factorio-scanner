@@ -145,15 +145,15 @@ impl ModList {
         Ok(self)
     }
 
-    pub fn generate<P: AsRef<Path>>(factorio_dir: P) -> Result<Self> {
-        Self::generate_custom(&factorio_dir, factorio_dir.as_ref().join("mods"))
+    pub fn generate(factorio_dir: impl AsRef<Path>) -> Result<Self> {
+        Self::generate_custom(
+            factorio_dir.as_ref().join("data"),
+            factorio_dir.as_ref().join("mods"),
+        )
     }
 
     #[instrument(name = "generate", skip_all)]
-    pub fn generate_custom<FP: AsRef<Path>, MP: AsRef<Path>>(
-        factorio_dir: FP,
-        mod_dir: MP,
-    ) -> Result<Self> {
+    pub fn generate_custom(data_dir: impl AsRef<Path>, mod_dir: impl AsRef<Path>) -> Result<Self> {
         #[allow(clippy::unwrap_used)]
         let filename_extractor = Regex::new(r"^(.+?)(?:_(\d+\.\d+\.\d+)(?:\.zip)?)?$").unwrap();
 
@@ -161,7 +161,7 @@ impl ModList {
 
         // add wube mods
         for w_mod in Mod::wube_mods() {
-            match Mod::load_custom(&factorio_dir, &mod_dir, w_mod) {
+            match Mod::load_custom(&data_dir, &mod_dir, w_mod) {
                 Ok(m) => {
                     list.insert(
                         w_mod.to_string(),
@@ -221,7 +221,7 @@ impl ModList {
                 version
             } else {
                 let Ok(version) =
-                    Mod::load_custom(&factorio_dir, &mod_dir, filename).map(|m| m.info.version)
+                    Mod::load_custom(&data_dir, &mod_dir, filename).map(|m| m.info.version)
                 else {
                     continue;
                 };
@@ -236,7 +236,7 @@ impl ModList {
         }
 
         Ok(Self {
-            factorio_dir: factorio_dir.as_ref().to_owned(),
+            factorio_dir: data_dir.as_ref().to_owned(),
             mod_dir: mod_dir.as_ref().to_owned(),
             list,
         })

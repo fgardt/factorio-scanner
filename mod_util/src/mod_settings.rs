@@ -175,7 +175,7 @@ pub struct SettingsDat {
 }
 
 impl SettingsDat {
-    pub fn load<P: AsRef<Path>>(path: P) -> Result<Self> {
+    pub fn load(path: impl AsRef<Path>) -> Result<Self> {
         let mut cursor = Cursor::new(fs::read(&path)?);
         let version = cursor.read_u64::<LittleEndian>()?;
         cursor.seek(SeekFrom::Current(1))?; // skip false bool
@@ -211,7 +211,7 @@ impl SettingsDat {
         })
     }
 
-    pub fn write<P: AsRef<Path>>(&self, path: P) -> Result<()> {
+    pub fn write(&self, path: impl AsRef<Path>) -> Result<()> {
         let mut buf = Vec::new();
 
         buf.write_u64::<LittleEndian>(self.version)?;
@@ -248,10 +248,10 @@ impl SettingsDat {
     }
 
     #[cfg(feature = "bp_meta_info")]
-    pub fn load_bp_settings<P: AsRef<Path>>(
+    pub fn load_bp_settings(
         settings: &crate::TagTable,
         version: u64,
-        path: P,
+        path: impl AsRef<Path>,
     ) -> Result<Self> {
         let mut startup = HashMap::new();
 
