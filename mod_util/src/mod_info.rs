@@ -242,6 +242,10 @@ impl DependencyType {
     pub const fn is_incompatible(&self) -> bool {
         matches!(self, Self::Incompatible)
     }
+
+    pub const fn affects_load_order(&self) -> bool {
+        matches!(self, Self::Required | Self::Optional | Self::HiddenOptional)
+    }
 }
 
 impl fmt::Display for DependencyType {
@@ -491,6 +495,11 @@ impl Dependency {
     #[must_use]
     pub const fn is_incompatible(&self) -> bool {
         self.kind.is_incompatible()
+    }
+
+    #[must_use]
+    pub const fn affects_load_order(&self) -> bool {
+        self.kind.affects_load_order()
     }
 
     #[must_use]
