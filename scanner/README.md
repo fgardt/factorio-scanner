@@ -23,11 +23,14 @@ Commandline tool to render factorio blueprints with mod support.
 ## Usage
 
 ```
-Usage: scanner [OPTIONS] --blueprint <BLUEPRINT> --factorio <FACTORIO> --out <OUT>
+Usage: scanner [OPTIONS] --factorio <FACTORIO> --out <OUT> <COMMAND>
+
+Commands:
+  string  Providing a blueprint string directly
+  file    Path to a file that contains a blueprint string
+  help    Print this message or the help of the given subcommand(s)
 
 Options:
-  -b, --blueprint <BLUEPRINT>
-          Path to the file that contains your blueprint string
   -f, --factorio <FACTORIO>
           Path to the factorio directory that contains the data folder (path.read-data)
       --factorio-bin <FACTORIO_BIN>
@@ -35,7 +38,9 @@ Options:
       --prototype-dump <PROTOTYPE_DUMP>
           Path to the data dump json file. If not set, the data will be dumped automatically
       --preset <PRESET>
-          Preset to use [possible values: K2, SE, K2SE, SeaBlock]
+          Preset to use [possible values: K2, SE, K2SE, IR3, PyAE, FF, FFK2, Nullius, SeaBlock, EI, Ultracube]
+      --mods <MODS>
+          List of additional mods to use
   -o, --out <OUT>
           Path to the output file
       --res <TARGET_RES>
@@ -48,12 +53,12 @@ Options:
           Print version
 ```
 
-You need to provide the blueprint string you want to render as a file.\
+You need to provide the blueprint string you want to render either as a file or directly.\
 You need to provide the path to the root of the extracted factorio archive mentioned in the setup step.\
 You need to provide the path to the output file (png).
 
-If your blueprint contains modded entities you can either use one of the presets.\
-Alternatively you can install my [blueprint meta info mod](https://mods.factorio.com/mod/blueprint-meta-info) before creating the blueprint. It will add all the required information about used mods into the blueprint itself (only works for blueprints newly created after installing the mod, using the reselect area button in a blueprint (blue button in the top left) will **NOT** work).
+If your blueprint contains modded entities you can use one of the provided presets or specify a comma separated list of mods to use with the `--mods` flag.\
+Alternatively you can install my [blueprint meta info mod](https://mods.factorio.com/mod/blueprint-meta-info) before creating the blueprint. It will add all the required information about used mods into the blueprint itself (only works for blueprints newly created after installing the mod, using the reselect area button in a blueprint (blue button in the top left) will **NOT** work, Factorio 2.0 will hopefully fix this).
 
 ## TODO
 
@@ -62,4 +67,4 @@ Alternatively you can install my [blueprint meta info mod](https://mods.factorio
   - [ ] draw inserter arrows
   - [ ] draw fluid box arrows
   - [ ] draw modules
-  - [ ] draw filters (splitters, inserters)
+  - [x] draw filters (splitters, inserters)

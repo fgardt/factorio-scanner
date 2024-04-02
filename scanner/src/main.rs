@@ -24,51 +24,51 @@ struct Cli {
     #[clap(long, value_parser)]
     factorio_bin: Option<PathBuf>,
 
-    #[clap(subcommand)]
-    command: Commands,
+    #[clap(flatten)]
+    args: CommandArgs,
 }
 
-#[derive(Subcommand, Debug)]
-enum Commands {
-    /// Render a blueprint string
-    Render {
-        #[clap(subcommand)]
-        input: Input,
+#[derive(Parser, Debug)]
+struct CommandArgs {
+    /// Blueprint string or file to render
+    #[clap(subcommand)]
+    input: Input,
 
-        /// Path to the data dump json file. If not set, the data will be dumped automatically
-        #[clap(long, value_parser)]
-        prototype_dump: Option<PathBuf>,
+    /// Path to the data dump json file. If not set, the data will be dumped automatically
+    #[clap(long, value_parser)]
+    prototype_dump: Option<PathBuf>,
 
-        /// Preset to use
-        #[clap(long, value_enum)]
-        preset: Option<preset::Preset>,
+    /// Preset to use
+    #[clap(long, value_enum)]
+    preset: Option<preset::Preset>,
 
-        /// List of additional mods to use
-        #[clap(long, value_parser, use_value_delimiter = true, value_delimiter = ',')]
-        mods: Vec<String>,
+    /// List of additional mods to use
+    #[clap(long, value_parser, use_value_delimiter = true, value_delimiter = ',')]
+    mods: Vec<String>,
 
-        /// Path to the output file
-        #[clap(short, long, value_parser)]
-        out: PathBuf,
+    /// Path to the output file
+    #[clap(short, long, value_parser)]
+    out: PathBuf,
 
-        /// Target resolution (1 side of a square) in pixels
-        #[clap(long = "res", default_value_t = 2048.0)]
-        target_res: f64,
+    /// Target resolution (1 side of a square) in pixels
+    #[clap(long = "res", default_value_t = 2048.0)]
+    target_res: f64,
 
-        /// Minimum scale to use (below 0.5 makes not much sense, vanilla HR mode is 0.5)
-        #[clap(long, default_value_t = 0.5)]
-        min_scale: f64,
-    },
+    /// Minimum scale to use (below 0.5 makes not much sense, vanilla HR mode is 0.5)
+    #[clap(long, default_value_t = 0.5)]
+    min_scale: f64,
 }
 
 #[derive(Subcommand, Debug)]
 enum Input {
+    /// Provide a blueprint string directly
     String {
         /// The blueprint string
         #[clap(value_parser)]
         string: String,
     },
 
+    /// Path to a file that contains a blueprint string
     File {
         /// Path to the file that contains your blueprint string
         #[clap(value_parser)]
@@ -125,31 +125,21 @@ fn main() -> ExitCode {
         }
     };
 
-    if let Err(err) = match cli.command {
-        Commands::Render {
-            input,
-            prototype_dump,
-            preset,
-            mods,
-            out,
-            target_res,
-            min_scale,
-        } => rt.block_on(render_command(
-            input,
-            &cli.factorio,
-            &factorio_bin,
-            preset,
-            &mods,
-            prototype_dump,
-            target_res,
-            &out,
-        )),
-    } {
+    if let Err(err) = rt.block_on(render_command(
+        cli.args.input,
+        &cli.factorio,
+        &factorio_bin,
+        cli.args.preset,
+        &cli.args.mods,
+        cli.args.prototype_dump,
+        cli.args.target_res,
+        &cli.args.out,
+    )) {
         error!("{err:#?}");
-        ExitCode::FAILURE
-    } else {
-        ExitCode::SUCCESS
-    }
+        return ExitCode::FAILURE;
+    };
+
+    ExitCode::SUCCESS
 }
 
 #[allow(clippy::too_many_arguments)]
