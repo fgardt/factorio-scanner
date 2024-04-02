@@ -6,7 +6,6 @@ members = [
     "locale",
     "lua_api_doc",
     "mod_util",
-    "pretty_logging",
     "prototypes",
     "serde_helper",
     "scanner",
@@ -30,7 +29,6 @@ image = { version = "0.25", features = ["png"], default-features = false }
 konst = "0.3"
 locale = { path = "locale" }
 mod_util = { path = "mod_util" }
-pretty_logging = { path = "pretty_logging" }
 prototypes = { path = "prototypes" }
 serde = { version = "1.0", features = ["derive"] }
 serde_helper = { path = "serde_helper" }

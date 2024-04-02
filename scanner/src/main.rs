@@ -8,7 +8,7 @@ use std::{
 
 use clap::{Parser, Subcommand};
 use error_stack::{Context, Result, ResultExt};
-use tracing::{error, info, warn, Level};
+use tracing::{error, info, warn};
 
 #[allow(clippy::wildcard_imports)]
 use scanner::*;
@@ -16,13 +16,6 @@ use scanner::*;
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Cli {
-    /// Sets the used logging level
-    /// Possible values: error, warn, info, debug, trace
-    /// For no logging don't set this option
-    /// Note: the LOG_LEVEL environment variable overrides this option
-    #[clap(long, value_parser, verbatim_doc_comment)]
-    log_level: Option<Level>,
-
     /// Path to the factorio directory that contains the data folder (path.read-data)
     #[clap(short, long, value_parser)]
     factorio: PathBuf,
@@ -106,15 +99,7 @@ impl Input {
 fn main() -> ExitCode {
     dotenv::dotenv().ok();
     let cli = Cli::parse();
-
-    let level = cli
-        .log_level
-        .as_ref()
-        .map_or("info", |level| level.as_str());
-    if let Err(logger_err) = pretty_logging::init(level) {
-        eprintln!("{logger_err:?}");
-        return ExitCode::FAILURE;
-    };
+    pretty_env_logger::init();
 
     info!(
         "starting {} v{} with prototypes v{} & types v{}",
