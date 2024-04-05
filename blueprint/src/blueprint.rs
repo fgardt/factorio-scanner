@@ -238,7 +238,7 @@ pub enum Condition {
         comparator: Comparator,
     },
     Constant {
-        first_signal: SignalID,
+        first_signal: Option<SignalID>,
         #[serde(default)]
         constant: i32,
         comparator: Comparator,
