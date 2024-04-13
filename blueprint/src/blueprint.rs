@@ -183,6 +183,7 @@ impl SplitterPriority {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct Inventory {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub filters: IndexedVec<NameString>,
     pub bar: Option<ItemStackIndex>,
 }
