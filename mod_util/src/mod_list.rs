@@ -345,11 +345,8 @@ impl ModList {
         name: &str,
         version: &DependencyVersion,
     ) -> Option<HashMap<String, Dependency>> {
-        let Some(entry) = self.list.get_mut(name) else {
-            return None;
-        };
-
-        let Some(version) = version
+        let entry = self.list.get_mut(name)?;
+        let version = version
             .get_allowed_version(
                 entry
                     .versions
@@ -358,10 +355,7 @@ impl ModList {
                     .collect::<Vec<_>>()
                     .as_slice(),
             )
-            .copied()
-        else {
-            return None;
-        };
+            .copied()?;
 
         let Some(Some(filename)) = entry.versions.get(&version) else {
             return None;
