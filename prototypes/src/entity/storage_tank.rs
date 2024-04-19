@@ -26,6 +26,9 @@ pub struct StorageTankData {
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub scale_info_icons: bool,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub show_fluid_icon: bool,
 }
 
 impl super::Renderable for StorageTankData {
