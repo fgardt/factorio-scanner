@@ -1297,7 +1297,7 @@ impl RenderableGraphics for SpriteVariations {
             }
             Self::Array(variations) => {
                 variations
-                    .get(0)?
+                    .first()?
                     .render(scale, used_mods, image_cache, &opts.into())
             }
         }
