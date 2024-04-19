@@ -23,7 +23,7 @@ Building additional tools might also happen along the way (cli tool to edit `mod
 **AT THIS POINT THERE IS NO GUARANTEE ABOUT BREAKING CHANGES.**\
 **CONSIDER ALL OF THIS TO BE UNSTABLE!**
 
-The versions of the [`types`](/types/) and [`prototypes`](/prototypes/) crates matches their corresponding factorio version.
+The prerelease part of the version number for the [`types`](/types/) and [`prototypes`](/prototypes/) crates matches their corresponding factorio version.
 
 Since the other crates are either only documented on the wiki (for example [blueprint string format](https://wiki.factorio.com/Blueprint_string_format) and [mod settings](https://wiki.factorio.com/Tutorial:Mod_settings) [file format](https://wiki.factorio.com/Mod_settings_file_format)) or not explicitly documented at all there is no factorio engine version to use for these crates.
 

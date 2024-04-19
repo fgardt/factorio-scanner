@@ -1387,14 +1387,17 @@ impl RenderLayerBuffer {
     }
 }
 
-use konst::{primitive::parse_u16, result::unwrap_ctx};
+use konst::{
+    iter::collect_const, primitive::parse_u16, result::unwrap_ctx, string::split as konst_split,
+};
 
 #[must_use]
 pub const fn targeted_engine_version() -> Version {
+    const V: [&str; 3] = collect_const!(&str => konst_split(env!("CARGO_PKG_VERSION_PRE"), '.'));
     Version::new(
-        unwrap_ctx!(parse_u16(env!("CARGO_PKG_VERSION_MAJOR"))),
-        unwrap_ctx!(parse_u16(env!("CARGO_PKG_VERSION_MINOR"))),
-        unwrap_ctx!(parse_u16(env!("CARGO_PKG_VERSION_PATCH"))),
+        unwrap_ctx!(parse_u16(V[0])),
+        unwrap_ctx!(parse_u16(V[1])),
+        unwrap_ctx!(parse_u16(V[2])),
     )
 }
 
