@@ -74,9 +74,7 @@ impl RecipePrototypeData {
                     };
                 }
 
-                let Some(main_product) = &recipe.main_product else {
-                    return None;
-                };
+                let main_product = recipe.main_product.as_ref()?;
 
                 for product in results {
                     match product {

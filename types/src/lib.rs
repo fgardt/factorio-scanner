@@ -258,7 +258,7 @@ pub enum GunShift4WayUnion {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StreamFluidProperties {
     #[serde(rename = "type")]
-    pub _type: FluidID,
+    pub type_: FluidID,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub damage_modifier: f64,
