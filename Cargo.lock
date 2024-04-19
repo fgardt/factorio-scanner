@@ -633,28 +633,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "diff-struct"
-version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79aac083112b31f7cb768b24b893dc0c34c296a4b06b250c407bfd495e42075c"
-dependencies = [
- "diff_derive",
- "num",
- "serde",
-]
-
-[[package]]
-name = "diff_derive"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe165e7ead196bbbf44c7ce11a7a21157b5c002ce46d7098ff9c556784a4912d"
-dependencies = [
- "proc-macro2 1.0.79",
- "quote 1.0.35",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1429,17 +1407,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fae87c125b03c1d2c0150c90365d7d6bcc53fb73a9acaef207d2d065860f062"
 dependencies = [
  "imgref",
-]
-
-[[package]]
-name = "lua_api_doc"
-version = "0.4.0"
-dependencies = [
- "clap",
- "diff-struct",
- "reqwest",
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -2596,17 +2563,6 @@ dependencies = [
  "proc-macro2 0.4.30",
  "quote 0.6.13",
  "unicode-xid",
-]
-
-[[package]]
-name = "syn"
-version = "1.0.109"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
-dependencies = [
- "proc-macro2 1.0.79",
- "quote 1.0.35",
- "unicode-ident",
 ]
 
 [[package]]
