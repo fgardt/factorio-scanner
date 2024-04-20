@@ -16,9 +16,10 @@ pub enum Preset {
     PyAE,
     FF,
     FFK2,
+    EI,
+    EIK2,
     Nullius,
     SeaBlock,
-    ExoticIndustries,
     Ultracube,
 }
 
@@ -37,22 +38,26 @@ impl Preset {
     pub fn used_mods(self) -> DependencyList {
         match self {
             Self::K2 => mod_p!["Krastorio2" 1:3:23],
-            Self::SE => mod_p!["space-exploration" 0:6:123],
+            Self::SE => mod_p!["space-exploration" 0:6:130],
             Self::K2SE => mod_p![
                 "Krastorio2" 1:3:23,
-                "space-exploration" 0:6:123
+                "space-exploration" 0:6:130
             ],
             Self::IR3 => mod_p!["IndustrialRevolution3" 3:1:20],
-            Self::PyAE => mod_p!["pyalternativeenergy" 1:2:17],
+            Self::PyAE => mod_p!["pyalternativeenergy" 1:2:25],
             Self::FF => mod_p!["FreightForwardingPack" 1:2:1],
             Self::FFK2 => mod_p![
                 "FreightForwardingPack" 1:2:1,
                 "Krastorio2" 1:3:23
             ],
+            Self::EI => mod_p!["exotic-industries-modpack" 0:5:10],
+            Self::EIK2 => mod_p![
+                "exotic-industries-modpack" 0:5:10,
+                "Krastorio2" 1:3:23
+            ],
             Self::Nullius => mod_p!["nullius" 1:9:1],
             Self::SeaBlock => mod_p!["SeaBlockMetaPack" 1:1:4],
-            Self::ExoticIndustries => mod_p!["exotic-industries-modpack" 0:5:2],
-            Self::Ultracube => mod_p!["Ultracube" 0:4:4],
+            Self::Ultracube => mod_p!["Ultracube" 0:5:4],
         }
         .iter()
         .cloned()
@@ -72,9 +77,10 @@ impl Preset {
             Self::PyAE => Some("py-"),
             Self::FF => Some("ff-"),
             Self::FFK2 => None,
+            Self::EI => Some("ei_"),
+            Self::EIK2 => None,
             Self::Nullius => Some("nullius-"),
             Self::SeaBlock => None,
-            Self::ExoticIndustries => Some("ei_"),
             Self::Ultracube => Some("cube-"),
         }
     }
@@ -98,9 +104,10 @@ impl std::str::FromStr for Preset {
             "pyae" | "pyanodons" => Ok(Self::PyAE),
             "ff" | "freightforwarding" => Ok(Self::FF),
             "ffk2" => Ok(Self::FFK2),
+            "ei" | "exoticindustries" => Ok(Self::EI),
+            "eik2" | "ei+k2" | "k2ei" | "k2+ei" => Ok(Self::EIK2),
             "nullius" => Ok(Self::Nullius),
             "seablock" | "sb" => Ok(Self::SeaBlock),
-            "ei" | "exoticindustries" => Ok(Self::ExoticIndustries),
             "ultracube" => Ok(Self::Ultracube),
             _ => Err(format!("unknown preset: {s}")),
         }
@@ -124,12 +131,14 @@ impl clap::ValueEnum for Preset {
             Self::PyAE => Some(PossibleValue::new("PyAE").aliases(["pyae", "pyanodons"])),
             Self::FF => Some(PossibleValue::new("FF").aliases(["ff", "FreightForwarding"])),
             Self::FFK2 => Some(PossibleValue::new("FFK2").aliases(["ffk2", "FF+K2", "ff+k2"])),
+            Self::EI => Some(PossibleValue::new("EI").aliases(["ei", "exoticindustries"])),
+            Self::EIK2 => Some(
+                PossibleValue::new("EIK2")
+                    .aliases(["eik2", "EI+K2", "ei+k2", "K2EI", "k2ei", "K2+EI", "k2+ei"]),
+            ),
             Self::Nullius => Some(PossibleValue::new("Nullius").alias("nullius")),
             Self::SeaBlock => {
                 Some(PossibleValue::new("SeaBlock").aliases(["seablock", "SB", "sb"]))
-            }
-            Self::ExoticIndustries => {
-                Some(PossibleValue::new("EI").aliases(["ei", "exoticindustries"]))
             }
             Self::Ultracube => Some(PossibleValue::new("Ultracube").alias("ultracube")),
         }
