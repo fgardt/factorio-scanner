@@ -63,4 +63,20 @@ impl PartialEq for DeconPlannerData {
     }
 }
 
+impl crate::GetIDs for DeconPlannerData {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = self.icons.get_ids();
+
+        for entry in &self.entity_filters {
+            ids.entity.insert(entry.name.clone());
+        }
+
+        for entry in &self.tile_filters {
+            ids.tile.insert(entry.name.clone());
+        }
+
+        ids
+    }
+}
+
 pub type DeconPlanner = crate::CommonData<super::PlannerData<DeconPlannerData>>;

@@ -49,4 +49,36 @@ impl PartialEq for UpgradePlannerData {
     }
 }
 
+impl crate::GetIDs for UpgradePlannerData {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = self.icons.get_ids();
+
+        for entry in &self.mappers {
+            if let Some(from) = &entry.from {
+                match from {
+                    MappedValue::Entity { name } => {
+                        ids.entity.insert(name.clone());
+                    }
+                    MappedValue::Item { name } => {
+                        ids.item.insert(name.clone());
+                    }
+                }
+            }
+
+            if let Some(to) = &entry.to {
+                match to {
+                    MappedValue::Entity { name } => {
+                        ids.entity.insert(name.clone());
+                    }
+                    MappedValue::Item { name } => {
+                        ids.item.insert(name.clone());
+                    }
+                }
+            }
+        }
+
+        ids
+    }
+}
+
 pub type UpgradePlanner = crate::CommonData<super::PlannerData<UpgradePlannerData>>;

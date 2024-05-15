@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use std::io::prelude::*;
+use std::{collections::HashSet, io::prelude::*};
 
 use base64::{engine::general_purpose, Engine};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder};
@@ -15,6 +15,50 @@ mod planner;
 pub use blueprint::*;
 pub use book::*;
 pub use planner::*;
+
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+#[serde(default, rename_all = "kebab-case")]
+pub struct UsedIDs {
+    pub recipe: HashSet<String>,
+    pub entity: HashSet<String>,
+    pub tile: HashSet<String>,
+    pub fluid: HashSet<String>,
+    pub item: HashSet<String>,
+    pub virtual_signal: HashSet<String>,
+}
+
+impl UsedIDs {
+    pub fn merge(&mut self, other: Self) {
+        self.recipe.extend(other.recipe);
+        self.entity.extend(other.entity);
+        self.tile.extend(other.tile);
+        self.fluid.extend(other.fluid);
+        self.item.extend(other.item);
+        self.virtual_signal.extend(other.virtual_signal);
+    }
+}
+
+pub trait GetIDs {
+    fn get_ids(&self) -> UsedIDs;
+}
+
+impl<T: GetIDs> GetIDs for Vec<T> {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = crate::UsedIDs::default();
+
+        for entry in self {
+            ids.merge(entry.get_ids());
+        }
+
+        ids
+    }
+}
+
+impl<T: GetIDs> GetIDs for Box<T> {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.as_ref().get_ids()
+    }
+}
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CommonData<T> {
@@ -116,6 +160,12 @@ impl<T> std::ops::Deref for Indexed<T> {
 impl<T: std::fmt::Display> std::fmt::Display for Indexed<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.data.fmt(f)
+    }
+}
+
+impl<T: GetIDs> GetIDs for Indexed<T> {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.data.get_ids()
     }
 }
 
@@ -317,6 +367,17 @@ impl Data {
             }
             // TODO: sort ordering for upgrade planner and deconstruction planner
             _ => {}
+        }
+    }
+}
+
+impl GetIDs for Data {
+    fn get_ids(&self) -> UsedIDs {
+        match self {
+            Self::Blueprint(data) => data.get_ids(),
+            Self::BlueprintBook(data) => data.get_ids(),
+            Self::UpgradePlanner(data) => data.get_ids(),
+            Self::DeconstructionPlanner(data) => data.get_ids(),
         }
     }
 }
