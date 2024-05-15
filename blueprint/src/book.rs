@@ -17,4 +17,14 @@ pub struct BookData {
     pub active_index: u16,
 }
 
+impl crate::GetIDs for BookData {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = self.icons.get_ids();
+
+        ids.merge(self.blueprints.get_ids());
+
+        ids
+    }
+}
+
 pub type Book = crate::CommonData<BookData>;

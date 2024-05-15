@@ -31,6 +31,22 @@ pub struct BlueprintData {
     pub description: String,
 }
 
+impl crate::GetIDs for BlueprintData {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = self.icons.get_ids();
+
+        ids.merge(self.entities.get_ids());
+
+        for tile in &self.tiles {
+            ids.tile.insert(tile.name.clone());
+        }
+
+        ids.merge(self.schedules.get_ids());
+
+        ids
+    }
+}
+
 pub type Blueprint = crate::CommonData<BlueprintData>;
 
 #[skip_serializing_none]
@@ -51,6 +67,12 @@ pub struct Icon {
     pub signal: SignalID,
 }
 
+impl crate::GetIDs for Icon {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.signal.get_ids()
+    }
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -58,6 +80,31 @@ pub enum SignalID {
     Item { name: Option<String> },
     Fluid { name: Option<String> },
     Virtual { name: Option<String> },
+}
+
+impl SignalID {
+    #[must_use]
+    pub const fn name(&self) -> &Option<String> {
+        match self {
+            Self::Item { name } | Self::Fluid { name } | Self::Virtual { name } => name,
+        }
+    }
+}
+
+impl crate::GetIDs for SignalID {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = crate::UsedIDs::default();
+
+        if let Some(name) = self.name() {
+            match self {
+                Self::Item { .. } => ids.item.insert(name.clone()),
+                Self::Fluid { .. } => ids.fluid.insert(name.clone()),
+                Self::Virtual { .. } => ids.virtual_signal.insert(name.clone()),
+            };
+        }
+
+        ids
+    }
 }
 
 pub type EntityNumber = u64;
@@ -155,6 +202,54 @@ impl PartialOrd for Entity {
     }
 }
 
+impl crate::GetIDs for Entity {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = crate::UsedIDs::default();
+
+        ids.entity.insert(self.name.clone());
+
+        if let Some(control_behavior) = &self.control_behavior {
+            ids.merge(control_behavior.get_ids());
+        }
+
+        for item in self.items.keys() {
+            ids.item.insert(item.clone());
+        }
+
+        if !self.recipe.is_empty() {
+            ids.recipe.insert(self.recipe.clone());
+        }
+
+        if let Some(inventory) = &self.inventory {
+            ids.merge(inventory.get_ids());
+        }
+
+        if let Some(infinity_settings) = &self.infinity_settings {
+            ids.merge(infinity_settings.get_ids());
+        }
+
+        if !self.filter.is_empty() {
+            ids.item.insert(self.filter.clone());
+        }
+
+        for entry in &self.filters {
+            ids.item.insert(entry.name.clone());
+        }
+
+        for entry in &self.request_filters {
+            ids.item.insert(entry.name.clone());
+        }
+
+        if let Some(alert_parameters) = &self.alert_parameters {
+            if let Some(signal) = &alert_parameters.icon_signal_id {
+                ids.merge(signal.get_ids());
+            }
+        }
+
+        ids
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum UndergroundType {
@@ -188,11 +283,29 @@ pub struct Inventory {
     pub bar: Option<ItemStackIndex>,
 }
 
+impl crate::GetIDs for Inventory {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = crate::UsedIDs::default();
+
+        for entry in &self.filters {
+            ids.item.insert(entry.name.clone());
+        }
+
+        ids
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Schedule {
     pub schedule: Vec<ScheduleRecord>,
     pub locomotives: Vec<EntityNumber>,
+}
+
+impl crate::GetIDs for Schedule {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.schedule.get_ids()
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -204,6 +317,12 @@ pub struct ScheduleRecord {
     pub wait_conditions: Vec<WaitCondition>,
 }
 
+impl crate::GetIDs for ScheduleRecord {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.wait_conditions.get_ids()
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 //#[serde(deny_unknown_fields)] // causes deserialization issues (https://github.com/serde-rs/serde/issues/1358)
 pub struct WaitCondition {
@@ -211,6 +330,25 @@ pub struct WaitCondition {
 
     #[serde(flatten)]
     pub condition: WaitConditionType,
+}
+
+impl crate::GetIDs for WaitCondition {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = crate::UsedIDs::default();
+
+        match &self.condition {
+            WaitConditionType::Circuit { condition }
+            | WaitConditionType::ItemCount { condition }
+            | WaitConditionType::FluidCount { condition } => {
+                if let Some(condition) = condition {
+                    ids.merge(condition.get_ids());
+                }
+            }
+            _ => {}
+        }
+
+        ids
+    }
 }
 
 #[skip_serializing_none]
@@ -244,6 +382,35 @@ pub enum Condition {
         constant: i32,
         comparator: Comparator,
     },
+}
+
+impl crate::GetIDs for Condition {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = crate::UsedIDs::default();
+
+        match self {
+            Self::Signals {
+                first_signal,
+                second_signal,
+                ..
+            } => {
+                if let Some(signal) = first_signal {
+                    ids.merge(signal.get_ids());
+                }
+
+                if let Some(signal) = second_signal {
+                    ids.merge(signal.get_ids());
+                }
+            }
+            Self::Constant { first_signal, .. } => {
+                if let Some(signal) = first_signal {
+                    ids.merge(signal.get_ids());
+                }
+            }
+        }
+
+        ids
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -422,6 +589,29 @@ pub enum InfinitySettings {
     },
 }
 
+impl crate::GetIDs for InfinitySettings {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = crate::UsedIDs::default();
+
+        match self {
+            Self::Pipe { name, .. } => {
+                if let Some(name) = name {
+                    ids.fluid.insert(name.clone());
+                }
+            }
+            Self::Chest { filters, .. } => {
+                if let Some(filters) = filters {
+                    for entry in filters {
+                        ids.item.insert(entry.name.clone());
+                    }
+                }
+            }
+        }
+
+        ids
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct InfinityFilter {
@@ -552,11 +742,97 @@ pub struct ControlBehavior {
     pub use_colors: Option<bool>,
 }
 
+impl crate::GetIDs for ControlBehavior {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = crate::UsedIDs::default();
+
+        if let Some(logistic_condition) = &self.logistic_condition {
+            ids.merge(logistic_condition.get_ids());
+        }
+
+        if let Some(red_output_signal) = &self.red_output_signal {
+            ids.merge(red_output_signal.get_ids());
+        }
+
+        if let Some(orange_output_signal) = &self.orange_output_signal {
+            ids.merge(orange_output_signal.get_ids());
+        }
+
+        if let Some(green_output_signal) = &self.green_output_signal {
+            ids.merge(green_output_signal.get_ids());
+        }
+
+        if let Some(blue_output_signal) = &self.blue_output_signal {
+            ids.merge(blue_output_signal.get_ids());
+        }
+
+        if let Some(circuit_condition) = &self.circuit_condition {
+            ids.merge(circuit_condition.get_ids());
+        }
+
+        if let Some(train_stopped_signal) = &self.train_stopped_signal {
+            ids.merge(train_stopped_signal.get_ids());
+        }
+
+        if let Some(trains_limit_signal) = &self.trains_limit_signal {
+            ids.merge(trains_limit_signal.get_ids());
+        }
+
+        if let Some(trains_count_signal) = &self.trains_count_signal {
+            ids.merge(trains_count_signal.get_ids());
+        }
+
+        if let Some(available_logistic_output_signal) = &self.available_logistic_output_signal {
+            ids.merge(available_logistic_output_signal.get_ids());
+        }
+
+        if let Some(total_logistic_output_signal) = &self.total_logistic_output_signal {
+            ids.merge(total_logistic_output_signal.get_ids());
+        }
+
+        if let Some(available_construction_output_signal) =
+            &self.available_construction_output_signal
+        {
+            ids.merge(available_construction_output_signal.get_ids());
+        }
+
+        if let Some(total_construction_output_signal) = &self.total_construction_output_signal {
+            ids.merge(total_construction_output_signal.get_ids());
+        }
+
+        if let Some(output_signal) = &self.output_signal {
+            ids.merge(output_signal.get_ids());
+        }
+
+        if let Some(stack_control_input_signal) = &self.stack_control_input_signal {
+            ids.merge(stack_control_input_signal.get_ids());
+        }
+
+        ids.merge(self.filters.get_ids());
+
+        if let Some(arithmetic_conditions) = &self.arithmetic_conditions {
+            ids.merge(arithmetic_conditions.get_ids());
+        }
+
+        if let Some(decider_conditions) = &self.decider_conditions {
+            ids.merge(decider_conditions.get_ids());
+        }
+
+        ids
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct ConstantCombinatorFilter {
     pub signal: SignalID,
     pub count: i32,
+}
+
+impl crate::GetIDs for ConstantCombinatorFilter {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.signal.get_ids()
+    }
 }
 
 #[skip_serializing_none]
@@ -605,6 +881,66 @@ impl ArithmeticData {
     }
 }
 
+impl crate::GetIDs for ArithmeticData {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = crate::UsedIDs::default();
+
+        match self {
+            Self::SignalSignal {
+                first_signal,
+                second_signal,
+                output_signal,
+                ..
+            } => {
+                if let Some(signal) = first_signal {
+                    ids.merge(signal.get_ids());
+                }
+
+                if let Some(signal) = second_signal {
+                    ids.merge(signal.get_ids());
+                }
+
+                if let Some(signal) = output_signal {
+                    ids.merge(signal.get_ids());
+                }
+            }
+            Self::SignalConstant {
+                first_signal,
+                output_signal,
+                ..
+            } => {
+                if let Some(signal) = first_signal {
+                    ids.merge(signal.get_ids());
+                }
+
+                if let Some(signal) = output_signal {
+                    ids.merge(signal.get_ids());
+                }
+            }
+            Self::ConstantSignal {
+                second_signal,
+                output_signal,
+                ..
+            } => {
+                if let Some(signal) = second_signal {
+                    ids.merge(signal.get_ids());
+                }
+
+                if let Some(signal) = output_signal {
+                    ids.merge(signal.get_ids());
+                }
+            }
+            Self::ConstantConstant { output_signal, .. } => {
+                if let Some(signal) = output_signal {
+                    ids.merge(signal.get_ids());
+                }
+            }
+        }
+
+        ids
+    }
+}
+
 // https://lua-api.factorio.com/latest/concepts.html#DeciderCombinatorParameters
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged, deny_unknown_fields)]
@@ -639,6 +975,48 @@ impl DeciderData {
         match self {
             Self::Signal { comparator, .. } | Self::Constant { comparator, .. } => *comparator,
         }
+    }
+}
+
+impl crate::GetIDs for DeciderData {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = crate::UsedIDs::default();
+
+        match self {
+            Self::Signal {
+                first_signal,
+                second_signal,
+                output_signal,
+                ..
+            } => {
+                if let Some(signal) = first_signal {
+                    ids.merge(signal.get_ids());
+                }
+
+                if let Some(signal) = second_signal {
+                    ids.merge(signal.get_ids());
+                }
+
+                if let Some(signal) = output_signal {
+                    ids.merge(signal.get_ids());
+                }
+            }
+            Self::Constant {
+                first_signal,
+                output_signal,
+                ..
+            } => {
+                if let Some(signal) = first_signal {
+                    ids.merge(signal.get_ids());
+                }
+
+                if let Some(signal) = output_signal {
+                    ids.merge(signal.get_ids());
+                }
+            }
+        }
+
+        ids
     }
 }
 
