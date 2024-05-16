@@ -86,9 +86,9 @@ impl Preset {
     }
 }
 
-impl ToString for Preset {
-    fn to_string(&self) -> String {
-        format!("{self:?}")
+impl std::fmt::Display for Preset {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
     }
 }
 

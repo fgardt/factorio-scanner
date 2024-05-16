@@ -373,7 +373,7 @@ pub async fn load_data(
             debug!("all mods are already installed");
         } else {
             info!("downloading missing mods from mod portal");
-            download_mods(missing, factorio)
+            download_mods(missing, &factorio.join("mods"))
                 .await
                 .change_context(ScannerError::SetupError)?;
         }
@@ -1120,10 +1120,8 @@ impl std::fmt::Display for ModDownloadError {
 #[instrument(skip_all, fields(count = missing.len()))]
 pub async fn download_mods(
     missing: UsedVersions,
-    factorio_dir: &Path,
+    destination: &Path,
 ) -> Result<(), ModDownloadError> {
-    let mods_path = factorio_dir.join("mods");
-
     let (username, token) = {
         let env_username = env::var("FACTORIO_USERNAME").ok();
         let env_token = env::var("FACTORIO_TOKEN").ok();
@@ -1131,7 +1129,7 @@ pub async fn download_mods(
         if let (Some(username), Some(token)) = (env_username.clone(), env_token.clone()) {
             (username, token)
         } else {
-            let player_data = PlayerData::load(&factorio_dir.join("player-data.json"))
+            let player_data = PlayerData::load(&destination.join("../player-data.json"))
                 .change_context(ModDownloadError::MissingCredentials).attach_printable("you can either use the game to login to your account\nor you provide the environment variables FACTORIO_USERNAME & FACTORIO_TOKEN\nwhich also work from a .env file")?;
 
             match (
@@ -1161,7 +1159,7 @@ pub async fn download_mods(
             .await
             .change_context(ModDownloadError::DownloadFailed(name.clone(), version))?;
 
-        fs::write(mods_path.join(format!("{name}_{version}.zip")), dl)
+        fs::write(destination.join(format!("{name}_{version}.zip")), dl)
             .change_context(ModDownloadError::SaveFailed(name, version))?;
 
         interval.tick().await;
