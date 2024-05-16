@@ -322,6 +322,21 @@ impl ModList {
             .collect()
     }
 
+    #[must_use]
+    pub fn active_with_order(&self) -> (UsedMods, Vec<String>) {
+        let active = self.active_mods();
+        let mut tmp = Vec::with_capacity(active.len());
+
+        for (name, m) in &active {
+            tmp.push((name.clone(), m.info.dependency_chain_length(&active)));
+        }
+
+        tmp.sort_unstable_by(|(a, _), (b, _)| natord::compare_ignore_case(a, b));
+        tmp.sort_by_key(|(_, chain)| *chain);
+
+        (active, tmp.iter().map(|(name, _)| name.clone()).collect())
+    }
+
     #[instrument(name = "load_all_local_deps", skip_all)]
     pub fn load_all_local_deps(&mut self, mods: &DependencyList) {
         let mut queue = mods

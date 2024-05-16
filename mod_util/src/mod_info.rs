@@ -8,6 +8,8 @@ use serde::{
 use serde_with::skip_serializing_none;
 use thiserror::Error;
 
+use crate::UsedMods;
+
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModInfo {
@@ -24,6 +26,36 @@ pub struct ModInfo {
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dependencies: Vec<Dependency>,
+}
+
+impl ModInfo {
+    #[must_use]
+    pub fn dependency_chain_length(&self, used: &UsedMods) -> usize {
+        // core is always first
+        if self.name == "core" {
+            return 0;
+        }
+
+        let mut max = 0;
+        for dep in &self.dependencies {
+            if !dep.affects_load_order() {
+                continue;
+            }
+
+            let Some(dep_mod) = used.get(dep.name()) else {
+                continue;
+            };
+
+            // this can go into a loop if there are circular dependencies
+            // but the dependency resolver should prevent that
+            let len = dep_mod.info.dependency_chain_length(used);
+            if len > max {
+                max = len;
+            }
+        }
+
+        max + 1
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
