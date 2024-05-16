@@ -1,6 +1,6 @@
 [package]
 name = "mod_util"
-version = "0.2.1"
+version = "0.3.0"
 authors.workspace = true
 edition.workspace = true
 
@@ -12,6 +12,7 @@ bp_meta_info = []
 
 [dependencies]
 byteorder = "1.5"
+natord = "1.0"
 petgraph = "0.6"
 regex = "1.10"
 serde.workspace = true
