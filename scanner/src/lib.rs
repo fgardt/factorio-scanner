@@ -65,16 +65,13 @@ pub fn get_protodump(
 ) -> Result<DataRaw, ScannerError> {
     // check if cached dump exists and load it if available
     let cached_path = {
-        let mut active_mods = mod_list
-            .active_mods()
-            .values()
-            .map(|m| format!("{}@{}", m.info.name, m.info.version))
-            .collect::<Vec<_>>();
-        active_mods.sort();
-
+        let (active_mods, load_order) = mod_list.active_with_order();
         let mut hash = rustc_hash::FxHasher::default();
-        for mod_name in &active_mods {
-            mod_name.hash(&mut hash);
+        for mod_name in &load_order {
+            let Some(m) = active_mods.get(mod_name) else {
+                continue;
+            };
+            format!("{}@{}", m.info.name, m.info.version).hash(&mut hash);
         }
         let mods_hash = hash.finish();
 
