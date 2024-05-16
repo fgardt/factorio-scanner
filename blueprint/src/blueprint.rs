@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
 
+use mod_util::{mod_info::DependencyVersion, AnyBasic, DependencyList};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -44,6 +45,54 @@ impl crate::GetIDs for BlueprintData {
         ids.merge(self.schedules.get_ids());
 
         ids
+    }
+}
+
+impl BlueprintData {
+    #[must_use]
+    pub fn has_meta_info(&self) -> bool {
+        self.entities
+            .iter()
+            .any(|e| e.tags.contains_key("bp_meta_info"))
+    }
+
+    #[must_use]
+    pub fn get_meta_info_mods(&self) -> Option<DependencyList> {
+        for e in &self.entities {
+            let Some(info) = e.tags.get("bp_meta_info") else {
+                continue;
+            };
+
+            let AnyBasic::Table(data) = info else {
+                continue;
+            };
+
+            let Some(mods) = data.get("mods") else {
+                continue;
+            };
+
+            let AnyBasic::Table(mods) = mods else {
+                continue;
+            };
+
+            let mut result = HashMap::with_capacity(mods.len());
+
+            for (mod_name, mod_version) in mods {
+                let AnyBasic::String(mod_version) = mod_version else {
+                    continue;
+                };
+
+                let Ok(version) = mod_version.try_into() else {
+                    continue;
+                };
+
+                result.insert(mod_name.clone(), DependencyVersion::Exact(version));
+            }
+
+            return Some(result);
+        }
+
+        None
     }
 }
 
