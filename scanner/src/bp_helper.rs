@@ -1,49 +1,18 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
-use mod_util::{mod_info::DependencyVersion, AnyBasic, DependencyList};
+use mod_util::{AnyBasic, DependencyList};
 use strum::IntoEnumIterator;
 
 use crate::preset::Preset;
 
 #[must_use]
 pub fn get_used_versions(bp: &blueprint::Blueprint) -> DependencyList {
+    if let Some(meta_info) = bp.get_meta_info_mods() {
+        return meta_info;
+    }
+
     let mut auto_detected = DependencyList::new();
-
     for entity in &bp.entities {
-        if entity.tags.contains_key("bp_meta_info") {
-            let Some(info) = entity.tags.get("bp_meta_info") else {
-                continue;
-            };
-
-            let AnyBasic::Table(data) = info else {
-                continue;
-            };
-
-            let Some(mods) = data.get("mods") else {
-                continue;
-            };
-
-            let AnyBasic::Table(mods) = mods else {
-                continue;
-            };
-
-            let mut result = HashMap::with_capacity(mods.len());
-
-            for (mod_name, mod_version) in mods {
-                let AnyBasic::String(mod_version) = mod_version else {
-                    continue;
-                };
-
-                let Ok(version) = mod_version.try_into() else {
-                    continue;
-                };
-
-                result.insert(mod_name.clone(), DependencyVersion::Exact(version));
-            }
-
-            return result;
-        }
-
         // trying to auto detect mods
         check_prefix(&entity.name, &mut auto_detected);
 
