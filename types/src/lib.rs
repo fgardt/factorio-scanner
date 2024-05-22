@@ -1956,6 +1956,47 @@ pub struct BeaconModuleVisualizations {
     pub slots: FactorioArray<FactorioArray<BeaconModuleVisualization>>,
 }
 
+impl RenderableGraphics for BeaconModuleVisualizations {
+    type RenderOpts = ();
+
+    fn render(
+        &self,
+        scale: f64,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        (): &Self::RenderOpts,
+    ) -> Option<GraphicsOutput> {
+        merge_renders(
+            &self
+                .slots
+                .iter()
+                .flat_map(|slot| {
+                    slot.iter()
+                        .filter_map(|l| {
+                            if l.has_empty_slot && l.draw_as_sprite {
+                                l.pictures.as_ref().map(|p| {
+                                    p.render(
+                                        scale,
+                                        used_mods,
+                                        image_cache,
+                                        &SpriteVariationsRenderOpts {
+                                            variation: 0,
+                                            runtime_tint: None,
+                                        },
+                                    )
+                                })
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>(),
+            scale,
+        )
+    }
+}
+
 /// [`Types/BeaconGraphicsSet`](https://lua-api.factorio.com/latest/types/BeaconGraphicsSet.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
@@ -2033,13 +2074,21 @@ impl RenderableGraphics for BeaconGraphicsSet {
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         // TODO: render module visualisations
-        merge_layers(
+        let base = merge_layers(
             &self.animation_list,
             scale,
             used_mods,
             image_cache,
             &opts.into(),
-        )
+        )?;
+
+        let mut renders = Vec::new();
+        renders.push(Some(base));
+        self.module_visualisations
+            .iter()
+            .for_each(|mv| renders.push(mv.render(scale, used_mods, image_cache, &())));
+
+        merge_renders(&renders, scale)
     }
 }
 
