@@ -1979,10 +1979,7 @@ impl RenderableGraphics for BeaconModuleVisualizations {
                                         scale,
                                         used_mods,
                                         image_cache,
-                                        &SpriteVariationsRenderOpts {
-                                            variation: 0,
-                                            runtime_tint: None,
-                                        },
+                                        &SpriteVariationsRenderOpts::default(),
                                     )
                                 })
                             } else {

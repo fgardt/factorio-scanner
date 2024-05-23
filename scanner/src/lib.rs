@@ -287,6 +287,7 @@ pub fn bp_entity2render_opts(
         position: (&value.position).into(),
         direction: value.direction,
         orientation: value.orientation,
+        variation: value.variation,
         pickup_position: value
             .pickup_position
             .as_ref()
