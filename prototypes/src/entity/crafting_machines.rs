@@ -177,6 +177,10 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
     fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
         self.child.heat_buffer_connections(options)
     }
+
+    fn recipe_visible(&self) -> bool {
+        self.show_recipe_icon
+    }
 }
 
 // TODO: find a better way to work around this abomination of a type

@@ -258,8 +258,10 @@ pub trait Renderable {
         image_cache: &mut ImageCache,
     ) -> RenderOutput;
 
-    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition>;
-    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition>;
+
+    fn recipe_visible(&self) -> bool {
+        false
+    }
 }
 
 /// [`Prototypes/EntityPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityPrototype.html)
@@ -293,6 +295,10 @@ impl<T: Renderable> Renderable for EntityPrototype<T> {
     fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
         self.child.heat_buffer_connections(options)
     }
+
+    fn recipe_visible(&self) -> bool {
+        self.child.recipe_visible()
+    }
 }
 
 pub trait RenderableEntity: Renderable {
@@ -302,6 +308,8 @@ pub trait RenderableEntity: Renderable {
 
     fn pipe_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)>;
     fn heat_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)>;
+
+    fn show_recipe(&self) -> bool;
 }
 
 impl<R, T> RenderableEntity for T
@@ -411,6 +419,10 @@ where
                 Some((conn + &options.position, dir))
             })
             .collect()
+    }
+
+    fn show_recipe(&self) -> bool {
+        self.recipe_visible()
     }
 }
 
@@ -549,6 +561,10 @@ impl<T: Renderable> Renderable for EntityData<T> {
 
     fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
         self.child.heat_buffer_connections(options)
+    }
+
+    fn recipe_visible(&self) -> bool {
+        self.child.recipe_visible()
     }
 }
 
@@ -697,6 +713,10 @@ impl<T: Renderable> Renderable for EntityWithHealthData<T> {
     fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
         self.child.heat_buffer_connections(options)
     }
+
+    fn recipe_visible(&self) -> bool {
+        self.child.recipe_visible()
+    }
 }
 
 /// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
@@ -741,6 +761,10 @@ impl<T: Renderable> Renderable for EntityWithOwnerData<T> {
 
     fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
         self.child.heat_buffer_connections(options)
+    }
+
+    fn recipe_visible(&self) -> bool {
+        self.child.recipe_visible()
     }
 }
 

@@ -40,4 +40,8 @@ impl<T: Renderable> Renderable for HeatBufferEntityData<T> {
         res.append(&mut self.child.heat_buffer_connections(options));
         res
     }
+
+    fn recipe_visible(&self) -> bool {
+        self.child.recipe_visible()
+    }
 }

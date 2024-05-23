@@ -518,10 +518,10 @@ pub fn render_bp(
         .entities
         .iter()
         .filter_map(|e| {
-            if !data.contains_entity(&e.name) {
+            let Some(e_data) = data.get_entity(&e.name) else {
                 unknown.insert(e.name.clone());
                 return None;
-            }
+            };
 
             let mut connected_gates: Vec<Direction> = Vec::new();
             let mut draw_gate_patch = false;
@@ -660,7 +660,7 @@ pub fn render_bp(
             render_opts.draw_gate_patch = draw_gate_patch;
 
             'recipe_icon: {
-                if !e.recipe.is_empty() {
+                if !e.recipe.is_empty() && e_data.recipe_visible() {
                     if !data.contains_recipe(&e.recipe) {
                         unknown.insert(e.recipe.clone());
                         break 'recipe_icon;

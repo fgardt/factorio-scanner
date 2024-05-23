@@ -69,4 +69,8 @@ impl<T: Renderable> Renderable for EnergyEntityData<T> {
 
         child
     }
+
+    fn recipe_visible(&self) -> bool {
+        self.child.recipe_visible()
+    }
 }
