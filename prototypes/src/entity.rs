@@ -258,6 +258,13 @@ pub trait Renderable {
         image_cache: &mut ImageCache,
     ) -> RenderOutput;
 
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
 
     fn recipe_visible(&self) -> bool {
         false

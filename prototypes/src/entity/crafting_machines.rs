@@ -225,14 +225,6 @@ impl super::Renderable for FurnaceData {
     ) -> super::RenderOutput {
         None
     }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
 }
 
 /// [`Prototypes/AssemblingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/AssemblingMachinePrototype.html)
@@ -266,14 +258,6 @@ impl super::Renderable for AssemblingMachineData {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         None
-    }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
     }
 }
 
@@ -421,13 +405,5 @@ impl super::Renderable for RocketSiloData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
-    }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
     }
 }

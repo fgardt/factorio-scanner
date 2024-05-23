@@ -80,14 +80,6 @@ impl super::Renderable for StorageTankData {
 
         Some(())
     }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
