@@ -1647,6 +1647,44 @@ impl BoundingBox {
     pub const fn bottom_right(&self) -> &MapPosition {
         &self.1
     }
+
+    #[must_use]
+    pub const fn top(&self) -> f64 {
+        self.0.y()
+    }
+
+    #[must_use]
+    pub const fn bottom(&self) -> f64 {
+        self.1.y()
+    }
+
+    #[must_use]
+    pub const fn left(&self) -> f64 {
+        self.0.x()
+    }
+
+    #[must_use]
+    pub const fn right(&self) -> f64 {
+        self.1.x()
+    }
+
+    #[must_use]
+    pub fn width(&self) -> f64 {
+        self.right() - self.left()
+    }
+
+    #[must_use]
+    pub fn height(&self) -> f64 {
+        self.bottom() - self.top()
+    }
+
+    #[must_use]
+    pub fn center(&self) -> MapPosition {
+        let (x1, y1) = self.0.as_tuple();
+        let (x2, y2) = self.1.as_tuple();
+
+        MapPosition::Tuple((x1 + x2) / 2.0, (y1 + y2) / 2.0)
+    }
 }
 
 /// [`Types/Direction`](https://lua-api.factorio.com/latest/types/Direction.html)

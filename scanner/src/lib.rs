@@ -790,6 +790,69 @@ pub fn render_bp(
                 }
             }
 
+            // modules / item requests
+            {
+                if !e.items.is_empty() {
+                    let mut items = e.items.iter().collect::<Vec<_>>();
+                    items.sort_unstable_by_key(|a| a.0);
+
+                    let scale = render_layers.scale() * 2.3;
+                    let s_box = e_data.selection_box();
+                    let width = s_box.width() - 0.25;
+                    let height = s_box.height();
+                    let count = items.iter().map(|(_, &c)| c).sum::<u32>();
+
+                    let row_len = (width / 0.5).floor() as u32;
+                    let row_count = (f64::from(count) / f64::from(row_len)).ceil() as u32;
+                    let row_len = (f64::from(count) / f64::from(row_count)).ceil() as u32;
+
+                    let start_y =
+                        ((height / 4.0) - (f64::from(row_count - 1) / 2.0) + 0.25).max(0.0);
+                    let mut offset = Vector::Tuple(0.0, start_y);
+
+                    let icons = items
+                        .iter()
+                        .filter_map(|(name, _)| {
+                            Some((
+                                (*name).clone(),
+                                data.get_item_icon(name, scale, used_mods, image_cache)?,
+                            ))
+                        })
+                        .collect::<HashMap<_, _>>();
+
+                    for chunk in e
+                        .items
+                        .iter()
+                        .flat_map(|(i, c)| std::iter::repeat(i).take(*c as usize))
+                        .collect::<Vec<_>>()
+                        .as_slice()
+                        .chunks(row_len as usize)
+                    {
+                        let count = chunk.len() as u32;
+                        if count == 0 {
+                            continue;
+                        }
+
+                        let start_x = f64::from(count - 1) * -0.25; // count / 2 * -0.5
+                        offset += Vector::Tuple(start_x, 0.0);
+
+                        for &item in chunk {
+                            if let Some(icon) = icons.get(item) {
+                                render_layers.add(
+                                    (icon.0.clone(), offset),
+                                    &render_opts.position,
+                                    InternalRenderLayer::IconOverlay,
+                                );
+                            }
+
+                            offset += Vector::Tuple(0.5, 0.0);
+                        }
+
+                        offset = Vector::Tuple(0.0, offset.y() + 0.5);
+                    }
+                }
+            }
+
             // store wire connections for wire rendering
             let mut wires0 = e
                 .neighbours
