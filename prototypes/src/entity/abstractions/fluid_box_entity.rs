@@ -40,4 +40,8 @@ impl<T: Renderable> Renderable for FluidBoxEntityData<T> {
     fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
         self.child.heat_buffer_connections(options)
     }
+
+    fn recipe_visible(&self) -> bool {
+        self.child.recipe_visible()
+    }
 }

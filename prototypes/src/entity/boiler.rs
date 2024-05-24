@@ -60,10 +60,6 @@ impl super::Renderable for BoilerData {
     fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
         self.output_fluid_box.connection_points(options.direction)
     }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

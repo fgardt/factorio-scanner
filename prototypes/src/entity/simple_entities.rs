@@ -46,14 +46,6 @@ impl super::Renderable for SimpleEntityData {
     ) -> super::RenderOutput {
         None
     }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -105,15 +97,29 @@ impl super::Renderable for SimpleEntityWithOwnerData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        None
-    }
+        let res = match self.graphics.as_ref()? {
+            SimpleEntityGraphics::Pictures { pictures } => pictures.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            ),
+            SimpleEntityGraphics::Picture { picture } => picture.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            ),
+            SimpleEntityGraphics::Animations { animations } => animations.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            ),
+        }?;
 
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
+        render_layers.add_entity(res, &options.position);
+        Some(())
     }
 }
 

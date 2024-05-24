@@ -291,7 +291,7 @@ dependencies = [
 
 [[package]]
 name = "blueprint"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "base64 0.22.1",
  "flate2",
@@ -1875,7 +1875,7 @@ dependencies = [
 
 [[package]]
 name = "prototypes"
-version = "2.0.1-1.1.107"
+version = "2.1.0-1.1.107"
 dependencies = [
  "image 0.25.1",
  "imageproc",
@@ -2285,7 +2285,7 @@ dependencies = [
 
 [[package]]
 name = "scanner"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "blueprint",
  "capnpc",
@@ -2896,7 +2896,7 @@ checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
 
 [[package]]
 name = "types"
-version = "2.0.1-1.1.107"
+version = "2.1.0-1.1.107"
 dependencies = [
  "image 0.25.1",
  "konst",

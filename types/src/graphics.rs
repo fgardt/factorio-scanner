@@ -1,3 +1,5 @@
+use std::num::NonZeroU32;
+
 use image::{imageops, DynamicImage, GenericImageView, Rgba};
 use mod_util::UsedMods;
 use serde::{Deserialize, Serialize};
@@ -1267,10 +1269,20 @@ pub enum SpriteVariations {
     Array(FactorioArray<Sprite>),
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy)]
 pub struct SpriteVariationsRenderOpts {
-    pub variation: u32,
+    pub variation: NonZeroU32,
     pub runtime_tint: Option<Color>,
+}
+
+impl Default for SpriteVariationsRenderOpts {
+    #[allow(unsafe_code)]
+    fn default() -> Self {
+        Self {
+            variation: unsafe { NonZeroU32::new_unchecked(1) },
+            runtime_tint: None,
+        }
+    }
 }
 
 impl From<&SpriteVariationsRenderOpts> for SimpleGraphicsRenderOpts {
@@ -1293,13 +1305,15 @@ impl RenderableGraphics for SpriteVariations {
     ) -> Option<GraphicsOutput> {
         match self {
             Self::Struct { sheet } | Self::SpriteSheet(sheet) => {
+                // TODO: implement variations here
                 sheet.render(scale, used_mods, image_cache, &opts.into())
             }
-            Self::Array(variations) => {
-                variations
-                    .first()?
-                    .render(scale, used_mods, image_cache, &opts.into())
-            }
+            Self::Array(variations) => variations.get((opts.variation.get() - 1) as usize)?.render(
+                scale,
+                used_mods,
+                image_cache,
+                &opts.into(),
+            ),
         }
     }
 }
@@ -2187,11 +2201,22 @@ pub enum AnimationVariations {
     },
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy)]
 pub struct AnimationVariationsRenderOpts {
-    pub variation: u32,
+    pub variation: NonZeroU32,
     pub progress: f64,
     pub runtime_tint: Option<Color>,
+}
+
+impl Default for AnimationVariationsRenderOpts {
+    fn default() -> Self {
+        #[allow(unsafe_code)]
+        Self {
+            variation: unsafe { NonZeroU32::new_unchecked(1) },
+            progress: 0.0,
+            runtime_tint: None,
+        }
+    }
 }
 
 impl From<&AnimationVariationsRenderOpts> for AnimationRenderOpts {
@@ -2217,7 +2242,7 @@ impl RenderableGraphics for AnimationVariations {
             Self::Animation(animation) => {
                 animation.render(scale, used_mods, image_cache, &opts.into())
             }
-            Self::Array(animations) => animations.get(opts.variation as usize)?.render(
+            Self::Array(animations) => animations.get((opts.variation.get() - 1) as usize)?.render(
                 scale,
                 used_mods,
                 image_cache,

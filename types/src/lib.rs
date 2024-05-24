@@ -1647,6 +1647,44 @@ impl BoundingBox {
     pub const fn bottom_right(&self) -> &MapPosition {
         &self.1
     }
+
+    #[must_use]
+    pub const fn top(&self) -> f64 {
+        self.0.y()
+    }
+
+    #[must_use]
+    pub const fn bottom(&self) -> f64 {
+        self.1.y()
+    }
+
+    #[must_use]
+    pub const fn left(&self) -> f64 {
+        self.0.x()
+    }
+
+    #[must_use]
+    pub const fn right(&self) -> f64 {
+        self.1.x()
+    }
+
+    #[must_use]
+    pub fn width(&self) -> f64 {
+        self.right() - self.left()
+    }
+
+    #[must_use]
+    pub fn height(&self) -> f64 {
+        self.bottom() - self.top()
+    }
+
+    #[must_use]
+    pub fn center(&self) -> MapPosition {
+        let (x1, y1) = self.0.as_tuple();
+        let (x2, y2) = self.1.as_tuple();
+
+        MapPosition::Tuple((x1 + x2) / 2.0, (y1 + y2) / 2.0)
+    }
 }
 
 /// [`Types/Direction`](https://lua-api.factorio.com/latest/types/Direction.html)
@@ -1956,6 +1994,44 @@ pub struct BeaconModuleVisualizations {
     pub slots: FactorioArray<FactorioArray<BeaconModuleVisualization>>,
 }
 
+impl RenderableGraphics for BeaconModuleVisualizations {
+    type RenderOpts = ();
+
+    fn render(
+        &self,
+        scale: f64,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        (): &Self::RenderOpts,
+    ) -> Option<GraphicsOutput> {
+        merge_renders(
+            &self
+                .slots
+                .iter()
+                .flat_map(|slot| {
+                    slot.iter()
+                        .filter_map(|l| {
+                            if l.has_empty_slot && l.draw_as_sprite {
+                                l.pictures.as_ref().map(|p| {
+                                    p.render(
+                                        scale,
+                                        used_mods,
+                                        image_cache,
+                                        &SpriteVariationsRenderOpts::default(),
+                                    )
+                                })
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>(),
+            scale,
+        )
+    }
+}
+
 /// [`Types/BeaconGraphicsSet`](https://lua-api.factorio.com/latest/types/BeaconGraphicsSet.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
@@ -2033,13 +2109,21 @@ impl RenderableGraphics for BeaconGraphicsSet {
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         // TODO: render module visualisations
-        merge_layers(
+        let base = merge_layers(
             &self.animation_list,
             scale,
             used_mods,
             image_cache,
             &opts.into(),
-        )
+        )?;
+
+        let mut renders = Vec::new();
+        renders.push(Some(base));
+        self.module_visualisations
+            .iter()
+            .for_each(|mv| renders.push(mv.render(scale, used_mods, image_cache, &())));
+
+        merge_renders(&renders, scale)
     }
 }
 

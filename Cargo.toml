@@ -40,7 +40,7 @@ tokio = "1.36"
 types = { path = "types" }
 
 [workspace.lints.rust]
-unsafe_code = "forbid"
+unsafe_code = "warn"
 
 [workspace.lints.clippy]
 nursery = "warn"
