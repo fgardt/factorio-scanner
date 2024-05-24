@@ -36,12 +36,4 @@ impl super::Renderable for HeatPipeData {
 
         Some(())
     }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
 }

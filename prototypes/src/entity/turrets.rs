@@ -169,14 +169,6 @@ impl super::Renderable for TurretData {
 
         Some(())
     }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
 }
 
 /// [`Prototypes/AmmoTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/AmmoTurretPrototype.html)

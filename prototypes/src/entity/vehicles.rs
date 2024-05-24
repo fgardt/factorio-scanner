@@ -172,14 +172,6 @@ impl super::Renderable for CarData {
     ) -> super::RenderOutput {
         None
     }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -463,14 +455,6 @@ impl super::Renderable for ArtilleryWagonData {
             Some(())
         }
     }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
 }
 
 /// [`Prototypes/CargoWagonPrototype`](https://lua-api.factorio.com/latest/prototypes/CargoWagonPrototype.html)
@@ -492,14 +476,6 @@ impl super::Renderable for CargoWagonData {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         Some(())
-    }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
     }
 }
 
@@ -524,14 +500,6 @@ impl super::Renderable for FluidWagonData {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         Some(())
-    }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
     }
 }
 
@@ -578,13 +546,5 @@ impl super::Renderable for LocomotiveData {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         Some(())
-    }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
     }
 }

@@ -45,14 +45,6 @@ impl super::Renderable for ElectricEnergyInterfaceData {
             .as_ref()?
             .render(options, used_mods, render_layers, image_cache)
     }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -102,13 +94,5 @@ impl super::Renderable for ElectricEnergyInterfaceGraphics {
         render_layers.add_entity(res, &options.position);
 
         Some(())
-    }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
     }
 }

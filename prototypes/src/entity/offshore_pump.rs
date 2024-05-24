@@ -53,14 +53,6 @@ impl super::Renderable for OffshorePumpData {
         self.graphics
             .render(options, used_mods, render_layers, image_cache)
     }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
 }
 
 #[skip_serializing_none]
@@ -100,14 +92,6 @@ impl super::Renderable for OffshorePumpGraphicsVariant {
                 Some(())
             }
         }
-    }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
     }
 }
 
@@ -171,13 +155,5 @@ impl super::Renderable for OffshorePumpGraphicsSet {
         render_layers.add_entity(res, &options.position);
 
         Some(())
-    }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
     }
 }

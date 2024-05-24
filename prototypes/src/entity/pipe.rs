@@ -54,14 +54,6 @@ impl super::Renderable for PipeData {
 
         Some(())
     }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -172,14 +164,6 @@ impl super::Renderable for PipeToGroundData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
-    }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
     }
 }
 

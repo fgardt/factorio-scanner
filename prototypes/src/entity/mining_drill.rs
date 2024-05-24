@@ -99,8 +99,4 @@ impl super::Renderable for MiningDrillData {
         input_cons.append(&mut output_cons);
         input_cons
     }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
-        Vec::with_capacity(0)
-    }
 }

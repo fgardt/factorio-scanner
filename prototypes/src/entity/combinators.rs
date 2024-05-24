@@ -143,14 +143,6 @@ impl super::Renderable for ArithmeticCombinatorData {
 
         Some(())
     }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
 }
 
 /// [`Prototypes/DeciderCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/DeciderCombinatorPrototype.html)
@@ -198,14 +190,6 @@ impl super::Renderable for DeciderCombinatorData {
 
         Some(())
     }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
 }
 
 /// [`Prototypes/ConstantCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/ConstantCombinatorPrototype.html)
@@ -244,13 +228,5 @@ impl super::Renderable for ConstantCombinatorData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
-    }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        Vec::with_capacity(0)
     }
 }

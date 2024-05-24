@@ -1,4 +1,7 @@
-use std::collections::{BTreeMap, HashMap};
+use std::{
+    collections::{BTreeMap, HashMap},
+    num::NonZeroU32,
+};
 
 use mod_util::{mod_info::DependencyVersion, AnyBasic, DependencyList};
 use serde::{Deserialize, Serialize};
@@ -157,7 +160,7 @@ impl crate::GetIDs for SignalID {
 }
 
 pub type EntityNumber = u64;
-pub type GraphicsVariation = u8;
+pub type GraphicsVariation = NonZeroU32;
 
 // todo: reduce optionals count by skipping serialization of defaults?
 #[skip_serializing_none]

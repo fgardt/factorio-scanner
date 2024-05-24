@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops::Deref};
+use std::{collections::HashMap, num::NonZeroU32, ops::Deref};
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -99,6 +99,7 @@ pub struct RenderOpts {
 
     pub direction: Direction,
     pub orientation: Option<RealOrientation>,
+    pub variation: Option<NonZeroU32>,
 
     pub pickup_position: Option<Vector>,
 
@@ -150,8 +151,11 @@ impl From<&RenderOpts> for SpriteNWayRenderOpts {
 
 impl From<&RenderOpts> for SpriteVariationsRenderOpts {
     fn from(opts: &RenderOpts) -> Self {
+        #[allow(unsafe_code)]
         Self {
-            variation: 0,
+            variation: opts
+                .variation
+                .unwrap_or(unsafe { NonZeroU32::new_unchecked(1) }),
             runtime_tint: opts.runtime_tint,
         }
     }
@@ -178,8 +182,11 @@ impl From<&RenderOpts> for Animation4WayRenderOpts {
 
 impl From<&RenderOpts> for AnimationVariationsRenderOpts {
     fn from(value: &RenderOpts) -> Self {
+        #[allow(unsafe_code)]
         Self {
-            variation: 0,
+            variation: value
+                .variation
+                .unwrap_or(unsafe { NonZeroU32::new_unchecked(1) }),
             progress: 0.0,
             runtime_tint: value.runtime_tint,
         }
@@ -251,8 +258,17 @@ pub trait Renderable {
         image_cache: &mut ImageCache,
     ) -> RenderOutput;
 
-    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition>;
-    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition>;
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+        Vec::with_capacity(0)
+    }
+
+    fn recipe_visible(&self) -> bool {
+        false
+    }
 }
 
 /// [`Prototypes/EntityPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityPrototype.html)
@@ -286,6 +302,10 @@ impl<T: Renderable> Renderable for EntityPrototype<T> {
     fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
         self.child.heat_buffer_connections(options)
     }
+
+    fn recipe_visible(&self) -> bool {
+        self.child.recipe_visible()
+    }
 }
 
 pub trait RenderableEntity: Renderable {
@@ -295,6 +315,8 @@ pub trait RenderableEntity: Renderable {
 
     fn pipe_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)>;
     fn heat_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)>;
+
+    fn show_recipe(&self) -> bool;
 }
 
 impl<R, T> RenderableEntity for T
@@ -404,6 +426,10 @@ where
                 Some((conn + &options.position, dir))
             })
             .collect()
+    }
+
+    fn show_recipe(&self) -> bool {
+        self.recipe_visible()
     }
 }
 
@@ -543,6 +569,10 @@ impl<T: Renderable> Renderable for EntityData<T> {
     fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
         self.child.heat_buffer_connections(options)
     }
+
+    fn recipe_visible(&self) -> bool {
+        self.child.recipe_visible()
+    }
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -660,8 +690,27 @@ impl<T: Renderable> Renderable for EntityWithHealthData<T> {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> RenderOutput {
-        self.child
-            .render(options, used_mods, render_layers, image_cache)
+        let ret = self
+            .child
+            .render(options, used_mods, render_layers, image_cache);
+
+        if let Some(patch) = self.integration_patch.as_ref() {
+            if let Some(res) = patch.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            ) {
+                render_layers.add(
+                    res,
+                    &options.position,
+                    crate::InternalRenderLayer::GroundPatch,
+                );
+                return Some(());
+            }
+        }
+
+        ret
     }
 
     fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
@@ -670,6 +719,10 @@ impl<T: Renderable> Renderable for EntityWithHealthData<T> {
 
     fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
         self.child.heat_buffer_connections(options)
+    }
+
+    fn recipe_visible(&self) -> bool {
+        self.child.recipe_visible()
     }
 }
 
@@ -715,6 +768,10 @@ impl<T: Renderable> Renderable for EntityWithOwnerData<T> {
 
     fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
         self.child.heat_buffer_connections(options)
+    }
+
+    fn recipe_visible(&self) -> bool {
+        self.child.recipe_visible()
     }
 }
 
