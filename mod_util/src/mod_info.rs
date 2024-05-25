@@ -282,14 +282,13 @@ impl DependencyType {
 
 impl fmt::Display for DependencyType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s = match self {
-            Self::Incompatible => "!",
-            Self::Optional => "?",
-            Self::HiddenOptional => "(?)",
-            Self::RequiredLazy => "~",
-            Self::Required => "",
-        };
-        write!(f, "{s}")
+        match self {
+            Self::Incompatible => write!(f, "! "),
+            Self::Optional => write!(f, "? "),
+            Self::HiddenOptional => write!(f, "(?) "),
+            Self::RequiredLazy => write!(f, "~ "),
+            Self::Required => Ok(()),
+        }
     }
 }
 
@@ -433,11 +432,11 @@ impl fmt::Display for DependencyVersion {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Any => Ok(()),
-            Self::Lower(version) => write!(f, "< {version}"),
-            Self::LowerOrEqual(version) => write!(f, "<= {version}"),
-            Self::Exact(version) => write!(f, "= {version}"),
-            Self::HigherOrEqual(version) => write!(f, ">= {version}"),
-            Self::Higher(version) => write!(f, "> {version}"),
+            Self::Lower(version) => write!(f, " < {version}"),
+            Self::LowerOrEqual(version) => write!(f, " <= {version}"),
+            Self::Exact(version) => write!(f, " = {version}"),
+            Self::HigherOrEqual(version) => write!(f, " >= {version}"),
+            Self::Higher(version) => write!(f, " > {version}"),
         }
     }
 }
@@ -574,11 +573,7 @@ impl fmt::Display for Dependency {
         let name = &self.name;
         let version = &self.version;
 
-        if matches!(version, DependencyVersion::Any) {
-            write!(f, "{prefix} {name}")
-        } else {
-            write!(f, "{prefix} {name} {version}")
-        }
+        write!(f, "{prefix}{name}{version}")
     }
 }
 
@@ -638,35 +633,40 @@ impl<'de> Visitor<'de> for DependencyVisitor {
         let name = if let Some(comp_start) = v.find(['<', '>', '=']) {
             let (name, ver) = v.split_at(comp_start);
 
-            if ver.len() >= 3 {
+            if ver.len() >= 2 {
                 let mut ver_c = ver.chars();
 
                 match ver_c.next() {
-                    Some('=') => {
-                        version = DependencyVersion::Exact(
-                            ver[2..].trim_start().parse().map_err(DeError::custom)?,
-                        );
+                    Some('=') if ver.len() >= 3 => {
+                        version = DependencyVersion::Exact(VersionVisitor::visit_str(
+                            VersionVisitor,
+                            ver[2..].trim_start(),
+                        )?);
                     }
                     Some('<') => {
-                        if ver_c.next() == Some('=') {
-                            version = DependencyVersion::LowerOrEqual(
-                                ver[2..].trim_start().parse().map_err(DeError::custom)?,
-                            );
+                        if ver_c.next() == Some('=') && ver.len() >= 3 {
+                            version = DependencyVersion::LowerOrEqual(VersionVisitor::visit_str(
+                                VersionVisitor,
+                                ver[2..].trim_start(),
+                            )?);
                         } else {
-                            version = DependencyVersion::Lower(
-                                ver[1..].trim_start().parse().map_err(DeError::custom)?,
-                            );
+                            version = DependencyVersion::Lower(VersionVisitor::visit_str(
+                                VersionVisitor,
+                                ver[1..].trim_start(),
+                            )?);
                         }
                     }
                     Some('>') => {
-                        if ver_c.next() == Some('=') {
-                            version = DependencyVersion::HigherOrEqual(
-                                ver[2..].trim_start().parse().map_err(DeError::custom)?,
-                            );
+                        if ver_c.next() == Some('=') && ver.len() >= 3 {
+                            version = DependencyVersion::HigherOrEqual(VersionVisitor::visit_str(
+                                VersionVisitor,
+                                ver[2..].trim_start(),
+                            )?);
                         } else {
-                            version = DependencyVersion::Higher(
-                                ver[1..].trim_start().parse().map_err(DeError::custom)?,
-                            );
+                            version = DependencyVersion::Higher(VersionVisitor::visit_str(
+                                VersionVisitor,
+                                ver[1..].trim_start(),
+                            )?);
                         }
                     }
                     _ => return Err(DeError::custom("Invalid dependency version comparator")),
@@ -718,3 +718,89 @@ pub trait DependencyExt: Iterator + Sized {
 }
 
 impl<I: Iterator> DependencyExt for I {}
+
+#[cfg(test)]
+mod test {
+    #![allow(clippy::unwrap_used)]
+    use super::*;
+
+    #[allow(clippy::needless_pass_by_value)]
+    fn dep_test(input: &str, kind: DependencyType, name: &str, version: DependencyVersion) {
+        let dep = DependencyVisitor::visit_str::<serde::de::value::Error>(DependencyVisitor, input)
+            .unwrap();
+
+        assert_eq!(dep.kind, kind);
+        assert_eq!(dep.name, name);
+        assert_eq!(dep.version, version);
+    }
+
+    #[test]
+    fn simple_dep() {
+        dep_test(
+            "mod-name",
+            DependencyType::Required,
+            "mod-name",
+            DependencyVersion::Any,
+        );
+    }
+
+    #[test]
+    fn dep_with_version() {
+        dep_test(
+            "mod-name = 1.0.0",
+            DependencyType::Required,
+            "mod-name",
+            DependencyVersion::Exact(Version::new(1, 0, 0)),
+        );
+    }
+
+    #[test]
+    fn dep_with_partial_version() {
+        dep_test(
+            "mod-name >= 1",
+            DependencyType::Required,
+            "mod-name",
+            DependencyVersion::HigherOrEqual(Version::new(1, 0, 0)),
+        );
+    }
+
+    #[test]
+    fn dep_with_optional() {
+        dep_test(
+            "? mod-name",
+            DependencyType::Optional,
+            "mod-name",
+            DependencyVersion::Any,
+        );
+    }
+
+    #[test]
+    fn dep_with_hidden_optional_and_version() {
+        dep_test(
+            "(?) mod-name <= 0.4.5",
+            DependencyType::HiddenOptional,
+            "mod-name",
+            DependencyVersion::LowerOrEqual(Version::new(0, 4, 5)),
+        );
+    }
+
+    #[test]
+    fn compact_dep() {
+        dep_test(
+            "~helloworld>2",
+            DependencyType::RequiredLazy,
+            "helloworld",
+            DependencyVersion::Higher(Version::new(2, 0, 0)),
+        );
+    }
+
+    #[test]
+    fn compact_with_space() {
+        dep_test(
+            "(?)hello world>3.4.5",
+            DependencyType::HiddenOptional,
+            "hello world",
+            DependencyVersion::Higher(Version::new(3, 4, 5)),
+        );
+    }
+}
