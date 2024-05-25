@@ -431,16 +431,14 @@ impl From<&Version> for DependencyVersion {
 
 impl fmt::Display for DependencyVersion {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s = match self {
-            Self::Any => String::new(),
-            Self::Lower(version) => format!("< {version}"),
-            Self::LowerOrEqual(version) => format!("<= {version}"),
-            Self::Exact(version) => format!("= {version}"),
-            Self::HigherOrEqual(version) => format!(">= {version}"),
-            Self::Higher(version) => format!("> {version}"),
-        };
-
-        write!(f, "{s}")
+        match self {
+            Self::Any => Ok(()),
+            Self::Lower(version) => write!(f, "< {version}"),
+            Self::LowerOrEqual(version) => write!(f, "<= {version}"),
+            Self::Exact(version) => write!(f, "= {version}"),
+            Self::HigherOrEqual(version) => write!(f, ">= {version}"),
+            Self::Higher(version) => write!(f, "> {version}"),
+        }
     }
 }
 
@@ -576,7 +574,11 @@ impl fmt::Display for Dependency {
         let name = &self.name;
         let version = &self.version;
 
-        write!(f, "{prefix} {name}{version}")
+        if matches!(version, DependencyVersion::Any) {
+            write!(f, "{prefix} {name}")
+        } else {
+            write!(f, "{prefix} {name} {version}")
+        }
     }
 }
 
@@ -608,59 +610,78 @@ impl<'de> Visitor<'de> for DependencyVisitor {
     where
         E: DeError,
     {
-        let v = v.trim();
+        let mut v = v.trim();
 
         if v.is_empty() {
             return Err(DeError::custom("Invalid dependency: empty string"));
         }
 
-        let mut kind: DependencyType = DependencyType::Required;
-
-        if v.starts_with('!') {
-            kind = DependencyType::Incompatible;
+        let kind = if v.starts_with('!') {
+            v = &v[1..];
+            DependencyType::Incompatible
         } else if v.starts_with('?') {
-            kind = DependencyType::Optional;
+            v = &v[1..];
+            DependencyType::Optional
         } else if v.starts_with("(?)") {
-            kind = DependencyType::HiddenOptional;
+            v = &v[3..];
+            DependencyType::HiddenOptional
         } else if v.starts_with('~') {
-            kind = DependencyType::RequiredLazy;
-        }
-
-        let parts = v.split(' ').collect::<Vec<_>>();
-        let part_count = parts.len();
-
-        if part_count == 1 && kind == DependencyType::Required {
-            let trim_end = v.find(['<', '>', '='].as_ref()).unwrap_or(v.len());
-            return Ok(Self::Value {
-                kind,
-                name: v[..trim_end].to_owned(),
-                version: DependencyVersion::Any,
-            });
-        }
-
-        let name_start = usize::from(kind != DependencyType::Required);
-        let dep_version = if part_count > (2 + name_start) {
-            DependencyVersionVisitor::visit_str::<E>(
-                DependencyVersionVisitor,
-                &[parts[part_count - 2], parts[part_count - 1]].join(" "),
-            )
+            v = &v[1..];
+            DependencyType::RequiredLazy
         } else {
-            Ok(DependencyVersion::Any)
+            DependencyType::Required
         };
 
-        let name_end = if dep_version.is_ok() && part_count > (2 + name_start) {
-            part_count - 2
-        } else {
-            part_count
-        };
+        v = v.trim_start();
 
-        let name = parts[name_start..name_end].join(" ");
-        let trim_end = name.find(['<', '>', '='].as_ref()).unwrap_or(name.len());
+        let mut version = DependencyVersion::Any;
+        let name = if let Some(comp_start) = v.find(['<', '>', '=']) {
+            let (name, ver) = v.split_at(comp_start);
+
+            if ver.len() >= 3 {
+                let mut ver_c = ver.chars();
+
+                match ver_c.next() {
+                    Some('=') => {
+                        version = DependencyVersion::Exact(
+                            ver[2..].trim_start().parse().map_err(DeError::custom)?,
+                        );
+                    }
+                    Some('<') => {
+                        if ver_c.next() == Some('=') {
+                            version = DependencyVersion::LowerOrEqual(
+                                ver[2..].trim_start().parse().map_err(DeError::custom)?,
+                            );
+                        } else {
+                            version = DependencyVersion::Lower(
+                                ver[1..].trim_start().parse().map_err(DeError::custom)?,
+                            );
+                        }
+                    }
+                    Some('>') => {
+                        if ver_c.next() == Some('=') {
+                            version = DependencyVersion::HigherOrEqual(
+                                ver[2..].trim_start().parse().map_err(DeError::custom)?,
+                            );
+                        } else {
+                            version = DependencyVersion::Higher(
+                                ver[1..].trim_start().parse().map_err(DeError::custom)?,
+                            );
+                        }
+                    }
+                    _ => return Err(DeError::custom("Invalid dependency version comparator")),
+                }
+            }
+
+            name.trim_end()
+        } else {
+            v
+        };
 
         Ok(Self::Value {
             kind,
-            name: name[..trim_end].to_owned(),
-            version: dep_version.unwrap_or(DependencyVersion::Any),
+            name: name.to_string(),
+            version,
         })
     }
 
