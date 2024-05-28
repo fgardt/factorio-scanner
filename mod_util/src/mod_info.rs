@@ -63,6 +63,10 @@ pub struct Version {
     major: u16,
     minor: u16,
     patch: u16,
+
+    leading_major: u8,
+    leading_minor: u8,
+    leading_patch: u8,
 }
 
 impl Version {
@@ -72,6 +76,9 @@ impl Version {
             major,
             minor,
             patch,
+            leading_major: 0,
+            leading_minor: 0,
+            leading_patch: 0,
         }
     }
 }
@@ -108,7 +115,11 @@ impl fmt::Display for Version {
         let minor = &self.minor;
         let patch = &self.patch;
 
-        write!(f, "{major}.{minor}.{patch}")
+        let p1 = usize::from(self.leading_major) + major.checked_ilog10().unwrap_or(0) as usize + 1;
+        let p2 = usize::from(self.leading_minor) + minor.checked_ilog10().unwrap_or(0) as usize + 1;
+        let p3 = usize::from(self.leading_patch) + patch.checked_ilog10().unwrap_or(0) as usize + 1;
+
+        write!(f, "{major:0>p1$}.{minor:0>p2$}.{patch:0>p3$}")
     }
 }
 
@@ -129,32 +140,41 @@ impl FromStr for Version {
     }
 }
 
+fn parse_version_part(part: &str) -> Result<(u16, u8), VersionParseError> {
+    let value = part
+        .parse()
+        .map_err(|err: ParseIntError| VersionParseError::InvalidNumber(err.to_string()))?;
+
+    let mut leading = part.chars().take_while(|&c| c == '0').count() as u8;
+
+    if value == 0 {
+        leading -= 1;
+    }
+
+    Ok((value, leading))
+}
+
 impl TryFrom<&str> for Version {
     type Error = VersionParseError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let mut parts = value.split('.');
 
-        let major = parts
-            .next()
-            .ok_or(VersionParseError::InvalidFormat)?
-            .parse()
-            .map_err(|err: ParseIntError| VersionParseError::InvalidNumber(err.to_string()))?;
-        let minor = parts
-            .next()
-            .ok_or(VersionParseError::InvalidFormat)?
-            .parse()
-            .map_err(|err: ParseIntError| VersionParseError::InvalidNumber(err.to_string()))?;
-        let patch = parts
-            .next()
-            .ok_or(VersionParseError::InvalidFormat)?
-            .parse()
-            .map_err(|err: ParseIntError| VersionParseError::InvalidNumber(err.to_string()))?;
+        let major_raw = parts.next().ok_or(VersionParseError::InvalidFormat)?;
+        let minor_raw = parts.next().ok_or(VersionParseError::InvalidFormat)?;
+        let patch_raw = parts.next().ok_or(VersionParseError::InvalidFormat)?;
+
+        let (major, leading_major) = parse_version_part(major_raw)?;
+        let (minor, leading_minor) = parse_version_part(minor_raw)?;
+        let (patch, leading_patch) = parse_version_part(patch_raw)?;
 
         Ok(Self {
             major,
             minor,
             patch,
+            leading_major,
+            leading_minor,
+            leading_patch,
         })
     }
 }
@@ -222,26 +242,34 @@ impl<'de> Visitor<'de> for VersionVisitor {
     {
         let mut parts = v.split('.');
 
-        let major = parts
-            .next()
-            .ok_or_else(|| DeError::custom("expected 3 parts"))?
-            .parse()
-            .map_err(DeError::custom)?;
-        let minor = parts
-            .next()
-            .unwrap_or("0")
-            .parse()
-            .map_err(DeError::custom)?; // minor will default to 0 if missing
-        let patch = parts
-            .next()
-            .unwrap_or("0")
-            .parse()
-            .map_err(DeError::custom)?; // patch will default to 0 if missing
+        // parts will default to 0 if missing
+        let mut major_raw = parts.next().unwrap_or("0");
+        let mut minor_raw = parts.next().unwrap_or("0");
+        let mut patch_raw = parts.next().unwrap_or("0");
+
+        if major_raw.is_empty() {
+            major_raw = "0";
+        }
+
+        if minor_raw.is_empty() {
+            minor_raw = "0";
+        }
+
+        if patch_raw.is_empty() {
+            patch_raw = "0";
+        }
+
+        let (major, leading_major) = parse_version_part(major_raw).map_err(DeError::custom)?;
+        let (minor, leading_minor) = parse_version_part(minor_raw).map_err(DeError::custom)?;
+        let (patch, leading_patch) = parse_version_part(patch_raw).map_err(DeError::custom)?;
 
         Ok(Self::Value {
             major,
             minor,
             patch,
+            leading_major,
+            leading_minor,
+            leading_patch,
         })
     }
 
@@ -637,10 +665,10 @@ impl<'de> Visitor<'de> for DependencyVisitor {
                 let mut ver_c = ver.chars();
 
                 match ver_c.next() {
-                    Some('=') if ver.len() >= 3 => {
+                    Some('=') if ver.len() >= 2 => {
                         version = DependencyVersion::Exact(VersionVisitor::visit_str(
                             VersionVisitor,
-                            ver[2..].trim_start(),
+                            ver[1..].trim_start(),
                         )?);
                     }
                     Some('<') => {
@@ -724,6 +752,34 @@ mod test {
     #![allow(clippy::unwrap_used)]
     use super::*;
 
+    #[test]
+    fn version_print() {
+        let version = Version {
+            major: 1,
+            minor: 2,
+            patch: 3,
+            leading_major: 1,
+            leading_minor: 2,
+            leading_patch: 3,
+        };
+
+        assert_eq!(format!("{version}"), "01.002.0003");
+    }
+
+    #[test]
+    fn version_parse() {
+        let input = "01.002.0003";
+        let version = Version::try_from(input).unwrap();
+        assert_eq!(format!("{version}"), input);
+    }
+
+    #[test]
+    fn version_zero() {
+        let input = "0.0.0";
+        let version = Version::try_from(input).unwrap();
+        assert_eq!(format!("{version}"), input);
+    }
+
     #[allow(clippy::needless_pass_by_value)]
     fn dep_test(input: &str, kind: DependencyType, name: &str, version: DependencyVersion) {
         let dep = DependencyVisitor::visit_str::<serde::de::value::Error>(DependencyVisitor, input)
@@ -735,7 +791,7 @@ mod test {
     }
 
     #[test]
-    fn simple_dep() {
+    fn dep_simple() {
         dep_test(
             "mod-name",
             DependencyType::Required,
@@ -785,7 +841,7 @@ mod test {
     }
 
     #[test]
-    fn compact_dep() {
+    fn dep_compact() {
         dep_test(
             "~helloworld>2",
             DependencyType::RequiredLazy,
@@ -795,12 +851,39 @@ mod test {
     }
 
     #[test]
-    fn compact_with_space() {
+    fn dep_compact_with_space() {
         dep_test(
             "(?)hello world>3.4.5",
             DependencyType::HiddenOptional,
             "hello world",
             DependencyVersion::Higher(Version::new(3, 4, 5)),
+        );
+    }
+
+    #[test]
+    fn dep_with_leading_zero() {
+        dep_test(
+            "! mod_name = 0035.042.001337",
+            DependencyType::Incompatible,
+            "mod_name",
+            DependencyVersion::Exact(Version {
+                major: 35,
+                minor: 42,
+                patch: 1337,
+                leading_major: 2,
+                leading_minor: 1,
+                leading_patch: 2,
+            }),
+        );
+    }
+
+    #[test]
+    fn dep_dot() {
+        dep_test(
+            "name=.",
+            DependencyType::Required,
+            "name",
+            DependencyVersion::Exact(Version::new(0, 0, 0)),
         );
     }
 }
