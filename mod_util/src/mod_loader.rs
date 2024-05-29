@@ -81,8 +81,8 @@ impl Mod {
             let info_file = internal_base.get_file("info.json")?;
             let mut info = serde_json::from_slice::<ModInfo>(&info_file)
                 .map_err(|err| ModError::InvalidInfoJson("base [to read core]".into(), err))?;
-            info.name = "core".to_owned();
-            info.title = "Core Factorio data".to_owned();
+            "core".clone_into(&mut info.name);
+            "Core Factorio data".clone_into(&mut info.title);
             info
         } else {
             let info_file = internal.get_file("info.json")?;
