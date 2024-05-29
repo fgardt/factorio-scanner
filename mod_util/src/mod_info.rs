@@ -320,52 +320,6 @@ impl fmt::Display for DependencyType {
     }
 }
 
-impl Serialize for DependencyType {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&format!("{self}"))
-    }
-}
-
-impl<'de> Deserialize<'de> for DependencyType {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        deserializer.deserialize_str(DependencyTypeVisitor)
-    }
-}
-
-struct DependencyTypeVisitor;
-
-impl<'de> Visitor<'de> for DependencyTypeVisitor {
-    type Value = DependencyType;
-
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("a dependency type: !, ?, (?), ~ or nothing")
-    }
-
-    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-    where
-        E: DeError,
-    {
-        match v {
-            "!" => Ok(DependencyType::Incompatible),
-            "?" => Ok(DependencyType::Optional),
-            "(?)" => Ok(DependencyType::HiddenOptional),
-            "~" => Ok(DependencyType::RequiredLazy),
-            "" => Ok(DependencyType::Required),
-            _ => Err(DeError::custom("Invalid dependency type")),
-        }
-    }
-
-    fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
-    where
-        E: DeError,
-    {
-        self.visit_str(&v)
-    }
-}
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum DependencyVersion {
     Any,
@@ -466,68 +420,6 @@ impl fmt::Display for DependencyVersion {
             Self::HigherOrEqual(version) => write!(f, " >= {version}"),
             Self::Higher(version) => write!(f, " > {version}"),
         }
-    }
-}
-
-impl Serialize for DependencyVersion {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&format!("{self}"))
-    }
-}
-
-impl<'de> Deserialize<'de> for DependencyVersion {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        deserializer.deserialize_str(DependencyVersionVisitor)
-    }
-}
-
-struct DependencyVersionVisitor;
-
-impl<'de> Visitor<'de> for DependencyVersionVisitor {
-    type Value = DependencyVersion;
-
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("a dependency version: <, <=, =, >=, > + version or nothing")
-    }
-
-    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-    where
-        E: DeError,
-    {
-        let v = v.trim();
-        if v.is_empty() {
-            return Ok(DependencyVersion::Any);
-        }
-
-        let mut parts = v.split(' ');
-
-        let comparator = parts.next().ok_or_else(|| {
-            DeError::custom("Invalid dependency version: failed to get comparator")
-        })?;
-        let version = parts
-            .next()
-            .ok_or_else(|| DeError::custom("Invalid dependency version: failed to get version"))?;
-
-        let version = VersionVisitor::visit_str::<E>(VersionVisitor, version)?;
-
-        match comparator {
-            "<" => Ok(DependencyVersion::Lower(version)),
-            "<=" => Ok(DependencyVersion::LowerOrEqual(version)),
-            "=" => Ok(DependencyVersion::Exact(version)),
-            ">=" => Ok(DependencyVersion::HigherOrEqual(version)),
-            ">" => Ok(DependencyVersion::Higher(version)),
-            _ => Err(DeError::custom("Invalid dependency version")),
-        }
-    }
-
-    fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
-    where
-        E: DeError,
-    {
-        self.visit_str(&v)
     }
 }
 
@@ -663,42 +555,38 @@ impl<'de> Visitor<'de> for DependencyVisitor {
 
             if ver.len() >= 2 {
                 let mut ver_c = ver.chars();
+                let Some(first) = ver_c.next() else {
+                    return Err(DeError::custom("Invalid dependency version comparator"));
+                };
+                let Some(second) = ver_c.next() else {
+                    return Err(DeError::custom("Invalid dependency version comparator"));
+                };
 
-                match ver_c.next() {
-                    Some('=') if ver.len() >= 2 => {
-                        version = DependencyVersion::Exact(VersionVisitor::visit_str(
-                            VersionVisitor,
-                            ver[1..].trim_start(),
-                        )?);
-                    }
-                    Some('<') => {
-                        if ver_c.next() == Some('=') && ver.len() >= 3 {
-                            version = DependencyVersion::LowerOrEqual(VersionVisitor::visit_str(
-                                VersionVisitor,
-                                ver[2..].trim_start(),
-                            )?);
-                        } else {
-                            version = DependencyVersion::Lower(VersionVisitor::visit_str(
-                                VersionVisitor,
-                                ver[1..].trim_start(),
-                            )?);
-                        }
-                    }
-                    Some('>') => {
-                        if ver_c.next() == Some('=') && ver.len() >= 3 {
-                            version = DependencyVersion::HigherOrEqual(VersionVisitor::visit_str(
-                                VersionVisitor,
-                                ver[2..].trim_start(),
-                            )?);
-                        } else {
-                            version = DependencyVersion::Higher(VersionVisitor::visit_str(
-                                VersionVisitor,
-                                ver[1..].trim_start(),
-                            )?);
-                        }
-                    }
+                version = match (first, second) {
+                    ('>', '=') | ('=', '>') => DependencyVersion::HigherOrEqual(
+                        VersionVisitor::visit_str(VersionVisitor, ver[2..].trim_start())?,
+                    ),
+                    ('<', '=') | ('=', '<') => DependencyVersion::LowerOrEqual(
+                        VersionVisitor::visit_str(VersionVisitor, ver[2..].trim_start())?,
+                    ),
+                    ('=', '=') => DependencyVersion::Exact(VersionVisitor::visit_str(
+                        VersionVisitor,
+                        ver[2..].trim_start(),
+                    )?),
+                    ('=', _) => DependencyVersion::Exact(VersionVisitor::visit_str(
+                        VersionVisitor,
+                        ver[1..].trim_start(),
+                    )?),
+                    ('>', _) => DependencyVersion::Higher(VersionVisitor::visit_str(
+                        VersionVisitor,
+                        ver[1..].trim_start(),
+                    )?),
+                    ('<', _) => DependencyVersion::Lower(VersionVisitor::visit_str(
+                        VersionVisitor,
+                        ver[1..].trim_start(),
+                    )?),
                     _ => return Err(DeError::custom("Invalid dependency version comparator")),
-                }
+                };
             }
 
             name.trim_end()
@@ -801,7 +689,17 @@ mod test {
     }
 
     #[test]
-    fn dep_with_version() {
+    fn dep_with_whitespace() {
+        dep_test(
+            "legacy mod name",
+            DependencyType::Required,
+            "legacy mod name",
+            DependencyVersion::Any,
+        );
+    }
+
+    #[test]
+    fn dep_version() {
         dep_test(
             "mod-name = 1.0.0",
             DependencyType::Required,
@@ -811,7 +709,7 @@ mod test {
     }
 
     #[test]
-    fn dep_with_partial_version() {
+    fn dep_partial_version() {
         dep_test(
             "mod-name >= 1",
             DependencyType::Required,
@@ -821,7 +719,7 @@ mod test {
     }
 
     #[test]
-    fn dep_with_optional() {
+    fn dep_optional() {
         dep_test(
             "? mod-name",
             DependencyType::Optional,
@@ -831,7 +729,27 @@ mod test {
     }
 
     #[test]
-    fn dep_with_hidden_optional_and_version() {
+    fn dep_lazy() {
+        dep_test(
+            "~ mod-name",
+            DependencyType::RequiredLazy,
+            "mod-name",
+            DependencyVersion::Any,
+        );
+    }
+
+    #[test]
+    fn dep_incompatible() {
+        dep_test(
+            "! mod-name",
+            DependencyType::Incompatible,
+            "mod-name",
+            DependencyVersion::Any,
+        );
+    }
+
+    #[test]
+    fn dep_hidden_optional_version() {
         dep_test(
             "(?) mod-name <= 0.4.5",
             DependencyType::HiddenOptional,
@@ -841,7 +759,7 @@ mod test {
     }
 
     #[test]
-    fn dep_compact() {
+    fn dep_compact_lazy_partial_version() {
         dep_test(
             "~helloworld>2",
             DependencyType::RequiredLazy,
@@ -851,7 +769,7 @@ mod test {
     }
 
     #[test]
-    fn dep_compact_with_space() {
+    fn dep_compact_with_whitespace() {
         dep_test(
             "(?)hello world>3.4.5",
             DependencyType::HiddenOptional,
@@ -861,9 +779,9 @@ mod test {
     }
 
     #[test]
-    fn dep_with_leading_zero() {
+    fn dep_leading_zero() {
         dep_test(
-            "! mod_name = 0035.042.001337",
+            "!mod_name=0035.042.001337",
             DependencyType::Incompatible,
             "mod_name",
             DependencyVersion::Exact(Version {
@@ -884,6 +802,76 @@ mod test {
             DependencyType::Required,
             "name",
             DependencyVersion::Exact(Version::new(0, 0, 0)),
+        );
+    }
+
+    #[test]
+    fn dep_double_equal() {
+        dep_test(
+            "name==0.0.0",
+            DependencyType::Required,
+            "name",
+            DependencyVersion::Exact(Version::new(0, 0, 0)),
+        );
+    }
+
+    #[test]
+    fn dep_higher() {
+        dep_test(
+            "name>0.0.0",
+            DependencyType::Required,
+            "name",
+            DependencyVersion::Higher(Version::new(0, 0, 0)),
+        );
+    }
+
+    #[test]
+    fn dep_higher_equal() {
+        dep_test(
+            "name>=0.0.0",
+            DependencyType::Required,
+            "name",
+            DependencyVersion::HigherOrEqual(Version::new(0, 0, 0)),
+        );
+    }
+
+    #[test]
+    fn dep_higher_equal_flipped() {
+        dep_test(
+            "name=>0.0.0",
+            DependencyType::Required,
+            "name",
+            DependencyVersion::HigherOrEqual(Version::new(0, 0, 0)),
+        );
+    }
+
+    #[test]
+    fn dep_lower() {
+        dep_test(
+            "name<0.0.0",
+            DependencyType::Required,
+            "name",
+            DependencyVersion::Lower(Version::new(0, 0, 0)),
+        );
+    }
+
+    #[test]
+    fn dep_lower_equal() {
+        dep_test(
+            "name<=0.0.0",
+            DependencyType::Required,
+            "name",
+            DependencyVersion::LowerOrEqual(Version::new(0, 0, 0)),
+        );
+    }
+
+    #[test]
+    fn dep_lower_equal_flipped() {
+        dep_test(
+            "name=<0.0.0",
+            DependencyType::Required,
+            "name",
+            DependencyVersion::LowerOrEqual(Version::new(0, 0, 0)),
         );
     }
 }
