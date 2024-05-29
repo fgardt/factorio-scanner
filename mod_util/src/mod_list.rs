@@ -51,6 +51,9 @@ pub enum ModListError {
 
     #[error("dependency solver found conflicts for {0} v{1}: {2:?}")]
     SolverFoundConflicts(String, Version, Vec<Dependency>),
+
+    #[error("dependency solver found circular dependencies")]
+    SolverCircularDependencies,
 }
 
 type Result<T> = std::result::Result<T, ModListError>;
@@ -558,6 +561,11 @@ impl ModList {
                     conflicts,
                 ));
             }
+        }
+
+        // check for circular dependencies
+        if petgraph::algo::is_cyclic_directed(&dep_graph) {
+            return Err(ModListError::SolverCircularDependencies);
         }
 
         // dependencies are satisfied, hurray!
