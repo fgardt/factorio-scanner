@@ -564,8 +564,28 @@ impl ModList {
         }
 
         // check for circular dependencies
-        if petgraph::algo::is_cyclic_directed(&dep_graph) {
-            return Err(ModListError::SolverCircularDependencies);
+        {
+            let mut dep_graph = dep_graph.clone();
+
+            // remove all edges that do not affect the load order
+            let mut to_remove = Vec::new();
+            for e_idx in dep_graph.edge_indices() {
+                let Some(edge) = dep_graph.edge_weight(e_idx) else {
+                    continue;
+                };
+
+                if !edge.affects_load_order() {
+                    to_remove.push(e_idx);
+                }
+            }
+
+            for e_idx in to_remove {
+                dep_graph.remove_edge(e_idx);
+            }
+
+            if petgraph::algo::is_cyclic_directed(&dep_graph) {
+                return Err(ModListError::SolverCircularDependencies);
+            }
         }
 
         // dependencies are satisfied, hurray!
