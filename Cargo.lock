@@ -1562,7 +1562,7 @@ dependencies = [
 
 [[package]]
 name = "mod_util"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "byteorder",
  "natord",

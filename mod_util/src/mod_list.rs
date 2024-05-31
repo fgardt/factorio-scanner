@@ -570,14 +570,15 @@ impl ModList {
             // remove all edges that do not affect the load order
             let mut to_remove = Vec::new();
             for e_idx in dep_graph.edge_indices() {
-                let Some(edge) = dep_graph.edge_weight(e_idx) else {
-                    continue;
-                };
-
-                if !edge.affects_load_order() {
+                if !dep_graph[e_idx].affects_load_order() {
                     to_remove.push(e_idx);
                 }
             }
+
+            // sort and reverse since graph.remove_edge() invalidates
+            // the last index and moves it to the removed index
+            to_remove.sort_unstable();
+            to_remove.reverse();
 
             for e_idx in to_remove {
                 dep_graph.remove_edge(e_idx);
