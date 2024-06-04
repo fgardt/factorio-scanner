@@ -98,10 +98,11 @@ impl super::Renderable for InserterData {
                 &options.into(),
             )
             .and_then(|(img, shift)| {
-                let raw_pickup_pos = options.pickup_position.unwrap_or(self.pickup_position);
-                let pickup_pos = direction.rotate_vector(raw_pickup_pos);
+                let pickup_pos = options
+                    .pickup_position
+                    .unwrap_or_else(|| direction.rotate_vector(self.pickup_position));
 
-                let length = pickup_pos.x().hypot(pickup_pos.y());
+                let length = pickup_pos.x().hypot(pickup_pos.y()) - 0.25;
                 let angle = pickup_pos.y().atan2(pickup_pos.x()) + std::f64::consts::FRAC_PI_2;
 
                 let (width, height) = img.dimensions();
