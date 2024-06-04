@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use types::{
-    ArithmeticOperation, Comparator, Direction, FilterMode, ItemCountType, ItemStackIndex,
-    RealOrientation, Vector,
+    ArithmeticOperation, Comparator, Direction, EntityID, FilterMode, FluidID, ItemCountType,
+    ItemID, ItemStackIndex, RealOrientation, RecipeID, TileID, Vector, VirtualSignalID,
 };
 
 use crate::{IndexedVec, NameString};
@@ -129,16 +129,18 @@ impl crate::GetIDs for Icon {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum SignalID {
-    Item { name: Option<String> },
-    Fluid { name: Option<String> },
-    Virtual { name: Option<String> },
+    Item { name: Option<ItemID> },
+    Fluid { name: Option<FluidID> },
+    Virtual { name: Option<VirtualSignalID> },
 }
 
 impl SignalID {
     #[must_use]
-    pub const fn name(&self) -> &Option<String> {
+    pub fn name(&self) -> Option<String> {
         match self {
-            Self::Item { name } | Self::Fluid { name } | Self::Virtual { name } => name,
+            Self::Item { name } => name.clone().map(|n| (*n).clone()),
+            Self::Fluid { name } => name.clone().map(|n| (*n).clone()),
+            Self::Virtual { name } => name.clone().map(|n| (*n).clone()),
         }
     }
 }
@@ -147,11 +149,13 @@ impl crate::GetIDs for SignalID {
     fn get_ids(&self) -> crate::UsedIDs {
         let mut ids = crate::UsedIDs::default();
 
-        if let Some(name) = self.name() {
+        if self.name().is_some() {
             match self {
-                Self::Item { .. } => ids.item.insert(name.clone()),
-                Self::Fluid { .. } => ids.fluid.insert(name.clone()),
-                Self::Virtual { .. } => ids.virtual_signal.insert(name.clone()),
+                Self::Item { name } => ids.item.insert(name.clone().unwrap_or_default()),
+                Self::Fluid { name } => ids.fluid.insert(name.clone().unwrap_or_default()),
+                Self::Virtual { name } => {
+                    ids.virtual_signal.insert(name.clone().unwrap_or_default())
+                }
             };
         }
 
@@ -168,7 +172,7 @@ pub type GraphicsVariation = NonZeroU32;
 #[serde(deny_unknown_fields)]
 pub struct Entity {
     pub entity_number: EntityNumber,
-    pub name: String,
+    pub name: EntityID,
     pub position: Position,
 
     #[serde(default, skip_serializing_if = "Direction::is_default")]
@@ -186,7 +190,7 @@ pub struct Entity {
     pub items: ItemRequest,
 
     #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub recipe: String,
+    pub recipe: RecipeID,
 
     pub bar: Option<ItemStackIndex>,
     pub inventory: Option<Inventory>,
@@ -201,10 +205,10 @@ pub struct Entity {
     pub output_priority: Option<SplitterPriority>,
 
     #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub filter: String,
+    pub filter: ItemID,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub filters: IndexedVec<NameString>,
+    pub filters: IndexedVec<NameString<ItemID>>,
 
     pub filter_mode: Option<FilterMode>,
     pub override_stack_size: Option<u8>,
@@ -331,7 +335,7 @@ impl SplitterPriority {
 #[serde(deny_unknown_fields)]
 pub struct Inventory {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub filters: IndexedVec<NameString>,
+    pub filters: IndexedVec<NameString<ItemID>>,
     pub bar: Option<ItemStackIndex>,
 }
 
@@ -475,7 +479,7 @@ pub enum CompareType {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Tile {
-    pub name: String,
+    pub name: TileID,
     pub position: Position,
 }
 
@@ -623,14 +627,14 @@ impl ConnectionDataExt for Vec<ConnectionData> {
     }
 }
 
-pub type ItemRequest = HashMap<String, ItemCountType>;
+pub type ItemRequest = HashMap<ItemID, ItemCountType>;
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields, untagged)]
 pub enum InfinitySettings {
     Pipe {
-        name: Option<String>,             // infinity pipes?
+        name: Option<FluidID>,            // infinity pipes?
         percentage: Option<f64>,          // infinity pipes?
         temperature: Option<f64>,         // infinity pipes?
         mode: Option<InfinityFilterMode>, // infinity pipes?
@@ -667,7 +671,7 @@ impl crate::GetIDs for InfinitySettings {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct InfinityFilter {
-    pub name: String,
+    pub name: ItemID,
     pub count: ItemCountType,
     pub mode: InfinityFilterMode,
 }
@@ -685,7 +689,7 @@ pub enum InfinityFilterMode {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct LogisticFilter {
-    pub name: String,
+    pub name: ItemID,
     pub count: ItemCountType,
 }
 

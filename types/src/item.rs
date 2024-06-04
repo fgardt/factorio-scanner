@@ -4,60 +4,6 @@ use serde_helper as helper;
 
 use crate::FactorioArray;
 
-/// [`Types/ItemID`](https://lua-api.factorio.com/latest/types/ItemID.html)
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct ItemID(String);
-
-impl ItemID {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl std::ops::Deref for ItemID {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-/// [`Types/ItemGroupID`](https://lua-api.factorio.com/latest/types/ItemGroupID.html)
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct ItemGroupID(String);
-
-impl ItemGroupID {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl std::ops::Deref for ItemGroupID {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-/// [`Types/ItemSubGroupID`](https://lua-api.factorio.com/latest/types/ItemSubGroupID.html)
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct ItemSubGroupID(String);
-
-impl ItemSubGroupID {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl std::ops::Deref for ItemSubGroupID {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
 /// [`Types/ItemStackIndex`](https://lua-api.factorio.com/latest/types/ItemStackIndex.html)
 pub type ItemStackIndex = u16;
 

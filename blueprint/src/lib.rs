@@ -15,16 +15,17 @@ mod planner;
 pub use blueprint::*;
 pub use book::*;
 pub use planner::*;
+use types::{EntityID, FluidID, ItemID, RecipeID, TileID, VirtualSignalID};
 
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct UsedIDs {
-    pub recipe: HashSet<String>,
-    pub entity: HashSet<String>,
-    pub tile: HashSet<String>,
-    pub fluid: HashSet<String>,
-    pub item: HashSet<String>,
-    pub virtual_signal: HashSet<String>,
+    pub recipe: HashSet<RecipeID>,
+    pub entity: HashSet<EntityID>,
+    pub tile: HashSet<TileID>,
+    pub fluid: HashSet<FluidID>,
+    pub item: HashSet<ItemID>,
+    pub virtual_signal: HashSet<VirtualSignalID>,
 }
 
 impl UsedIDs {
@@ -170,19 +171,22 @@ impl<T: GetIDs> GetIDs for Indexed<T> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
-pub struct NameString {
-    name: String,
+pub struct NameString<T> {
+    name: T,
 }
 
-impl std::ops::Deref for NameString {
-    type Target = String;
+impl<T> std::ops::Deref for NameString<T> {
+    type Target = T;
 
     fn deref(&self) -> &Self::Target {
         &self.name
     }
 }
 
-impl std::fmt::Display for NameString {
+impl<T> std::fmt::Display for NameString<T>
+where
+    T: std::fmt::Display,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.name.fmt(f)
     }

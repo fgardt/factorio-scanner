@@ -1,20 +1,22 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
+use types::{EntityID, ItemID};
 
 use crate::IndexedVec;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase", tag = "type", deny_unknown_fields)]
 pub enum MappedValue {
-    Entity { name: String },
-    Item { name: String },
+    Entity { name: EntityID },
+    Item { name: ItemID },
 }
 
 impl MappedValue {
     #[must_use]
     pub fn name(&self) -> &str {
         match self {
-            Self::Entity { name } | Self::Item { name } => name,
+            Self::Entity { name } => name.as_str(),
+            Self::Item { name } => name.as_str(),
         }
     }
 }

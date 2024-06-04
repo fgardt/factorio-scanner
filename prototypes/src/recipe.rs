@@ -1,5 +1,3 @@
-use std::collections::{HashMap, HashSet};
-
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -8,6 +6,8 @@ use types::{
     Color, FactorioArray, FluidID, Icon, ItemID, ItemSubGroupID, RecipeCategoryID, RecipeID,
     RenderableGraphics,
 };
+
+use crate::helper_macro::namespace_struct;
 
 /// [`Prototypes/RecipeCategory`](https://lua-api.factorio.com/latest/prototypes/RecipeCategory.html)
 pub type RecipeCategory = crate::BasePrototype<()>;
@@ -454,27 +454,10 @@ pub enum ProductItemAmount {
     },
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct AllTypes {
-    pub recipe: HashMap<RecipeID, RecipePrototype>,
-}
-
-impl crate::IdNamespace for AllTypes {
-    type Id = RecipeID;
-
-    fn all_ids(&self) -> HashSet<&Self::Id> {
-        self.recipe.keys().collect()
-    }
-
-    fn contains(&self, id: &Self::Id) -> bool {
-        self.recipe.contains_key(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<RecipePrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&RecipePrototype> {
-        self.recipe.get(id)
-    }
+namespace_struct! {
+    AllTypes,
+    RecipeID,
+    "recipe"
 }
 
 impl AllTypes {

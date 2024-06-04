@@ -1,6 +1,6 @@
 [package]
 name = "types"
-version = "2.2.0-1.1.107"
+version = "2.2.1-1.1.107"
 authors.workspace = true
 edition.workspace = true
 
@@ -11,6 +11,7 @@ workspace = true
 image.workspace = true
 konst.workspace = true
 mod_util.workspace = true
+paste.workspace = true
 regex = "1.10"
 serde.workspace = true
 serde_helper.workspace = true

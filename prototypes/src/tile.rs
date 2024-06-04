@@ -8,7 +8,7 @@ use types::{
     RenderableGraphics, SimpleGraphicsRenderOpts, TileID, TileSprite, TileSpriteWithProbability,
 };
 
-use crate::InternalRenderLayer;
+use crate::{helper_macro::namespace_struct, InternalRenderLayer};
 
 /// [`Prototypes/TilePrototype`](https://lua-api.factorio.com/latest/prototypes/TilePrototype.html)
 pub type TilePrototype = crate::BasePrototype<TilePrototypeData>;
@@ -170,4 +170,10 @@ pub type TileTransitionsBetweenTransitions = TileTransitions<TileTransitionsBetw
 pub struct TileTransitionsBetweenTransitionsData {
     pub transition_group1: u8,
     pub transition_group2: u8,
+}
+
+namespace_struct! {
+    AllTypes,
+    TileID,
+    "tile"
 }
