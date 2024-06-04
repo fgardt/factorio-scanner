@@ -23,11 +23,12 @@ use mod_util::{
     AnyBasic, DependencyList, UsedMods, UsedVersions,
 };
 use prototypes::{
-    entity::Type as EntityType, ConnectedEntities, DataRaw, DataUtil, EntityWireConnections,
+    entity::{Type as EntityType, WallPrototype},
+    ConnectedEntities, DataRaw, DataUtil, DataUtilAccess, EntityWireConnections,
     InternalRenderLayer, RenderLayerBuffer, TargetSize,
 };
 use types::{
-    ConnectedDirections, Direction, ImageCache, MapPosition, RenderableGraphics,
+    ConnectedDirections, Direction, EntityID, ImageCache, MapPosition, RenderableGraphics,
     SimpleGraphicsRenderOpts, Vector,
 };
 
@@ -525,7 +526,7 @@ pub fn render_bp(
 
             let mut connected_gates: Vec<Direction> = Vec::new();
             let mut draw_gate_patch = false;
-            let connections = data.get_type(&e.name).and_then(|entity_type| {
+            let connections = data.get_entity_type(&e.name).and_then(|entity_type| {
                 if entity_type.connectable() {
                     let mut up = false;
                     let mut down = false;
@@ -571,12 +572,34 @@ pub fn render_bp(
                                     continue;
                                 }
 
-                                let Some(other_type) = data.get_type(&other.name) else {
+                                let Some(other_type) = data.get_entity_type(&other.name) else {
                                     continue;
                                 };
 
                                 if !entity_type.can_connect_to(other_type) {
                                     continue;
+                                }
+
+                                if matches!(entity_type, EntityType::Wall)
+                                    && matches!(other_type, EntityType::Wall)
+                                {
+                                    let Some(src) = data
+                                        .get_proto::<WallPrototype>(EntityID::new(&e.name))
+                                        .map(|p| p.visual_merge_group)
+                                    else {
+                                        continue;
+                                    };
+
+                                    let Some(dst) = data
+                                        .get_proto::<WallPrototype>(EntityID::new(&other.name))
+                                        .map(|p| p.visual_merge_group)
+                                    else {
+                                        continue;
+                                    };
+
+                                    if src != dst {
+                                        continue;
+                                    }
                                 }
 
                                 let other_pos: types::MapPosition = (&other.position).into();

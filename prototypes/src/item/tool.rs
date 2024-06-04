@@ -59,9 +59,20 @@ impl std::ops::Deref for ArmorPrototypeData {
     }
 }
 
+// MiningTool = Tool
+// using newtype pattern to avoid type collisions
 /// [`Prototypes/MiningToolPrototype`](https://lua-api.factorio.com/latest/prototypes/MiningToolPrototype.html)
 /// _deprecated_
-pub type MiningToolPrototype = ToolPrototype;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct MiningToolPrototype(ToolPrototype);
+
+impl std::ops::Deref for MiningToolPrototype {
+    type Target = ToolPrototype;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 /// [`Prototypes/RepairToolPrototype`](https://lua-api.factorio.com/latest/prototypes/RepairToolPrototype.html)
 pub type RepairToolPrototype = crate::BasePrototype<RepairToolPrototypeData>;

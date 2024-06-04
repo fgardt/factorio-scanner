@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -9,8 +9,6 @@ use types::{
     IconData, ItemCountType, ItemID, ItemProductPrototype, ItemPrototypeFlags, RenderableGraphics,
     SpriteVariations, TileID,
 };
-
-use crate::PrototypeMap;
 
 mod ammo;
 mod capsule;
@@ -132,44 +130,47 @@ pub enum RocketLaunchProduct {
     Single(ItemProductPrototype),
 }
 
+type ItemPrototypeMap<T> = HashMap<ItemID, T>;
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct AllTypes {
-    pub item: PrototypeMap<ItemPrototype>,
+    pub item: ItemPrototypeMap<ItemPrototype>,
 
-    pub ammo: PrototypeMap<AmmoItemPrototype>,
+    pub ammo: ItemPrototypeMap<AmmoItemPrototype>,
 
-    pub capsule: PrototypeMap<CapsulePrototype>,
+    pub capsule: ItemPrototypeMap<CapsulePrototype>,
 
-    pub gun: PrototypeMap<GunPrototype>,
+    pub gun: ItemPrototypeMap<GunPrototype>,
 
-    pub item_with_entity_data: PrototypeMap<ItemWithEntityDataPrototype>,
+    pub item_with_entity_data: ItemPrototypeMap<ItemWithEntityDataPrototype>,
 
-    pub item_with_label: PrototypeMap<ItemWithLabelPrototype>,
-    pub item_with_inventory: PrototypeMap<ItemWithInventoryPrototype>,
-    pub blueprint_book: PrototypeMap<BlueprintBookPrototype>,
-    pub item_with_tags: PrototypeMap<ItemWithTagsPrototype>,
-    pub selection_tool: PrototypeMap<SelectionToolPrototype>,
-    pub blueprint: PrototypeMap<BlueprintItemPrototype>,
-    pub copy_paste_tool: PrototypeMap<CopyPasteToolPrototype>,
-    pub deconstruction_item: PrototypeMap<DeconstructionItemPrototype>,
-    pub upgrade_item: PrototypeMap<UpgradeItemPrototype>,
+    pub item_with_label: ItemPrototypeMap<ItemWithLabelPrototype>,
+    pub item_with_inventory: ItemPrototypeMap<ItemWithInventoryPrototype>,
+    pub blueprint_book: ItemPrototypeMap<BlueprintBookPrototype>,
+    pub item_with_tags: ItemPrototypeMap<ItemWithTagsPrototype>,
+    pub selection_tool: ItemPrototypeMap<SelectionToolPrototype>,
+    pub blueprint: ItemPrototypeMap<BlueprintItemPrototype>,
+    pub copy_paste_tool: ItemPrototypeMap<CopyPasteToolPrototype>,
+    pub deconstruction_item: ItemPrototypeMap<DeconstructionItemPrototype>,
+    pub upgrade_item: ItemPrototypeMap<UpgradeItemPrototype>,
 
-    pub module: PrototypeMap<ModulePrototype>,
+    pub module: ItemPrototypeMap<ModulePrototype>,
 
-    pub rail_planner: PrototypeMap<RailPlannerPrototype>,
+    pub rail_planner: ItemPrototypeMap<RailPlannerPrototype>,
 
-    pub spidertron_remote: PrototypeMap<SpidertronRemotePrototype>,
+    pub spidertron_remote: ItemPrototypeMap<SpidertronRemotePrototype>,
 
-    pub tool: PrototypeMap<ToolPrototype>,
-    pub armor: PrototypeMap<ArmorPrototype>,
-    pub mining_tool: PrototypeMap<MiningToolPrototype>,
-    pub repair_tool: PrototypeMap<RepairToolPrototype>,
+    pub tool: ItemPrototypeMap<ToolPrototype>,
+    pub armor: ItemPrototypeMap<ArmorPrototype>,
+    pub mining_tool: ItemPrototypeMap<MiningToolPrototype>,
+    pub repair_tool: ItemPrototypeMap<RepairToolPrototype>,
 }
 
-impl AllTypes {
-    #[must_use]
-    pub fn all_names(&self) -> HashSet<&ItemID> {
+impl crate::IdNamespace for AllTypes {
+    type Id = ItemID;
+
+    fn all_ids(&self) -> HashSet<&Self::Id> {
         let mut res = HashSet::new();
 
         res.extend(self.item.keys());
@@ -197,6 +198,158 @@ impl AllTypes {
         res
     }
 
+    fn contains(&self, id: &Self::Id) -> bool {
+        self.item.contains_key(id)
+            || self.ammo.contains_key(id)
+            || self.capsule.contains_key(id)
+            || self.gun.contains_key(id)
+            || self.item_with_entity_data.contains_key(id)
+            || self.item_with_label.contains_key(id)
+            || self.item_with_inventory.contains_key(id)
+            || self.blueprint_book.contains_key(id)
+            || self.item_with_tags.contains_key(id)
+            || self.selection_tool.contains_key(id)
+            || self.blueprint.contains_key(id)
+            || self.copy_paste_tool.contains_key(id)
+            || self.deconstruction_item.contains_key(id)
+            || self.upgrade_item.contains_key(id)
+            || self.module.contains_key(id)
+            || self.rail_planner.contains_key(id)
+            || self.spidertron_remote.contains_key(id)
+            || self.tool.contains_key(id)
+            || self.armor.contains_key(id)
+            || self.mining_tool.contains_key(id)
+            || self.repair_tool.contains_key(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ItemPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ItemPrototype> {
+        self.item.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<AmmoItemPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&AmmoItemPrototype> {
+        self.ammo.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<CapsulePrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&CapsulePrototype> {
+        self.capsule.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<GunPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&GunPrototype> {
+        self.gun.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ItemWithEntityDataPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ItemWithEntityDataPrototype> {
+        self.item_with_entity_data.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ItemWithLabelPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ItemWithLabelPrototype> {
+        self.item_with_label.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ItemWithInventoryPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ItemWithInventoryPrototype> {
+        self.item_with_inventory.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<BlueprintBookPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&BlueprintBookPrototype> {
+        self.blueprint_book.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ItemWithTagsPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ItemWithTagsPrototype> {
+        self.item_with_tags.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<SelectionToolPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&SelectionToolPrototype> {
+        self.selection_tool.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<BlueprintItemPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&BlueprintItemPrototype> {
+        self.blueprint.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<CopyPasteToolPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&CopyPasteToolPrototype> {
+        self.copy_paste_tool.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<DeconstructionItemPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&DeconstructionItemPrototype> {
+        self.deconstruction_item.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<UpgradeItemPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&UpgradeItemPrototype> {
+        self.upgrade_item.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ModulePrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ModulePrototype> {
+        self.module.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<RailPlannerPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&RailPlannerPrototype> {
+        self.rail_planner.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<SpidertronRemotePrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&SpidertronRemotePrototype> {
+        self.spidertron_remote.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ToolPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ToolPrototype> {
+        self.tool.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ArmorPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ArmorPrototype> {
+        self.armor.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<MiningToolPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&MiningToolPrototype> {
+        self.mining_tool.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<RepairToolPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&RepairToolPrototype> {
+        self.repair_tool.get(id)
+    }
+}
+
+impl AllTypes {
     pub fn get_icon(
         &self,
         name: &str,
@@ -204,88 +357,90 @@ impl AllTypes {
         used_mods: &mod_util::UsedMods,
         image_cache: &mut types::ImageCache,
     ) -> Option<types::GraphicsOutput> {
-        if self.item.contains_key(name) {
-            return self.item[name].get_icon(scale, used_mods, image_cache);
+        let id = &ItemID::new(name);
+
+        if self.item.contains_key(id) {
+            return self.item[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.ammo.contains_key(name) {
-            return self.ammo[name].get_icon(scale, used_mods, image_cache);
+        if self.ammo.contains_key(id) {
+            return self.ammo[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.capsule.contains_key(name) {
-            return self.capsule[name].get_icon(scale, used_mods, image_cache);
+        if self.capsule.contains_key(id) {
+            return self.capsule[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.gun.contains_key(name) {
-            return self.gun[name].get_icon(scale, used_mods, image_cache);
+        if self.gun.contains_key(id) {
+            return self.gun[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.item_with_entity_data.contains_key(name) {
-            return self.item_with_entity_data[name].get_icon(scale, used_mods, image_cache);
+        if self.item_with_entity_data.contains_key(id) {
+            return self.item_with_entity_data[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.item_with_label.contains_key(name) {
-            return self.item_with_label[name].get_icon(scale, used_mods, image_cache);
+        if self.item_with_label.contains_key(id) {
+            return self.item_with_label[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.item_with_inventory.contains_key(name) {
-            return self.item_with_inventory[name].get_icon(scale, used_mods, image_cache);
+        if self.item_with_inventory.contains_key(id) {
+            return self.item_with_inventory[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.blueprint_book.contains_key(name) {
-            return self.blueprint_book[name].get_icon(scale, used_mods, image_cache);
+        if self.blueprint_book.contains_key(id) {
+            return self.blueprint_book[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.item_with_tags.contains_key(name) {
-            return self.item_with_tags[name].get_icon(scale, used_mods, image_cache);
+        if self.item_with_tags.contains_key(id) {
+            return self.item_with_tags[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.selection_tool.contains_key(name) {
-            return self.selection_tool[name].get_icon(scale, used_mods, image_cache);
+        if self.selection_tool.contains_key(id) {
+            return self.selection_tool[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.blueprint.contains_key(name) {
-            return self.blueprint[name].get_icon(scale, used_mods, image_cache);
+        if self.blueprint.contains_key(id) {
+            return self.blueprint[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.copy_paste_tool.contains_key(name) {
-            return self.copy_paste_tool[name].get_icon(scale, used_mods, image_cache);
+        if self.copy_paste_tool.contains_key(id) {
+            return self.copy_paste_tool[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.deconstruction_item.contains_key(name) {
-            return self.deconstruction_item[name].get_icon(scale, used_mods, image_cache);
+        if self.deconstruction_item.contains_key(id) {
+            return self.deconstruction_item[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.upgrade_item.contains_key(name) {
-            return self.upgrade_item[name].get_icon(scale, used_mods, image_cache);
+        if self.upgrade_item.contains_key(id) {
+            return self.upgrade_item[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.module.contains_key(name) {
-            return self.module[name].get_icon(scale, used_mods, image_cache);
+        if self.module.contains_key(id) {
+            return self.module[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.rail_planner.contains_key(name) {
-            return self.rail_planner[name].get_icon(scale, used_mods, image_cache);
+        if self.rail_planner.contains_key(id) {
+            return self.rail_planner[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.spidertron_remote.contains_key(name) {
-            return self.spidertron_remote[name].get_icon(scale, used_mods, image_cache);
+        if self.spidertron_remote.contains_key(id) {
+            return self.spidertron_remote[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.tool.contains_key(name) {
-            return self.tool[name].get_icon(scale, used_mods, image_cache);
+        if self.tool.contains_key(id) {
+            return self.tool[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.armor.contains_key(name) {
-            return self.armor[name].get_icon(scale, used_mods, image_cache);
+        if self.armor.contains_key(id) {
+            return self.armor[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.mining_tool.contains_key(name) {
-            return self.mining_tool[name].get_icon(scale, used_mods, image_cache);
+        if self.mining_tool.contains_key(id) {
+            return self.mining_tool[id].get_icon(scale, used_mods, image_cache);
         }
 
-        if self.repair_tool.contains_key(name) {
-            return self.repair_tool[name].get_icon(scale, used_mods, image_cache);
+        if self.repair_tool.contains_key(id) {
+            return self.repair_tool[id].get_icon(scale, used_mods, image_cache);
         }
 
         None
@@ -395,11 +550,11 @@ mod test {
                     icon_mipmaps: 0,
                 },
                 dark_background_icon: None,
-                place_result: String::new(),
+                place_result: EntityID::new(""),
                 place_as_tile: None,
-                placed_as_equipment_result: String::new(),
-                fuel_category: String::new(),
-                burnt_result: String::new(),
+                placed_as_equipment_result: EquipmentID::new(""),
+                fuel_category: FuelCategoryID::new(""),
+                burnt_result: ItemID::new(""),
                 pictures: None,
                 flags: FactorioArray::default(),
                 default_request_amount: None,

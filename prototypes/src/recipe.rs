@@ -1,11 +1,11 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 use types::{
-    Color, FactorioArray, FluidID, Icon, ItemID, ItemSubGroupID, RecipeCategoryID,
+    Color, FactorioArray, FluidID, Icon, ItemID, ItemSubGroupID, RecipeCategoryID, RecipeID,
     RenderableGraphics,
 };
 
@@ -81,7 +81,7 @@ impl RecipePrototypeData {
                         ProductPrototype::Specific(
                             SpecificProductPrototype::FluidProductPrototype { name, .. },
                         ) => {
-                            if name == main_product {
+                            if **name == *main_product {
                                 return fluids.get_icon(name, scale, used_mods, image_cache);
                             }
                         }
@@ -93,7 +93,7 @@ impl RecipePrototypeData {
                                 ..
                             }),
                         ) => {
-                            if name == main_product {
+                            if **name == *main_product {
                                 return items.get_icon(name, scale, used_mods, image_cache);
                             }
                         }
@@ -115,7 +115,7 @@ impl RecipePrototypeData {
 }
 
 fn crafting_category() -> RecipeCategoryID {
-    "crafting".to_owned()
+    RecipeCategoryID::new("crafting")
 }
 
 fn is_crafting_category(category: &RecipeCategoryID) -> bool {
@@ -456,15 +456,28 @@ pub enum ProductItemAmount {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AllTypes {
-    pub recipe: crate::PrototypeMap<RecipePrototype>,
+    pub recipe: HashMap<RecipeID, RecipePrototype>,
 }
 
-impl AllTypes {
-    #[must_use]
-    pub fn all_names(&self) -> HashSet<&String> {
+impl crate::IdNamespace for AllTypes {
+    type Id = RecipeID;
+
+    fn all_ids(&self) -> HashSet<&Self::Id> {
         self.recipe.keys().collect()
     }
 
+    fn contains(&self, id: &Self::Id) -> bool {
+        self.recipe.contains_key(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<RecipePrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&RecipePrototype> {
+        self.recipe.get(id)
+    }
+}
+
+impl AllTypes {
     pub fn get_icon(
         &self,
         name: &str,
@@ -475,14 +488,14 @@ impl AllTypes {
         fluids: &crate::fluid::AllTypes,
     ) -> Option<types::GraphicsOutput> {
         self.recipe
-            .get(name)
+            .get(&RecipeID::new(name))
             .and_then(|recipe| recipe.get_icon(scale, used_mods, image_cache, items, fluids))
     }
 
     #[must_use]
     pub fn uses_fluid(&self, name: &str) -> (bool, bool) {
         self.recipe
-            .get(name)
+            .get(&RecipeID::new(name))
             .map_or((false, false), |recipe| recipe.uses_fluid())
     }
 }
