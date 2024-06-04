@@ -180,7 +180,8 @@ pub struct DataRaw {
     pub recipe: recipe::AllTypes,
     pub recipe_category: HashMap<RecipeCategoryID, recipe::RecipeCategory>,
 
-    pub tile: HashMap<TileID, tile::TilePrototype>,
+    #[serde(flatten)]
+    pub tile: tile::AllTypes,
 
     pub utility_sprites: HashMap<String, utility_sprites::UtilitySprites>,
 }
@@ -1037,12 +1038,30 @@ impl DataUtilAccess<FluidID, fluid::AllTypes> for DataUtil {
     }
 }
 
+impl DataUtilAccess<VirtualSignalID, signal::AllTypes> for DataUtil {
+    fn get_proto<T>(&self, id: &VirtualSignalID) -> Option<&T>
+    where
+        signal::AllTypes: IdNamespaceAccess<T>,
+    {
+        self.raw.virtual_signal.get_proto(id)
+    }
+}
+
 impl DataUtilAccess<RecipeID, recipe::AllTypes> for DataUtil {
     fn get_proto<T>(&self, id: &RecipeID) -> Option<&T>
     where
         recipe::AllTypes: IdNamespaceAccess<T>,
     {
         self.raw.recipe.get_proto(id)
+    }
+}
+
+impl DataUtilAccess<TileID, tile::AllTypes> for DataUtil {
+    fn get_proto<T>(&self, id: &TileID) -> Option<&T>
+    where
+        tile::AllTypes: IdNamespaceAccess<T>,
+    {
+        self.raw.tile.get_proto(id)
     }
 }
 
