@@ -19,7 +19,7 @@ use scanner::*;
 struct Cli {
     /// Path to the factorio application directory, which contains the 'data' folder (path.read-data)
     #[clap(short, long, value_parser)]
-    factorio: PathBuf,
+    factorio: Option<PathBuf>,
 
     /// Path to the factorio user data directory (path.write-data), which contains the 'mods' and 'script-output' folders
     #[clap(long, value_parser)]
@@ -114,12 +114,13 @@ fn main() -> ExitCode {
         types::targeted_engine_version()
     );
 
-    let factorio_userdir = cli.factorio_userdir.unwrap_or_else(|| cli.factorio.clone());
-
-    let factorio_bin = cli.factorio_bin.unwrap_or_else(|| match env::consts::OS {
-        "macos" => cli.factorio.join("MacOS/factorio"),
-        default => cli.factorio.join("bin/x64/factorio"),
-    });
+    let (factorio_appdir, factorio_userdir, factorio_bin) = match infer_paths(&cli) {
+        Ok(tup) => tup,
+        Err(err) => {
+            error!("{err}");
+            return ExitCode::FAILURE;
+        }
+    };
 
     let rt = match tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -135,7 +136,7 @@ fn main() -> ExitCode {
 
     if let Err(err) = rt.block_on(render_command(
         cli.args.input,
-        &cli.factorio,
+        &factorio_appdir,
         &factorio_userdir,
         &factorio_bin,
         cli.args.preset,
@@ -149,6 +150,63 @@ fn main() -> ExitCode {
     };
 
     ExitCode::SUCCESS
+}
+
+fn get_home(argument: &str) -> std::result::Result<PathBuf, String> {
+    match env::var("HOME") {
+        Ok(home) => Ok(home.into()),
+        Err(e) => Err(format!("Couldn't infer {argument} ($HOME: {e})")),
+    }
+}
+
+fn infer_paths(cli: &Cli) -> std::result::Result<(PathBuf, PathBuf, PathBuf), String> {
+    let factorio_appdir = cli.factorio.clone().map_or_else(
+        || match env::consts::OS {
+            "linux" => Ok(Path::new(&get_home("--factorio")?).join(".factorio")),
+            "macos" => Ok(Path::new("/Applications/factorio.app/Contents").to_path_buf()),
+            default => Err("--factorio is required".to_owned()),
+        },
+        Ok,
+    )?;
+
+    if !factorio_appdir.join("data").is_dir() {
+        return Err(format!(
+            "Factorio app directory at {factorio_appdir:?} doesn't exist \
+            or doesn't contain 'data', check --factorio"
+        ));
+    }
+
+    let factorio_userdir = cli.factorio_userdir.clone().map_or_else(
+        || match env::consts::OS {
+            "macos" => Ok(Path::new(&get_home("--factorio-userdir")?)
+                .join("Library/Application Support/factorio")),
+            default => Ok(factorio_appdir.clone()),
+        },
+        Ok::<PathBuf, String>,
+    )?;
+
+    if !factorio_userdir.join("mods").is_dir() {
+        return Err(format!(
+            "Factorio user data directory at {factorio_userdir:?} doesn't exist \
+            or doesn't contain 'mods', check --factorio-userdir"
+        ));
+    }
+
+    let factorio_bin = cli
+        .factorio_bin
+        .clone()
+        .unwrap_or_else(|| match env::consts::OS {
+            "macos" => factorio_appdir.join("MacOS/factorio"),
+            default => factorio_appdir.join("bin/x64/factorio"),
+        });
+
+    if !factorio_bin.exists() {
+        return Err(format!(
+            "Factorio binary not found at {factorio_bin:?}, check --factorio-bin"
+        ));
+    }
+
+    Ok((factorio_appdir, factorio_userdir, factorio_bin))
 }
 
 #[allow(clippy::too_many_arguments)]
