@@ -29,10 +29,10 @@ impl SignalPrototypeData {
     }
 }
 
-fn default_subgroup() -> String {
-    "virtual-signal".to_string()
+fn default_subgroup() -> ItemSubGroupID {
+    ItemSubGroupID::new("virtual-signal")
 }
 
-fn is_default_subgroup(subgroup: &String) -> bool {
+fn is_default_subgroup(subgroup: &ItemSubGroupID) -> bool {
     *subgroup == default_subgroup()
 }

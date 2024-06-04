@@ -126,4 +126,28 @@ impl super::Renderable for SimpleEntityWithOwnerData {
 /// [`Prototypes/SimpleEntityWithForcePrototype`](https://lua-api.factorio.com/latest/prototypes/SimpleEntityWithForcePrototype.html)
 ///
 /// The only difference to `SimpleEntityWithOwnerPrototype` is that `is_military_target` defaults to `true` which is not relevant -> difference is not implemented.
-pub type SimpleEntityWithForcePrototype = SimpleEntityWithOwnerPrototype;
+pub type SimpleEntityWithForcePrototype = EntityWithOwnerPrototype<SimpleEntityWithForceData>;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SimpleEntityWithForceData(SimpleEntityWithOwnerData);
+
+impl std::ops::Deref for SimpleEntityWithForceData {
+    type Target = SimpleEntityWithOwnerData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl super::Renderable for SimpleEntityWithForceData {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+        image_cache: &mut ImageCache,
+    ) -> super::RenderOutput {
+        self.0
+            .render(options, used_mods, render_layers, image_cache)
+    }
+}

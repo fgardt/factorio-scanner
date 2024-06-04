@@ -60,7 +60,21 @@ impl<T> std::ops::Deref for BasePrototype<T> {
     }
 }
 
-pub type PrototypeMap<T> = HashMap<String, T>;
+pub trait IdNamespace {
+    type Id;
+
+    #[must_use]
+    fn all_ids(&self) -> HashSet<&Self::Id>;
+
+    #[must_use]
+    fn contains(&self, id: &Self::Id) -> bool;
+}
+
+// TODO: write macro to generate impls for these
+pub trait IdNamespaceAccess<T>: IdNamespace {
+    #[must_use]
+    fn get_proto(&self, id: &Self::Id) -> Option<&T>;
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -83,15 +97,15 @@ pub struct DataRaw {
     #[serde(flatten)]
     pub fluid: fluid::AllTypes,
 
-    pub virtual_signal: PrototypeMap<signal::SignalPrototypeData>,
+    pub virtual_signal: HashMap<VirtualSignalID, signal::SignalPrototypeData>,
 
     #[serde(flatten)]
     pub recipe: recipe::AllTypes,
-    pub recipe_category: PrototypeMap<recipe::RecipeCategory>,
+    pub recipe_category: HashMap<RecipeCategoryID, recipe::RecipeCategory>,
 
-    pub tile: PrototypeMap<tile::TilePrototype>,
+    pub tile: HashMap<TileID, tile::TilePrototype>,
 
-    pub utility_sprites: PrototypeMap<utility_sprites::UtilitySprites>,
+    pub utility_sprites: HashMap<String, utility_sprites::UtilitySprites>,
 }
 
 impl DataRaw {
@@ -110,14 +124,14 @@ impl DataRaw {
 pub struct DataUtil {
     raw: DataRaw,
 
-    entities: HashMap<String, entity::Type>,
+    entities: HashMap<EntityID, entity::Type>,
 }
 
 impl DataUtil {
     #[allow(clippy::too_many_lines)]
     #[must_use]
     pub fn new(raw: DataRaw) -> Self {
-        let mut entities: HashMap<String, entity::Type> = HashMap::new();
+        let mut entities: HashMap<EntityID, entity::Type> = HashMap::new();
 
         {
             (*raw.entity.accumulator).keys().fold((), |(), name| {
@@ -411,24 +425,25 @@ impl DataUtil {
     }
 
     #[must_use]
-    pub fn get_type(&self, name: &str) -> Option<&entity::Type> {
-        self.entities.get(name)
+    pub fn get_entity_type(&self, name: &str) -> Option<&entity::Type> {
+        self.entities.get(&EntityID::new(name))
     }
 
     #[must_use]
     pub fn contains_entity(&self, name: &str) -> bool {
-        self.entities.contains_key(name)
+        self.entities.contains_key(&EntityID::new(name))
     }
 
     #[must_use]
     pub fn contains_recipe(&self, name: &str) -> bool {
-        self.raw.recipe.recipe.contains_key(name)
+        self.raw.recipe.recipe.contains_key(&RecipeID::new(name))
     }
 
     #[allow(clippy::too_many_lines)]
     #[must_use]
     pub fn get_entity(&self, name: &str) -> Option<&dyn RenderableEntity> {
-        let entity_type = self.get_type(name)?;
+        let entity_type = self.get_entity_type(name)?;
+        let name = &EntityID::new(name);
 
         match entity_type {
             entity::Type::Accumulator => self
@@ -826,12 +841,7 @@ impl DataUtil {
 
     #[must_use]
     pub fn get_tile(&self, name: &str) -> Option<&tile::TilePrototype> {
-        self.raw.tile.get(name)
-    }
-
-    #[must_use]
-    pub fn entities(&self) -> std::collections::HashSet<&String> {
-        self.entities.keys().collect()
+        self.raw.tile.get(&TileID::new(name))
     }
 
     #[must_use]
@@ -857,7 +867,7 @@ impl DataUtil {
     ) -> Option<()> {
         self.raw
             .tile
-            .get(tile_name)
+            .get(&TileID::new(tile_name))
             .and_then(|t| t.render(position, used_mods, render_layers, image_cache))
     }
 
@@ -890,7 +900,7 @@ impl DataUtil {
     ) -> Option<types::GraphicsOutput> {
         self.raw
             .virtual_signal
-            .get(name)
+            .get(&VirtualSignalID::new(name))
             .and_then(|x| x.get_icon(scale, used_mods, image_cache))
     }
 
@@ -920,6 +930,51 @@ impl DataUtil {
     pub fn util_sprites(&self) -> Option<&utility_sprites::UtilitySprites> {
         let key = self.raw.utility_sprites.keys().next()?;
         self.raw.utility_sprites.get(key)
+    }
+}
+
+pub trait DataUtilAccess<I, S>
+where
+    S: IdNamespace,
+{
+    fn get_proto<T>(&self, id: I) -> Option<&T>
+    where
+        S: IdNamespaceAccess<T>;
+}
+
+impl DataUtilAccess<EntityID, entity::AllTypes> for DataUtil {
+    fn get_proto<T>(&self, id: EntityID) -> Option<&T>
+    where
+        entity::AllTypes: IdNamespaceAccess<T>,
+    {
+        self.raw.entity.get_proto(&id)
+    }
+}
+
+impl DataUtilAccess<ItemID, item::AllTypes> for DataUtil {
+    fn get_proto<T>(&self, id: ItemID) -> Option<&T>
+    where
+        item::AllTypes: IdNamespaceAccess<T>,
+    {
+        self.raw.item.get_proto(&id)
+    }
+}
+
+impl DataUtilAccess<FluidID, fluid::AllTypes> for DataUtil {
+    fn get_proto<T>(&self, id: FluidID) -> Option<&T>
+    where
+        fluid::AllTypes: IdNamespaceAccess<T>,
+    {
+        self.raw.fluid.get_proto(&id)
+    }
+}
+
+impl DataUtilAccess<RecipeID, recipe::AllTypes> for DataUtil {
+    fn get_proto<T>(&self, id: RecipeID) -> Option<&T>
+    where
+        recipe::AllTypes: IdNamespaceAccess<T>,
+    {
+        self.raw.recipe.get_proto(&id)
     }
 }
 

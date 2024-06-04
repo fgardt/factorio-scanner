@@ -10,6 +10,20 @@ use types::{
     Color, FactorioArray, FilterMode, ItemGroupID, ItemID, ItemStackIndex, ItemSubGroupID,
 };
 
+// ItemWithTags = ItemWithLabel
+// using newtype pattern to avoid type collisions
+/// [`Prototypes/ItemWithTagsPrototype`](https://lua-api.factorio.com/latest/prototypes/ItemWithTagsPrototype.html)
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ItemWithTagsPrototype(ItemWithLabelPrototype);
+
+impl std::ops::Deref for ItemWithTagsPrototype {
+    type Target = ItemWithLabelPrototype;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 /// [`Prototypes/ItemWithLabelPrototype`](https://lua-api.factorio.com/latest/prototypes/ItemWithLabelPrototype.html)
 pub type ItemWithLabelPrototype = crate::BasePrototype<ItemWithLabelPrototypeData>;
 
@@ -130,6 +144,3 @@ impl std::ops::Deref for BlueprintBookPrototypeData {
         &self.parent
     }
 }
-
-/// [`Prototypes/ItemWithTagsPrototype`](https://lua-api.factorio.com/latest/prototypes/ItemWithTagsPrototype.html)
-pub type ItemWithTagsPrototype = ItemWithLabelPrototype;
