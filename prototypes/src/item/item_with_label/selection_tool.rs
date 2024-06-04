@@ -113,7 +113,7 @@ impl std::ops::Deref for SelectionToolPrototypeData {
 
 #[must_use]
 fn default_mouse_cursor() -> MouseCursorID {
-    "selection-tool-cursor".to_owned()
+    MouseCursorID::new("selection-tool-cursor")
 }
 
 #[must_use]
@@ -121,8 +121,19 @@ fn is_default_mouse_cursor(mouse_cursor: &MouseCursorID) -> bool {
     *mouse_cursor == default_mouse_cursor()
 }
 
-// [`Prototypes/BlueprintItemPrototype`](https://lua-api.factorio.com/latest/prototypes/BlueprintItemPrototype.html)
-pub type BlueprintItemPrototype = SelectionToolPrototype;
+// BlueprintItem = SelectionTool
+// using newtype pattern to avoid type collisions
+/// [`Prototypes/BlueprintItemPrototype`](https://lua-api.factorio.com/latest/prototypes/BlueprintItemPrototype.html)
+#[derive(Debug, Deserialize, Serialize)]
+pub struct BlueprintItemPrototype(SelectionToolPrototype);
+
+impl std::ops::Deref for BlueprintItemPrototype {
+    type Target = SelectionToolPrototype;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 /// [`Prototypes/CopyPasteToolPrototype`](https://lua-api.factorio.com/latest/prototypes/CopyPasteToolPrototype.html)
 pub type CopyPasteToolPrototype = crate::BasePrototype<CopyPasteToolPrototypeData>;

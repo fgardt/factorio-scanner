@@ -1,11 +1,9 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
 use serde_helper as helper;
 use types::{Color, Energy, FluidID, Icon, ItemSubGroupID, RenderableGraphics};
-
-use crate::PrototypeMap;
 
 /// [`Prototypes/FluidPrototype`](https://lua-api.factorio.com/latest/prototypes/FluidPrototype.html)
 pub type FluidPrototype = crate::BasePrototype<FluidPrototypeData>;
@@ -85,7 +83,7 @@ fn default_fuel_value() -> Energy {
 }
 
 fn default_subgroup() -> ItemSubGroupID {
-    "fluid".to_owned()
+    ItemSubGroupID::new("fluid")
 }
 
 fn is_default_capacity(capacity: &Energy) -> bool {
@@ -102,15 +100,28 @@ fn is_default_subgroup(subgroup: &ItemSubGroupID) -> bool {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AllTypes {
-    pub fluid: PrototypeMap<FluidPrototype>,
+    pub fluid: HashMap<FluidID, FluidPrototype>,
 }
 
-impl AllTypes {
-    #[must_use]
-    pub fn all_names(&self) -> HashSet<&FluidID> {
+impl crate::IdNamespace for AllTypes {
+    type Id = FluidID;
+
+    fn all_ids(&self) -> HashSet<&Self::Id> {
         self.fluid.keys().collect()
     }
 
+    fn contains(&self, id: &Self::Id) -> bool {
+        self.fluid.contains_key(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<FluidPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&FluidPrototype> {
+        self.fluid.get(id)
+    }
+}
+
+impl AllTypes {
     pub fn get_icon(
         &self,
         name: &str,
@@ -119,7 +130,7 @@ impl AllTypes {
         image_cache: &mut types::ImageCache,
     ) -> Option<types::GraphicsOutput> {
         self.fluid
-            .get(name)
+            .get(&FluidID::new(name))
             .and_then(|proto| proto.get_icon(scale, used_mods, image_cache))
     }
 }

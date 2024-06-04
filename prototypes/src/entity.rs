@@ -1,4 +1,8 @@
-use std::{collections::HashMap, num::NonZeroU32, ops::Deref};
+use std::{
+    collections::{HashMap, HashSet},
+    num::NonZeroU32,
+    ops::Deref,
+};
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -903,7 +907,7 @@ impl Type {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct EntityPrototypeMap<T: Renderable>(HashMap<String, T>);
+pub struct EntityPrototypeMap<T: Renderable>(HashMap<EntityID, T>);
 
 impl<T> Default for EntityPrototypeMap<T>
 where
@@ -915,7 +919,7 @@ where
 }
 
 impl<T: Renderable> Deref for EntityPrototypeMap<T> {
-    type Target = HashMap<String, T>;
+    type Target = HashMap<EntityID, T>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -1019,4 +1023,546 @@ pub struct AllTypes {
     // pub player_port: EntityPrototypeMap<PlayerPortPrototype>,
     // pub unit: EntityPrototypeMap<UnitPrototype>,
     // pub spider_vehicle: EntityPrototypeMap<SpiderVehiclePrototype>,
+}
+
+impl crate::IdNamespace for AllTypes {
+    type Id = EntityID;
+
+    fn all_ids(&self) -> std::collections::HashSet<&Self::Id> {
+        let mut res = HashSet::new();
+
+        res.extend(self.accumulator.keys());
+        res.extend(self.artillery_turret.keys());
+        res.extend(self.beacon.keys());
+        res.extend(self.boiler.keys());
+        res.extend(self.burner_generator.keys());
+        res.extend(self.arithmetic_combinator.keys());
+        res.extend(self.decider_combinator.keys());
+        res.extend(self.constant_combinator.keys());
+        res.extend(self.programmable_speaker.keys());
+        res.extend(self.container.keys());
+        res.extend(self.logistic_container.keys());
+        res.extend(self.infinity_container.keys());
+        res.extend(self.linked_container.keys());
+        res.extend(self.assembling_machine.keys());
+        res.extend(self.rocket_silo.keys());
+        res.extend(self.furnace.keys());
+        res.extend(self.electric_energy_interface.keys());
+        res.extend(self.electric_pole.keys());
+        res.extend(self.power_switch.keys());
+        res.extend(self.combat_robot.keys());
+        res.extend(self.construction_robot.keys());
+        res.extend(self.logistic_robot.keys());
+        res.extend(self.roboport.keys());
+        res.extend(self.gate.keys());
+        res.extend(self.wall.keys());
+        res.extend(self.generator.keys());
+        res.extend(self.reactor.keys());
+        res.extend(self.heat_interface.keys());
+        res.extend(self.heat_pipe.keys());
+        res.extend(self.inserter.keys());
+        res.extend(self.lab.keys());
+        res.extend(self.lamp.keys());
+        res.extend(self.land_mine.keys());
+        res.extend(self.market.keys());
+        res.extend(self.mining_drill.keys());
+        res.extend(self.offshore_pump.keys());
+        res.extend(self.pipe.keys());
+        res.extend(self.infinity_pipe.keys());
+        res.extend(self.pipe_to_ground.keys());
+        res.extend(self.pump.keys());
+        res.extend(self.simple_entity.keys());
+        res.extend(self.simple_entity_with_owner.keys());
+        res.extend(self.simple_entity_with_force.keys());
+        res.extend(self.solar_panel.keys());
+        res.extend(self.storage_tank.keys());
+        res.extend(self.linked_belt.keys());
+        res.extend(self.loader_1x1.keys());
+        res.extend(self.loader.keys());
+        res.extend(self.splitter.keys());
+        res.extend(self.transport_belt.keys());
+        res.extend(self.underground_belt.keys());
+        res.extend(self.radar.keys());
+        res.extend(self.turret.keys());
+        res.extend(self.ammo_turret.keys());
+        res.extend(self.electric_turret.keys());
+        res.extend(self.fluid_turret.keys());
+        res.extend(self.car.keys());
+        res.extend(self.curved_rail.keys());
+        res.extend(self.straight_rail.keys());
+        res.extend(self.rail_signal.keys());
+        res.extend(self.rail_chain_signal.keys());
+        res.extend(self.train_stop.keys());
+        res.extend(self.locomotive.keys());
+        res.extend(self.cargo_wagon.keys());
+        res.extend(self.fluid_wagon.keys());
+        res.extend(self.artillery_wagon.keys());
+
+        res
+    }
+
+    fn contains(&self, id: &Self::Id) -> bool {
+        self.accumulator.contains_key(id)
+            || self.artillery_turret.contains_key(id)
+            || self.beacon.contains_key(id)
+            || self.boiler.contains_key(id)
+            || self.burner_generator.contains_key(id)
+            || self.arithmetic_combinator.contains_key(id)
+            || self.decider_combinator.contains_key(id)
+            || self.constant_combinator.contains_key(id)
+            || self.programmable_speaker.contains_key(id)
+            || self.container.contains_key(id)
+            || self.logistic_container.contains_key(id)
+            || self.infinity_container.contains_key(id)
+            || self.linked_container.contains_key(id)
+            || self.assembling_machine.contains_key(id)
+            || self.rocket_silo.contains_key(id)
+            || self.furnace.contains_key(id)
+            || self.electric_energy_interface.contains_key(id)
+            || self.electric_pole.contains_key(id)
+            || self.power_switch.contains_key(id)
+            || self.combat_robot.contains_key(id)
+            || self.construction_robot.contains_key(id)
+            || self.logistic_robot.contains_key(id)
+            || self.roboport.contains_key(id)
+            || self.gate.contains_key(id)
+            || self.wall.contains_key(id)
+            || self.generator.contains_key(id)
+            || self.reactor.contains_key(id)
+            || self.heat_interface.contains_key(id)
+            || self.heat_pipe.contains_key(id)
+            || self.inserter.contains_key(id)
+            || self.lab.contains_key(id)
+            || self.lamp.contains_key(id)
+            || self.land_mine.contains_key(id)
+            || self.market.contains_key(id)
+            || self.mining_drill.contains_key(id)
+            || self.offshore_pump.contains_key(id)
+            || self.pipe.contains_key(id)
+            || self.infinity_pipe.contains_key(id)
+            || self.pipe_to_ground.contains_key(id)
+            || self.pump.contains_key(id)
+            || self.simple_entity.contains_key(id)
+            || self.simple_entity_with_owner.contains_key(id)
+            || self.simple_entity_with_force.contains_key(id)
+            || self.solar_panel.contains_key(id)
+            || self.storage_tank.contains_key(id)
+            || self.linked_belt.contains_key(id)
+            || self.loader_1x1.contains_key(id)
+            || self.loader.contains_key(id)
+            || self.splitter.contains_key(id)
+            || self.transport_belt.contains_key(id)
+            || self.underground_belt.contains_key(id)
+            || self.radar.contains_key(id)
+            || self.turret.contains_key(id)
+            || self.ammo_turret.contains_key(id)
+            || self.electric_turret.contains_key(id)
+            || self.fluid_turret.contains_key(id)
+            || self.car.contains_key(id)
+            || self.curved_rail.contains_key(id)
+            || self.straight_rail.contains_key(id)
+            || self.rail_signal.contains_key(id)
+            || self.rail_chain_signal.contains_key(id)
+            || self.train_stop.contains_key(id)
+            || self.locomotive.contains_key(id)
+            || self.cargo_wagon.contains_key(id)
+            || self.fluid_wagon.contains_key(id)
+            || self.artillery_wagon.contains_key(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<AccumulatorPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&AccumulatorPrototype> {
+        self.accumulator.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ArtilleryTurretPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ArtilleryTurretPrototype> {
+        self.artillery_turret.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<BeaconPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&BeaconPrototype> {
+        self.beacon.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<BoilerPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&BoilerPrototype> {
+        self.boiler.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<BurnerGeneratorPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&BurnerGeneratorPrototype> {
+        self.burner_generator.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ArithmeticCombinatorPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ArithmeticCombinatorPrototype> {
+        self.arithmetic_combinator.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<DeciderCombinatorPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&DeciderCombinatorPrototype> {
+        self.decider_combinator.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ConstantCombinatorPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ConstantCombinatorPrototype> {
+        self.constant_combinator.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ProgrammableSpeakerPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ProgrammableSpeakerPrototype> {
+        self.programmable_speaker.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ContainerPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ContainerPrototype> {
+        self.container.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<LogisticContainerPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&LogisticContainerPrototype> {
+        self.logistic_container.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<InfinityContainerPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&InfinityContainerPrototype> {
+        self.infinity_container.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<LinkedContainerPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&LinkedContainerPrototype> {
+        self.linked_container.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<AssemblingMachinePrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&AssemblingMachinePrototype> {
+        self.assembling_machine.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<RocketSiloPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&RocketSiloPrototype> {
+        self.rocket_silo.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<FurnacePrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&FurnacePrototype> {
+        self.furnace.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ElectricEnergyInterfacePrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ElectricEnergyInterfacePrototype> {
+        self.electric_energy_interface.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ElectricPolePrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ElectricPolePrototype> {
+        self.electric_pole.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<PowerSwitchPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&PowerSwitchPrototype> {
+        self.power_switch.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<CombatRobotPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&CombatRobotPrototype> {
+        self.combat_robot.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ConstructionRobotPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ConstructionRobotPrototype> {
+        self.construction_robot.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<LogisticRobotPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&LogisticRobotPrototype> {
+        self.logistic_robot.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<RoboportPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&RoboportPrototype> {
+        self.roboport.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<GatePrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&GatePrototype> {
+        self.gate.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<WallPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&WallPrototype> {
+        self.wall.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<GeneratorPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&GeneratorPrototype> {
+        self.generator.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ReactorPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ReactorPrototype> {
+        self.reactor.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<HeatInterfacePrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&HeatInterfacePrototype> {
+        self.heat_interface.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<HeatPipePrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&HeatPipePrototype> {
+        self.heat_pipe.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<InserterPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&InserterPrototype> {
+        self.inserter.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<LabPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&LabPrototype> {
+        self.lab.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<LampPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&LampPrototype> {
+        self.lamp.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<LandMinePrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&LandMinePrototype> {
+        self.land_mine.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<MarketPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&MarketPrototype> {
+        self.market.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<MiningDrillPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&MiningDrillPrototype> {
+        self.mining_drill.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<OffshorePumpPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&OffshorePumpPrototype> {
+        self.offshore_pump.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<PipePrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&PipePrototype> {
+        self.pipe.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<InfinityPipePrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&InfinityPipePrototype> {
+        self.infinity_pipe.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<PipeToGroundPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&PipeToGroundPrototype> {
+        self.pipe_to_ground.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<PumpPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&PumpPrototype> {
+        self.pump.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<SimpleEntityPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&SimpleEntityPrototype> {
+        self.simple_entity.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<SimpleEntityWithOwnerPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&SimpleEntityWithOwnerPrototype> {
+        self.simple_entity_with_owner.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<SimpleEntityWithForcePrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&SimpleEntityWithForcePrototype> {
+        self.simple_entity_with_force.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<SolarPanelPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&SolarPanelPrototype> {
+        self.solar_panel.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<StorageTankPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&StorageTankPrototype> {
+        self.storage_tank.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<LinkedBeltPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&LinkedBeltPrototype> {
+        self.linked_belt.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<Loader1x1Prototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&Loader1x1Prototype> {
+        self.loader_1x1.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<Loader1x2Prototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&Loader1x2Prototype> {
+        self.loader.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<SplitterPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&SplitterPrototype> {
+        self.splitter.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<TransportBeltPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&TransportBeltPrototype> {
+        self.transport_belt.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<UndergroundBeltPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&UndergroundBeltPrototype> {
+        self.underground_belt.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<RadarPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&RadarPrototype> {
+        self.radar.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<TurretPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&TurretPrototype> {
+        self.turret.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<AmmoTurretPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&AmmoTurretPrototype> {
+        self.ammo_turret.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ElectricTurretPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ElectricTurretPrototype> {
+        self.electric_turret.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<FluidTurretPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&FluidTurretPrototype> {
+        self.fluid_turret.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<CarPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&CarPrototype> {
+        self.car.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<CurvedRailPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&CurvedRailPrototype> {
+        self.curved_rail.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<StraightRailPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&StraightRailPrototype> {
+        self.straight_rail.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<RailSignalPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&RailSignalPrototype> {
+        self.rail_signal.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<RailChainSignalPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&RailChainSignalPrototype> {
+        self.rail_chain_signal.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<TrainStopPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&TrainStopPrototype> {
+        self.train_stop.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<LocomotivePrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&LocomotivePrototype> {
+        self.locomotive.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<CargoWagonPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&CargoWagonPrototype> {
+        self.cargo_wagon.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<FluidWagonPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&FluidWagonPrototype> {
+        self.fluid_wagon.get(id)
+    }
+}
+
+impl crate::IdNamespaceAccess<ArtilleryWagonPrototype> for AllTypes {
+    fn get_proto(&self, id: &Self::Id) -> Option<&ArtilleryWagonPrototype> {
+        self.artillery_wagon.get(id)
+    }
 }
