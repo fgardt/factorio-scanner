@@ -1,5 +1,3 @@
-use std::collections::{HashMap, HashSet};
-
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -29,6 +27,8 @@ pub use module::*;
 pub use rail_planner::*;
 pub use spidertron_remote::*;
 pub use tool::*;
+
+use crate::helper_macro::namespace_struct;
 
 /// [`Prototypes/ItemPrototype`](https://lua-api.factorio.com/latest/prototypes/ItemPrototype.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -130,223 +130,34 @@ pub enum RocketLaunchProduct {
     Single(ItemProductPrototype),
 }
 
-type ItemPrototypeMap<T> = HashMap<ItemID, T>;
+// workaround for prototype type string not matching the actual type name
+type AmmoPrototype = AmmoItemPrototype;
+type BlueprintPrototype = BlueprintItemPrototype;
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct AllTypes {
-    pub item: ItemPrototypeMap<ItemPrototype>,
-
-    pub ammo: ItemPrototypeMap<AmmoItemPrototype>,
-
-    pub capsule: ItemPrototypeMap<CapsulePrototype>,
-
-    pub gun: ItemPrototypeMap<GunPrototype>,
-
-    pub item_with_entity_data: ItemPrototypeMap<ItemWithEntityDataPrototype>,
-
-    pub item_with_label: ItemPrototypeMap<ItemWithLabelPrototype>,
-    pub item_with_inventory: ItemPrototypeMap<ItemWithInventoryPrototype>,
-    pub blueprint_book: ItemPrototypeMap<BlueprintBookPrototype>,
-    pub item_with_tags: ItemPrototypeMap<ItemWithTagsPrototype>,
-    pub selection_tool: ItemPrototypeMap<SelectionToolPrototype>,
-    pub blueprint: ItemPrototypeMap<BlueprintItemPrototype>,
-    pub copy_paste_tool: ItemPrototypeMap<CopyPasteToolPrototype>,
-    pub deconstruction_item: ItemPrototypeMap<DeconstructionItemPrototype>,
-    pub upgrade_item: ItemPrototypeMap<UpgradeItemPrototype>,
-
-    pub module: ItemPrototypeMap<ModulePrototype>,
-
-    pub rail_planner: ItemPrototypeMap<RailPlannerPrototype>,
-
-    pub spidertron_remote: ItemPrototypeMap<SpidertronRemotePrototype>,
-
-    pub tool: ItemPrototypeMap<ToolPrototype>,
-    pub armor: ItemPrototypeMap<ArmorPrototype>,
-    pub mining_tool: ItemPrototypeMap<MiningToolPrototype>,
-    pub repair_tool: ItemPrototypeMap<RepairToolPrototype>,
-}
-
-impl crate::IdNamespace for AllTypes {
-    type Id = ItemID;
-
-    fn all_ids(&self) -> HashSet<&Self::Id> {
-        let mut res = HashSet::new();
-
-        res.extend(self.item.keys());
-        res.extend(self.ammo.keys());
-        res.extend(self.capsule.keys());
-        res.extend(self.gun.keys());
-        res.extend(self.item_with_entity_data.keys());
-        res.extend(self.item_with_label.keys());
-        res.extend(self.item_with_inventory.keys());
-        res.extend(self.blueprint_book.keys());
-        res.extend(self.item_with_tags.keys());
-        res.extend(self.selection_tool.keys());
-        res.extend(self.blueprint.keys());
-        res.extend(self.copy_paste_tool.keys());
-        res.extend(self.deconstruction_item.keys());
-        res.extend(self.upgrade_item.keys());
-        res.extend(self.module.keys());
-        res.extend(self.rail_planner.keys());
-        res.extend(self.spidertron_remote.keys());
-        res.extend(self.tool.keys());
-        res.extend(self.armor.keys());
-        res.extend(self.mining_tool.keys());
-        res.extend(self.repair_tool.keys());
-
-        res
-    }
-
-    fn contains(&self, id: &Self::Id) -> bool {
-        self.item.contains_key(id)
-            || self.ammo.contains_key(id)
-            || self.capsule.contains_key(id)
-            || self.gun.contains_key(id)
-            || self.item_with_entity_data.contains_key(id)
-            || self.item_with_label.contains_key(id)
-            || self.item_with_inventory.contains_key(id)
-            || self.blueprint_book.contains_key(id)
-            || self.item_with_tags.contains_key(id)
-            || self.selection_tool.contains_key(id)
-            || self.blueprint.contains_key(id)
-            || self.copy_paste_tool.contains_key(id)
-            || self.deconstruction_item.contains_key(id)
-            || self.upgrade_item.contains_key(id)
-            || self.module.contains_key(id)
-            || self.rail_planner.contains_key(id)
-            || self.spidertron_remote.contains_key(id)
-            || self.tool.contains_key(id)
-            || self.armor.contains_key(id)
-            || self.mining_tool.contains_key(id)
-            || self.repair_tool.contains_key(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<ItemPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&ItemPrototype> {
-        self.item.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<AmmoItemPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&AmmoItemPrototype> {
-        self.ammo.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<CapsulePrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&CapsulePrototype> {
-        self.capsule.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<GunPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&GunPrototype> {
-        self.gun.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<ItemWithEntityDataPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&ItemWithEntityDataPrototype> {
-        self.item_with_entity_data.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<ItemWithLabelPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&ItemWithLabelPrototype> {
-        self.item_with_label.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<ItemWithInventoryPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&ItemWithInventoryPrototype> {
-        self.item_with_inventory.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<BlueprintBookPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&BlueprintBookPrototype> {
-        self.blueprint_book.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<ItemWithTagsPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&ItemWithTagsPrototype> {
-        self.item_with_tags.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<SelectionToolPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&SelectionToolPrototype> {
-        self.selection_tool.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<BlueprintItemPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&BlueprintItemPrototype> {
-        self.blueprint.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<CopyPasteToolPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&CopyPasteToolPrototype> {
-        self.copy_paste_tool.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<DeconstructionItemPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&DeconstructionItemPrototype> {
-        self.deconstruction_item.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<UpgradeItemPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&UpgradeItemPrototype> {
-        self.upgrade_item.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<ModulePrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&ModulePrototype> {
-        self.module.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<RailPlannerPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&RailPlannerPrototype> {
-        self.rail_planner.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<SpidertronRemotePrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&SpidertronRemotePrototype> {
-        self.spidertron_remote.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<ToolPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&ToolPrototype> {
-        self.tool.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<ArmorPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&ArmorPrototype> {
-        self.armor.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<MiningToolPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&MiningToolPrototype> {
-        self.mining_tool.get(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<RepairToolPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&RepairToolPrototype> {
-        self.repair_tool.get(id)
-    }
+namespace_struct! {
+    AllTypes,
+    ItemID,
+    "item",
+    "ammo",
+    "capsule",
+    "gun",
+    "item-with-entity-data",
+    "item-with-label",
+    "item-with-inventory",
+    "blueprint-book",
+    "item-with-tags",
+    "selection-tool",
+    "blueprint",
+    "copy-paste-tool",
+    "deconstruction-item",
+    "upgrade-item",
+    "module",
+    "rail-planner",
+    "spidertron-remote",
+    "tool",
+    "armor",
+    "mining-tool",
+    "repair-tool"
 }
 
 impl AllTypes {

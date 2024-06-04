@@ -1,13 +1,15 @@
 use serde::{Deserialize, Serialize};
 
-use types::{Icon, ItemSubGroupID, RenderableGraphics};
+use types::{Icon, ItemSubGroupID, RenderableGraphics, VirtualSignalID};
+
+use crate::helper_macro::namespace_struct;
 
 /// [`Prototypes/VirtualSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/VirtualSignalPrototype.html)
-pub type SignalPrototype = crate::BasePrototype<SignalPrototypeData>;
+pub type VirtualSignalPrototype = crate::BasePrototype<VirtualSignalPrototypeData>;
 
 /// [`Prototypes/VirtualSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/VirtualSignalPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
-pub struct SignalPrototypeData {
+pub struct VirtualSignalPrototypeData {
     #[serde(flatten)]
     pub icon: Icon,
 
@@ -18,7 +20,7 @@ pub struct SignalPrototypeData {
     pub subgroup: ItemSubGroupID,
 }
 
-impl SignalPrototypeData {
+impl VirtualSignalPrototypeData {
     pub fn get_icon(
         &self,
         scale: f64,
@@ -35,4 +37,10 @@ fn default_subgroup() -> ItemSubGroupID {
 
 fn is_default_subgroup(subgroup: &ItemSubGroupID) -> bool {
     *subgroup == default_subgroup()
+}
+
+namespace_struct! {
+    AllTypes,
+    VirtualSignalID,
+    "virtual-signal"
 }

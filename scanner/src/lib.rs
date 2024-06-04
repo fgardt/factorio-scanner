@@ -24,11 +24,12 @@ use mod_util::{
 };
 use prototypes::{
     entity::{Type as EntityType, WallPrototype},
+    tile::TilePrototype,
     ConnectedEntities, DataRaw, DataUtil, DataUtilAccess, EntityWireConnections,
     InternalRenderLayer, RenderLayerBuffer, TargetSize,
 };
 use types::{
-    ConnectedDirections, Direction, EntityID, ImageCache, MapPosition, RenderableGraphics,
+    ConnectedDirections, Direction, ImageCache, MapPosition, RenderableGraphics,
     SimpleGraphicsRenderOpts, Vector,
 };
 
@@ -227,7 +228,7 @@ pub fn calculate_target_size(
     }
 
     for tile in &bp.tiles {
-        if data.get_tile(&tile.name).is_none() {
+        if data.get_proto::<TilePrototype>(&tile.name).is_none() {
             continue;
         }
 
@@ -523,7 +524,7 @@ pub fn render_bp(
         .iter()
         .filter_map(|e| {
             let Some(e_data) = data.get_entity(&e.name) else {
-                unknown.insert(e.name.clone());
+                unknown.insert((*e.name).clone());
                 return None;
             };
 
@@ -587,14 +588,14 @@ pub fn render_bp(
                                     && matches!(other_type, EntityType::Wall)
                                 {
                                     let Some(src) = data
-                                        .get_proto::<WallPrototype>(EntityID::new(&e.name))
+                                        .get_proto::<WallPrototype>(&e.name)
                                         .map(|p| p.visual_merge_group)
                                     else {
                                         continue;
                                     };
 
                                     let Some(dst) = data
-                                        .get_proto::<WallPrototype>(EntityID::new(&other.name))
+                                        .get_proto::<WallPrototype>(&other.name)
                                         .map(|p| p.visual_merge_group)
                                     else {
                                         continue;
@@ -688,7 +689,7 @@ pub fn render_bp(
             'recipe_icon: {
                 if !e.recipe.is_empty() && e_data.recipe_visible() {
                     if !data.contains_recipe(&e.recipe) {
-                        unknown.insert(e.recipe.clone());
+                        unknown.insert((*e.recipe).clone());
                         break 'recipe_icon;
                     }
 
@@ -934,13 +935,14 @@ pub fn render_bp(
         .iter()
         .filter_map(|t| {
             let position: MapPosition = (&t.position).into();
-            data.render_tile(
-                &t.name,
-                &(position + MapPosition::Tuple(0.5, 0.5)),
-                used_mods,
-                &mut render_layers,
-                image_cache,
-            )
+            data.get_proto::<TilePrototype>(&t.name).and_then(|tile| {
+                tile.render(
+                    &(position + MapPosition::Tuple(0.5, 0.5)),
+                    used_mods,
+                    &mut render_layers,
+                    image_cache,
+                )
+            })
         })
         .count();
 

@@ -28,6 +28,7 @@ image = { version = "0.25", features = ["png"], default-features = false }
 konst = "0.3"
 locale = { path = "locale" }
 mod_util = { path = "mod_util" }
+paste = "1.0"
 prototypes = { path = "prototypes" }
 serde = { version = "1.0", features = ["derive"] }
 serde_helper = { path = "serde_helper" }

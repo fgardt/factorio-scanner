@@ -1,9 +1,9 @@
-use std::collections::{HashMap, HashSet};
-
 use serde::{Deserialize, Serialize};
 
 use serde_helper as helper;
 use types::{Color, Energy, FluidID, Icon, ItemSubGroupID, RenderableGraphics};
+
+use crate::helper_macro::namespace_struct;
 
 /// [`Prototypes/FluidPrototype`](https://lua-api.factorio.com/latest/prototypes/FluidPrototype.html)
 pub type FluidPrototype = crate::BasePrototype<FluidPrototypeData>;
@@ -98,27 +98,10 @@ fn is_default_subgroup(subgroup: &ItemSubGroupID) -> bool {
     *subgroup == default_subgroup()
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct AllTypes {
-    pub fluid: HashMap<FluidID, FluidPrototype>,
-}
-
-impl crate::IdNamespace for AllTypes {
-    type Id = FluidID;
-
-    fn all_ids(&self) -> HashSet<&Self::Id> {
-        self.fluid.keys().collect()
-    }
-
-    fn contains(&self, id: &Self::Id) -> bool {
-        self.fluid.contains_key(id)
-    }
-}
-
-impl crate::IdNamespaceAccess<FluidPrototype> for AllTypes {
-    fn get_proto(&self, id: &Self::Id) -> Option<&FluidPrototype> {
-        self.fluid.get(id)
-    }
+namespace_struct! {
+    AllTypes,
+    FluidID,
+    "fluid"
 }
 
 impl AllTypes {

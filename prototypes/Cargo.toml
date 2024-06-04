@@ -1,6 +1,6 @@
 [package]
 name = "prototypes"
-version = "2.2.0-1.1.107"
+version = "2.2.1-1.1.107"
 authors.workspace = true
 edition.workspace = true
 
@@ -9,7 +9,8 @@ workspace = true
 
 [dependencies]
 image.workspace = true
-imageproc = "0.24"
+imageproc = "0.25"
+paste.workspace = true
 konst.workspace = true
 mod_util.workspace = true
 serde.workspace = true

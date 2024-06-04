@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_repr::{Deserialize_repr, Serialize_repr};
+use types::{EntityID, TileID};
 
 use crate::{IndexedVec, NameString};
 
@@ -29,7 +30,7 @@ pub struct DeconPlannerData {
     pub entity_filter_mode: FilterMode,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub entity_filters: IndexedVec<NameString>,
+    pub entity_filters: IndexedVec<NameString<EntityID>>,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub trees_and_rocks_only: bool,
@@ -41,7 +42,7 @@ pub struct DeconPlannerData {
     pub tile_selection_mode: TileSelectionMode,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub tile_filters: IndexedVec<NameString>,
+    pub tile_filters: IndexedVec<NameString<TileID>>,
 
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub description: String,
