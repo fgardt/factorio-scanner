@@ -59,7 +59,7 @@ impl std::fmt::Display for ScannerError {
 #[allow(clippy::too_many_lines)]
 #[instrument(skip_all)]
 pub fn get_protodump(
-    factorio: &Path,
+    factorio_userdir: &Path,
     factorio_bin: &Path,
     mod_list: &ModList,
     (bp_settings, bp_version): (&BTreeMap<String, AnyBasic>, u64),
@@ -88,7 +88,7 @@ pub fn get_protodump(
         }
         let settings_hash = hash.finish();
 
-        let cached_path = factorio.join(format!(
+        let cached_path = factorio_userdir.join(format!(
             "script-output/cached-dump_{mods_hash:X}-{settings_hash:X}.json.deflate"
         ));
 
@@ -124,7 +124,7 @@ pub fn get_protodump(
     SettingsDat::load_bp_settings(
         bp_settings,
         bp_version,
-        factorio.join("mods/mod-settings.dat"),
+        factorio_userdir.join("mods/mod-settings.dat"),
     )
     .change_context(ScannerError::SetupError)?
     .save()
@@ -148,7 +148,7 @@ pub fn get_protodump(
             .attach_printable(String::from_utf8_lossy(&dump_out.stdout).to_string()));
     }
 
-    let dump_path = factorio.join("script-output/data-raw-dump.json");
+    let dump_path = factorio_userdir.join("script-output/data-raw-dump.json");
     let dump_bytes = fs::read(&dump_path)
         .change_context(ScannerError::SetupError)
         .attach_printable(format!("failed to read prototype dump at {dump_path:?}"))?;
@@ -324,7 +324,8 @@ pub fn bp_entity2render_opts(
 #[instrument(skip_all, fields(preset, mods))]
 pub async fn load_data(
     bp: &blueprint::Data,
-    factorio: &Path,
+    factorio_appdir: &Path,
+    factorio_userdir: &Path,
     factorio_bin: &Path,
     preset: Option<preset::Preset>,
     mods: &[String],
@@ -336,7 +337,9 @@ pub async fn load_data(
 
     info!("loaded BP");
 
-    let mut mod_list = ModList::generate(factorio).change_context(ScannerError::SetupError)?;
+    let mut mod_list =
+        ModList::generate_custom(factorio_appdir.join("data"), factorio_userdir.join("mods"))
+            .change_context(ScannerError::SetupError)?;
 
     // get used mods from preset or detect from BP meta info
     let mut required_mods = std::iter::once((
@@ -372,7 +375,7 @@ pub async fn load_data(
             debug!("all mods are already installed");
         } else {
             info!("downloading missing mods from mod portal");
-            download_mods(missing, &factorio.join("mods"))
+            download_mods(missing, &factorio_userdir.join("mods"))
                 .await
                 .change_context(ScannerError::SetupError)?;
         }
@@ -389,7 +392,7 @@ pub async fn load_data(
         DataRaw::load(&path).change_context(ScannerError::SetupError)?
     } else {
         get_protodump(
-            factorio,
+            factorio_userdir,
             factorio_bin,
             &mod_list,
             (
