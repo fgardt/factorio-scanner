@@ -1,6 +1,7 @@
 #![allow(dead_code, clippy::upper_case_acronyms, unused_variables)]
 
 use std::{
+    env,
     fs::{self},
     path::{Path, PathBuf},
     process::ExitCode,
@@ -16,9 +17,13 @@ use scanner::*;
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Cli {
-    /// Path to the factorio directory that contains the data folder (path.read-data)
+    /// Path to the factorio application directory, which contains the 'data' folder (path.read-data)
     #[clap(short, long, value_parser)]
     factorio: PathBuf,
+
+    /// Path to the factorio user data directory (path.write-data), which contains the 'mods' and 'script-output' folders
+    #[clap(long, value_parser)]
+    factorio_userdir: Option<PathBuf>,
 
     /// Path to the factorio binary instead of the default expected one
     #[clap(long, value_parser)]
@@ -109,9 +114,12 @@ fn main() -> ExitCode {
         types::targeted_engine_version()
     );
 
-    let factorio_bin = cli
-        .factorio_bin
-        .unwrap_or_else(|| cli.factorio.join("bin/x64/factorio"));
+    let factorio_userdir = cli.factorio_userdir.unwrap_or_else(|| cli.factorio.clone());
+
+    let factorio_bin = cli.factorio_bin.unwrap_or_else(|| match env::consts::OS {
+        "macos" => cli.factorio.join("MacOS/factorio"),
+        default => cli.factorio.join("bin/x64/factorio"),
+    });
 
     let rt = match tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -128,6 +136,7 @@ fn main() -> ExitCode {
     if let Err(err) = rt.block_on(render_command(
         cli.args.input,
         &cli.factorio,
+        &factorio_userdir,
         &factorio_bin,
         cli.args.preset,
         &cli.args.mods,
@@ -146,6 +155,7 @@ fn main() -> ExitCode {
 async fn render_command(
     input: Input,
     factorio: &Path,
+    factorio_userdir: &Path,
     factorio_bin: &Path,
     preset: Option<preset::Preset>,
     mods: &[String],
@@ -158,8 +168,16 @@ async fn render_command(
         .change_context(ScannerError::NoBlueprint)?;
 
     let bp = blueprint::Data::try_from(bp_string).change_context(ScannerError::NoBlueprint)?;
-    let (data, active_mods) =
-        load_data(&bp, factorio, factorio_bin, preset, mods, prototype_dump).await?;
+    let (data, active_mods) = load_data(
+        &bp,
+        factorio,
+        factorio_userdir,
+        factorio_bin,
+        preset,
+        mods,
+        prototype_dump,
+    )
+    .await?;
     let (res, missing, thumb) = render(&bp, &data, &active_mods, target_res)?;
 
     if !missing.is_empty() {
