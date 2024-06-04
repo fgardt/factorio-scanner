@@ -908,11 +908,6 @@ impl DataUtil {
     }
 
     #[must_use]
-    pub fn get_tile(&self, name: &str) -> Option<&tile::TilePrototype> {
-        self.raw.tile.get(&TileID::new(name))
-    }
-
-    #[must_use]
     pub fn render_entity(
         &self,
         entity_name: &str,
@@ -923,20 +918,6 @@ impl DataUtil {
     ) -> entity::RenderOutput {
         self.get_entity(entity_name)?
             .render(render_opts, used_mods, render_layers, image_cache)
-    }
-
-    pub fn render_tile(
-        &self,
-        tile_name: &str,
-        position: &MapPosition,
-        used_mods: &UsedMods,
-        render_layers: &mut crate::RenderLayerBuffer,
-        image_cache: &mut ImageCache,
-    ) -> Option<()> {
-        self.raw
-            .tile
-            .get(&TileID::new(tile_name))
-            .and_then(|t| t.render(position, used_mods, render_layers, image_cache))
     }
 
     pub fn get_item_icon(

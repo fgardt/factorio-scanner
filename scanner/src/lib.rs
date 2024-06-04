@@ -24,6 +24,7 @@ use mod_util::{
 };
 use prototypes::{
     entity::{Type as EntityType, WallPrototype},
+    tile::TilePrototype,
     ConnectedEntities, DataRaw, DataUtil, DataUtilAccess, EntityWireConnections,
     InternalRenderLayer, RenderLayerBuffer, TargetSize,
 };
@@ -227,7 +228,7 @@ pub fn calculate_target_size(
     }
 
     for tile in &bp.tiles {
-        if data.get_tile(&tile.name).is_none() {
+        if data.get_proto::<TilePrototype>(&tile.name).is_none() {
             continue;
         }
 
@@ -934,13 +935,14 @@ pub fn render_bp(
         .iter()
         .filter_map(|t| {
             let position: MapPosition = (&t.position).into();
-            data.render_tile(
-                &t.name,
-                &(position + MapPosition::Tuple(0.5, 0.5)),
-                used_mods,
-                &mut render_layers,
-                image_cache,
-            )
+            data.get_proto::<TilePrototype>(&t.name).and_then(|tile| {
+                tile.render(
+                    &(position + MapPosition::Tuple(0.5, 0.5)),
+                    used_mods,
+                    &mut render_layers,
+                    image_cache,
+                )
+            })
         })
         .count();
 
