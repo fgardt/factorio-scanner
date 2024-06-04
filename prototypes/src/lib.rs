@@ -76,6 +76,82 @@ pub trait IdNamespaceAccess<T>: IdNamespace {
     fn get_proto(&self, id: &Self::Id) -> Option<&T>;
 }
 
+mod helper_macro {
+
+    macro_rules! namespace_struct {
+        ( $name:ident, $id:ty, $member:literal ) => {
+            paste::paste! {
+                #[derive(Debug, Deserialize, Serialize)]
+                #[serde(rename_all = "kebab-case")]
+                pub struct $name {
+                    pub [< $member:snake >]: std::collections::HashMap<$id, [< $member:camel Prototype >]>,
+                }
+
+                impl crate::IdNamespace for $name {
+                    type Id = $id;
+
+                    fn all_ids(&self) -> std::collections::HashSet<&Self::Id> {
+                        self.[< $member:snake >].keys().collect()
+                    }
+
+                    fn contains(&self, id: &Self::Id) -> bool {
+                        self.[< $member:snake >].contains_key(id)
+                    }
+                }
+
+                impl crate::IdNamespaceAccess<[< $member:camel Prototype >]> for $name {
+                    fn get_proto(&self, id: &Self::Id) -> Option<&[< $member:camel Prototype >]> {
+                        self.[< $member:snake >].get(id)
+                    }
+                }
+            }
+        };
+        ( $name:ident, $id:ty, $( $member:literal ),+ ) => {
+            paste::paste! {
+                #[derive(Debug, Deserialize, Serialize)]
+                #[serde(rename_all = "kebab-case")]
+                pub struct $name {
+                    $(
+                        pub [< $member:snake >]: std::collections::HashMap<$id, [< $member:camel Prototype >]>,
+                    )+
+                }
+
+                impl crate::IdNamespace for $name {
+                    type Id = $id;
+
+                    fn all_ids(&self) -> std::collections::HashSet<&Self::Id> {
+                        let mut res = std::collections::HashSet::new();
+                        $(
+                            res.extend(self.[< $member:snake >].keys());
+                        )+
+                        res
+                    }
+
+                    fn contains(&self, id: &Self::Id) -> bool {
+                        $(
+                            if self.[< $member:snake >].contains_key(id) {
+                                return true;
+                            }
+                        )+
+                        false
+                    }
+
+                }
+
+                $(
+                    impl crate::IdNamespaceAccess<[< $member:camel Prototype >]> for $name {
+                        fn get_proto(&self, id: &Self::Id) -> Option<&[< $member:camel Prototype >]> {
+                            self.[< $member:snake >].get(id)
+                        }
+                    }
+                )+
+            }
+        };
+    }
+
+    pub(crate) use namespace_struct;
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("data.raw io error: {0}")]
@@ -97,7 +173,8 @@ pub struct DataRaw {
     #[serde(flatten)]
     pub fluid: fluid::AllTypes,
 
-    pub virtual_signal: HashMap<VirtualSignalID, signal::SignalPrototypeData>,
+    #[serde(flatten)]
+    pub virtual_signal: signal::AllTypes,
 
     #[serde(flatten)]
     pub recipe: recipe::AllTypes,
@@ -134,289 +211,279 @@ impl DataUtil {
         let mut entities: HashMap<EntityID, entity::Type> = HashMap::new();
 
         {
-            (*raw.entity.accumulator).keys().fold((), |(), name| {
+            raw.entity.accumulator.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Accumulator);
             });
 
-            (*raw.entity.artillery_turret).keys().fold((), |(), name| {
+            raw.entity.artillery_turret.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::ArtilleryTurret);
             });
 
-            (*raw.entity.beacon).keys().fold((), |(), name| {
+            raw.entity.beacon.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Beacon);
             });
 
-            (*raw.entity.boiler).keys().fold((), |(), name| {
+            raw.entity.boiler.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Boiler);
             });
 
-            (*raw.entity.burner_generator).keys().fold((), |(), name| {
+            raw.entity.burner_generator.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::BurnerGenerator);
             });
 
-            (*raw.entity.arithmetic_combinator)
+            raw.entity
+                .arithmetic_combinator
                 .keys()
                 .fold((), |(), name| {
                     entities.insert(name.clone(), entity::Type::ArithmeticCombinator);
                 });
 
-            (*raw.entity.decider_combinator)
-                .keys()
-                .fold((), |(), name| {
-                    entities.insert(name.clone(), entity::Type::DeciderCombinator);
-                });
+            raw.entity.decider_combinator.keys().fold((), |(), name| {
+                entities.insert(name.clone(), entity::Type::DeciderCombinator);
+            });
 
-            (*raw.entity.constant_combinator)
-                .keys()
-                .fold((), |(), name| {
-                    entities.insert(name.clone(), entity::Type::ConstantCombinator);
-                });
+            raw.entity.constant_combinator.keys().fold((), |(), name| {
+                entities.insert(name.clone(), entity::Type::ConstantCombinator);
+            });
 
-            (*raw.entity.programmable_speaker)
-                .keys()
-                .fold((), |(), name| {
-                    entities.insert(name.clone(), entity::Type::ProgrammableSpeaker);
-                });
+            raw.entity.programmable_speaker.keys().fold((), |(), name| {
+                entities.insert(name.clone(), entity::Type::ProgrammableSpeaker);
+            });
 
-            (*raw.entity.container).keys().fold((), |(), name| {
+            raw.entity.container.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Container);
             });
 
-            (*raw.entity.logistic_container)
-                .keys()
-                .fold((), |(), name| {
-                    entities.insert(name.clone(), entity::Type::LogisticContainer);
-                });
+            raw.entity.logistic_container.keys().fold((), |(), name| {
+                entities.insert(name.clone(), entity::Type::LogisticContainer);
+            });
 
-            (*raw.entity.infinity_container)
-                .keys()
-                .fold((), |(), name| {
-                    entities.insert(name.clone(), entity::Type::InfinityContainer);
-                });
+            raw.entity.infinity_container.keys().fold((), |(), name| {
+                entities.insert(name.clone(), entity::Type::InfinityContainer);
+            });
 
-            (*raw.entity.linked_container).keys().fold((), |(), name| {
+            raw.entity.linked_container.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::LinkedContainer);
             });
 
-            (*raw.entity.assembling_machine)
-                .keys()
-                .fold((), |(), name| {
-                    entities.insert(name.clone(), entity::Type::AssemblingMachine);
-                });
+            raw.entity.assembling_machine.keys().fold((), |(), name| {
+                entities.insert(name.clone(), entity::Type::AssemblingMachine);
+            });
 
-            (*raw.entity.rocket_silo).keys().fold((), |(), name| {
+            raw.entity.rocket_silo.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::RocketSilo);
             });
 
-            (*raw.entity.furnace).keys().fold((), |(), name| {
+            raw.entity.furnace.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Furnace);
             });
 
-            (*raw.entity.electric_energy_interface)
+            raw.entity
+                .electric_energy_interface
                 .keys()
                 .fold((), |(), name| {
                     entities.insert(name.clone(), entity::Type::ElectricEnergyInterface);
                 });
 
-            (*raw.entity.electric_pole).keys().fold((), |(), name| {
+            raw.entity.electric_pole.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::ElectricPole);
             });
 
-            (*raw.entity.power_switch).keys().fold((), |(), name| {
+            raw.entity.power_switch.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::PowerSwitch);
             });
 
-            (*raw.entity.combat_robot).keys().fold((), |(), name| {
+            raw.entity.combat_robot.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::CombatRobot);
             });
 
-            (*raw.entity.construction_robot)
-                .keys()
-                .fold((), |(), name| {
-                    entities.insert(name.clone(), entity::Type::ConstructionRobot);
-                });
+            raw.entity.construction_robot.keys().fold((), |(), name| {
+                entities.insert(name.clone(), entity::Type::ConstructionRobot);
+            });
 
-            (*raw.entity.logistic_robot).keys().fold((), |(), name| {
+            raw.entity.logistic_robot.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::LogisticRobot);
             });
 
-            (*raw.entity.roboport).keys().fold((), |(), name| {
+            raw.entity.roboport.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Roboport);
             });
 
-            (*raw.entity.gate).keys().fold((), |(), name| {
+            raw.entity.gate.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Gate);
             });
 
-            (*raw.entity.gate).keys().fold((), |(), name| {
+            raw.entity.gate.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Gate);
             });
 
-            (*raw.entity.wall).keys().fold((), |(), name| {
+            raw.entity.wall.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Wall);
             });
 
-            (*raw.entity.generator).keys().fold((), |(), name| {
+            raw.entity.generator.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Generator);
             });
 
-            (*raw.entity.reactor).keys().fold((), |(), name| {
+            raw.entity.reactor.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Reactor);
             });
 
-            (*raw.entity.heat_interface).keys().fold((), |(), name| {
+            raw.entity.heat_interface.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::HeatInterface);
             });
 
-            (*raw.entity.heat_pipe).keys().fold((), |(), name| {
+            raw.entity.heat_pipe.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::HeatPipe);
             });
 
-            (*raw.entity.inserter).keys().fold((), |(), name| {
+            raw.entity.inserter.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Inserter);
             });
 
-            (*raw.entity.lab).keys().fold((), |(), name| {
+            raw.entity.lab.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Lab);
             });
 
-            (*raw.entity.lamp).keys().fold((), |(), name| {
+            raw.entity.lamp.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Lamp);
             });
 
-            (*raw.entity.land_mine).keys().fold((), |(), name| {
+            raw.entity.land_mine.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::LandMine);
             });
 
-            (*raw.entity.market).keys().fold((), |(), name| {
+            raw.entity.market.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Market);
             });
 
-            (*raw.entity.mining_drill).keys().fold((), |(), name| {
+            raw.entity.mining_drill.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::MiningDrill);
             });
 
-            (*raw.entity.offshore_pump).keys().fold((), |(), name| {
+            raw.entity.offshore_pump.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::OffshorePump);
             });
 
-            (*raw.entity.pipe).keys().fold((), |(), name| {
+            raw.entity.pipe.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Pipe);
             });
 
-            (*raw.entity.infinity_pipe).keys().fold((), |(), name| {
+            raw.entity.infinity_pipe.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::InfinityPipe);
             });
 
-            (*raw.entity.pipe_to_ground).keys().fold((), |(), name| {
+            raw.entity.pipe_to_ground.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::PipeToGround);
             });
 
-            (*raw.entity.pump).keys().fold((), |(), name| {
+            raw.entity.pump.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Pump);
             });
 
-            (*raw.entity.simple_entity_with_owner)
+            raw.entity
+                .simple_entity_with_owner
                 .keys()
                 .fold((), |(), name| {
                     entities.insert(name.clone(), entity::Type::SimpleEntityWithOwner);
                 });
 
-            (*raw.entity.simple_entity_with_force)
+            raw.entity
+                .simple_entity_with_force
                 .keys()
                 .fold((), |(), name| {
                     entities.insert(name.clone(), entity::Type::SimpleEntityWithForce);
                 });
 
-            (*raw.entity.solar_panel).keys().fold((), |(), name| {
+            raw.entity.solar_panel.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::SolarPanel);
             });
 
-            (*raw.entity.storage_tank).keys().fold((), |(), name| {
+            raw.entity.storage_tank.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::StorageTank);
             });
 
-            (*raw.entity.linked_belt).keys().fold((), |(), name| {
+            raw.entity.linked_belt.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::LinkedBelt);
             });
 
-            (*raw.entity.loader_1x1).keys().fold((), |(), name| {
+            raw.entity.loader_1x1.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Loader1x1);
             });
 
-            (*raw.entity.loader).keys().fold((), |(), name| {
+            raw.entity.loader.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Loader);
             });
 
-            (*raw.entity.splitter).keys().fold((), |(), name| {
+            raw.entity.splitter.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Splitter);
             });
 
-            (*raw.entity.transport_belt).keys().fold((), |(), name| {
+            raw.entity.transport_belt.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::TransportBelt);
             });
 
-            (*raw.entity.underground_belt).keys().fold((), |(), name| {
+            raw.entity.underground_belt.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::UndergroundBelt);
             });
 
-            (*raw.entity.radar).keys().fold((), |(), name| {
+            raw.entity.radar.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Radar);
             });
 
-            (*raw.entity.turret).keys().fold((), |(), name| {
+            raw.entity.turret.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Turret);
             });
 
-            (*raw.entity.ammo_turret).keys().fold((), |(), name| {
+            raw.entity.ammo_turret.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::AmmoTurret);
             });
 
-            (*raw.entity.electric_turret).keys().fold((), |(), name| {
+            raw.entity.electric_turret.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::ElectricTurret);
             });
 
-            (*raw.entity.fluid_turret).keys().fold((), |(), name| {
+            raw.entity.fluid_turret.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::FluidTurret);
             });
 
-            (*raw.entity.car).keys().fold((), |(), name| {
+            raw.entity.car.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Car);
             });
 
-            (*raw.entity.curved_rail).keys().fold((), |(), name| {
+            raw.entity.curved_rail.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::CurvedRail);
             });
 
-            (*raw.entity.straight_rail).keys().fold((), |(), name| {
+            raw.entity.straight_rail.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::StraightRail);
             });
 
-            (*raw.entity.rail_signal).keys().fold((), |(), name| {
+            raw.entity.rail_signal.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::RailSignal);
             });
 
-            (*raw.entity.rail_chain_signal).keys().fold((), |(), name| {
+            raw.entity.rail_chain_signal.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::RailChainSignal);
             });
 
-            (*raw.entity.train_stop).keys().fold((), |(), name| {
+            raw.entity.train_stop.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::TrainStop);
             });
 
-            (*raw.entity.locomotive).keys().fold((), |(), name| {
+            raw.entity.locomotive.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::Locomotive);
             });
 
-            (*raw.entity.cargo_wagon).keys().fold((), |(), name| {
+            raw.entity.cargo_wagon.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::CargoWagon);
             });
 
-            (*raw.entity.fluid_wagon).keys().fold((), |(), name| {
+            raw.entity.fluid_wagon.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::FluidWagon);
             });
 
-            (*raw.entity.artillery_wagon).keys().fold((), |(), name| {
+            raw.entity.artillery_wagon.keys().fold((), |(), name| {
                 entities.insert(name.clone(), entity::Type::ArtilleryWagon);
             });
         }
@@ -900,6 +967,7 @@ impl DataUtil {
     ) -> Option<types::GraphicsOutput> {
         self.raw
             .virtual_signal
+            .virtual_signal
             .get(&VirtualSignalID::new(name))
             .and_then(|x| x.get_icon(scale, used_mods, image_cache))
     }
@@ -937,44 +1005,44 @@ pub trait DataUtilAccess<I, S>
 where
     S: IdNamespace,
 {
-    fn get_proto<T>(&self, id: I) -> Option<&T>
+    fn get_proto<T>(&self, id: &I) -> Option<&T>
     where
         S: IdNamespaceAccess<T>;
 }
 
 impl DataUtilAccess<EntityID, entity::AllTypes> for DataUtil {
-    fn get_proto<T>(&self, id: EntityID) -> Option<&T>
+    fn get_proto<T>(&self, id: &EntityID) -> Option<&T>
     where
         entity::AllTypes: IdNamespaceAccess<T>,
     {
-        self.raw.entity.get_proto(&id)
+        self.raw.entity.get_proto(id)
     }
 }
 
 impl DataUtilAccess<ItemID, item::AllTypes> for DataUtil {
-    fn get_proto<T>(&self, id: ItemID) -> Option<&T>
+    fn get_proto<T>(&self, id: &ItemID) -> Option<&T>
     where
         item::AllTypes: IdNamespaceAccess<T>,
     {
-        self.raw.item.get_proto(&id)
+        self.raw.item.get_proto(id)
     }
 }
 
 impl DataUtilAccess<FluidID, fluid::AllTypes> for DataUtil {
-    fn get_proto<T>(&self, id: FluidID) -> Option<&T>
+    fn get_proto<T>(&self, id: &FluidID) -> Option<&T>
     where
         fluid::AllTypes: IdNamespaceAccess<T>,
     {
-        self.raw.fluid.get_proto(&id)
+        self.raw.fluid.get_proto(id)
     }
 }
 
 impl DataUtilAccess<RecipeID, recipe::AllTypes> for DataUtil {
-    fn get_proto<T>(&self, id: RecipeID) -> Option<&T>
+    fn get_proto<T>(&self, id: &RecipeID) -> Option<&T>
     where
         recipe::AllTypes: IdNamespaceAccess<T>,
     {
-        self.raw.recipe.get_proto(&id)
+        self.raw.recipe.get_proto(id)
     }
 }
 

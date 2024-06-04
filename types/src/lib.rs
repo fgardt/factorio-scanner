@@ -10,13 +10,13 @@ use std::{collections::HashMap, fmt, hash::Hash};
 use konst::{
     iter::collect_const, primitive::parse_u16, result::unwrap_ctx, string::split as konst_split,
 };
-
-use mod_util::{mod_info::Version, UsedMods};
 use serde::{Deserialize, Serialize};
+use serde_helper as helper;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
+use tracing::warn;
 
-use serde_helper as helper;
+use mod_util::{mod_info::Version, UsedMods};
 
 #[must_use]
 pub const fn targeted_engine_version() -> Version {
@@ -32,6 +32,7 @@ mod empty_array_fix;
 mod energy;
 mod graphics;
 mod icon;
+mod ids;
 mod item;
 mod module;
 mod wire;
@@ -40,28 +41,10 @@ pub use empty_array_fix::*;
 pub use energy::*;
 pub use graphics::*;
 pub use icon::*;
+pub use ids::*;
 pub use item::*;
 pub use module::*;
-use tracing::warn;
 pub use wire::*;
-
-/// [`Types/AmmoCategoryID`](https://lua-api.factorio.com/latest/types/AmmoCategoryID.html)
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct AmmoCategoryID(String);
-
-impl AmmoCategoryID {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl std::ops::Deref for AmmoCategoryID {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
 
 /// [`Types/AmmoType`](https://lua-api.factorio.com/latest/types/AmmoType.html)
 #[skip_serializing_none]
@@ -1012,24 +995,6 @@ impl std::ops::Neg for RealOrientation {
     }
 }
 
-/// [`Types/FuelCategoryID`](https://lua-api.factorio.com/latest/types/FuelCategoryID.html)
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct FuelCategoryID(String);
-
-impl FuelCategoryID {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl std::ops::Deref for FuelCategoryID {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum FuelCategory {
@@ -1040,60 +1005,6 @@ pub enum FuelCategory {
     Multi {
         fuel_categories: FactorioArray<FuelCategoryID>,
     },
-}
-
-/// [`Types/TileID`](https://lua-api.factorio.com/latest/types/TileID.html)
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct TileID(String);
-
-impl TileID {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl std::ops::Deref for TileID {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-/// [`Types/VirtualSignalID`](https://lua-api.factorio.com/latest/types/VirtualSignalID.html)
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct VirtualSignalID(String);
-
-impl VirtualSignalID {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl std::ops::Deref for VirtualSignalID {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-/// [`Types/FluidID`](https://lua-api.factorio.com/latest/types/FluidID.html)
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct FluidID(String);
-
-impl FluidID {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl std::ops::Deref for FluidID {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -1260,96 +1171,6 @@ impl FluidBox {
     }
 }
 
-/// [`Types/RecipeID`](https://lua-api.factorio.com/latest/types/RecipeID.html)
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct RecipeID(String);
-
-impl RecipeID {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl std::ops::Deref for RecipeID {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-/// [`Types/RecipeCategoryID`](https://lua-api.factorio.com/latest/types/RecipeCategoryID.html)
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct RecipeCategoryID(String);
-
-impl RecipeCategoryID {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl std::ops::Deref for RecipeCategoryID {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-/// [`Types/EquipmentGridID`](https://lua-api.factorio.com/latest/types/EquipmentGridID.html)
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct EquipmentGridID(String);
-
-impl EquipmentGridID {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl std::ops::Deref for EquipmentGridID {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-/// [`Types/EquipmentID`](https://lua-api.factorio.com/latest/types/EquipmentID.html)
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct EquipmentID(String);
-
-impl EquipmentID {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl std::ops::Deref for EquipmentID {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-/// [`Types/ResourceCategoryID`](https://lua-api.factorio.com/latest/types/ResourceCategoryID.html)
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct ResourceCategoryID(String);
-
-impl ResourceCategoryID {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl std::ops::Deref for ResourceCategoryID {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum SignalIDConnector {
@@ -1410,24 +1231,6 @@ pub enum CursorBoxType {
     BlueprintSnapRectangle,
 }
 
-/// [`Types/MouseCursorID`](https://lua-api.factorio.com/latest/types/MouseCursorID.html)
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct MouseCursorID(String);
-
-impl MouseCursorID {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl std::ops::Deref for MouseCursorID {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
 /// [`Types/ItemToPlace`](https://lua-api.factorio.com/latest/types/ItemToPlace.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ItemToPlace {
@@ -1446,24 +1249,6 @@ pub enum PlaceableBy {
 
 /// [`Types/CollisionMask`](https://lua-api.factorio.com/latest/types/CollisionMask.html)
 pub type CollisionMask = FactorioArray<String>;
-
-/// [`Types/EntityID`](https://lua-api.factorio.com/latest/types/EntityID.html)
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct EntityID(String);
-
-impl EntityID {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl std::ops::Deref for EntityID {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
 
 /// Union used in [`Types/EntityPrototypeFlags`](https://lua-api.factorio.com/latest/types/EntityPrototypeFlags.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -2018,24 +1803,6 @@ impl TryFrom<u8> for Direction {
             7 => Ok(Self::NorthWest),
             _ => Err(()),
         }
-    }
-}
-
-/// [`Types/DamageTypeID`](https://lua-api.factorio.com/latest/types/DamageTypeID.html)
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-pub struct DamageTypeID(String);
-
-impl DamageTypeID {
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-}
-
-impl std::ops::Deref for DamageTypeID {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
     }
 }
 

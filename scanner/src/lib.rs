@@ -28,7 +28,7 @@ use prototypes::{
     InternalRenderLayer, RenderLayerBuffer, TargetSize,
 };
 use types::{
-    ConnectedDirections, Direction, EntityID, ImageCache, MapPosition, RenderableGraphics,
+    ConnectedDirections, Direction, ImageCache, MapPosition, RenderableGraphics,
     SimpleGraphicsRenderOpts, Vector,
 };
 
@@ -523,7 +523,7 @@ pub fn render_bp(
         .iter()
         .filter_map(|e| {
             let Some(e_data) = data.get_entity(&e.name) else {
-                unknown.insert(e.name.clone());
+                unknown.insert((*e.name).clone());
                 return None;
             };
 
@@ -587,14 +587,14 @@ pub fn render_bp(
                                     && matches!(other_type, EntityType::Wall)
                                 {
                                     let Some(src) = data
-                                        .get_proto::<WallPrototype>(EntityID::new(&e.name))
+                                        .get_proto::<WallPrototype>(&e.name)
                                         .map(|p| p.visual_merge_group)
                                     else {
                                         continue;
                                     };
 
                                     let Some(dst) = data
-                                        .get_proto::<WallPrototype>(EntityID::new(&other.name))
+                                        .get_proto::<WallPrototype>(&other.name)
                                         .map(|p| p.visual_merge_group)
                                     else {
                                         continue;
@@ -688,7 +688,7 @@ pub fn render_bp(
             'recipe_icon: {
                 if !e.recipe.is_empty() && e_data.recipe_visible() {
                     if !data.contains_recipe(&e.recipe) {
-                        unknown.insert(e.recipe.clone());
+                        unknown.insert((*e.recipe).clone());
                         break 'recipe_icon;
                     }
 
