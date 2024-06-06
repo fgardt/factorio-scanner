@@ -413,12 +413,14 @@ pub fn render(
     data: &DataUtil,
     used_mods: &UsedMods,
     target_res: f64,
+    min_scale: f64,
 ) -> Result<(Vec<u8>, HashSet<String>, Option<Vec<u8>>), ScannerError> {
     let bp = raw_bp
         .as_blueprint()
         .ok_or(report!(ScannerError::NoBlueprint))?;
 
-    let size = calculate_target_size(bp, data, target_res, 0.5).ok_or(ScannerError::RenderError)?;
+    let size =
+        calculate_target_size(bp, data, target_res, min_scale).ok_or(ScannerError::RenderError)?;
     info!("target size: {size}");
 
     let image_cache = &mut ImageCache::new();

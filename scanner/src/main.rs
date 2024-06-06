@@ -143,6 +143,7 @@ fn main() -> ExitCode {
         &cli.args.mods,
         cli.args.prototype_dump,
         cli.args.target_res,
+        cli.args.min_scale,
         &cli.args.out,
     )) {
         error!("{err:#?}");
@@ -219,6 +220,7 @@ async fn render_command(
     mods: &[String],
     prototype_dump: Option<PathBuf>,
     target_res: f64,
+    min_scale: f64,
     out: &Path,
 ) -> Result<(), ScannerError> {
     let bp_string = input
@@ -236,7 +238,7 @@ async fn render_command(
         prototype_dump,
     )
     .await?;
-    let (res, missing, thumb) = render(&bp, &data, &active_mods, target_res)?;
+    let (res, missing, thumb) = render(&bp, &data, &active_mods, target_res, min_scale)?;
 
     if !missing.is_empty() {
         warn!("missing prototypes: {missing:?}");
