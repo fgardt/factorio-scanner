@@ -243,34 +243,74 @@ pub struct RecipeData {
     )]
     pub enabled: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
+    #[serde(
+        default,
+        deserialize_with = "helper::bool_deserializer",
+        skip_serializing_if = "helper::is_default"
+    )]
     pub hidden: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
+    #[serde(
+        default,
+        deserialize_with = "helper::bool_deserializer",
+        skip_serializing_if = "helper::is_default"
+    )]
     pub hide_from_stats: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
+    #[serde(
+        default,
+        deserialize_with = "helper::bool_deserializer",
+        skip_serializing_if = "helper::is_default"
+    )]
     pub hide_from_player_crafting: bool,
 
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    #[serde(
+        default = "helper::bool_true",
+        deserialize_with = "helper::bool_deserializer",
+        skip_serializing_if = "Clone::clone"
+    )]
     pub allow_decomposition: bool,
 
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    #[serde(
+        default = "helper::bool_true",
+        deserialize_with = "helper::bool_deserializer",
+        skip_serializing_if = "Clone::clone"
+    )]
     pub allow_as_intermediate: bool,
 
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    #[serde(
+        default = "helper::bool_true",
+        deserialize_with = "helper::bool_deserializer",
+        skip_serializing_if = "Clone::clone"
+    )]
     pub allow_intermediates: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
+    #[serde(
+        default,
+        deserialize_with = "helper::bool_deserializer",
+        skip_serializing_if = "helper::is_default"
+    )]
     pub always_show_made_in: bool,
 
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    #[serde(
+        default = "helper::bool_true",
+        deserialize_with = "helper::bool_deserializer",
+        skip_serializing_if = "Clone::clone"
+    )]
     pub show_amount_in_title: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
+    #[serde(
+        default,
+        deserialize_with = "helper::bool_deserializer",
+        skip_serializing_if = "helper::is_default"
+    )]
     pub always_show_products: bool,
 
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    #[serde(
+        default = "helper::bool_true",
+        deserialize_with = "helper::bool_deserializer",
+        skip_serializing_if = "Clone::clone"
+    )]
     pub unlock_results: bool,
 }
 
