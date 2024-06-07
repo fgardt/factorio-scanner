@@ -1896,7 +1896,7 @@ dependencies = [
 
 [[package]]
 name = "prototypes"
-version = "2.2.1-1.1.107"
+version = "2.2.2-1.1.107"
 dependencies = [
  "image 0.25.1",
  "imageproc",

@@ -81,7 +81,7 @@ mod helper_macro {
     macro_rules! namespace_struct {
         ( $name:ident, $id:ty, $member:literal ) => {
             paste::paste! {
-                #[derive(Debug, Deserialize, Serialize)]
+                #[derive(Debug, Default, Deserialize, Serialize)]
                 #[serde(rename_all = "kebab-case")]
                 pub struct $name {
                     pub [< $member:snake >]: std::collections::HashMap<$id, [< $member:camel Prototype >]>,
@@ -1565,6 +1565,11 @@ mod test {
     #[test]
     fn deserialize_exotic_industries() {
         let _ = load_data("ei");
+    }
+
+    #[test]
+    fn deserialize_248k() {
+        let _ = load_data("248k");
     }
 
     #[test]
