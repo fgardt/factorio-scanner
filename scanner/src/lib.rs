@@ -643,10 +643,37 @@ pub fn render_bp(
                                     }
                                     EntityType::TransportBelt => {
                                         let neighbor = match other_type {
-                                            EntityType::TransportBelt
-                                            | EntityType::UndergroundBelt
-                                            | EntityType::LinkedBelt => {
+                                            EntityType::TransportBelt => {
                                                 pos.is_cardinal_neighbor(&other_pos)
+                                            }
+                                            EntityType::UndergroundBelt
+                                            | EntityType::LinkedBelt => {
+                                                let dir = pos.is_cardinal_neighbor(&other_pos);
+
+                                                if let Some(dir) = dir {
+                                                    let Some(u_output) =
+                                                        other.type_.as_ref().map(|t| {
+                                                            matches!(
+                                                                t,
+                                                                blueprint::UndergroundType::Output
+                                                            )
+                                                        })
+                                                    else {
+                                                        continue;
+                                                    };
+
+                                                    let other_dir = if u_output {
+                                                        other.direction.flip()
+                                                    } else {
+                                                        other.direction
+                                                    };
+
+                                                    if dir != other_dir {
+                                                        continue;
+                                                    }
+                                                }
+
+                                                dir
                                             }
                                             EntityType::Splitter => {
                                                 pos.is_2wide_cardinal_neighbor(&other_pos)

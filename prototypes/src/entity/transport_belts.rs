@@ -1,9 +1,11 @@
 use std::ops::Deref;
 
+use image::{DynamicImage, GenericImageView};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
+use tracing::warn;
 
 use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
@@ -93,6 +95,7 @@ impl super::Renderable for BeltGraphics {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
+        // TODO: handle individual graphics case
         let res = match self {
             Self::BeltAnimationSet { belt_animation_set } => belt_animation_set.render(
                 render_layers.scale(),
@@ -103,10 +106,47 @@ impl super::Renderable for BeltGraphics {
             Self::Individual { .. } => None,
         }?;
 
+        let res = split_belt(res, options);
+
         render_layers.add_entity(res, &options.position);
 
         Some(())
     }
+}
+
+fn split_belt(
+    (img, shift): (DynamicImage, Vector),
+    options: &super::RenderOpts,
+) -> (DynamicImage, Vector) {
+    let Some(underground_in) = options.underground_in else {
+        return (img, shift);
+    };
+
+    // figure out which half to keep
+    let (width, height) = img.dimensions();
+    let (tx, ty, w, h, sx, sy) = {
+        let dir = if underground_in {
+            options.direction.flip()
+        } else {
+            options.direction
+        };
+
+        match dir {
+            Direction::North => (0, 0, width, height.div_ceil(2), 0.0, -0.5),
+            Direction::East => (width / 2, 0, width.div_ceil(2), height, 0.5, 0.0),
+            Direction::South => (0, height / 2, width, height.div_ceil(2), 0.0, 0.5),
+            Direction::West => (0, 0, width.div_ceil(2), height, -0.5, 0.0),
+            _ => {
+                warn!("belts only support cardinal directions");
+                return (img, shift);
+            }
+        }
+    };
+
+    // let mut res = DynamicImage::new(w, h, img.color());
+    // overlay(&mut res, &img.crop_imm(tx, ty, w, h), tx.into(), ty.into());
+
+    (img.crop_imm(tx, ty, w, h), shift + Vector::new(sx, sy))
 }
 
 /// [`Prototypes/LinkedBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/LinkedBeltPrototype.html)
@@ -116,7 +156,7 @@ pub type LinkedBeltPrototype = EntityWithOwnerPrototype<LinkedBeltData>;
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LinkedBeltData {
-    pub structure: LinkedBeltStructure,
+    pub structure: UndergroundBeltStructure,
 
     pub structure_render_layer: Option<RenderLayer>,
 
@@ -152,29 +192,8 @@ impl super::Renderable for LinkedBeltData {
         self.parent
             .render(options, used_mods, render_layers, image_cache);
 
-        let res = if options.underground_in.unwrap_or_default() {
-            self.structure.direction_in.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &options.into(),
-            )
-        } else {
-            let flipped_opts = &super::RenderOpts {
-                direction: options.direction.flip(),
-                ..options.clone()
-            };
-            self.structure.direction_out.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &flipped_opts.into(),
-            )
-        }?;
-
-        render_layers.add_entity(res, &options.position);
-
-        Some(())
+        self.structure
+            .render(options, used_mods, render_layers, image_cache)
     }
 
     fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
@@ -184,19 +203,6 @@ impl super::Renderable for LinkedBeltData {
     fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
         self.parent.heat_buffer_connections(options)
     }
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LinkedBeltStructure {
-    pub direction_in: Sprite4Way,
-    pub direction_out: Sprite4Way,
-
-    pub back_patch: Option<Sprite4Way>,
-    pub front_patch: Option<Sprite4Way>,
-
-    pub direction_in_side_loading: Option<Sprite4Way>,
-    pub direction_out_side_loading: Option<Sprite4Way>,
 }
 
 /// [`Prototypes/LoaderPrototype`](https://lua-api.factorio.com/latest/prototypes/LoaderPrototype.html)
@@ -247,28 +253,8 @@ impl super::Renderable for LoaderData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        let res = if options.underground_in.unwrap_or_default() {
-            self.structure.direction_in.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &options.into(),
-            )
-        } else {
-            let flipped_opts = &super::RenderOpts {
-                direction: options.direction.flip(),
-                ..options.clone()
-            };
-            self.structure.direction_out.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &flipped_opts.into(),
-            )
-        }?;
-
-        render_layers.add_entity(res, &options.position);
-        Some(())
+        self.structure
+            .render(options, used_mods, render_layers, image_cache)
     }
 
     fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
@@ -280,6 +266,7 @@ impl super::Renderable for LoaderData {
     }
 }
 
+// used for loaders, linked belts and undergrounds
 /// [`Types/LoaderStructure`](https://lua-api.factorio.com/latest/types/LoaderStructure.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
@@ -291,15 +278,45 @@ pub struct LoaderStructure {
     pub front_patch: Option<Sprite4Way>,
 }
 
+impl super::Renderable for LoaderStructure {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+        image_cache: &mut ImageCache,
+    ) -> super::RenderOutput {
+        let res = if options.underground_in.unwrap_or_default() {
+            self.direction_in.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        } else {
+            let flipped_opts = &super::RenderOpts {
+                direction: options.direction.flip(),
+                ..options.clone()
+            };
+            self.direction_out.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &flipped_opts.into(),
+            )
+        }?;
+
+        render_layers.add_entity(res, &options.position);
+        Some(())
+    }
+}
+
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
 pub type Loader1x1Prototype = EntityWithOwnerPrototype<Loader1x1Data>;
-
-// TODO: loaders `belt_length` is not actually hardcoded but defaults to a internal hardcoded value instead..
 
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Loader1x1Data {
-    // hardcoded to 0, validate this?
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub belt_length: f64,
 
@@ -347,7 +364,6 @@ pub type Loader1x2Prototype = EntityWithOwnerPrototype<Loader1x2Data>;
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Loader1x2Data {
-    // hardcoded to 0.5, validate this?
     #[serde(
         default = "helper::f64_half",
         skip_serializing_if = "helper::is_half_f64"
@@ -374,25 +390,17 @@ impl super::Renderable for Loader1x2Data {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        let offset = (options.direction.get_offset() * 0.5).into();
+        let dir = if options.underground_in.unwrap_or_default() {
+            options.direction.flip()
+        } else {
+            options.direction
+        };
+        let offset = (dir.get_offset() * 0.5).into();
         let pos_up = &options.position + &offset;
-        let pos_down = &options.position - &offset;
-
-        // TODO: render short end piece instead of 2 full belts
 
         self.parent.parent.render(
             &super::RenderOpts {
                 position: pos_up,
-                ..options.clone()
-            },
-            used_mods,
-            render_layers,
-            image_cache,
-        );
-
-        self.parent.parent.render(
-            &super::RenderOpts {
-                position: pos_down,
                 ..options.clone()
             },
             used_mods,
@@ -634,33 +642,11 @@ impl super::Renderable for UndergroundBeltData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        // TODO: only render visible half of the belt
         self.parent
             .render(options, used_mods, render_layers, image_cache);
 
-        let res = if options.underground_in.unwrap_or_default() {
-            self.structure.direction_in.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &options.into(),
-            )
-        } else {
-            let flipped_opts = &super::RenderOpts {
-                direction: options.direction.flip(),
-                ..options.clone()
-            };
-            self.structure.direction_out.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &flipped_opts.into(),
-            )
-        }?;
-
-        render_layers.add_entity(res, &options.position);
-
-        Some(())
+        self.structure
+            .render(options, used_mods, render_layers, image_cache)
     }
 
     fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
@@ -672,13 +658,34 @@ impl super::Renderable for UndergroundBeltData {
     }
 }
 
+// used for undergrounds and linked belts
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UndergroundBeltStructure {
-    pub direction_in: Sprite4Way,
-    pub direction_out: Sprite4Way,
-    pub back_patch: Option<Sprite4Way>,
-    pub front_patch: Option<Sprite4Way>,
+    #[serde(flatten)]
+    parent: LoaderStructure,
+
     pub direction_in_side_loading: Option<Sprite4Way>,
     pub direction_out_side_loading: Option<Sprite4Way>,
+}
+
+impl Deref for UndergroundBeltStructure {
+    type Target = LoaderStructure;
+
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
+}
+
+impl super::Renderable for UndergroundBeltStructure {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+        image_cache: &mut ImageCache,
+    ) -> super::RenderOutput {
+        self.parent
+            .render(options, used_mods, render_layers, image_cache)
+    }
 }

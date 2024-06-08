@@ -4,7 +4,7 @@ Commandline tool to render factorio blueprints with mod support.
 
 ## Current limitations
 
-- very limited "alt-mode" (recipes are supported (without a black background tho), anything else is still missing)
+- "alt-mode" is limited
 - only blueprints will be rendered (or only the selected blueprint from a book), no upgrade/deconstructon planners
 
 ## Setup
@@ -66,5 +66,5 @@ Alternatively you can install my [blueprint meta info mod](https://mods.factorio
   - [x] draw recipes
   - [ ] draw inserter arrows
   - [ ] draw fluid box arrows
-  - [ ] draw modules
+  - [x] draw modules
   - [x] draw filters (splitters, inserters)
