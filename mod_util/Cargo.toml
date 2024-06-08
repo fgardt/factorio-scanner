@@ -1,6 +1,6 @@
 [package]
 name = "mod_util"
-version = "0.3.6"
+version = "0.3.7"
 authors.workspace = true
 edition.workspace = true
 
