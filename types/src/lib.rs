@@ -2244,12 +2244,15 @@ impl RenderableGraphics for TransportBeltAnimationSet {
     ) -> Option<GraphicsOutput> {
         // -1 because the index is 1-based. Lua stuff :)
         let index = match opts.direction {
-            Direction::North => self.north_index - 1,
-            Direction::East => self.east_index - 1,
-            Direction::South => self.south_index - 1,
-            Direction::West => self.west_index - 1,
-            _ => unreachable!("Belts only support cardinal directions"),
-        };
+            Direction::North => self.north_index,
+            Direction::East => self.east_index,
+            Direction::South => self.south_index,
+            Direction::West => self.west_index,
+            _ => {
+                warn!("belts only support cardinal directions");
+                return None;
+            }
+        } - 1;
 
         let index_options = &Self::RenderOpts {
             index_override: Some(index),
