@@ -24,8 +24,23 @@ pub struct ModInfo {
 
     pub factorio_version: Option<String>,
 
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default = "default_dep", skip_serializing_if = "is_default_dep")]
     pub dependencies: Vec<Dependency>,
+}
+
+fn default_dep() -> Vec<Dependency> {
+    vec![Dependency {
+        kind: DependencyType::Required,
+        name: "base".to_owned(),
+        version: DependencyVersion::Any,
+    }]
+}
+
+fn is_default_dep(input: &[Dependency]) -> bool {
+    input.len() == 1
+        && input[0].name == "base"
+        && input[0].version.is_any()
+        && input[0].kind.is_required()
 }
 
 impl ModInfo {
