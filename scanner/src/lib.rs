@@ -10,6 +10,7 @@ use std::{
 use error_stack::{ensure, report, Context, Result, ResultExt};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder};
 use image::{codecs::png, imageops, ImageEncoder};
+use imageproc::geometric_transformations::{self, rotate_about_center};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use tracing::{debug, error, field, info, info_span, instrument, warn};
@@ -23,7 +24,7 @@ use mod_util::{
     AnyBasic, DependencyList, UsedMods, UsedVersions,
 };
 use prototypes::{
-    entity::{Type as EntityType, WallPrototype},
+    entity::{InserterPrototype, Type as EntityType, WallPrototype},
     tile::TilePrototype,
     ConnectedEntities, DataRaw, DataUtil, DataUtilAccess, EntityWireConnections,
     InternalRenderLayer, RenderLayerBuffer, TargetSize,
@@ -484,12 +485,22 @@ pub fn render_bp(
     };
 
     let Some(indicator_arrow) = util_sprites.indication_arrow.render(
-        render_layers.scale() * 1.5,
+        render_layers.scale() * 1.25,
         used_mods,
         image_cache,
         &SimpleGraphicsRenderOpts::default(),
     ) else {
         warn!("failed to load indicator arrow sprite, required for alt mode");
+        return None;
+    };
+
+    let Some(indicator_line) = util_sprites.indication_line.render(
+        render_layers.scale() * 1.25,
+        used_mods,
+        image_cache,
+        &SimpleGraphicsRenderOpts::default(),
+    ) else {
+        warn!("failed to load indicator line sprite, required for alt mode");
         return None;
     };
 
@@ -907,6 +918,65 @@ pub fn render_bp(
                         offset = Vector::Tuple(0.0, offset.y() + 0.5);
                     }
                 }
+            }
+
+            // inserter indicators
+            'inserter_indicators: {
+                let Some(proto) = data.get_proto::<InserterPrototype>(&e.name) else {
+                    break 'inserter_indicators;
+                };
+
+                #[allow(clippy::items_after_statements)]
+                fn indicator_helper(
+                    pos: Vector,
+                    opts: &prototypes::entity::RenderOpts,
+                    graphics: &(image::DynamicImage, Vector),
+                    layers: &mut RenderLayerBuffer,
+                ) {
+                    let img = if pos.x() != 0.0 && pos.x() != 0.0 {
+                        let angle = pos.y().atan2(pos.x()) + std::f64::consts::FRAC_PI_2;
+                        rotate_about_center(
+                            &graphics.0.to_rgba8(),
+                            angle as f32,
+                            geometric_transformations::Interpolation::Nearest,
+                            image::Rgba([0, 0, 0, 0]),
+                        )
+                        .into()
+                    } else if pos.y() < 0.0 {
+                        graphics.0.clone()
+                    } else if pos.y() > 0.0 {
+                        imageops::rotate180(&graphics.0).into()
+                    } else if pos.x() > 0.0 {
+                        imageops::rotate90(&graphics.0).into()
+                    } else {
+                        imageops::rotate270(&graphics.0).into()
+                    };
+
+                    layers.add(
+                        (img, pos.shorten_by(0.45)),
+                        &opts.position,
+                        InternalRenderLayer::DirectionOverlay,
+                    );
+                }
+
+                indicator_helper(
+                    proto.get_pickup_position(
+                        e.direction,
+                        e.pickup_position.as_ref().map(std::convert::Into::into),
+                    ),
+                    &render_opts,
+                    &indicator_line,
+                    &mut render_layers,
+                );
+                indicator_helper(
+                    proto.get_insert_position(
+                        e.direction,
+                        e.drop_position.as_ref().map(std::convert::Into::into),
+                    ),
+                    &render_opts,
+                    &indicator_arrow,
+                    &mut render_layers,
+                );
             }
 
             // store wire connections for wire rendering
