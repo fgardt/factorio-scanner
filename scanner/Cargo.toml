@@ -14,6 +14,7 @@ error-stack = "0.4"
 factorio_api.workspace = true
 flate2.workspace = true
 image.workspace = true
+imageproc.workspace = true
 locale.workspace = true
 mod_util = { workspace = true, features = ["bp_meta_info"] }
 pretty_env_logger = "0.5"

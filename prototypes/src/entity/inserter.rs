@@ -98,9 +98,7 @@ impl super::Renderable for InserterData {
                 &options.into(),
             )
             .and_then(|(img, shift)| {
-                let pickup_pos = options
-                    .pickup_position
-                    .unwrap_or_else(|| direction.rotate_vector(self.pickup_position));
+                let pickup_pos = self.get_pickup_position(direction, options.pickup_position);
 
                 let length = pickup_pos.x().hypot(pickup_pos.y()) - 0.25;
                 let angle = pickup_pos.y().atan2(pickup_pos.x()) + std::f64::consts::FRAC_PI_2;
@@ -174,5 +172,17 @@ impl super::Renderable for InserterData {
         } else {
             Some(())
         }
+    }
+}
+
+impl InserterData {
+    #[must_use]
+    pub fn get_pickup_position(&self, direction: Direction, custom: Option<Vector>) -> Vector {
+        custom.unwrap_or_else(|| direction.rotate_vector(self.pickup_position))
+    }
+
+    #[must_use]
+    pub fn get_insert_position(&self, direction: Direction, custom: Option<Vector>) -> Vector {
+        custom.unwrap_or_else(|| direction.rotate_vector(self.insert_position))
     }
 }

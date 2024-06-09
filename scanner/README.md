@@ -23,22 +23,24 @@ Commandline tool to render factorio blueprints with mod support.
 ## Usage
 
 ```
-Usage: scanner [OPTIONS] --factorio <FACTORIO> --out <OUT> <COMMAND>
+Usage: scanner [OPTIONS] --out <OUT> <COMMAND>
 
 Commands:
-  string  Providing a blueprint string directly
+  string  Provide a blueprint string directly
   file    Path to a file that contains a blueprint string
   help    Print this message or the help of the given subcommand(s)
 
 Options:
   -f, --factorio <FACTORIO>
-          Path to the factorio directory that contains the data folder (path.read-data)
+          Path to the factorio application directory, which contains the 'data' folder (path.read-data)
+      --factorio-userdir <FACTORIO_USERDIR>
+          Path to the factorio user data directory (path.write-data), which contains the 'mods' and 'script-output' folders
       --factorio-bin <FACTORIO_BIN>
           Path to the factorio binary instead of the default expected one
       --prototype-dump <PROTOTYPE_DUMP>
           Path to the data dump json file. If not set, the data will be dumped automatically
       --preset <PRESET>
-          Preset to use [possible values: K2, SE, K2SE, IR3, PyAE, FF, FFK2, Nullius, SeaBlock, EI, Ultracube]
+          Preset to use [possible values: K2, SE, K2SE, IR3, PyAE, FF, FFK2, EI, EIK2, Nullius, SeaBlock, Ultracube]
       --mods <MODS>
           List of additional mods to use
   -o, --out <OUT>
@@ -64,7 +66,7 @@ Alternatively you can install my [blueprint meta info mod](https://mods.factorio
 
 - draw "alt-mode"
   - [x] draw recipes
-  - [ ] draw inserter arrows
+  - [x] draw inserter arrows
   - [ ] draw fluid box arrows
   - [x] draw modules
   - [x] draw filters (splitters, inserters)
