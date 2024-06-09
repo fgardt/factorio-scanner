@@ -529,6 +529,18 @@ impl From<&Position> for types::MapPosition {
     }
 }
 
+impl From<Position> for types::Vector {
+    fn from(value: Position) -> Self {
+        Self::Tuple(value.x.into(), value.y.into())
+    }
+}
+
+impl From<&Position> for types::Vector {
+    fn from(value: &Position) -> Self {
+        Self::Tuple(value.x.into(), value.y.into())
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged, deny_unknown_fields)]
 pub enum Connection {

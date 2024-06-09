@@ -468,6 +468,20 @@ impl Vector {
     pub fn is_0_vector(value: &Self) -> bool {
         value.x() == 0.0 && value.y() == 0.0
     }
+
+    #[must_use]
+    pub fn shorten_by(&self, length: f64) -> Self {
+        let (x, y) = self.as_tuple();
+        let len = x.hypot(y);
+
+        if len == 0.0 {
+            return *self;
+        }
+
+        let factor = (len - length) / len;
+
+        Self::Tuple(x * factor, y * factor)
+    }
 }
 
 impl Default for Vector {
