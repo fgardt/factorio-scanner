@@ -5,7 +5,7 @@ use mod_util::UsedMods;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use crate::{FactorioArray, ImageCache, RealOrientation};
+use crate::{FactorioArray, ImageCache, MapPosition, RealOrientation};
 
 use super::{helper, Color, Direction, FileName, Vector};
 
@@ -1335,6 +1335,12 @@ pub struct WaterReflectionDefinition {
 // =======[ Tiles ]======= //
 // ======================= //
 
+#[derive(Debug, Clone, Copy)]
+pub struct TileRenderOpts {
+    pub position: MapPosition,
+    pub runtime_tint: Option<Color>,
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TileGraphics<T: FetchSprite> {
@@ -1355,7 +1361,7 @@ impl<T: FetchSprite> std::ops::Deref for TileGraphics<T> {
 }
 
 impl<T: FetchSprite> RenderableGraphics for TileGraphics<T> {
-    type RenderOpts = SimpleGraphicsRenderOpts;
+    type RenderOpts = TileRenderOpts;
 
     fn render(
         &self,
@@ -1364,12 +1370,16 @@ impl<T: FetchSprite> RenderableGraphics for TileGraphics<T> {
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
-        self.fetch(
+        let x = opts.position.x().ceil() as i16;
+        let y = opts.position.y().ceil() as i16;
+
+        self.fetch_offset(
             scale,
             &self.picture,
             used_mods,
             image_cache,
             opts.runtime_tint,
+            (x, y),
         )
     }
 }
@@ -1437,13 +1447,25 @@ impl FetchSprite for TileSpriteParams {
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
         let (width, height) = self.get_size();
+
+        let size = 8; // TODO: verify this? https://forums.factorio.com/113757
+        let count = self.count as i16;
+        let mut offset_x = offset.0.rem_euclid(size * count);
+        let mut offset_y = offset.1.rem_euclid(size);
+
+        if self.line_length > 0 {
+            let line_length = self.line_length as i16;
+            offset_y += offset_x / line_length * size;
+            offset_x %= line_length;
+        }
+
         self.fetch_offset_by_pixels(
             scale,
             filename,
             used_mods,
             image_cache,
             runtime_tint,
-            (offset.0 * width, offset.1 * height),
+            (offset_x * width, offset_y * height),
         )
     }
 
@@ -1554,13 +1576,26 @@ impl FetchSprite for TileSpriteProbabilityParams {
         offset: (i16, i16),
     ) -> Option<GraphicsOutput> {
         let (width, height) = self.get_size();
+
+        let size = self.size as i16;
+        let count = self.count as i16;
+        let line_length = self.line_length as i16;
+        let mut offset_x = offset.0.rem_euclid(size * count);
+        let mut offset_y = offset.1.rem_euclid(size);
+
+        if self.line_length > 0 {
+            let line_length = self.line_length as i16;
+            offset_y += offset_x / line_length * size;
+            offset_x %= line_length;
+        }
+
         self.fetch_offset_by_pixels(
             scale,
             filename,
             used_mods,
             image_cache,
             runtime_tint,
-            (offset.0 * width, offset.1 * height),
+            (offset_x * width, offset_y * height),
         )
     }
 

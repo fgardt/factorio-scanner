@@ -395,8 +395,8 @@ impl super::Renderable for Loader1x2Data {
         } else {
             options.direction
         };
-        let offset = (dir.get_offset() * 0.5).into();
-        let pos_up = &options.position + &offset;
+        let offset: MapPosition = (dir.get_offset() * 0.5).into();
+        let pos_up = options.position + offset;
 
         self.parent.parent.render(
             &super::RenderOpts {
@@ -458,8 +458,8 @@ impl super::Renderable for SplitterData {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         let offset: MapPosition = (options.direction.right90().get_offset() * 0.5).into();
-        let left_pos = &options.position - &offset;
-        let right_pos = &options.position + &offset;
+        let left_pos = options.position - offset;
+        let right_pos = options.position + offset;
 
         self.parent.render(
             &super::RenderOpts {
