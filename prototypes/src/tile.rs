@@ -31,7 +31,7 @@ impl TilePrototype {
             .as_ref()
             .and_then(|mb| mb.render(render_layers.scale(), used_mods, image_cache, &opts))
             .or_else(|| {
-                self.variants.main.iter().find(|t| t.size == 1)?.render(
+                self.variants.main.iter().next()?.render(
                     render_layers.scale(),
                     used_mods,
                     image_cache,
