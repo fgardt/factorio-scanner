@@ -208,8 +208,8 @@ pub fn calculate_target_size(
         let e_pos: MapPosition = (&entity.position).into();
         let c_box = e_proto.drawing_box();
 
-        let tl = &e_pos + c_box.top_left();
-        let br = &e_pos + c_box.bottom_right();
+        let tl = e_pos + c_box.top_left();
+        let br = e_pos + c_box.bottom_right();
 
         if tl.x() < min_x {
             min_x = tl.x();
@@ -514,20 +514,16 @@ pub fn render_bp(
         e_data
             .pipe_connections(&options)
             .iter()
+            .copied()
             .for_each(|(pos, dir)| {
-                pipe_connections
-                    .entry(pos.clone())
-                    .or_default()
-                    .insert(*dir);
+                pipe_connections.entry(pos).or_default().insert(dir);
             });
         e_data
             .heat_connections(&options)
             .iter()
+            .copied()
             .for_each(|(pos, dir)| {
-                heat_connections
-                    .entry(pos.clone())
-                    .or_default()
-                    .insert(*dir);
+                heat_connections.entry(pos).or_default().insert(dir);
             });
     });
 

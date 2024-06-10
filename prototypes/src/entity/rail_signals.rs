@@ -143,7 +143,7 @@ impl super::Renderable for RailChainSignalData {
 
         self.parent.render(
             &super::RenderOpts {
-                position: options.position.clone() + MapPosition::from(offset),
+                position: options.position + MapPosition::from(offset),
                 ..options.clone()
             },
             used_mods,
