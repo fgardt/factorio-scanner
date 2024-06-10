@@ -1301,7 +1301,7 @@ pub enum EntityPrototypeFlag {
 pub type EntityPrototypeFlags = FactorioArray<EntityPrototypeFlag>;
 
 /// [`Types/MapPosition`](https://lua-api.factorio.com/latest/types/MapPosition.html)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum MapPosition {
     XY { x: f64, y: f64 },
@@ -2671,7 +2671,7 @@ impl HeatBuffer {
             .iter()
             .map(|c| {
                 let offset: MapPosition = (c.direction.get_offset()).into();
-                c.position.clone() + offset
+                c.position + offset
             })
             .collect()
     }

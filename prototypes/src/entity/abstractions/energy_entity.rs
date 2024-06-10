@@ -59,7 +59,7 @@ impl<T: Renderable> Renderable for EnergyEntityData<T> {
                     .iter()
                     .map(|c| {
                         let offset = c.direction.get_offset();
-                        let pos: Vector = c.position.clone().into();
+                        let pos: Vector = c.position.into();
 
                         options.direction.rotate_vector(pos + offset).into()
                     })

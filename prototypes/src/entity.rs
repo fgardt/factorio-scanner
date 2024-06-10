@@ -361,7 +361,6 @@ where
         raw_connections
             .iter()
             .filter_map(|conn| {
-                let conn = conn.clone();
                 let (x, y) = conn.as_tuple();
 
                 let dir = if y <= top_y {
@@ -406,7 +405,6 @@ where
         raw_connections
             .iter()
             .filter_map(|conn| {
-                let conn = conn.clone();
                 let (x, y) = conn.as_tuple();
 
                 let dir = if y <= top_y {

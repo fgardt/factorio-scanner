@@ -5,7 +5,7 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 use types::{
     CollisionMask, Color, FactorioArray, Icon, ImageCache, MapPosition, PlaceableBy,
-    RenderableGraphics, SimpleGraphicsRenderOpts, TileID, TileSprite, TileSpriteWithProbability,
+    RenderableGraphics, TileID, TileRenderOpts, TileSprite, TileSpriteWithProbability,
 };
 
 use crate::{helper_macro::namespace_struct, InternalRenderLayer};
@@ -21,8 +21,9 @@ impl TilePrototype {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<()> {
-        let opts = SimpleGraphicsRenderOpts {
+        let opts = TileRenderOpts {
             runtime_tint: Some(self.tint),
+            position: *position,
         };
 
         self.variants
@@ -30,15 +31,11 @@ impl TilePrototype {
             .as_ref()
             .and_then(|mb| mb.render(render_layers.scale(), used_mods, image_cache, &opts))
             .or_else(|| {
-                let tile = self.variants.main.iter().find(|t| t.size == 1)?;
-
-                tile.render(
+                self.variants.main.iter().find(|t| t.size == 1)?.render(
                     render_layers.scale(),
                     used_mods,
                     image_cache,
-                    &SimpleGraphicsRenderOpts {
-                        runtime_tint: Some(self.tint),
-                    },
+                    &opts,
                 )
             })
             .map(|res| render_layers.add(res, position, InternalRenderLayer::Ground))
