@@ -108,7 +108,7 @@ mod helper_macro {
         };
         ( $name:ident, $id:ty, $( $member:literal ),+ ) => {
             paste::paste! {
-                #[derive(Debug, Deserialize, Serialize)]
+                #[derive(Debug, Default, Deserialize, Serialize)]
                 #[serde(rename_all = "kebab-case")]
                 pub struct $name {
                     $(
