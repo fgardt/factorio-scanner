@@ -1896,7 +1896,7 @@ dependencies = [
 
 [[package]]
 name = "prototypes"
-version = "2.2.5-1.1.107"
+version = "2.3.0-1.1.109"
 dependencies = [
  "image 0.25.1",
  "imageproc",
@@ -2908,7 +2908,7 @@ checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
 
 [[package]]
 name = "types"
-version = "2.2.4-1.1.107"
+version = "2.3.0-1.1.109"
 dependencies = [
  "image 0.25.1",
  "konst",
