@@ -1,1 +1,1 @@
-prototypes/test_dumps linguist-generated
+prototypes/test_dumps/*.json linguist-generated=true
