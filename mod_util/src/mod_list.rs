@@ -326,13 +326,10 @@ impl ModList {
     }
 
     #[must_use]
+    #[instrument(skip_all)]
     pub fn active_with_order(&self) -> (UsedMods, Vec<String>) {
         let active = self.active_mods();
-        let mut tmp = Vec::with_capacity(active.len());
-
-        for (name, m) in &active {
-            tmp.push((name.clone(), m.info.dependency_chain_length(&active)));
-        }
+        let mut tmp = dep_chain_len(&active);
 
         tmp.sort_unstable_by(|(a, _), (b, _)| natord::compare_ignore_case(a, b));
         tmp.sort_by_key(|(_, chain)| *chain);
@@ -597,4 +594,61 @@ impl ModList {
             .map(|n| (n.weight.0.to_string(), n.weight.1))
             .collect())
     }
+}
+
+fn dep_chain_len(active: &UsedMods) -> Vec<(String, usize)> {
+    let mut cache = HashMap::new();
+    let mut visit_list = HashSet::new();
+    active
+        .iter()
+        .map(|(name, _)| {
+            (
+                name.clone(),
+                dep_chain_recur(name, active, &mut cache, &mut visit_list),
+            )
+        })
+        .collect()
+}
+
+fn dep_chain_recur<'a>(
+    target: &'a str,
+    active: &'a UsedMods,
+    cache: &mut HashMap<&'a str, usize>,
+    visit_list: &mut HashSet<&'a str>,
+) -> usize {
+    // core is always first
+    if target == "core" {
+        return 0;
+    }
+
+    if let Some(len) = cache.get(target) {
+        return *len;
+    }
+
+    // circular dependency?
+    if visit_list.contains(target) {
+        return usize::MAX >> 1;
+    }
+
+    let Some(m) = active.get(target) else {
+        return 0;
+    };
+
+    visit_list.insert(target);
+
+    let mut max = 0;
+    for dep in &m.info.dependencies {
+        if !dep.affects_load_order() {
+            continue;
+        }
+
+        let len = dep_chain_recur(dep.name(), active, cache, visit_list);
+        if len > max {
+            max = len;
+        }
+    }
+
+    max += 1;
+    cache.insert(target, max);
+    max
 }
