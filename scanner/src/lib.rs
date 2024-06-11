@@ -1029,15 +1029,18 @@ pub fn render_bp(
         .tiles
         .iter()
         .filter_map(|t| {
+            let Some(tile) = data.get_proto::<TilePrototype>(&t.name) else {
+                unknown.insert((*t.name).clone());
+                return None;
+            };
+
             let position: MapPosition = (&t.position).into();
-            data.get_proto::<TilePrototype>(&t.name).and_then(|tile| {
-                tile.render(
-                    &(position + MapPosition::Tuple(0.5, 0.5)),
-                    used_mods,
-                    &mut render_layers,
-                    image_cache,
-                )
-            })
+            tile.render(
+                &(position + MapPosition::Tuple(0.5, 0.5)),
+                used_mods,
+                &mut render_layers,
+                image_cache,
+            )
         })
         .count();
 
