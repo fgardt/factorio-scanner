@@ -75,11 +75,18 @@ pub struct CraftingMachineData<T: super::Renderable> {
 
     pub module_specification: Option<ModuleSpecification>,
 
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub working_visualisations: FactorioArray<WorkingVisualisation>,
+    #[serde(default)]
+    pub working_visualisations: Option<WorkVisKind>,
 
     #[serde(flatten)]
     child: T,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum WorkVisKind {
+    Layered(FactorioArray<WorkingVisualisation>),
+    Single(WorkingVisualisation),
 }
 
 impl<T: super::Renderable> Deref for CraftingMachineData<T> {
