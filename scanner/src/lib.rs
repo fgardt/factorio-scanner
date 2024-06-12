@@ -1060,21 +1060,31 @@ pub fn render_thumbnail(
     image_cache: &mut ImageCache,
 ) -> Option<image::DynamicImage> {
     static BASE_SCALE: f64 = 0.125;
-    let size = (32.0 / BASE_SCALE).round() as u32;
 
-    let mut layers = RenderLayerBuffer::new(TargetSize::new(
-        size,
-        size,
-        BASE_SCALE,
-        MapPosition::Tuple(-1.0, -1.0),
-        MapPosition::Tuple(1.0, 1.0),
-    ));
+    let (ground_scale, ground_offset, tl, br) = if bp.is_book() {
+        (
+            BASE_SCALE * 0.65,
+            Vector::Tuple(-0.525, -0.375),
+            MapPosition::Tuple(-1.3, -1.15),
+            MapPosition::Tuple(1.25, 1.4),
+        )
+    } else {
+        (
+            BASE_SCALE,
+            Vector::Tuple(-0.5, -0.5),
+            MapPosition::Tuple(-1.0, -1.0),
+            MapPosition::Tuple(1.0, 1.0),
+        )
+    };
+
+    let size = (32.0 / ground_scale).round() as u32;
+    let mut layers = RenderLayerBuffer::new(TargetSize::new(size, size, BASE_SCALE, tl, br));
 
     layers.add(
         (
-            data.get_item_icon(bp.item(), BASE_SCALE, used_mods, image_cache)?
+            data.get_item_icon(bp.item(), ground_scale, used_mods, image_cache)?
                 .0,
-            Vector::Tuple(-0.5, -0.5),
+            ground_offset,
         ),
         &MapPosition::default(),
         InternalRenderLayer::Entity,
