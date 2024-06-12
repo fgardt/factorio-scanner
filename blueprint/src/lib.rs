@@ -214,6 +214,16 @@ impl Data {
     }
 
     #[must_use]
+    pub const fn version(&self) -> u64 {
+        match self {
+            Self::Blueprint(data) => data.version,
+            Self::BlueprintBook(data) => data.version,
+            Self::UpgradePlanner(data) => data.version,
+            Self::DeconstructionPlanner(data) => data.version,
+        }
+    }
+
+    #[must_use]
     pub fn description(&self) -> &str {
         match self {
             Self::Blueprint(data) => &data.description,
