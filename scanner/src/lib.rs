@@ -271,7 +271,8 @@ pub fn calculate_target_size(
 
     let scale = ((TILE_RES * width.sqrt() * height.sqrt()) / target_res).max(min_scale);
     let scale = (scale * 4.0).ceil() / 4.0;
-    let tile_res = TILE_RES / scale;
+    let tile_res = (TILE_RES / scale).floor();
+    let scale = TILE_RES / tile_res;
 
     Some(TargetSize::new(
         (width * tile_res).ceil() as u32,
