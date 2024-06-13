@@ -1442,7 +1442,7 @@ impl RenderLayerBuffer {
                 let p_x = x.rem(2.0);
                 let p_y = y.rem(2.0);
 
-                if p_x < 1.0 && p_y < 1.0 || p_x > 1.0 && p_y > 1.0 {
+                if p_x < 1.0 && p_y < 1.0 || p_x >= 1.0 && p_y >= 1.0 {
                     lab_tile_dark
                 } else {
                     lab_tile_light
