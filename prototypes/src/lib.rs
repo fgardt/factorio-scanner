@@ -1334,6 +1334,14 @@ impl RenderLayerBuffer {
         image_cache: &mut types::ImageCache,
     ) {
         let dd = self.generate_wire_draw_data(wire_data);
+        let count = dd.iter().map(std::vec::Vec::len).sum::<usize>();
+
+        if count > 10_000 {
+            tracing::warn!("too many wires to draw ({count})");
+            return;
+        }
+
+        tracing::info!("drawing wires");
 
         let target_size = self.target_size.clone();
         let layer = self.get_layer(InternalRenderLayer::Wire);
