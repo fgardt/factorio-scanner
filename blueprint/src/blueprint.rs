@@ -371,6 +371,9 @@ pub struct ScheduleRecord {
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub wait_conditions: Vec<WaitCondition>,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub temporary: bool,
 }
 
 impl crate::GetIDs for ScheduleRecord {
