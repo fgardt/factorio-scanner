@@ -498,3 +498,22 @@ impl TryFrom<Data> for String {
         json_to_bp_string(&json)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[allow(clippy::unwrap_used)]
+    fn load_bp(data: &str) -> Data {
+        Data::try_from(data).unwrap()
+    }
+
+    mod bp {
+        use super::*;
+
+        #[test]
+        fn train_schedule_temporary_record() {
+            load_bp(include_str!("../tests/train_schedule_temporary_record.txt"));
+        }
+    }
+}
