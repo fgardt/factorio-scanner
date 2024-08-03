@@ -515,5 +515,12 @@ mod tests {
         fn train_schedule_temporary_record() {
             load_bp(include_str!("../tests/train_schedule_temporary_record.txt"));
         }
+
+        #[test]
+        fn comparators_operators_and_invalids() {
+            load_bp(include_str!(
+                "../tests/comparators_operators_and_invalids.txt"
+            ));
+        }
     }
 }
