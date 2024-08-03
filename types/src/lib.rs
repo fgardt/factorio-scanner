@@ -3032,6 +3032,9 @@ pub enum Comparator {
     Equal,
     #[serde(rename = "≠", alias = "!=")]
     NotEqual,
+
+    #[serde(rename = "?", other)]
+    Unknown,
 }
 
 // https://lua-api.factorio.com/latest/concepts.html#ArithmeticCombinatorParameters
@@ -3069,4 +3072,7 @@ pub enum ArithmeticOperation {
 
     #[serde(rename = "XOR")]
     BitwiseXor,
+
+    #[serde(rename = "?", other)]
+    Unknown,
 }
