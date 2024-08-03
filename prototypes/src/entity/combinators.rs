@@ -128,6 +128,7 @@ impl super::Renderable for ArithmeticCombinatorData {
                 ArithmeticOperation::BitwiseAnd => self.and_symbol_sprites.as_ref(),
                 ArithmeticOperation::BitwiseOr => self.or_symbol_sprites.as_ref(),
                 ArithmeticOperation::BitwiseXor => self.xor_symbol_sprites.as_ref(),
+                ArithmeticOperation::Unknown => None,
             }
             .and_then(|s| {
                 s.render(
@@ -175,6 +176,7 @@ impl super::Renderable for DeciderCombinatorData {
                 Comparator::NotEqual => self.not_equal_symbol_sprites.as_ref(),
                 Comparator::GreaterOrEqual => self.greater_or_equal_symbol_sprites.as_ref(),
                 Comparator::LessOrEqual => self.less_or_equal_symbol_sprites.as_ref(),
+                Comparator::Unknown => None,
             }
             .and_then(|s| {
                 s.render(
