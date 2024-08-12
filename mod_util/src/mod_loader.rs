@@ -74,7 +74,7 @@ impl Mod {
             return Self::load_wube(data_dir, name);
         }
 
-        let internal = ModType::load(&mod_dir, &name, version)?;
+        let internal = ModType::load(&mod_dir, name, version)?;
 
         let info_file = internal.get_file("info.json")?;
         let info = serde_json::from_slice::<ModInfo>(&info_file)

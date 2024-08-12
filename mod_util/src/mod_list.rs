@@ -93,6 +93,7 @@ pub struct Entry {
 }
 
 impl Entry {
+    #[must_use]
     pub fn selected_version(&self) -> Option<Version> {
         let mut versions = self.versions.keys().copied().collect::<Vec<_>>();
         versions.sort_unstable();
@@ -295,7 +296,6 @@ impl ModList {
         missing
     }
 
-    #[must_use]
     pub fn load_mod(&self, name: &str) -> std::result::Result<Option<Mod>, mod_loader::ModError> {
         let Some(entry) = self.list.get(name) else {
             return Ok(None);
@@ -333,7 +333,7 @@ impl ModList {
                 }
 
                 let version = entry.selected_version()?;
-                match Mod::load_custom(&self.factorio_dir, &self.mod_dir, &name, version) {
+                match Mod::load_custom(&self.factorio_dir, &self.mod_dir, name, version) {
                     Ok(m) => Some((name.clone(), m)),
                     Err(e) => {
                         warn!("Failed to load mod {name}@{version}: {e}");
