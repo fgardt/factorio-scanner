@@ -13,7 +13,7 @@ use tracing::{debug, instrument, warn};
 
 use crate::{
     mod_info::{Dependency, DependencyExt, DependencyUtil, DependencyVersion, Version},
-    mod_loader::Mod,
+    mod_loader::{self, Mod},
     DependencyList, UsedMods, UsedVersions,
 };
 
@@ -92,6 +92,15 @@ pub struct Entry {
     pub known_dependencies: HashMap<Version, Vec<Dependency>>,
 }
 
+impl Entry {
+    pub fn selected_version(&self) -> Option<Version> {
+        let mut versions = self.versions.keys().copied().collect::<Vec<_>>();
+        versions.sort_unstable();
+
+        Some(self.active_version.unwrap_or(versions.last().copied()?))
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ModList {
     pub factorio_dir: PathBuf,
@@ -164,7 +173,7 @@ impl ModList {
 
         // add wube mods
         for w_mod in Mod::wube_mods() {
-            match Mod::load_custom(&data_dir, &mod_dir, w_mod) {
+            match Mod::load_wube(&data_dir, w_mod) {
                 Ok(m) => {
                     list.insert(
                         w_mod.to_string(),
@@ -223,9 +232,7 @@ impl ModList {
                 };
                 version
             } else {
-                let Ok(version) =
-                    Mod::load_custom(&data_dir, &mod_dir, filename).map(|m| m.info.version)
-                else {
+                let Ok(version) = Mod::load_from_path(path).map(|m| m.info.version) else {
                     continue;
                 };
                 version
@@ -289,6 +296,33 @@ impl ModList {
     }
 
     #[must_use]
+    pub fn load_mod(&self, name: &str) -> std::result::Result<Option<Mod>, mod_loader::ModError> {
+        let Some(entry) = self.list.get(name) else {
+            return Ok(None);
+        };
+
+        if !entry.enabled {
+            return Ok(None);
+        }
+
+        let Some(version) = entry.selected_version() else {
+            return Ok(None);
+        };
+
+        Ok(Some(Mod::load_custom(
+            &self.factorio_dir,
+            &self.mod_dir,
+            name,
+            version,
+        )?))
+    }
+
+    #[must_use]
+    pub fn is_enabled(&self, name: &str) -> bool {
+        self.list.get(name).map_or(false, |e| e.enabled)
+    }
+
+    #[must_use]
     #[instrument(skip_all)]
     pub fn active_mods(&self) -> UsedMods {
         self.list
@@ -298,26 +332,11 @@ impl ModList {
                     return None;
                 }
 
-                let file = {
-                    let mut versions = entry.versions.keys().copied().collect::<Vec<_>>();
-                    versions.sort_unstable();
-
-                    let version = entry.active_version.unwrap_or(versions.last().copied()?);
-
-                    let versioned = format!("{name}_{version}");
-                    if self.mod_dir.join(versioned.clone() + ".zip").exists() {
-                        versioned + ".zip"
-                    } else if self.mod_dir.join(versioned.clone()).exists() {
-                        versioned
-                    } else {
-                        name.clone()
-                    }
-                };
-
-                match Mod::load_custom(&self.factorio_dir, &self.mod_dir, &file) {
+                let version = entry.selected_version()?;
+                match Mod::load_custom(&self.factorio_dir, &self.mod_dir, &name, version) {
                     Ok(m) => Some((name.clone(), m)),
                     Err(e) => {
-                        warn!("Failed to load mod {name} at {file}: {e}");
+                        warn!("Failed to load mod {name}@{version}: {e}");
                         None
                     }
                 }
@@ -372,21 +391,9 @@ impl ModList {
             )
             .copied()?;
 
-        let Some(Some(filename)) = entry.versions.get(&version) else {
+        let Ok(m) = Mod::load_custom(&self.factorio_dir, &self.mod_dir, name, version) else {
             return None;
         };
-
-        let Ok(m) = Mod::load_custom(&self.factorio_dir, &self.mod_dir, filename) else {
-            return None;
-        };
-
-        if version != m.info.version {
-            warn!(
-                "Version mismatch for {name}: {version} != {}",
-                m.info.version
-            );
-            return None;
-        }
 
         let res = m
             .info
