@@ -104,8 +104,8 @@ impl Entry {
 
 #[derive(Debug, Clone)]
 pub struct ModList {
-    pub factorio_dir: PathBuf,
-    pub mod_dir: PathBuf,
+    pub read_path: PathBuf,
+    pub mods_path: PathBuf,
     pub list: HashMap<String, Entry>,
 }
 
@@ -137,8 +137,19 @@ impl From<ModList> for ModListFormat {
 }
 
 impl ModList {
+    /// Loads the `mod-list.json` file from the mods folder.
+    ///
+    /// This will also enable all mods that are not inside the mod list but are present in the mods folder.
     pub fn load(&mut self) -> Result<&mut Self> {
-        let list = ModListFormat::load(self.mod_dir.join("mod-list.json").canonicalize()?)?;
+        println!(
+            "Loading mod list from {:?}",
+            self.mods_path.join("mod-list.json")
+        );
+
+        let list = ModListFormat::load(self.mods_path.join("mod-list.json").canonicalize()?)?;
+
+        // enable every mod, disabled mods will be disabled again while going through the list
+        self.list.values_mut().for_each(|e| e.enabled = true);
 
         // enable mods (and set active version) if they were found in the folder
         for entry in list.mods {
@@ -158,23 +169,30 @@ impl ModList {
         Ok(self)
     }
 
+    /// Generates a mod list from all mods in the mods and data folder.
+    ///
+    /// **Note:** all mods (except `core`) are disabled by default. If you want to mimic the games behaviour you should use [`ModList::load`] after this.
     pub fn generate(factorio_dir: impl AsRef<Path>) -> Result<Self> {
-        Self::generate_custom(
-            factorio_dir.as_ref().join("data"),
-            factorio_dir.as_ref().join("mods"),
-        )
+        Self::generate_custom(factorio_dir.as_ref().join("data"), factorio_dir)
     }
 
+    /// Generates a mod list from all mods in the mods and data folder.
+    ///
+    /// **Note:** all mods (except `core`) are disabled by default. If you want to mimic the games behaviour you should use [`ModList::load`] after this.
     #[instrument(name = "generate", skip_all)]
-    pub fn generate_custom(data_dir: impl AsRef<Path>, mod_dir: impl AsRef<Path>) -> Result<Self> {
+    pub fn generate_custom(
+        read_path: impl AsRef<Path>,
+        write_path: impl AsRef<Path>,
+    ) -> Result<Self> {
         #[allow(clippy::unwrap_used)]
         let filename_extractor = Regex::new(r"^(.+?)(?:_(\d+\.\d+\.\d+)(?:\.zip)?)?$").unwrap();
 
         let mut list = HashMap::new();
+        let mods_path = write_path.as_ref().join("mods");
 
         // add wube mods
         for w_mod in Mod::wube_mods() {
-            match Mod::load_wube(&data_dir, w_mod) {
+            match Mod::load_wube(&read_path, w_mod) {
                 Ok(m) => {
                     list.insert(
                         w_mod.to_string(),
@@ -201,7 +219,7 @@ impl ModList {
         }
 
         // add mods from mods folder
-        let paths = fs::read_dir(&mod_dir)?;
+        let paths = fs::read_dir(&mods_path)?;
         for path in paths {
             let Ok(path) = path else {
                 continue;
@@ -247,8 +265,8 @@ impl ModList {
         }
 
         Ok(Self {
-            factorio_dir: data_dir.as_ref().to_owned(),
-            mod_dir: mod_dir.as_ref().to_owned(),
+            read_path: read_path.as_ref().to_owned(),
+            mods_path,
             list,
         })
     }
@@ -256,7 +274,7 @@ impl ModList {
     pub fn save(&self) -> Result<()> {
         let format: ModListFormat = self.into();
         let bytes = serde_json::to_vec_pretty(&format)?;
-        std::fs::write(self.mod_dir.join("mod-list.json"), bytes)?;
+        std::fs::write(self.mods_path.join("mod-list.json"), bytes)?;
 
         Ok(())
     }
@@ -310,8 +328,8 @@ impl ModList {
         };
 
         Ok(Some(Mod::load_custom(
-            &self.factorio_dir,
-            &self.mod_dir,
+            &self.read_path,
+            &self.mods_path,
             name,
             version,
         )?))
@@ -333,7 +351,7 @@ impl ModList {
                 }
 
                 let version = entry.selected_version()?;
-                match Mod::load_custom(&self.factorio_dir, &self.mod_dir, name, version) {
+                match Mod::load_custom(&self.read_path, &self.mods_path, name, version) {
                     Ok(m) => Some((name.clone(), m)),
                     Err(e) => {
                         warn!("Failed to load mod {name}@{version}: {e}");
@@ -391,7 +409,7 @@ impl ModList {
             )
             .copied()?;
 
-        let Ok(m) = Mod::load_custom(&self.factorio_dir, &self.mod_dir, name, version) else {
+        let Ok(m) = Mod::load_custom(&self.read_path, &self.mods_path, name, version) else {
             return None;
         };
 

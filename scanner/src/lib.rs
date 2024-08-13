@@ -340,9 +340,8 @@ pub async fn load_data(
 
     info!("loaded BP");
 
-    let mut mod_list =
-        ModList::generate_custom(factorio_appdir.join("data"), factorio_userdir.join("mods"))
-            .change_context(ScannerError::SetupError)?;
+    let mut mod_list = ModList::generate_custom(factorio_appdir.join("data"), factorio_userdir)
+        .change_context(ScannerError::SetupError)?;
 
     // get used mods from preset or detect from BP meta info
     let mut required_mods = std::iter::once((

@@ -65,16 +65,16 @@ impl Mod {
     }
 
     pub fn load_custom(
-        data_dir: impl AsRef<Path>,
-        mod_dir: impl AsRef<Path>,
+        read_path: impl AsRef<Path>,
+        mods_path: impl AsRef<Path>,
         name: &str,
         version: Version,
     ) -> Result<Self> {
         if Self::wube_mods().contains(&name) {
-            return Self::load_wube(data_dir, name);
+            return Self::load_wube(read_path, name);
         }
 
-        let internal = ModType::load(&mod_dir, name, version)?;
+        let internal = ModType::load(&mods_path, name, version)?;
 
         let info_file = internal.get_file("info.json")?;
         let info = serde_json::from_slice::<ModInfo>(&info_file)
@@ -107,12 +107,12 @@ impl Mod {
         Ok(Self { info, internal })
     }
 
-    pub fn load_wube(data_dir: impl AsRef<Path>, name: &str) -> Result<Self> {
+    pub fn load_wube(read_path: impl AsRef<Path>, name: &str) -> Result<Self> {
         if !Self::wube_mods().contains(&name) {
-            return Err(ModError::PathDoesNotExist(data_dir.as_ref().join(name)));
+            return Err(ModError::PathDoesNotExist(read_path.as_ref().join(name)));
         }
 
-        let path = data_dir.as_ref().join(name);
+        let path = read_path.as_ref().join(name);
 
         if !path.exists() {
             return Err(ModError::PathDoesNotExist(path));
@@ -122,7 +122,7 @@ impl Mod {
 
         // the special core "mod" has no version field -> grab it from base instead
         let info = if name == "core" {
-            let internal_base = ModType::load_from_path(data_dir.as_ref().join("base"))?;
+            let internal_base = ModType::load_from_path(read_path.as_ref().join("base"))?;
             let info_file = internal_base.get_file("info.json")?;
             let mut info = serde_json::from_slice::<ModInfo>(&info_file)
                 .map_err(|err| ModError::InvalidInfoJson("base [to read core]".into(), err))?;
