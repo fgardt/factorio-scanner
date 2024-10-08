@@ -34,9 +34,6 @@ pub struct ModuleSpecification {
     pub module_info_multi_row_initial_height_modifier: Option<f32>,
 }
 
-/// [`Types/ModuleCategoryID`](https://lua-api.factorio.com/latest/types/ModuleCategoryID.html)
-pub type ModuleCategoryID = String;
-
 /// [`Types/EffectValue`](https://lua-api.factorio.com/latest/types/EffectValue.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EffectValue {
