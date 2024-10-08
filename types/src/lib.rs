@@ -1684,13 +1684,21 @@ impl BoundingBox {
 pub enum Direction {
     #[default]
     North = 0,
-    NorthEast = 1,
-    East = 2,
-    SouthEast = 3,
-    South = 4,
-    SouthWest = 5,
-    West = 6,
-    NorthWest = 7,
+    NorthNorthEast = 1,
+    NorthEast = 2,
+    EastNorthEast = 3,
+    East = 4,
+    EastSouthEast = 5,
+    SouthEast = 6,
+    SouthSouthEast = 7,
+    South = 8,
+    SouthSouthWest = 9,
+    SouthWest = 10,
+    WestSouthWest = 11,
+    West = 12,
+    WestNorthWest = 13,
+    NorthWest = 14,
+    NorthNorthWest = 15,
 }
 
 impl Direction {
@@ -1698,13 +1706,21 @@ impl Direction {
     pub const fn flip(self) -> Self {
         match self {
             Self::North => Self::South,
+            Self::NorthNorthEast => Self::SouthSouthWest,
             Self::NorthEast => Self::SouthWest,
+            Self::EastNorthEast => Self::WestSouthWest,
             Self::East => Self::West,
+            Self::EastSouthEast => Self::WestNorthWest,
             Self::SouthEast => Self::NorthWest,
+            Self::SouthSouthEast => Self::NorthNorthWest,
             Self::South => Self::North,
+            Self::SouthSouthWest => Self::NorthNorthEast,
             Self::SouthWest => Self::NorthEast,
+            Self::WestSouthWest => Self::EastNorthEast,
             Self::West => Self::East,
+            Self::WestNorthWest => Self::EastSouthEast,
             Self::NorthWest => Self::SouthEast,
+            Self::NorthNorthWest => Self::SouthSouthEast,
         }
     }
 
@@ -1714,13 +1730,10 @@ impl Direction {
     pub fn rotate_vector(self, vector: Vector) -> Vector {
         let (x_fac, y_fac, swap) = match self {
             Self::North => (1.0, 1.0, false),
-            Self::NorthEast => todo!(),
             Self::East => (-1.0, 1.0, true),
-            Self::SouthEast => todo!(),
             Self::South => (-1.0, -1.0, false),
-            Self::SouthWest => todo!(),
             Self::West => (1.0, -1.0, true),
-            Self::NorthWest => todo!(),
+            _ => todo!("rotation for non-cardinal directions not yet implemented"),
         };
 
         let (x, y) = if swap {
@@ -1734,21 +1747,28 @@ impl Direction {
 
     #[must_use]
     pub const fn is_straight(&self, other: &Self) -> bool {
-        match self {
-            Self::NorthEast | Self::SouthWest => matches!(other, Self::NorthEast | Self::SouthWest),
-            Self::NorthWest | Self::SouthEast => matches!(other, Self::NorthWest | Self::SouthEast),
-            Self::North | Self::South => matches!(other, Self::North | Self::South),
-            Self::East | Self::West => matches!(other, Self::East | Self::West),
-        }
+        matches!(self, other) || matches!(self.flip(), other)
     }
 
     #[must_use]
     pub const fn is_right_angle(&self, other: &Self) -> bool {
         match self {
-            Self::NorthEast | Self::SouthWest => matches!(other, Self::NorthWest | Self::SouthEast),
-            Self::NorthWest | Self::SouthEast => matches!(other, Self::NorthEast | Self::SouthWest),
             Self::North | Self::South => matches!(other, Self::East | Self::West),
             Self::East | Self::West => matches!(other, Self::North | Self::South),
+            Self::NorthEast | Self::SouthWest => matches!(other, Self::NorthWest | Self::SouthEast),
+            Self::NorthWest | Self::SouthEast => matches!(other, Self::NorthEast | Self::SouthWest),
+            Self::NorthNorthEast | Self::SouthSouthWest => {
+                matches!(other, Self::EastSouthEast | Self::WestNorthWest)
+            }
+            Self::NorthNorthWest | Self::SouthSouthEast => {
+                matches!(other, Self::EastNorthEast | Self::WestSouthWest)
+            }
+            Self::EastNorthEast | Self::WestSouthWest => {
+                matches!(other, Self::NorthNorthWest | Self::SouthSouthEast)
+            }
+            Self::EastSouthEast | Self::WestNorthWest => {
+                matches!(other, Self::NorthNorthEast | Self::SouthSouthWest)
+            }
         }
     }
 
@@ -1756,13 +1776,21 @@ impl Direction {
     pub const fn to_orientation(&self) -> RealOrientation {
         let val = match self {
             Self::North => 0.0,
+            Self::NorthNorthEast => 0.0625,
             Self::NorthEast => 0.125,
+            Self::EastNorthEast => 0.1875,
             Self::East => 0.25,
+            Self::EastSouthEast => 0.3125,
             Self::SouthEast => 0.375,
+            Self::SouthSouthEast => 0.4375,
             Self::South => 0.5,
+            Self::SouthSouthWest => 0.5625,
             Self::SouthWest => 0.625,
+            Self::WestSouthWest => 0.6875,
             Self::West => 0.75,
+            Self::WestNorthWest => 0.8125,
             Self::NorthWest => 0.875,
+            Self::NorthNorthWest => 0.9375,
         };
 
         RealOrientation::new(val)
@@ -1777,13 +1805,21 @@ impl Direction {
     pub const fn right90(&self) -> Self {
         match self {
             Self::North => Self::East,
+            Self::NorthNorthEast => Self::EastSouthEast,
             Self::NorthEast => Self::SouthEast,
+            Self::EastNorthEast => Self::SouthSouthEast,
             Self::East => Self::South,
+            Self::EastSouthEast => Self::SouthSouthWest,
             Self::SouthEast => Self::SouthWest,
+            Self::SouthSouthEast => Self::WestSouthWest,
             Self::South => Self::West,
+            Self::SouthSouthWest => Self::WestNorthWest,
             Self::SouthWest => Self::NorthWest,
+            Self::WestSouthWest => Self::NorthNorthWest,
             Self::West => Self::North,
+            Self::WestNorthWest => Self::NorthNorthEast,
             Self::NorthWest => Self::NorthEast,
+            Self::NorthNorthWest => Self::EastNorthEast,
         }
     }
 
@@ -1798,6 +1834,7 @@ impl Direction {
             Self::SouthWest => Vector::new(-1.0, 1.0),
             Self::West => Vector::new(-1.0, 0.0),
             Self::NorthWest => Vector::new(-1.0, -1.0),
+            _ => todo!(),
         }
     }
 }
@@ -1808,13 +1845,21 @@ impl TryFrom<u8> for Direction {
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(Self::North),
-            1 => Ok(Self::NorthEast),
-            2 => Ok(Self::East),
-            3 => Ok(Self::SouthEast),
-            4 => Ok(Self::South),
-            5 => Ok(Self::SouthWest),
-            6 => Ok(Self::West),
-            7 => Ok(Self::NorthWest),
+            1 => Ok(Self::NorthNorthEast),
+            2 => Ok(Self::NorthEast),
+            3 => Ok(Self::EastNorthEast),
+            4 => Ok(Self::East),
+            5 => Ok(Self::EastSouthEast),
+            6 => Ok(Self::SouthEast),
+            7 => Ok(Self::SouthSouthEast),
+            8 => Ok(Self::South),
+            9 => Ok(Self::SouthSouthWest),
+            10 => Ok(Self::SouthWest),
+            11 => Ok(Self::WestSouthWest),
+            12 => Ok(Self::West),
+            13 => Ok(Self::WestNorthWest),
+            14 => Ok(Self::NorthWest),
+            15 => Ok(Self::NorthNorthWest),
             _ => Err(()),
         }
     }

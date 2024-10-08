@@ -1153,6 +1153,9 @@ impl RenderableGraphics for Sprite8Way {
                 Direction::SouthWest => south_west,
                 Direction::West => west,
                 Direction::NorthWest => north_west,
+                _ => {
+                    unimplemented!("Sprite8Way does not support half-diagonals");
+                }
             }
             .render(scale, used_mods, image_cache, &opts.into()),
         }
@@ -2129,22 +2132,13 @@ impl RenderableGraphics for Animation4Way {
                 west,
             } => match opts.direction {
                 Direction::North => north,
-                Direction::NorthEast => {
-                    unimplemented!("Animation4Way does not support diagonals")
-                }
                 Direction::East => east.as_ref().unwrap_or(north),
-                Direction::SouthEast => {
-                    unimplemented!("Animation4Way does not support diagonals")
-                }
                 Direction::South => south.as_ref().unwrap_or(north),
-                Direction::SouthWest => {
-                    unimplemented!("Animation4Way does not support diagonals")
-                }
                 Direction::West => west
                     .as_ref()
                     .unwrap_or_else(|| east.as_ref().unwrap_or(north)),
-                Direction::NorthWest => {
-                    unimplemented!("Animation4Way does not support diagonals")
+                _ => {
+                    unimplemented!("Animation4Way only supports cardinal directions")
                 }
             }
             .render(scale, used_mods, image_cache, &opts.into()),
