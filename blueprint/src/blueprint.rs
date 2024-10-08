@@ -318,6 +318,7 @@ pub type GraphicsVariation = NonZeroU32;
 pub struct Entity {
     pub entity_number: EntityNumber,
     pub name: EntityID,
+    pub quality: Option<QualityID>,
     pub position: Position,
 
     #[serde(default, skip_serializing_if = "Direction::is_default")]
@@ -336,6 +337,7 @@ pub struct Entity {
 
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub recipe: RecipeID,
+    pub recipe_quality: Option<QualityID>,
 
     pub bar: Option<ItemStackIndex>,
     pub inventory: Option<Inventory>,
@@ -409,6 +411,10 @@ impl crate::GetIDs for Entity {
 
         ids.entity.insert(self.name.clone());
 
+        if let Some(quality) = &self.quality {
+            ids.quality.insert(quality.clone());
+        }
+
         if let Some(control_behavior) = &self.control_behavior {
             ids.merge(control_behavior.get_ids());
         }
@@ -419,6 +425,10 @@ impl crate::GetIDs for Entity {
 
         if !self.recipe.is_empty() {
             ids.recipe.insert(self.recipe.clone());
+        }
+
+        if let Some(recipe_quality) = &self.recipe_quality {
+            ids.quality.insert(recipe_quality.clone());
         }
 
         if let Some(inventory) = &self.inventory {
