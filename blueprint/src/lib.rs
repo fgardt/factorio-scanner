@@ -620,5 +620,24 @@ mod tests {
                 "../tests/comparators_operators_and_invalids.txt"
             ));
         }
+
+        mod v2 {
+            use super::*;
+
+            #[test]
+            fn quality_chemplants() {
+                load_bp(include_str!("../tests/2.0/quality_chemplants.txt"));
+            }
+
+            #[test]
+            fn constant_logistic_group() {
+                load_bp(include_str!("../tests/2.0/constant_logistic_group.txt"));
+            }
+
+            #[test]
+            fn platform_hub() {
+                load_bp(include_str!("../tests/2.0/platform_hub.txt"));
+            }
+        }
     }
 }
