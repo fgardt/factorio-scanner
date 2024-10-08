@@ -11,6 +11,7 @@ macro_rules! ids {
             }
 
             impl $name {
+                #[allow(dead_code)]
                 pub fn new(id: impl Into<String>) -> Self {
                     Self(id.into())
                 }
@@ -34,20 +35,41 @@ macro_rules! ids {
 }
 
 ids!(
+    ActiveTriggerID,
+    AirbornePollutantID,
     AmmoCategoryID,
+    AsteroidChunkID,
+    AutoplaceControlID,
+    BurnerUsageID,
+    CollisionLayerID,
     DamageTypeID,
+    DecorativeID,
     EntityID,
+    EquipmentCategoryID,
     EquipmentGridID,
     EquipmentID,
+    // FluidBoxLinkedConnectionID, // not done here since its a u32
     FluidID,
     FuelCategoryID,
     ItemGroupID,
     ItemID,
     ItemSubGroupID,
+    ModuleCategoryID,
     MouseCursorID,
+    ParticleID,
+    ProcessionID,
+    ProcessionLayerInheritanceGroupID,
+    QualityID,
     RecipeCategoryID,
     RecipeID,
     ResourceCategoryID,
+    SpaceConnectionID,
+    SpaceLocationID,
+    SurfaceID,
+    SurfacePropertyID,
+    TechnologyID,
+    TileEffectDefinitionID,
     TileID,
+    TrivialSmokeID,
     VirtualSignalID
 );
