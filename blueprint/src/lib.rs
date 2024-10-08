@@ -15,7 +15,10 @@ mod planner;
 pub use blueprint::*;
 pub use book::*;
 pub use planner::*;
-use types::{EntityID, FluidID, ItemID, RecipeID, TileID, VirtualSignalID};
+use types::{
+    AsteroidChunkID, EntityID, FluidID, ItemID, QualityID, RecipeID, SpaceLocationID, TileID,
+    VirtualSignalID,
+};
 
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
 #[serde(default, rename_all = "kebab-case")]
@@ -26,6 +29,9 @@ pub struct UsedIDs {
     pub fluid: HashSet<FluidID>,
     pub item: HashSet<ItemID>,
     pub virtual_signal: HashSet<VirtualSignalID>,
+    pub quality: HashSet<QualityID>,
+    pub space_location: HashSet<SpaceLocationID>,
+    pub asteroid_chunk: HashSet<AsteroidChunkID>,
 }
 
 impl UsedIDs {
@@ -36,6 +42,9 @@ impl UsedIDs {
         self.fluid.extend(other.fluid);
         self.item.extend(other.item);
         self.virtual_signal.extend(other.virtual_signal);
+        self.quality.extend(other.quality);
+        self.space_location.extend(other.space_location);
+        self.asteroid_chunk.extend(other.asteroid_chunk);
     }
 }
 

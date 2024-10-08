@@ -4,12 +4,13 @@ use std::{
 };
 
 use mod_util::{mod_info::DependencyVersion, AnyBasic, DependencyList};
-use serde::{Deserialize, Serialize};
+use serde::{de::Visitor, Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use types::{
-    ArithmeticOperation, Comparator, Direction, EntityID, FilterMode, FluidID, ItemCountType,
-    ItemID, ItemStackIndex, RealOrientation, RecipeID, TileID, Vector, VirtualSignalID,
+    ArithmeticOperation, AsteroidChunkID, Comparator, Direction, EntityID, FilterMode, FluidID,
+    ItemCountType, ItemID, ItemStackIndex, QualityID, RealOrientation, RecipeID, SpaceLocationID,
+    TileID, Vector, VirtualSignalID,
 };
 
 use crate::{IndexedVec, NameString};
@@ -126,21 +127,68 @@ impl crate::GetIDs for Icon {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, /*Deserialize,*/ Serialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum SignalID {
-    Item { name: Option<ItemID> },
-    Fluid { name: Option<FluidID> },
-    Virtual { name: Option<VirtualSignalID> },
+    Item {
+        name: Option<ItemID>,
+        quality: Option<QualityID>,
+    },
+    Fluid {
+        name: Option<FluidID>,
+        quality: Option<QualityID>,
+    },
+    Virtual {
+        name: Option<VirtualSignalID>,
+        quality: Option<QualityID>,
+    },
+    Entity {
+        name: Option<EntityID>,
+        quality: Option<QualityID>,
+    },
+    Recipe {
+        name: Option<RecipeID>,
+        quality: Option<QualityID>,
+    },
+    SpaceLocation {
+        name: Option<SpaceLocationID>,
+        quality: Option<QualityID>,
+    },
+    AsteroidChunk {
+        name: Option<AsteroidChunkID>,
+        quality: Option<QualityID>,
+    },
+    Quality {
+        name: Option<QualityID>,
+    },
 }
 
 impl SignalID {
     #[must_use]
     pub fn name(&self) -> Option<String> {
         match self {
-            Self::Item { name } => name.clone().map(|n| (*n).clone()),
-            Self::Fluid { name } => name.clone().map(|n| (*n).clone()),
-            Self::Virtual { name } => name.clone().map(|n| (*n).clone()),
+            Self::Item { name, .. } => name.clone().map(|n| (*n).clone()),
+            Self::Fluid { name, .. } => name.clone().map(|n| (*n).clone()),
+            Self::Virtual { name, .. } => name.clone().map(|n| (*n).clone()),
+            Self::Entity { name, .. } => name.clone().map(|n| (*n).clone()),
+            Self::Recipe { name, .. } => name.clone().map(|n| (*n).clone()),
+            Self::SpaceLocation { name, .. } => name.clone().map(|n| (*n).clone()),
+            Self::AsteroidChunk { name, .. } => name.clone().map(|n| (*n).clone()),
+            Self::Quality { name } => name.clone().map(|n| (*n).clone()),
+        }
+    }
+
+    #[must_use]
+    pub const fn quality(&self) -> &Option<QualityID> {
+        match self {
+            Self::Item { quality, .. }
+            | Self::Fluid { quality, .. }
+            | Self::Virtual { quality, .. }
+            | Self::Entity { quality, .. }
+            | Self::Recipe { quality, .. }
+            | Self::SpaceLocation { quality, .. }
+            | Self::AsteroidChunk { quality, .. } => quality,
+            Self::Quality { .. } => &None,
         }
     }
 }
@@ -151,15 +199,109 @@ impl crate::GetIDs for SignalID {
 
         if self.name().is_some() {
             match self {
-                Self::Item { name } => ids.item.insert(name.clone().unwrap_or_default()),
-                Self::Fluid { name } => ids.fluid.insert(name.clone().unwrap_or_default()),
-                Self::Virtual { name } => {
+                Self::Item { name, .. } => ids.item.insert(name.clone().unwrap_or_default()),
+                Self::Fluid { name, .. } => ids.fluid.insert(name.clone().unwrap_or_default()),
+                Self::Virtual { name, .. } => {
                     ids.virtual_signal.insert(name.clone().unwrap_or_default())
                 }
+                Self::Entity { name, .. } => ids.entity.insert(name.clone().unwrap_or_default()),
+                Self::Recipe { name, .. } => ids.recipe.insert(name.clone().unwrap_or_default()),
+                Self::SpaceLocation { name, .. } => {
+                    ids.space_location.insert(name.clone().unwrap_or_default())
+                }
+                Self::AsteroidChunk { name, .. } => {
+                    ids.asteroid_chunk.insert(name.clone().unwrap_or_default())
+                }
+                Self::Quality { name } => ids.quality.insert(name.clone().unwrap_or_default()),
             };
         }
 
+        if let Some(quality) = self.quality() {
+            ids.quality.insert(quality.clone());
+        }
+
         ids
+    }
+}
+
+impl<'de> Deserialize<'de> for SignalID {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct SignalIDVisitor;
+
+        impl<'de> Visitor<'de> for SignalIDVisitor {
+            type Value = SignalID;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("a SignalID")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::MapAccess<'de>,
+            {
+                let mut kind = None;
+                let mut name = None;
+                let mut quality = None;
+
+                while let Ok(Some((key, value))) = map.next_entry::<String, String>() {
+                    match key.as_str() {
+                        "type" => {
+                            kind = Some(value);
+                        }
+                        "name" => {
+                            name = Some(value);
+                        }
+                        "quality" => {
+                            quality = Some(QualityID::new(value));
+                        }
+                        _ => {}
+                    }
+                }
+
+                match kind.unwrap_or_else(|| "item".to_owned()).as_str() {
+                    "item" => {
+                        let name = name.map(ItemID::new);
+                        Ok(SignalID::Item { name, quality })
+                    }
+                    "fluid" => {
+                        let name = name.map(FluidID::new);
+                        Ok(SignalID::Fluid { name, quality })
+                    }
+                    "virtual" => {
+                        let name = name.map(VirtualSignalID::new);
+                        Ok(SignalID::Virtual { name, quality })
+                    }
+                    "entity" => {
+                        let name = name.map(EntityID::new);
+                        Ok(SignalID::Entity { name, quality })
+                    }
+                    "recipe" => {
+                        let name = name.map(RecipeID::new);
+                        Ok(SignalID::Recipe { name, quality })
+                    }
+                    "space-location" => {
+                        let name = name.map(SpaceLocationID::new);
+                        Ok(SignalID::SpaceLocation { name, quality })
+                    }
+                    "asteroid-chunk" => {
+                        let name = name.map(AsteroidChunkID::new);
+                        Ok(SignalID::AsteroidChunk { name, quality })
+                    }
+                    "quality" => {
+                        let name = name.map(QualityID::new);
+                        Ok(SignalID::Quality { name })
+                    }
+                    any => Err(serde::de::Error::custom(format!(
+                        "unknown SignalID type: {any}"
+                    ))),
+                }
+            }
+        }
+
+        deserializer.deserialize_map(SignalIDVisitor)
     }
 }
 
