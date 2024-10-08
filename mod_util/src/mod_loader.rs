@@ -148,6 +148,12 @@ impl Mod {
         Ok(Self { info, internal })
     }
 
+    pub fn path(&self) -> PathBuf {
+        match self.internal {
+            ModType::Folder { ref path } | ModType::Zip { ref path, .. } => path.clone(),
+        }
+    }
+
     pub fn get_file(&self, path: &str) -> Result<Vec<u8>> {
         self.internal.get_file(path)
     }
@@ -164,6 +170,7 @@ enum ModType {
         path: PathBuf,
     },
     Zip {
+        path: PathBuf,
         internal_prefix: String,
         zip: RefCell<ZipArchive<File>>,
     },
@@ -186,9 +193,10 @@ impl ModType {
 
         if is_zip {
             let zip = ZipArchive::new(File::open(&path)?)?;
-            let internal_prefix = get_zip_internal_folder(path, &zip)?;
+            let internal_prefix = get_zip_internal_folder(&path, &zip)?;
 
             Ok(Self::Zip {
+                path,
                 internal_prefix,
                 zip: RefCell::new(zip),
             })
@@ -213,6 +221,7 @@ impl ModType {
             let internal_prefix = get_zip_internal_folder(path, &zip)?;
 
             Ok(Self::Zip {
+                path: path.into(),
                 internal_prefix,
                 zip: RefCell::new(zip),
             })
@@ -234,6 +243,7 @@ impl ModType {
             Self::Zip {
                 internal_prefix,
                 zip,
+                ..
             } => {
                 let path = internal_prefix.clone() + file;
                 let mut zip = zip.try_borrow_mut()?;
