@@ -3,6 +3,7 @@ use std::{
     num::NonZeroU32,
 };
 
+use logistics::LogisticSections;
 use mod_util::{mod_info::DependencyVersion, AnyBasic, DependencyList};
 use serde::{de::Visitor, Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -14,6 +15,8 @@ use types::{
 };
 
 use crate::{IndexedVec, NameString};
+
+mod logistics;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -890,6 +893,9 @@ pub struct ControlBehavior {
     pub logistic_condition: Option<Condition>,
     pub connect_to_logistic_network: Option<bool>,
 
+    // logistics
+    pub sections: Option<LogisticSections>,
+
     // rail/chain signals
     pub circuit_close_signal: Option<bool>,
     pub circuit_read_signal: Option<bool>,
@@ -958,6 +964,10 @@ pub struct ControlBehavior {
 impl crate::GetIDs for ControlBehavior {
     fn get_ids(&self) -> crate::UsedIDs {
         let mut ids = crate::UsedIDs::default();
+
+        if let Some(sections) = &self.sections {
+            ids.merge(sections.get_ids());
+        }
 
         if let Some(logistic_condition) = &self.logistic_condition {
             ids.merge(logistic_condition.get_ids());
