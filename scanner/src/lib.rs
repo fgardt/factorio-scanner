@@ -399,7 +399,7 @@ pub async fn load_data(
             &mod_list,
             (
                 bp_helper::get_used_startup_settings(bp).unwrap_or(&BTreeMap::new()),
-                bp.version,
+                *bp.version,
             ),
         )?
     };
