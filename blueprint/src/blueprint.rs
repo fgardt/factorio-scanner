@@ -3,9 +3,9 @@ use std::{
     num::NonZeroU32,
 };
 
-use logistics::LogisticSections;
+use logistics::{LogisticSections, RequestFilters};
 use mod_util::{mod_info::DependencyVersion, AnyBasic, DependencyList};
-use serde::{de::Visitor, Deserialize, Serialize};
+use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use types::{
@@ -34,6 +34,12 @@ pub struct BlueprintData {
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub schedules: Vec<Schedule>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stock_connections: Vec<StockConnection>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub wires: Vec<WireData>,
 
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub description: String,
@@ -311,6 +317,81 @@ impl<'de> Deserialize<'de> for SignalID {
 pub type EntityNumber = u64;
 pub type GraphicsVariation = NonZeroU32;
 
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct StockConnection {
+    pub stock: EntityNumber,
+    pub back: EntityNumber,
+}
+
+// todo: use defines.wire_connector_id
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WireData {
+    pub entity_a: EntityNumber,
+    pub circuit_a: u8,
+    pub entity_b: EntityNumber,
+    pub circuit_b: u8,
+}
+
+impl Serialize for WireData {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut seq = serializer.serialize_seq(Some(4))?;
+        seq.serialize_element(&self.entity_a)?;
+        seq.serialize_element(&self.circuit_a)?;
+        seq.serialize_element(&self.entity_b)?;
+        seq.serialize_element(&self.circuit_b)?;
+        seq.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for WireData {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct WireDataVisitor;
+
+        impl<'de> Visitor<'de> for WireDataVisitor {
+            type Value = WireData;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("wire connection data")
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::SeqAccess<'de>,
+            {
+                let entity_a = seq.next_element()?;
+                let circuit_a = seq.next_element()?;
+                let entity_b = seq.next_element()?;
+                let circuit_b = seq.next_element()?;
+                let end = seq.next_element::<Option<()>>()?;
+
+                let (Some(entity_a), Some(circuit_a), Some(entity_b), Some(circuit_b), None) =
+                    (entity_a, circuit_a, entity_b, circuit_b, end)
+                else {
+                    return Err(serde::de::Error::custom(
+                        "wire connection data needs 4 elements",
+                    ));
+                };
+
+                Ok(WireData {
+                    entity_a,
+                    circuit_a,
+                    entity_b,
+                    circuit_b,
+                })
+            }
+        }
+
+        deserializer.deserialize_seq(WireDataVisitor)
+    }
+}
+
 // todo: reduce optionals count by skipping serialization of defaults?
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -332,8 +413,8 @@ pub struct Entity {
     pub control_behavior: Option<ControlBehavior>,
     pub connections: Option<Connection>,
 
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub items: ItemRequest,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub items: Vec<ItemRequest>,
 
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub recipe: RecipeID,
@@ -362,11 +443,7 @@ pub struct Entity {
     pub drop_position: Option<Position>,
     pub pickup_position: Option<Position>,
 
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub request_filters: IndexedVec<LogisticFilter>,
-
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub request_from_buffers: bool,
+    pub request_filters: Option<RequestFilters>,
 
     pub parameters: Option<SpeakerParameter>,
     pub alert_parameters: Option<SpeakerAlertParameter>,
@@ -382,6 +459,15 @@ pub struct Entity {
     pub color: Option<Color>,
 
     pub manual_trains_limit: Option<u32>,
+    pub priority: Option<u8>,
+
+    pub enable_logistics_while_moving: Option<bool>,
+
+    #[serde(
+        default = "serde_helper::bool_true",
+        skip_serializing_if = "Clone::clone"
+    )]
+    pub copy_color_from_train_stop: bool,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub switch_state: bool,
@@ -419,8 +505,8 @@ impl crate::GetIDs for Entity {
             ids.merge(control_behavior.get_ids());
         }
 
-        for item in self.items.keys() {
-            ids.item.insert(item.clone());
+        for item in &self.items {
+            ids.merge(item.id.get_ids());
         }
 
         if !self.recipe.is_empty() {
@@ -447,8 +533,8 @@ impl crate::GetIDs for Entity {
             ids.item.insert(entry.name.clone());
         }
 
-        for entry in &self.request_filters {
-            ids.item.insert(entry.name.clone());
+        if let Some(request_filters) = &self.request_filters {
+            ids.merge(request_filters.get_ids());
         }
 
         if let Some(alert_parameters) = &self.alert_parameters {
@@ -509,13 +595,31 @@ impl crate::GetIDs for Inventory {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Schedule {
-    pub schedule: Vec<ScheduleRecord>,
     pub locomotives: Vec<EntityNumber>,
+    pub schedule: ScheduleData,
 }
 
 impl crate::GetIDs for Schedule {
     fn get_ids(&self) -> crate::UsedIDs {
         self.schedule.get_ids()
+    }
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ScheduleData {
+    pub records: Vec<ScheduleRecord>,
+    pub group: Option<String>,
+    pub interrupts: Vec<ScheduleInterrupt>,
+}
+
+impl crate::GetIDs for ScheduleData {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = self.records.get_ids();
+        ids.merge(self.interrupts.get_ids());
+
+        ids
     }
 }
 
@@ -529,11 +633,41 @@ pub struct ScheduleRecord {
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub temporary: bool,
+
+    #[serde(
+        default = "serde_helper::bool_true",
+        skip_serializing_if = "Clone::clone"
+    )]
+    pub allows_unloading: bool,
 }
 
 impl crate::GetIDs for ScheduleRecord {
     fn get_ids(&self) -> crate::UsedIDs {
         self.wait_conditions.get_ids()
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ScheduleInterrupt {
+    pub name: String,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub conditions: Vec<WaitCondition>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub targets: Vec<ScheduleRecord>,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub inside_interrupt: bool,
+}
+
+impl crate::GetIDs for ScheduleInterrupt {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = self.conditions.get_ids();
+        ids.merge(self.targets.get_ids());
+
+        ids
     }
 }
 
@@ -558,6 +692,12 @@ impl crate::GetIDs for WaitCondition {
                     ids.merge(condition.get_ids());
                 }
             }
+            WaitConditionType::RequestSatisfied { condition }
+            | WaitConditionType::RequestNotSatisfied { condition } => {
+                if let Some(condition) = condition {
+                    ids.item.insert(condition.name.clone());
+                }
+            }
             _ => {}
         }
 
@@ -571,14 +711,51 @@ impl crate::GetIDs for WaitCondition {
 pub enum WaitConditionType {
     Full,
     Empty,
+    #[serde(alias = "not-empty")]
+    NotEmpty,
+    FuelFull,
     RobotsInactive,
     PassengerPresent,
     PassengerNotPresent,
-    Time { ticks: u32 },
-    Inactivity { ticks: u32 },
-    Circuit { condition: Option<Condition> },
-    ItemCount { condition: Option<Condition> },
-    FluidCount { condition: Option<Condition> },
+    AllRequestsSatisfied,
+    AnyRequestZero,
+    AnyRequestNotSatisfied,
+    Time {
+        ticks: u32,
+    },
+    Inactivity {
+        ticks: u32,
+    },
+    DamageTaken {
+        damage: u32,
+    },
+    Circuit {
+        condition: Option<Condition>,
+    },
+    ItemCount {
+        condition: Option<Condition>,
+    },
+    FluidCount {
+        condition: Option<Condition>,
+    },
+    FuelItemCountAll {
+        condition: Option<Condition>,
+    },
+    FuelItemCountAny {
+        condition: Option<Condition>,
+    },
+    RequestSatisfied {
+        condition: Option<RequestCondition>,
+    },
+    RequestNotSatisfied {
+        condition: Option<RequestCondition>,
+    },
+    SpecificDestinationFull {
+        station: Option<String>,
+    },
+    SpecificDestinationNotFull {
+        station: Option<String>,
+    },
 }
 
 #[skip_serializing_none]
@@ -625,6 +802,12 @@ impl crate::GetIDs for Condition {
 
         ids
     }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub struct RequestCondition {
+    pub name: ItemID,
+    pub quality: Option<QualityID>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -797,7 +980,43 @@ impl ConnectionDataExt for Vec<ConnectionData> {
     }
 }
 
-pub type ItemRequest = HashMap<ItemID, ItemCountType>;
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub struct ItemRequest {
+    pub id: ItemRequestID,
+    pub items: ItemRequestItems,
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub struct ItemRequestID {
+    pub name: ItemID,
+    pub quality: Option<QualityID>,
+}
+
+impl crate::GetIDs for ItemRequestID {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = crate::UsedIDs::default();
+
+        ids.item.insert(self.name.clone());
+
+        if let Some(quality) = &self.quality {
+            ids.quality.insert(quality.clone());
+        }
+
+        ids
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub struct ItemRequestItems {
+    pub in_inventory: Vec<ItemRequestInventoryRecord>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub struct ItemRequestInventoryRecord {
+    pub inventory: ItemStackIndex,
+    pub stack: ItemStackIndex,
+}
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -903,6 +1122,14 @@ pub struct ControlBehavior {
     pub logistic_condition: Option<Condition>,
     pub connect_to_logistic_network: Option<bool>,
 
+    // space platform hub
+    pub read_moving_from: Option<bool>,
+    pub read_moving_to: Option<bool>,
+    pub read_speed: Option<bool>,
+    pub speed_signal: Option<SignalID>,
+    pub read_damage_taken: Option<bool>,
+    pub damage_taken_signal: Option<SignalID>,
+
     // logistics
     pub sections: Option<LogisticSections>,
 
@@ -914,8 +1141,9 @@ pub struct ControlBehavior {
     pub green_output_signal: Option<SignalID>,
     pub blue_output_signal: Option<SignalID>,
 
+    pub circuit_enabled: Option<bool>,
     pub circuit_condition: Option<Condition>,
-    pub circuit_enable_disable: Option<bool>,
+    // pub circuit_enable_disable: Option<bool>,
 
     // train stops
     pub send_to_train: Option<bool>,
@@ -929,6 +1157,9 @@ pub struct ControlBehavior {
 
     pub read_trains_count: Option<bool>,
     pub trains_count_signal: Option<SignalID>,
+
+    pub set_priority: Option<bool>,
+    pub priority_signal: Option<SignalID>,
 
     // roboports
     pub read_logistics: Option<bool>,

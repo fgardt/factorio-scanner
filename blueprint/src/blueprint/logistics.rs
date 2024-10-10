@@ -19,6 +19,21 @@ impl crate::GetIDs for LogisticSections {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct RequestFilters {
+    pub sections: IndexedVec<LogisticSection>,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub request_from_buffers: bool,
+}
+
+impl crate::GetIDs for RequestFilters {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.sections.get_ids()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 #[skip_serializing_none]

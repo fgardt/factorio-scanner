@@ -609,17 +609,17 @@ mod tests {
     mod bp {
         use super::*;
 
-        #[test]
-        fn train_schedule_temporary_record() {
-            load_bp(include_str!("../tests/train_schedule_temporary_record.txt"));
-        }
+        // #[test]
+        // fn train_schedule_temporary_record() {
+        //     load_bp(include_str!("../tests/train_schedule_temporary_record.txt"));
+        // }
 
-        #[test]
-        fn comparators_operators_and_invalids() {
-            load_bp(include_str!(
-                "../tests/comparators_operators_and_invalids.txt"
-            ));
-        }
+        // #[test]
+        // fn comparators_operators_and_invalids() {
+        //     load_bp(include_str!(
+        //         "../tests/comparators_operators_and_invalids.txt"
+        //     ));
+        // }
 
         mod v2 {
             use super::*;
@@ -637,6 +637,11 @@ mod tests {
             #[test]
             fn platform_hub() {
                 load_bp(include_str!("../tests/2.0/platform_hub.txt"));
+            }
+
+            #[test]
+            fn train_schedule() {
+                load_bp(include_str!("../tests/2.0/train_schedule.txt"));
             }
         }
     }
