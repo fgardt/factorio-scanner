@@ -412,6 +412,9 @@ pub struct Entity {
 
     pub orientation: Option<RealOrientation>,
 
+    // todo: make a defines.rail_layer type for this
+    pub rail_layer: Option<String>,
+
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub neighbours: Vec<EntityNumber>,
 
