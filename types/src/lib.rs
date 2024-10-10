@@ -3063,8 +3063,9 @@ pub enum CircuitConnectorSecondaryDrawOrder {
 }
 
 // Comparator variants
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
 pub enum Comparator {
+    #[default]
     #[serde(rename = "<")]
     Less,
     #[serde(rename = "≤", alias = "<=")]
