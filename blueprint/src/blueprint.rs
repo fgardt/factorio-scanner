@@ -326,7 +326,8 @@ pub type GraphicsVariation = NonZeroU32;
 #[serde(deny_unknown_fields)]
 pub struct StockConnection {
     pub stock: EntityNumber,
-    pub back: EntityNumber,
+    pub front: Option<EntityNumber>,
+    pub back: Option<EntityNumber>,
 }
 
 // todo: use defines.wire_connector_id
@@ -455,6 +456,8 @@ pub struct Entity {
 
     pub request_filters: Option<RequestFilters>,
 
+    pub request_missing_construction_materials: Option<bool>,
+
     pub parameters: Option<SpeakerParameter>,
     pub alert_parameters: Option<SpeakerAlertParameter>,
 
@@ -493,6 +496,11 @@ pub struct Entity {
 
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub tags: mod_util::TagTable,
+
+    // display panel
+    pub text: Option<String>,
+    pub icon: Option<SignalID>,
+    pub always_show: Option<bool>,
 }
 
 impl PartialOrd for Entity {
@@ -551,6 +559,10 @@ impl crate::GetIDs for Entity {
             if let Some(signal) = &alert_parameters.icon_signal_id {
                 ids.merge(signal.get_ids());
             }
+        }
+
+        if let Some(icon) = &self.icon {
+            ids.merge(icon.get_ids());
         }
 
         ids
@@ -619,8 +631,12 @@ impl crate::GetIDs for Schedule {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ScheduleData {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub records: Vec<ScheduleRecord>,
+
     pub group: Option<String>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub interrupts: Vec<ScheduleInterrupt>,
 }
 
@@ -724,12 +740,22 @@ pub enum WaitConditionType {
     #[serde(alias = "not-empty")]
     NotEmpty,
     FuelFull,
+    AtStation {
+        station: Option<String>,
+    },
+    NotAtStation {
+        station: Option<String>,
+    },
     RobotsInactive,
     PassengerPresent,
     PassengerNotPresent,
     AllRequestsSatisfied,
     AnyRequestZero,
     AnyRequestNotSatisfied,
+    AnyPlanetImportZero {
+        planet: Option<PlanetImportTarget>,
+    },
+    DestinationFullOrNoPath,
     Time {
         ticks: u32,
     },
@@ -766,6 +792,12 @@ pub enum WaitConditionType {
     SpecificDestinationNotFull {
         station: Option<String>,
     },
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct PlanetImportTarget {
+    pub name: SpaceLocationID,
 }
 
 #[skip_serializing_none]
