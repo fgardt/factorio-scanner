@@ -643,6 +643,11 @@ mod tests {
             fn train_schedule() {
                 load_bp(include_str!("../tests/2.0/train_schedule.txt"));
             }
+
+            #[test]
+            fn parametrics() {
+                load_bp(include_str!("../tests/2.0/parametrics.txt"));
+            }
         }
     }
 }
