@@ -279,6 +279,19 @@ mod u16 {
     }
 }
 
+pub use i32::*;
+mod i32 {
+    #[must_use]
+    pub const fn i32_1() -> i32 {
+        1
+    }
+
+    #[must_use]
+    pub const fn is_1_i32(value: &i32) -> bool {
+        *value == i32_1()
+    }
+}
+
 pub use u32::*;
 mod u32 {
     #[must_use]

@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use types::{Comparator, QualityID};
+
+use super::QualityCondition;
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -26,10 +27,4 @@ pub enum ParameterData {
         variable: Option<String>,
         formula: Option<String>,
     },
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct QualityCondition {
-    pub quality: QualityID,
-    pub comparator: Comparator,
 }

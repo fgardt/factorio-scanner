@@ -1204,6 +1204,7 @@ pub struct ControlBehavior {
     pub filters: IndexedVec<ConstantCombinatorFilter>,
     pub arithmetic_conditions: Option<ArithmeticData>,
     pub decider_conditions: Option<DeciderData>,
+    pub selector_conditions: Option<SelectorData>,
 
     // speakers
     pub circuit_parameters: Option<SpeakerCircuitParameters>,
@@ -1292,6 +1293,10 @@ impl crate::GetIDs for ControlBehavior {
             ids.merge(decider_conditions.get_ids());
         }
 
+        if let Some(selector_conditions) = &self.selector_conditions {
+            ids.merge(selector_conditions.get_ids());
+        }
+
         ids
     }
 }
@@ -1309,6 +1314,13 @@ impl crate::GetIDs for ConstantCombinatorFilter {
     }
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct SignalNetworks {
+    pub red: bool,
+    pub green: bool,
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged, deny_unknown_fields)]
@@ -1318,6 +1330,8 @@ pub enum ArithmeticData {
         second_signal: Option<SignalID>,
         operation: ArithmeticOperation,
         output_signal: Option<SignalID>,
+        first_signal_networks: Option<SignalNetworks>,
+        second_signal_networks: Option<SignalNetworks>,
     },
     SignalConstant {
         first_signal: Option<SignalID>,
@@ -1325,6 +1339,7 @@ pub enum ArithmeticData {
         second_constant: i32,
         operation: ArithmeticOperation,
         output_signal: Option<SignalID>,
+        first_signal_networks: Option<SignalNetworks>,
     },
     ConstantSignal {
         #[serde(default)]
@@ -1332,6 +1347,7 @@ pub enum ArithmeticData {
         second_signal: Option<SignalID>,
         operation: ArithmeticOperation,
         output_signal: Option<SignalID>,
+        second_signal_networks: Option<SignalNetworks>,
     },
     ConstantConstant {
         #[serde(default)]
@@ -1415,19 +1431,44 @@ impl crate::GetIDs for ArithmeticData {
     }
 }
 
-// https://lua-api.factorio.com/latest/concepts.html#DeciderCombinatorParameters
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct DeciderData {
+    pub conditions: Vec<DeciderCondition>,
+    pub outputs: Vec<DeciderOutput>,
+}
+
+impl DeciderData {
+    #[must_use]
+    pub fn operation(&self) -> Comparator {
+        self.conditions
+            .first()
+            .map_or(Comparator::Unknown, DeciderCondition::comparator)
+    }
+}
+
+impl crate::GetIDs for DeciderData {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = self.conditions.get_ids();
+        ids.merge(self.outputs.get_ids());
+
+        ids
+    }
+}
+
+#[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged, deny_unknown_fields)]
-pub enum DeciderData {
+pub enum DeciderCondition {
     Signal {
         first_signal: Option<SignalID>,
         second_signal: Option<SignalID>,
 
+        #[serde(default, skip_serializing_if = "serde_helper::is_default")]
         comparator: Comparator,
-        output_signal: Option<SignalID>,
 
-        #[serde(default = "default_true", skip_serializing_if = "Clone::clone")]
-        copy_count_from_input: bool,
+        first_signal_networks: Option<SignalNetworks>,
+        second_signal_networks: Option<SignalNetworks>,
     },
     Constant {
         first_signal: Option<SignalID>,
@@ -1435,24 +1476,23 @@ pub enum DeciderData {
         #[serde(default)]
         constant: i32,
 
+        #[serde(default, skip_serializing_if = "serde_helper::is_default")]
         comparator: Comparator,
-        output_signal: Option<SignalID>,
 
-        #[serde(default = "default_true", skip_serializing_if = "Clone::clone")]
-        copy_count_from_input: bool,
+        first_signal_networks: Option<SignalNetworks>,
     },
 }
 
-impl DeciderData {
+impl DeciderCondition {
     #[must_use]
-    pub const fn operation(&self) -> Comparator {
+    pub const fn comparator(&self) -> Comparator {
         match self {
             Self::Signal { comparator, .. } | Self::Constant { comparator, .. } => *comparator,
         }
     }
 }
 
-impl crate::GetIDs for DeciderData {
+impl crate::GetIDs for DeciderCondition {
     fn get_ids(&self) -> crate::UsedIDs {
         let mut ids = crate::UsedIDs::default();
 
@@ -1460,7 +1500,6 @@ impl crate::GetIDs for DeciderData {
             Self::Signal {
                 first_signal,
                 second_signal,
-                output_signal,
                 ..
             } => {
                 if let Some(signal) = first_signal {
@@ -1470,21 +1509,9 @@ impl crate::GetIDs for DeciderData {
                 if let Some(signal) = second_signal {
                     ids.merge(signal.get_ids());
                 }
-
-                if let Some(signal) = output_signal {
-                    ids.merge(signal.get_ids());
-                }
             }
-            Self::Constant {
-                first_signal,
-                output_signal,
-                ..
-            } => {
+            Self::Constant { first_signal, .. } => {
                 if let Some(signal) = first_signal {
-                    ids.merge(signal.get_ids());
-                }
-
-                if let Some(signal) = output_signal {
                     ids.merge(signal.get_ids());
                 }
             }
@@ -1492,6 +1519,141 @@ impl crate::GetIDs for DeciderData {
 
         ids
     }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct DeciderOutput {
+    pub signal: Option<SignalID>,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub copy_count_from_input: bool,
+
+    #[serde(
+        default = "serde_helper::i32_1",
+        skip_serializing_if = "serde_helper::is_1_i32"
+    )]
+    pub constant: i32,
+
+    pub networks: Option<SignalNetworks>,
+}
+
+impl crate::GetIDs for DeciderOutput {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.signal
+            .as_ref()
+            .map_or_else(Default::default, crate::GetIDs::get_ids)
+    }
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(tag = "operation", rename_all = "kebab-case", deny_unknown_fields)]
+pub enum SelectorData {
+    Select {
+        select_max: bool,
+        index_signal: Option<SignalID>,
+        index_constant: Option<u16>,
+
+        // why are you here
+        quality_filter: Option<()>,
+    },
+    Count {
+        count_signal: Option<SignalID>,
+
+        // why are you here
+        select_max: bool,
+        index_constant: u8,
+        quality_filter: Option<()>,
+    },
+    Random {
+        #[serde(default, skip_serializing_if = "serde_helper::is_default")]
+        random_update_interval: u32,
+
+        // why are you here
+        select_max: bool,
+        index_constant: u8,
+        quality_filter: Option<()>,
+    },
+    StackSize,
+    RocketCapacity,
+    QualityFilter {
+        quality_filter: Option<QualityCondition>,
+
+        // why are you here
+        select_max: bool,
+        index_constant: u8,
+    },
+    QualityTransfer {
+        #[serde(default, skip_serializing_if = "serde_helper::is_default")]
+        select_quality_from_signal: bool,
+        quality_source_signal: Option<SignalID>,
+        quality_source_static: Option<QualitySourceStatic>,
+        quality_destination_signal: Option<SignalID>,
+
+        // why are you here
+        select_max: bool,
+        index_constant: u8,
+        quality_filter: Option<()>,
+    },
+}
+
+impl crate::GetIDs for SelectorData {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = crate::UsedIDs::default();
+
+        match self {
+            Self::Select { index_signal, .. } => {
+                if let Some(signal) = index_signal {
+                    ids.merge(signal.get_ids());
+                }
+            }
+            Self::Count { count_signal, .. } => {
+                if let Some(signal) = count_signal {
+                    ids.merge(signal.get_ids());
+                }
+            }
+            Self::Random { .. } | Self::StackSize | Self::RocketCapacity => {}
+            Self::QualityFilter { quality_filter, .. } => {
+                if let Some(quality_filter) = quality_filter {
+                    ids.quality.insert(quality_filter.quality.clone());
+                }
+            }
+            Self::QualityTransfer {
+                quality_source_signal,
+                quality_source_static,
+                quality_destination_signal,
+                ..
+            } => {
+                if let Some(signal) = quality_source_signal {
+                    ids.merge(signal.get_ids());
+                }
+
+                if let Some(signal) = quality_destination_signal {
+                    ids.merge(signal.get_ids());
+                }
+
+                if let Some(static_source) = quality_source_static {
+                    ids.quality.insert(static_source.name.clone());
+                }
+            }
+        }
+
+        ids
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct QualityCondition {
+    pub quality: QualityID,
+    pub comparator: Comparator,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct QualitySourceStatic {
+    pub name: QualityID,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -1521,8 +1683,4 @@ where
     } else {
         s.serialize_f32(*x)
     }
-}
-
-const fn default_true() -> bool {
-    true
 }
