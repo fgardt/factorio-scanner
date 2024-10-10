@@ -648,6 +648,11 @@ mod tests {
             fn parametrics() {
                 load_bp(include_str!("../tests/2.0/parametrics.txt"));
             }
+
+            #[test]
+            fn elevated_rails() {
+                load_bp(include_str!("../tests/2.0/elevated_rails.txt"));
+            }
         }
     }
 }
