@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use types::{Comparator, ItemCountType, SpaceLocationID};
+use types::{Comparator, ItemCountType, QualityID, SpaceLocationID};
 
 use crate::IndexedVec;
 
@@ -65,7 +65,7 @@ pub struct LogisticFilter {
     #[serde(rename = "type")]
     pub kind: Option<String>,
     pub name: Option<String>,
-    pub quality: Option<String>,
+    pub quality: Option<QualityID>,
 
     pub comparator: Option<Comparator>,
     pub count: i32,

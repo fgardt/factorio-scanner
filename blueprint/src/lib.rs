@@ -653,6 +653,11 @@ mod tests {
             fn elevated_rails() {
                 load_bp(include_str!("../tests/2.0/elevated_rails.txt"));
             }
+
+            #[test]
+            fn combinators() {
+                load_bp(include_str!("../tests/2.0/combinators.txt"));
+            }
         }
     }
 }
