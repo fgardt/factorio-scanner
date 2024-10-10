@@ -5,6 +5,7 @@ use std::{
 
 use logistics::{LogisticSections, RequestFilters};
 use mod_util::{mod_info::DependencyVersion, AnyBasic, DependencyList};
+use parameters::ParameterData;
 use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
@@ -17,6 +18,7 @@ use types::{
 use crate::{IndexedVec, NameString};
 
 mod logistics;
+mod parameters;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -40,6 +42,9 @@ pub struct BlueprintData {
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub wires: Vec<WireData>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parameters: Vec<ParameterData>,
 
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub description: String,
@@ -412,6 +417,8 @@ pub struct Entity {
 
     pub control_behavior: Option<ControlBehavior>,
     pub connections: Option<Connection>,
+
+    pub player_description: Option<String>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<ItemRequest>,
