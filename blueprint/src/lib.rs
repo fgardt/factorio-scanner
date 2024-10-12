@@ -658,6 +658,21 @@ mod tests {
             fn combinators() {
                 load_bp(include_str!("../tests/2.0/combinators.txt"));
             }
+
+            #[test]
+            fn flipped_fluidboxes() {
+                load_bp(include_str!("../tests/2.0/flipped_fluidboxes.txt"));
+            }
+
+            #[test]
+            fn long_train() {
+                load_bp(include_str!("../tests/2.0/long_train.txt"));
+            }
+
+            #[test]
+            fn artillery() {
+                load_bp(include_str!("../tests/2.0/artillery.txt"));
+            }
         }
     }
 }
