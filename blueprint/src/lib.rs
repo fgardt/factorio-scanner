@@ -106,6 +106,12 @@ impl Version {
     }
 }
 
+impl From<u64> for Version {
+    fn from(value: u64) -> Self {
+        Self(value)
+    }
+}
+
 impl std::ops::Deref for Version {
     type Target = u64;
 
@@ -606,6 +612,22 @@ mod tests {
         Data::try_from(data).unwrap()
     }
 
+    macro_rules! bp_tests {
+        ($prefix:literal, $($name:ident),+) => {
+            $(
+                #[test]
+                fn $name() {
+                    load_bp(include_str!(concat!(
+                        "../tests/",
+                        $prefix,
+                        stringify!($name),
+                        ".txt"
+                    )));
+                }
+            )+
+        };
+    }
+
     mod bp {
         use super::*;
 
@@ -624,55 +646,19 @@ mod tests {
         mod v2 {
             use super::*;
 
-            #[test]
-            fn quality_chemplants() {
-                load_bp(include_str!("../tests/2.0/quality_chemplants.txt"));
-            }
-
-            #[test]
-            fn constant_logistic_group() {
-                load_bp(include_str!("../tests/2.0/constant_logistic_group.txt"));
-            }
-
-            #[test]
-            fn platform_hub() {
-                load_bp(include_str!("../tests/2.0/platform_hub.txt"));
-            }
-
-            #[test]
-            fn train_schedule() {
-                load_bp(include_str!("../tests/2.0/train_schedule.txt"));
-            }
-
-            #[test]
-            fn parametrics() {
-                load_bp(include_str!("../tests/2.0/parametrics.txt"));
-            }
-
-            #[test]
-            fn elevated_rails() {
-                load_bp(include_str!("../tests/2.0/elevated_rails.txt"));
-            }
-
-            #[test]
-            fn combinators() {
-                load_bp(include_str!("../tests/2.0/combinators.txt"));
-            }
-
-            #[test]
-            fn flipped_fluidboxes() {
-                load_bp(include_str!("../tests/2.0/flipped_fluidboxes.txt"));
-            }
-
-            #[test]
-            fn long_train() {
-                load_bp(include_str!("../tests/2.0/long_train.txt"));
-            }
-
-            #[test]
-            fn artillery() {
-                load_bp(include_str!("../tests/2.0/artillery.txt"));
-            }
+            bp_tests!(
+                "2.0/",
+                quality_chemplants,
+                constant_logistic_group,
+                platform_hub,
+                train_schedule,
+                parametrics,
+                elevated_rails,
+                combinators,
+                flipped_fluidboxes,
+                long_train,
+                artillery
+            );
         }
     }
 }

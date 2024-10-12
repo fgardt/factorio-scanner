@@ -7,6 +7,10 @@ edition.workspace = true
 [lints]
 workspace = true
 
+[[example]]
+name = "extract-tests"
+path = "examples/extract-tests.rs"
+
 [dependencies]
 base64 = "0.22"
 flate2.workspace = true
