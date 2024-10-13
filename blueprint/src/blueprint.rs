@@ -410,8 +410,8 @@ pub struct Entity {
 
     #[serde(default, skip_serializing_if = "Direction::is_default")]
     pub direction: Direction,
-
     pub orientation: Option<RealOrientation>,
+    pub mirror: Option<bool>,
 
     // todo: make a defines.rail_layer type for this
     pub rail_layer: Option<String>,
@@ -421,6 +421,8 @@ pub struct Entity {
 
     pub control_behavior: Option<ControlBehavior>,
     pub connections: Option<Connection>,
+
+    pub artillery_auto_targeting: Option<bool>,
 
     pub player_description: Option<String>,
 
@@ -1236,6 +1238,7 @@ pub struct ControlBehavior {
     pub filters: IndexedVec<ConstantCombinatorFilter>,
     pub arithmetic_conditions: Option<ArithmeticData>,
     pub decider_conditions: Option<DeciderData>,
+    #[serde(flatten)]
     pub selector_conditions: Option<SelectorData>,
 
     // speakers
@@ -1243,6 +1246,9 @@ pub struct ControlBehavior {
 
     // lamps
     pub use_colors: Option<bool>,
+
+    // turrets
+    pub read_ammo: Option<bool>,
 }
 
 impl crate::GetIDs for ControlBehavior {
@@ -1580,41 +1586,24 @@ impl crate::GetIDs for DeciderOutput {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(tag = "operation", rename_all = "kebab-case", deny_unknown_fields)]
+#[serde(tag = "operation", rename_all = "kebab-case")]
 pub enum SelectorData {
     Select {
         select_max: bool,
         index_signal: Option<SignalID>,
         index_constant: Option<u16>,
-
-        // why are you here
-        quality_filter: Option<()>,
     },
     Count {
         count_signal: Option<SignalID>,
-
-        // why are you here
-        select_max: bool,
-        index_constant: u8,
-        quality_filter: Option<()>,
     },
     Random {
         #[serde(default, skip_serializing_if = "serde_helper::is_default")]
         random_update_interval: u32,
-
-        // why are you here
-        select_max: bool,
-        index_constant: u8,
-        quality_filter: Option<()>,
     },
     StackSize,
     RocketCapacity,
     QualityFilter {
         quality_filter: Option<QualityCondition>,
-
-        // why are you here
-        select_max: bool,
-        index_constant: u8,
     },
     QualityTransfer {
         #[serde(default, skip_serializing_if = "serde_helper::is_default")]
@@ -1622,11 +1611,6 @@ pub enum SelectorData {
         quality_source_signal: Option<SignalID>,
         quality_source_static: Option<QualitySourceStatic>,
         quality_destination_signal: Option<SignalID>,
-
-        // why are you here
-        select_max: bool,
-        index_constant: u8,
-        quality_filter: Option<()>,
     },
 }
 

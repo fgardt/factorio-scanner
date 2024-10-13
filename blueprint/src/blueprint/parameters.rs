@@ -26,5 +26,8 @@ pub enum ParameterData {
         name: Option<String>,
         variable: Option<String>,
         formula: Option<String>,
+
+        #[serde(default, skip_serializing_if = "serde_helper::is_default")]
+        dependent: bool,
     },
 }
