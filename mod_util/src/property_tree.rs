@@ -55,6 +55,8 @@ enum PropertyTreeType {
     String = 3,
     List = 4,
     Dictionary = 5,
+    SignedInteger = 6,
+    UnsignedInteger = 7,
 }
 
 #[allow(clippy::upper_case_acronyms)]
@@ -71,6 +73,8 @@ impl TryFrom<&u8> for PropertyTreeType {
             3 => Ok(Self::String),
             4 => Ok(Self::List),
             5 => Ok(Self::Dictionary),
+            6 => Ok(Self::SignedInteger),
+            7 => Ok(Self::UnsignedInteger),
             _ => Err(PropertyTreeError::InvalidType(*value)),
         }
     }
@@ -93,6 +97,8 @@ impl From<&PropertyTree> for PropertyTreeType {
             PropertyTree::String(_) => Self::String,
             PropertyTree::List(_) => Self::List,
             PropertyTree::Dictionary(_) => Self::Dictionary,
+            PropertyTree::SignedInteger(_) => Self::SignedInteger,
+            PropertyTree::UnsignedInteger(_) => Self::UnsignedInteger,
         }
     }
 }
@@ -112,8 +118,8 @@ pub enum PropertyTree {
     String(String),
     List(Vec<PropertyTree>),
     Dictionary(HashMap<String, PropertyTree>),
-    // SignedInteger(i32),
-    // UnsignedInteger(u32),
+    SignedInteger(i64),
+    UnsignedInteger(u64),
 }
 
 impl PropertyTree {
@@ -147,6 +153,8 @@ impl PropertyTree {
 
                 Self::Dictionary(dict)
             }
+            PTT::SignedInteger => Self::SignedInteger(reader.read_i64::<LittleEndian>()?),
+            PTT::UnsignedInteger => Self::UnsignedInteger(reader.read_u64::<LittleEndian>()?),
         };
 
         Ok(data)
@@ -180,6 +188,8 @@ impl PropertyTree {
                     value.write(out)?;
                 }
             }
+            Self::SignedInteger(val) => out.write_i64::<LittleEndian>(*val)?,
+            Self::UnsignedInteger(val) => out.write_u64::<LittleEndian>(*val)?,
         }
 
         Ok(())
