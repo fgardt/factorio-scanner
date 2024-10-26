@@ -9,13 +9,13 @@ workspace = true
 
 [dependencies]
 mod_util.workspace = true
-reqwest = { version = "0.11", features = [
+reqwest = { version = "0.12", features = [
     "rustls-tls",
     "multipart",
 ], default-features = false }
-reqwest-middleware = "0.2"
-reqwest-retry = "0.4"
-reqwest-tracing = "0.4"
+reqwest-middleware = "0.3"
+reqwest-retry = "0.6"
+reqwest-tracing = "0.5"
 serde.workspace = true
 serde_json.workspace = true
 task-local-extensions = "0.1"
