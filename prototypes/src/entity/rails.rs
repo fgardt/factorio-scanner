@@ -78,6 +78,7 @@ impl<T: RailDirectionPrototype> super::Renderable for RailData<T> {
                         .pictures
                         .straight_rail_diagonal_left_bottom
                         .render(options, used_mods, render_layers, image_cache),
+                    _ => None, // TODO: new rails
                 }
             }
             RailDirectionType::Curved => {
@@ -128,6 +129,7 @@ impl<T: RailDirectionPrototype> super::Renderable for RailData<T> {
                         render_layers,
                         image_cache,
                     ),
+                    _ => None, // TODO: new rails
                 }
             }
         }
