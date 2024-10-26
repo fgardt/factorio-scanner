@@ -28,9 +28,11 @@ pub fn get_used_versions(bp: &blueprint::Blueprint) -> DependencyList {
             check_prefix(filter, &mut auto_detected);
         }
 
-        for item in entity.items.keys() {
-            check_prefix(item, &mut auto_detected);
-        }
+        // for item in entity.items.keys() {
+        //     check_prefix(item, &mut auto_detected);
+        // }
+
+        // TODO: update prefix detection
     }
 
     auto_detected

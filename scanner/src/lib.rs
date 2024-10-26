@@ -853,8 +853,9 @@ pub fn render_bp(
                 }
             }
 
+            // TODO: update item requests rendering
             // modules / item requests
-            {
+            /*{
                 if !e.items.is_empty() {
                     let mut items = e.items.iter().collect::<Vec<_>>();
                     items.sort_unstable_by_key(|a| a.0);
@@ -914,7 +915,7 @@ pub fn render_bp(
                         offset = Vector::Tuple(0.0, offset.y() + 0.5);
                     }
                 }
-            }
+            }*/
 
             // inserter indicators
             'inserter_indicators: {
@@ -1115,25 +1116,27 @@ pub fn render_thumbnail(
                 offset += Vector::Tuple(-1.0, 0.5);
             }
 
+            // TODO: render quality indicator
             let res = match &icon.signal {
-                SignalID::Item { name } => data.get_item_icon(
+                SignalID::Item { name, .. } => data.get_item_icon(
                     name.clone().unwrap_or_default().as_str(),
                     scale,
                     used_mods,
                     image_cache,
                 ),
-                SignalID::Fluid { name } => data.get_fluid_icon(
+                SignalID::Fluid { name, .. } => data.get_fluid_icon(
                     name.clone().unwrap_or_default().as_str(),
                     scale,
                     used_mods,
                     image_cache,
                 ),
-                SignalID::Virtual { name } => data.get_signal_icon(
+                SignalID::Virtual { name, .. } => data.get_signal_icon(
                     name.clone().unwrap_or_default().as_str(),
                     scale,
                     used_mods,
                     image_cache,
                 ),
+                _ => None, // TODO: render more signal types
             };
 
             let Some((res, _)) = res else {
