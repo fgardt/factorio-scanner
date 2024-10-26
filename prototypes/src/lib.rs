@@ -42,12 +42,21 @@ pub struct BasePrototype<T> {
 
     pub name: String,
 
-    #[serde(default, skip_serializing_if = "String::is_empty")]
+    #[serde(default, skip_serializing_if = "serde_helper::is_default")]
     pub order: Order,
 
     pub localised_name: Option<LocalisedString>,
     pub localised_description: Option<LocalisedString>,
+    pub factoriopedia_description: Option<LocalisedString>,
 
+    #[serde(default, skip_serializing_if = "serde_helper::is_default")]
+    pub hidden: bool,
+    pub hidden_in_factoriopedia: Option<bool>,
+
+    #[serde(default, skip_serializing_if = "serde_helper::is_default")]
+    pub parameter: bool,
+
+    // pub factoriopedia_simulation: Option<SimulationDefinition>,
     #[serde(flatten)]
     child: T,
 }

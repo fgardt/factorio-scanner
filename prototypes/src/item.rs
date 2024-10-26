@@ -338,7 +338,11 @@ mod test {
             name: "iron-plate".to_owned(),
             localised_name: None,
             localised_description: None,
+            factoriopedia_description: None,
             order: String::new(),
+            parameter: false,
+            hidden: false,
+            hidden_in_factoriopedia: None,
             child: ItemPrototypeData {
                 stack_size: 100,
                 // icon: Icon::Single {
