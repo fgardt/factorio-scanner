@@ -1949,13 +1949,20 @@ pub enum LightDefinition {
 pub struct BoxSpecification {
     pub sprite: Sprite,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "serde_helper::is_default")]
     pub is_whole_box: bool,
 
     // TODO: model mandatory depending on `is_whole_box`
     pub side_length: Option<f64>,
     pub side_height: Option<f64>,
     pub max_side_length: Option<f64>,
+}
+
+/// [`Types/EntityBuildAnimationPiece`](https://lua-api.factorio.com/latest/types/EntityBuildAnimationPiece.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct EntityBuildAnimationPiece {
+    pub top: Animation,
+    pub body: Animation,
 }
 
 /// [`Types/BeamAnimationSet`](https://lua-api.factorio.com/latest/types/BeamAnimationSet.html)
