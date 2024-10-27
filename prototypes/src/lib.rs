@@ -191,8 +191,9 @@ pub struct DataRaw {
     pub recipe: recipe::AllTypes,
     pub recipe_category: HashMap<RecipeCategoryID, recipe::RecipeCategory>,
 
-    // #[serde(flatten)]
-    // pub tile: tile::AllTypes,
+    #[serde(flatten)]
+    pub tile: tile::AllTypes,
+
     pub utility_sprites: HashMap<String, utility_sprites::UtilitySprites>,
 }
 
