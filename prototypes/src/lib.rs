@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use signed_distance_field::prelude::*;
 
-use entity::RenderableEntity;
+// use entity::RenderableEntity;
 use mod_util::mod_info::Version;
 
 use mod_util::UsedMods;
@@ -31,6 +31,8 @@ pub mod recipe;
 pub mod signal;
 pub mod tile;
 pub mod utility_sprites;
+
+// `Prototype` not implemented since it only holds the `factoriopedia_alternative` field
 
 /// [`Prototypes/PrototypeBase`](https://lua-api.factorio.com/latest/PrototypeBase.html)
 #[skip_serializing_none]
@@ -121,6 +123,7 @@ mod helper_macro {
                 #[serde(rename_all = "kebab-case")]
                 pub struct $name {
                     $(
+                        #[serde(default)]
                         pub [< $member:snake >]: std::collections::HashMap<$id, [< $member:camel Prototype >]>,
                     )+
                 }
@@ -173,25 +176,23 @@ pub enum Error {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct DataRaw {
-    #[serde(flatten)]
-    pub entity: entity::AllTypes,
-
+    // #[serde(flatten)]
+    // pub entity: entity::AllTypes,
     #[serde(flatten)]
     pub item: item::AllTypes,
 
-    #[serde(flatten)]
-    pub fluid: fluid::AllTypes,
+    // #[serde(flatten)]
+    // pub fluid: fluid::AllTypes,
 
-    #[serde(flatten)]
-    pub virtual_signal: signal::AllTypes,
+    // #[serde(flatten)]
+    // pub virtual_signal: signal::AllTypes,
 
-    #[serde(flatten)]
-    pub recipe: recipe::AllTypes,
-    pub recipe_category: HashMap<RecipeCategoryID, recipe::RecipeCategory>,
+    // #[serde(flatten)]
+    // pub recipe: recipe::AllTypes,
+    // pub recipe_category: HashMap<RecipeCategoryID, recipe::RecipeCategory>,
 
-    #[serde(flatten)]
-    pub tile: tile::AllTypes,
-
+    // #[serde(flatten)]
+    // pub tile: tile::AllTypes,
     pub utility_sprites: HashMap<String, utility_sprites::UtilitySprites>,
 }
 
@@ -207,6 +208,8 @@ impl DataRaw {
         Ok(serde_json::from_slice(bytes)?)
     }
 }
+
+/*
 
 pub struct DataUtil {
     raw: DataRaw,
@@ -1054,6 +1057,8 @@ impl DataUtilAccess<TileID, tile::AllTypes> for DataUtil {
         self.raw.tile.get_proto(id)
     }
 }
+
+*/
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum InternalRenderLayer {

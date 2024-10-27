@@ -38,7 +38,7 @@ pub struct LandMineData {
     )]
     pub trigger_force: ForceCondition,
 
-    pub trigger_collision_mask: Option<CollisionMask>,
+    pub trigger_collision_mask: Option<CollisionMaskConnector>,
     // not implemented
     // pub action: Option<Trigger>,
 }

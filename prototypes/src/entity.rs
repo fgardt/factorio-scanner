@@ -441,7 +441,7 @@ pub struct EntityData<T: Renderable> {
     pub icon: Option<Icon>,
 
     pub collision_box: Option<BoundingBox>,
-    pub collision_mask: Option<CollisionMask>,
+    pub collision_mask: Option<CollisionMaskConnector>,
 
     pub map_generator_bounding_box: Option<BoundingBox>,
     pub selection_box: Option<BoundingBox>,

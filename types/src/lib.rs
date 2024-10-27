@@ -50,9 +50,7 @@ pub use wire::*;
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AmmoType {
-    pub category: AmmoCategoryID,
-
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub clamp_position: bool,
 
     pub energy_consumption: Option<Energy>,
@@ -66,15 +64,15 @@ pub struct AmmoType {
     #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
     pub consumption_modifier: f32,
 
-    pub target_type: Option<AmmoTypeTargetType>,
-
     #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub source_type: AmmoSourceType,
+    pub target_type: AmmoTypeTargetType,
+
+    pub source_type: Option<AmmoSourceType>,
     // not implemented
     // pub action: Option<Trigger>,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum AmmoTypeTargetType {
     #[default]
@@ -1223,10 +1221,13 @@ pub enum SelectionModeFlagsUnion {
     CancelUpgrade,
     Downgrade,
     EntityWithHealth,
-    EntityWithForce,
     IsMilitaryTarget,
     EntityWithOwner,
     AvoidRollingStock,
+    AvoidVehicle,
+    Controllable,
+    ControllableAdd,
+    ControllableRemove,
     EntityGhost,
     TileGhost,
 }
@@ -1236,13 +1237,16 @@ pub enum SelectionModeFlagsUnion {
 #[serde(rename_all = "kebab-case")]
 pub enum CursorBoxType {
     Entity,
+    MultiplayerEntity,
     Electricity,
     Copy,
     NotAllowed,
     Pair,
     Logistics,
-    TrainVisualizations,
+    TrainVisualization,
     BlueprintSnapRectangle,
+    SpidertronRemoteSelected,
+    SpidertronRemoteToBeSelected,
 }
 
 /// [`Types/ItemToPlace`](https://lua-api.factorio.com/latest/types/ItemToPlace.html)
@@ -1261,8 +1265,20 @@ pub enum PlaceableBy {
     Multiple(FactorioArray<ItemToPlace>),
 }
 
-/// [`Types/CollisionMask`](https://lua-api.factorio.com/latest/types/CollisionMask.html)
-pub type CollisionMask = FactorioArray<String>;
+/// [`Types/CollisionMaskConnector`](https://lua-api.factorio.com/latest/types/CollisionMaskConnector.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CollisionMaskConnector {
+    pub layers: HashMap<CollisionLayerID, bool>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub not_colliding_with_self: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub consider_tile_transitions: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub colliding_with_tiles_only: bool,
+}
 
 /// Union used in [`Types/EntityPrototypeFlags`](https://lua-api.factorio.com/latest/types/EntityPrototypeFlags.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -3129,3 +3145,6 @@ pub enum ArithmeticOperation {
     #[serde(rename = "?", other)]
     Unknown,
 }
+
+/// [`Types/Weight`](https://lua-api.factorio.com/latest/types/Weight.html)
+pub type Weight = f64;

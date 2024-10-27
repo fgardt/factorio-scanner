@@ -27,9 +27,9 @@ pub struct OffshorePumpData {
     )]
     pub min_perceived_performance: f64,
 
-    pub fluid_box_tile_collision_test: Option<CollisionMask>,
-    pub adjacent_tile_collision_test: Option<CollisionMask>,
-    pub center_collision_mask: Option<CollisionMask>,
+    pub fluid_box_tile_collision_test: Option<CollisionMaskConnector>,
+    pub adjacent_tile_collision_test: Option<CollisionMaskConnector>,
+    pub center_collision_mask: Option<CollisionMaskConnector>,
     pub adjacent_tile_collision_box: Option<BoundingBox>,
     pub placeable_position_visualization: Option<Sprite>,
 
