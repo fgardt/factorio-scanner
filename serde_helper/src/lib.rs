@@ -152,6 +152,132 @@ where
 struct InfFloatVisitor;
 
 impl<'de> serde::de::Visitor<'de> for InfFloatVisitor {
+    type Value = f32;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str(
+            "a single precision floating point number or a string containing \"inf\", \"-inf\" or \"NaN\"",
+        )
+    }
+
+    fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(value as f32)
+    }
+
+    fn visit_f32<E>(self, value: f32) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(value)
+    }
+
+    fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(value as f32)
+    }
+
+    fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(value as f32)
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        match value {
+            "inf" => Ok(f32::INFINITY),
+            "-inf" => Ok(f32::NEG_INFINITY),
+            "NaN" => Ok(f32::NAN),
+            _ => Err(E::custom(format!(
+                "invalid string for special float value: {value}"
+            ))),
+        }
+    }
+}
+
+#[allow(clippy::missing_errors_doc)]
+pub fn inf_float_deserializer<'de, D>(deserializer: D) -> Result<f32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    deserializer.deserialize_any(InfFloatVisitor)
+}
+
+#[allow(clippy::missing_errors_doc)]
+pub fn inf_float_serializer<S>(value: &f32, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    if value.is_nan() {
+        serializer.serialize_str("NaN")
+    } else if value.is_infinite() {
+        if value.is_sign_positive() {
+            serializer.serialize_str("inf")
+        } else {
+            serializer.serialize_str("-inf")
+        }
+    } else {
+        serializer.serialize_f32(*value)
+    }
+}
+
+struct InfFloatOptVisitor;
+
+impl<'de> serde::de::Visitor<'de> for InfFloatOptVisitor {
+    type Value = Option<f32>;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str(
+            "a single precision floating point number or a string containing \"inf\", \"-inf\" or \"NaN\"",
+        )
+    }
+
+    fn visit_none<E>(self) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(None)
+    }
+
+    fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: serde::de::Deserializer<'de>,
+    {
+        deserializer.deserialize_any(InfFloatVisitor).map(Some)
+    }
+}
+
+#[allow(clippy::missing_errors_doc)]
+pub fn inf_float_opt_deserializer<'de, D>(deserializer: D) -> Result<Option<f32>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    deserializer.deserialize_option(InfFloatOptVisitor)
+}
+
+#[allow(clippy::missing_errors_doc)]
+pub fn inf_float_opt_serializer<S>(value: &Option<f32>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    if let Some(value) = value {
+        inf_float_serializer(value, serializer)
+    } else {
+        serializer.serialize_none()
+    }
+}
+
+struct InfDoubleVisitor;
+
+impl<'de> serde::de::Visitor<'de> for InfDoubleVisitor {
     type Value = f64;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -204,15 +330,15 @@ impl<'de> serde::de::Visitor<'de> for InfFloatVisitor {
 }
 
 #[allow(clippy::missing_errors_doc)]
-pub fn inf_float_deserializer<'de, D>(deserializer: D) -> Result<f64, D::Error>
+pub fn inf_double_deserializer<'de, D>(deserializer: D) -> Result<f64, D::Error>
 where
     D: Deserializer<'de>,
 {
-    deserializer.deserialize_any(InfFloatVisitor)
+    deserializer.deserialize_any(InfDoubleVisitor)
 }
 
 #[allow(clippy::missing_errors_doc)]
-pub fn inf_float_serializer<S>(value: &f64, serializer: S) -> Result<S::Ok, S::Error>
+pub fn inf_double_serializer<S>(value: &f64, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
@@ -229,9 +355,9 @@ where
     }
 }
 
-struct InfFloatOptVisitor;
+struct InfDoubleOptVisitor;
 
-impl<'de> serde::de::Visitor<'de> for InfFloatOptVisitor {
+impl<'de> serde::de::Visitor<'de> for InfDoubleOptVisitor {
     type Value = Option<f64>;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -251,25 +377,25 @@ impl<'de> serde::de::Visitor<'de> for InfFloatOptVisitor {
     where
         D: serde::de::Deserializer<'de>,
     {
-        deserializer.deserialize_any(InfFloatVisitor).map(Some)
+        deserializer.deserialize_any(InfDoubleVisitor).map(Some)
     }
 }
 
 #[allow(clippy::missing_errors_doc)]
-pub fn inf_float_opt_deserializer<'de, D>(deserializer: D) -> Result<Option<f64>, D::Error>
+pub fn inf_double_opt_deserializer<'de, D>(deserializer: D) -> Result<Option<f64>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    deserializer.deserialize_option(InfFloatOptVisitor)
+    deserializer.deserialize_option(InfDoubleOptVisitor)
 }
 
 #[allow(clippy::missing_errors_doc)]
-pub fn inf_float_opt_serializer<S>(value: &Option<f64>, serializer: S) -> Result<S::Ok, S::Error>
+pub fn inf_double_opt_serializer<S>(value: &Option<f64>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
     if let Some(value) = value {
-        inf_float_serializer(value, serializer)
+        inf_double_serializer(value, serializer)
     } else {
         serializer.serialize_none()
     }
