@@ -181,8 +181,8 @@ pub struct DataRaw {
     #[serde(flatten)]
     pub item: item::AllTypes,
 
-    // #[serde(flatten)]
-    // pub fluid: fluid::AllTypes,
+    #[serde(flatten)]
+    pub fluid: fluid::AllTypes,
 
     // #[serde(flatten)]
     // pub virtual_signal: signal::AllTypes,
