@@ -119,6 +119,11 @@ mod f64 {
     }
 
     #[must_use]
+    pub const fn f64_min() -> f64 {
+        f64::MIN
+    }
+
+    #[must_use]
     pub const fn f64_max() -> f64 {
         f64::MAX
     }
@@ -201,6 +206,11 @@ mod f64 {
     #[must_use]
     pub fn is_1000_f64(value: &f64) -> bool {
         (*value - f64_1000()).abs() < f64::EPSILON
+    }
+
+    #[must_use]
+    pub fn is_min_f64(value: &f64) -> bool {
+        (*value - f64_min()).abs() < f64::EPSILON
     }
 
     #[must_use]
