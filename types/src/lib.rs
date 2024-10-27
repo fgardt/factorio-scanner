@@ -408,6 +408,23 @@ pub struct StatusColors {
     pub low_power: Option<Color>,
 }
 
+/// [`Types/SurfaceCondition`](https://lua-api.factorio.com/latest/types/SurfaceCondition.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SurfaceCondition {
+    pub property: SurfacePropertyID,
+
+    #[serde(
+        default = "helper::f64_min",
+        skip_serializing_if = "helper::is_min_f64"
+    )]
+    pub min: f64,
+    #[serde(
+        default = "helper::f64_max",
+        skip_serializing_if = "helper::is_max_f64"
+    )]
+    pub max: f64,
+}
+
 /// [`Types/Vector`](https://lua-api.factorio.com/latest/types/Vector.html)
 #[derive(Debug, Serialize, Deserialize, Copy, Clone)]
 #[serde(untagged)]
