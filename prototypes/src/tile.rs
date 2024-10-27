@@ -4,7 +4,7 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 use types::{
-    CollisionMask, Color, FactorioArray, Icon, ImageCache, MapPosition, PlaceableBy,
+    CollisionMaskConnector, Color, FactorioArray, Icon, ImageCache, MapPosition, PlaceableBy,
     RenderableGraphics, TileID, TileRenderOpts, TileSprite, TileSpriteWithProbability,
 };
 
@@ -46,7 +46,7 @@ impl TilePrototype {
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TilePrototypeData {
-    pub collision_mask: CollisionMask,
+    pub collision_mask: CollisionMaskConnector,
     pub layer: u8,
 
     pub variants: TileTransitionsVariants,

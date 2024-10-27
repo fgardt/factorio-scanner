@@ -15,16 +15,17 @@ pub type ItemCountType = u32;
 #[serde(rename_all = "kebab-case")]
 pub enum ItemPrototypeFlag {
     DrawLogisticOverlay,
-    Hidden,
+    ExcludedFromTrashUnrequested,
     AlwaysShow,
     HideFromBonusGui,
     HideFromFuelTooltip,
     NotStackable,
-    CanExtendInventory,
     PrimaryPlaceResult,
     ModOpenable,
     OnlyInCursor,
     Spawnable,
+    SpoilResult,
+    IgnoreSpoilTimeModifier,
 }
 
 /// [`Types/ItemPrototypeFlags`](https://lua-api.factorio.com/latest/types/ItemPrototypeFlags.html)

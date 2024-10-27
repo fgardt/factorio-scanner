@@ -6,7 +6,28 @@ use crate::FactorioArray;
 use super::{helper, Direction, FluidBox, FuelCategory, MapPosition, Sprite4Way};
 
 /// [`Types/Energy`](https://lua-api.factorio.com/latest/types/Energy.html)
-pub type Energy = String;
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Energy(String);
+
+impl Energy {
+    pub fn new<T: Into<String>>(value: T) -> Self {
+        Self(value.into())
+    }
+}
+
+impl std::ops::Deref for Energy {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::default::Default for Energy {
+    fn default() -> Self {
+        Self("0J".to_string())
+    }
+}
 
 /// [`Types/BaseEnergySource`](https://lua-api.factorio.com/latest/types/BaseEnergySource.html)
 #[derive(Debug, Deserialize, Serialize)]

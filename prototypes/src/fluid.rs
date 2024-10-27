@@ -41,10 +41,7 @@ pub struct FluidPrototypeData {
     )]
     pub heat_capacity: Energy,
 
-    #[serde(
-        default = "default_fuel_value",
-        skip_serializing_if = "is_default_fuel_value"
-    )]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub fuel_value: Energy,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
@@ -75,11 +72,7 @@ impl FluidPrototypeData {
 }
 
 fn default_capacity() -> Energy {
-    "1KJ".to_owned()
-}
-
-fn default_fuel_value() -> Energy {
-    "0J".to_owned()
+    Energy::new("1KJ")
 }
 
 fn default_subgroup() -> ItemSubGroupID {
@@ -88,10 +81,6 @@ fn default_subgroup() -> ItemSubGroupID {
 
 fn is_default_capacity(capacity: &Energy) -> bool {
     *capacity == default_capacity()
-}
-
-fn is_default_fuel_value(fuel_value: &Energy) -> bool {
-    *fuel_value == default_fuel_value()
 }
 
 fn is_default_subgroup(subgroup: &ItemSubGroupID) -> bool {
