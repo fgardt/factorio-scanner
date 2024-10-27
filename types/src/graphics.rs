@@ -1351,8 +1351,6 @@ pub struct TileGraphics<T: FetchSprite> {
 
     #[serde(flatten)]
     data: Box<T>,
-
-    pub hr_version: Option<Box<Self>>,
 }
 
 impl<T: FetchSprite> std::ops::Deref for TileGraphics<T> {
@@ -1388,14 +1386,7 @@ impl<T: FetchSprite> RenderableGraphics for TileGraphics<T> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TileSpriteParams {
-    #[serde(
-        default,
-        deserialize_with = "helper::truncating_deserializer",
-        skip_serializing_if = "helper::is_default"
-    )]
-    pub count: u32,
-
+pub struct TileSpriteLayout {
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub scale: f64,
 
@@ -1419,9 +1410,16 @@ pub struct TileSpriteParams {
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub line_length: u32,
+
+    #[serde(
+        default,
+        deserialize_with = "helper::truncating_deserializer",
+        skip_serializing_if = "helper::is_default"
+    )]
+    pub count: u32,
 }
 
-impl FetchSprite for TileSpriteParams {
+impl FetchSprite for TileSpriteLayout {
     fn fetch(
         &self,
         scale: f64,
@@ -1526,31 +1524,21 @@ impl FetchSprite for TileSpriteParams {
     }
 }
 
-impl Scale for TileSpriteParams {
+impl Scale for TileSpriteLayout {
     fn scale(&self) -> f64 {
         self.scale
     }
 }
 
-/// [`Types/TileSprite`](https://lua-api.factorio.com/latest/types/TileSprite.html)
-pub type TileSprite = TileGraphics<TileSpriteParams>;
-
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TileSpriteProbabilityParams {
-    #[serde(deserialize_with = "helper::truncating_deserializer")]
+pub struct TileLightPicturesParams {
     pub size: u32,
 
-    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
-    pub probability: f64,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub weights: FactorioArray<f64>,
-
     #[serde(flatten)]
-    tile_sprite_params: TileSpriteParams,
+    tile_sprite_layout: TileSpriteLayout,
 }
 
-impl FetchSprite for TileSpriteProbabilityParams {
+impl FetchSprite for TileLightPicturesParams {
     fn fetch(
         &self,
         scale: f64,
@@ -1647,52 +1635,171 @@ impl FetchSprite for TileSpriteProbabilityParams {
     }
 
     fn get_position(&self) -> (i16, i16) {
-        self.tile_sprite_params.get_position()
+        self.tile_sprite_layout.get_position()
     }
 
     fn get_size(&self) -> (i16, i16) {
         let size = self.size as i16;
-        let (w, h) = self.tile_sprite_params.get_size();
+        let (w, h) = self.tile_sprite_layout.get_size();
         (w * size, h * size)
     }
 }
 
-impl Scale for TileSpriteProbabilityParams {
+impl Scale for TileLightPicturesParams {
     fn scale(&self) -> f64 {
-        self.tile_sprite_params.scale()
+        self.tile_sprite_layout.scale()
     }
 }
 
-impl std::ops::Deref for TileSpriteProbabilityParams {
-    type Target = TileSpriteParams;
+impl std::ops::Deref for TileLightPicturesParams {
+    type Target = TileSpriteLayout;
 
     fn deref(&self) -> &Self::Target {
-        &self.tile_sprite_params
+        &self.tile_sprite_layout
     }
 }
 
-/// [`Types/TileSpriteWithProbability`](https://lua-api.factorio.com/latest/types/TileSpriteWithProbability.html)
-pub type TileSpriteWithProbability = TileGraphics<TileSpriteProbabilityParams>;
+/// [`Types/TileLightPictures`](https://lua-api.factorio.com/latest/types/TileLightPictures.html)
+pub type TileLightPictures = TileGraphics<TileLightPicturesParams>;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TileTransitionSpriteParams {
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub tall: bool,
+pub struct TileMainPicturesParams {
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
+    pub size: u32,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub probability: f64,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub weights: FactorioArray<f64>,
 
     #[serde(flatten)]
-    tile_sprite_params: TileSpriteParams,
+    tile_sprite_layout: TileSpriteLayout,
 }
 
-impl std::ops::Deref for TileTransitionSpriteParams {
-    type Target = TileSpriteParams;
+impl FetchSprite for TileMainPicturesParams {
+    fn fetch(
+        &self,
+        scale: f64,
+        filename: &FileName,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        runtime_tint: Option<Color>,
+    ) -> Option<GraphicsOutput> {
+        self.fetch_offset_by_pixels(
+            scale,
+            filename,
+            used_mods,
+            image_cache,
+            runtime_tint,
+            (0, 0),
+        )
+    }
 
-    fn deref(&self) -> &Self::Target {
-        &self.tile_sprite_params
+    fn fetch_offset(
+        &self,
+        scale: f64,
+        filename: &FileName,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        runtime_tint: Option<Color>,
+        offset: (i16, i16),
+    ) -> Option<GraphicsOutput> {
+        let (width, height) = self.get_size();
+
+        let size = self.size as i16;
+        let count = self.count as i16;
+        let line_length = self.line_length as i16;
+        let mut offset_x = offset.0.rem_euclid(size * count);
+        let mut offset_y = offset.1.rem_euclid(size);
+
+        if self.line_length > 0 {
+            let line_length = self.line_length as i16;
+            offset_y += offset_x / line_length * size;
+            offset_x %= line_length;
+        }
+
+        self.fetch_offset_by_pixels(
+            scale,
+            filename,
+            used_mods,
+            image_cache,
+            runtime_tint,
+            (offset_x * width, offset_y * height),
+        )
+    }
+
+    fn fetch_offset_by_pixels(
+        &self,
+        scale: f64,
+        filename: &FileName,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        runtime_tint: Option<Color>,
+        offset: (i16, i16),
+    ) -> Option<GraphicsOutput> {
+        let (x, y) = self.get_position();
+        let (offset_x, offset_y) = offset;
+        let (width, height) = self.get_size();
+
+        let img = filename.load(used_mods, image_cache)?.crop_imm(
+            (x + offset_x) as u32,
+            (y + offset_y) as u32,
+            width as u32,
+            height as u32,
+        );
+
+        let mut img = img.resize(
+            (f64::from(img.width()) * self.scale / scale).round() as u32,
+            (f64::from(img.height()) * self.scale / scale).round() as u32,
+            image::imageops::FilterType::Nearest,
+        );
+
+        if let Some(tint) = runtime_tint {
+            if !Color::is_white(&tint) {
+                let mut img_buf = img.to_rgba8();
+                let [tint_r, tint_g, tint_b, tint_a] = tint.to_rgba();
+
+                for Rgba([r, g, b, a]) in img_buf.pixels_mut() {
+                    *r = (f64::from(*r) * tint_r).round() as u8;
+                    *g = (f64::from(*g) * tint_g).round() as u8;
+                    *b = (f64::from(*b) * tint_b).round() as u8;
+                    *a = (f64::from(*a) * tint_a).round() as u8;
+                }
+                img = img_buf.into();
+            }
+        }
+
+        Some((img, Vector::default()))
+    }
+
+    fn get_position(&self) -> (i16, i16) {
+        self.tile_sprite_layout.get_position()
+    }
+
+    fn get_size(&self) -> (i16, i16) {
+        let size = self.size as i16;
+        let (w, h) = self.tile_sprite_layout.get_size();
+        (w * size, h * size)
     }
 }
 
-/// [`Types/TileTransitionSprite`](https://lua-api.factorio.com/latest/types/TileTransitionSprite.html)
-pub type TileTransitionSprite = TileGraphics<TileTransitionSpriteParams>;
+impl Scale for TileMainPicturesParams {
+    fn scale(&self) -> f64 {
+        self.tile_sprite_layout.scale()
+    }
+}
+
+impl std::ops::Deref for TileMainPicturesParams {
+    type Target = TileSpriteLayout;
+
+    fn deref(&self) -> &Self::Target {
+        &self.tile_sprite_layout
+    }
+}
+
+/// [`Types/TileMainPictures`](https://lua-api.factorio.com/latest/types/TileMainPictures.html)
+pub type TileMainPictures = TileGraphics<TileMainPicturesParams>;
 
 // ======================== //
 // =====[ Animations ]===== //
