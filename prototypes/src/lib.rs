@@ -187,9 +187,9 @@ pub struct DataRaw {
     #[serde(flatten)]
     pub virtual_signal: signal::AllTypes,
 
-    // #[serde(flatten)]
-    // pub recipe: recipe::AllTypes,
-    // pub recipe_category: HashMap<RecipeCategoryID, recipe::RecipeCategory>,
+    #[serde(flatten)]
+    pub recipe: recipe::AllTypes,
+    pub recipe_category: HashMap<RecipeCategoryID, recipe::RecipeCategory>,
 
     // #[serde(flatten)]
     // pub tile: tile::AllTypes,
