@@ -1,2 +1,2 @@
-blueprint/tests/*.txt linguist-generated=true
-prototypes/test_dumps/*.json linguist-generated=true
+blueprint/tests/** linguist-generated=true
+prototypes/test_dumps/** linguist-generated=true
