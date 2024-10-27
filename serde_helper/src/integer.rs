@@ -266,6 +266,19 @@ mod u8 {
     }
 }
 
+pub use i16::*;
+mod i16 {
+    #[must_use]
+    pub const fn i16_64() -> i16 {
+        64
+    }
+
+    #[must_use]
+    pub const fn is_64_i16(value: &i16) -> bool {
+        *value == i16_64()
+    }
+}
+
 pub use u16::*;
 mod u16 {
     #[must_use]

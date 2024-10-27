@@ -15,35 +15,14 @@ pub type SelectionToolPrototype = crate::BasePrototype<SelectionToolPrototypeDat
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SelectionToolPrototypeData {
-    pub selection_mode: SelectionModeFlags,
-    pub alt_selection_mode: SelectionModeFlags,
+    pub select: SelectionModeData,
+    pub alt_select: SelectionModeData,
+    pub super_forced_select: Option<SelectionModeData>,
+    pub reverse_select: Option<SelectionModeData>,
+    pub alt_reverse_select: Option<SelectionModeData>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub always_include_tiles: bool,
-
-    pub selection_color: Color,
-    pub alt_selection_color: Color,
-    pub selection_cursor_box_type: CursorBoxType,
-    pub alt_selection_cursor_box_type: CursorBoxType,
-
-    // defaults depending on values of other fields
-    pub reverse_selection_color: Option<Color>,
-    pub alt_reverse_selection_color: Option<Color>,
-    pub selection_count_button_color: Option<Color>,
-
-    pub alt_selection_count_button_color: Option<Color>,
-    pub reverse_selection_count_button_color: Option<Color>,
-    pub alt_reverse_selection_count_button_color: Option<Color>,
-
-    pub chart_selection_color: Option<Color>,
-    pub chart_alt_selection_color: Option<Color>,
-    pub chart_reverse_selection_color: Option<Color>,
-    pub chart_alt_reverse_selection_color: Option<Color>,
-
-    pub reverse_selection_mode: Option<SelectionModeFlags>,
-    pub alt_reverse_selection_mode: Option<SelectionModeFlags>,
-    pub reverse_selection_cursor_box_type: Option<CursorBoxType>,
-    pub alt_reverse_selection_cursor_box_type: Option<CursorBoxType>,
 
     #[serde(
         default = "default_mouse_cursor",
@@ -51,53 +30,8 @@ pub struct SelectionToolPrototypeData {
     )]
     pub mouse_cursor: MouseCursorID,
 
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub entity_filters: FactorioArray<EntityID>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub alt_entity_filters: FactorioArray<EntityID>,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub entity_type_filters: FactorioArray<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub alt_entity_type_filters: FactorioArray<String>,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub tile_filters: FactorioArray<TileID>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub alt_tile_filters: FactorioArray<TileID>,
-
     #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub entity_filter_mode: FilterMode,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub alt_entity_filter_mode: FilterMode,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub tile_filter_mode: FilterMode,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub alt_tile_filter_mode: FilterMode,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reverse_entity_filters: FactorioArray<EntityID>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub alt_reverse_entity_filters: FactorioArray<EntityID>,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reverse_entity_type_filters: FactorioArray<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub alt_reverse_entity_type_filters: FactorioArray<String>,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reverse_tile_filters: FactorioArray<TileID>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub alt_reverse_tile_filters: FactorioArray<TileID>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub reverse_entity_filter_mode: FilterMode,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub alt_reverse_entity_filter_mode: FilterMode,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub reverse_tile_filter_mode: FilterMode,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub alt_reverse_tile_filter_mode: FilterMode,
+    pub skip_fog_of_war: bool,
 
     #[serde(flatten)]
     parent: super::ItemWithLabelPrototypeData,
@@ -109,6 +43,35 @@ impl std::ops::Deref for SelectionToolPrototypeData {
     fn deref(&self) -> &Self::Target {
         &self.parent
     }
+}
+
+/// [`Types/SelectionModeData`](https://lua-api.factorio.com/latest/types/SelectionModeData.html)
+#[skip_serializing_none]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SelectionModeData {
+    pub border_color: Color,
+    pub count_button_color: Option<Color>,
+    pub chart_color: Option<Color>,
+
+    pub cursor_box_type: CursorBoxType,
+    pub mode: SelectionModeFlags,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub entity_filters: FactorioArray<EntityID>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub entity_type_filters: FactorioArray<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tile_filters: FactorioArray<TileID>,
+
+    // pub started_sound: Option<Sound>,
+    // pub ended_sound: Option<Sound>,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub play_ended_sound_when_nothing_selected: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub entity_filter_mode: FilterMode,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub tile_filter_mode: FilterMode,
 }
 
 #[must_use]
@@ -180,23 +143,26 @@ impl std::ops::Deref for DeconstructionItemPrototypeData {
     }
 }
 
-/// [`Prototypes/UpgradeItemPrototype`](https://lua-api.factorio.com/latest/prototypes/UpgradeItemPrototype.html)
-pub type UpgradeItemPrototype = crate::BasePrototype<UpgradeItemPrototypeData>;
+/// [`Prototypes/SpidertronRemotePrototype`](https://lua-api.factorio.com/latest/prototypes/SpidertronRemotePrototype.html)
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SpidertronRemotePrototype(SelectionToolPrototype);
+
+impl std::ops::Deref for SpidertronRemotePrototype {
+    type Target = SelectionToolPrototype;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 /// [`Prototypes/UpgradeItemPrototype`](https://lua-api.factorio.com/latest/prototypes/UpgradeItemPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
-pub struct UpgradeItemPrototypeData {
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub mapper_count: ItemStackIndex,
+pub struct UpgradeItemPrototype(SelectionToolPrototype);
 
-    #[serde(flatten)]
-    parent: SelectionToolPrototypeData,
-}
-
-impl std::ops::Deref for UpgradeItemPrototypeData {
-    type Target = SelectionToolPrototypeData;
+impl std::ops::Deref for UpgradeItemPrototype {
+    type Target = SelectionToolPrototype;
 
     fn deref(&self) -> &Self::Target {
-        &self.parent
+        &self.0
     }
 }

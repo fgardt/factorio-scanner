@@ -35,11 +35,7 @@ pub struct ModuleSpecification {
 }
 
 /// [`Types/EffectValue`](https://lua-api.factorio.com/latest/types/EffectValue.html)
-#[derive(Debug, Serialize, Deserialize)]
-pub struct EffectValue {
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub bonus: f64,
-}
+pub type EffectValue = f64;
 
 /// [`Types/Effect`](https://lua-api.factorio.com/latest/types/Effect.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -48,6 +44,7 @@ pub struct Effect {
     pub speed: Option<EffectValue>,
     pub productivity: Option<EffectValue>,
     pub pollution: Option<EffectValue>,
+    pub quality: Option<EffectValue>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]

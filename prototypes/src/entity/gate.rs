@@ -40,7 +40,7 @@ pub struct GateData {
     )]
     pub fadeout_interval: u32,
 
-    pub opened_collision_mask: Option<CollisionMask>,
+    pub opened_collision_mask: Option<CollisionMaskConnector>,
 }
 
 impl super::Renderable for GateData {
