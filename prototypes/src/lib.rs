@@ -27,6 +27,7 @@ use types::*;
 pub mod entity;
 pub mod fluid;
 pub mod item;
+pub mod quality;
 pub mod recipe;
 pub mod signal;
 pub mod tile;
@@ -193,6 +194,9 @@ pub struct DataRaw {
 
     #[serde(flatten)]
     pub tile: tile::AllTypes,
+
+    #[serde(flatten)]
+    pub quality: quality::AllTypes,
 
     pub utility_sprites: HashMap<String, utility_sprites::UtilitySprites>,
 }
