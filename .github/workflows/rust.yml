@@ -66,6 +66,7 @@ jobs:
         with:
           prefix-key: "rust-stable"
           shared-key: "tests"
+          cache-on-failure: true
       - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@main
       - name: Install cargo-nextest
@@ -76,7 +77,7 @@ jobs:
         uses: dorny/test-reporter@v1
         if: always()
         with:
-          name: Tests
+          name: Tests Report
           path: target/nextest/ci/report.xml
           reporter: java-junit
           fail-on-error: true
