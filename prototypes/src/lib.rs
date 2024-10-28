@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use signed_distance_field::prelude::*;
 
-// use entity::RenderableEntity;
+use entity::RenderableEntity;
 use mod_util::mod_info::Version;
 
 use mod_util::UsedMods;
@@ -214,8 +214,6 @@ impl DataRaw {
     }
 }
 
-/*
-
 pub struct DataUtil {
     raw: DataRaw,
 
@@ -226,6 +224,8 @@ impl DataUtil {
     #[allow(clippy::too_many_lines)]
     #[must_use]
     pub fn new(raw: DataRaw) -> Self {
+        // TODO: undo this
+        /*
         let mut entities: HashMap<EntityID, entity::Type> = HashMap::new();
 
         {
@@ -507,6 +507,12 @@ impl DataUtil {
         }
 
         Self { raw, entities }
+        */
+
+        Self {
+            raw,
+            entities: HashMap::new(),
+        }
     }
 
     #[must_use]
@@ -527,6 +533,10 @@ impl DataUtil {
     #[allow(clippy::too_many_lines)]
     #[must_use]
     pub fn get_entity(&self, name: &str) -> Option<&dyn RenderableEntity> {
+        None
+
+        // TODO: undo this
+        /*
         let entity_type = self.get_entity_type(name)?;
         let name = &EntityID::new(name);
 
@@ -922,6 +932,7 @@ impl DataUtil {
                 .get(name)
                 .map(|x| x as &dyn RenderableEntity),
         }
+        */
     }
 
     #[must_use]
@@ -1014,7 +1025,10 @@ impl DataUtilAccess<EntityID, entity::AllTypes> for DataUtil {
     where
         entity::AllTypes: IdNamespaceAccess<T>,
     {
-        self.raw.entity.get_proto(id)
+        None
+
+        // TODO: undo this
+        // self.raw.entity.get_proto(id)
     }
 }
 
@@ -1063,7 +1077,14 @@ impl DataUtilAccess<TileID, tile::AllTypes> for DataUtil {
     }
 }
 
-*/
+impl DataUtilAccess<QualityID, quality::AllTypes> for DataUtil {
+    fn get_proto<T>(&self, id: &QualityID) -> Option<&T>
+    where
+        quality::AllTypes: IdNamespaceAccess<T>,
+    {
+        self.raw.quality.get_proto(id)
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum InternalRenderLayer {
