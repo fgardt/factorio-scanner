@@ -38,6 +38,12 @@ impl crate::GetIDs for RequestFilters {
 #[serde(deny_unknown_fields)]
 #[skip_serializing_none]
 pub struct LogisticSection {
+    #[serde(
+        default = "serde_helper::bool_true",
+        skip_serializing_if = "Clone::clone"
+    )]
+    pub active: bool,
+
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub filters: IndexedVec<LogisticFilter>,
     pub group: Option<String>,
