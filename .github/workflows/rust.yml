@@ -52,6 +52,35 @@ jobs:
         with:
           sarif_file: results.sarif
 
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || !github.event.pull_request.draft }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Stable rust toolchain
+        run: rustup toolchain install stable --profile minimal
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: "rust-stable"
+          shared-key: "tests"
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+      - name: Install cargo-nextest
+        run: cargo binstall --no-confirm --force cargo-nextest
+      - name: Run tests
+        run: cargo nextest run --config-file nextest.ci.toml -P ci || true
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Rust Tests
+          path: target/nextest/ci/report.xml
+          reporter: java-junit
+          fail-on-error: true
+
   build:
     name: Build ${{ matrix.platform.os_name }} [rust ${{ matrix.toolchain }}]
     runs-on: ${{ matrix.platform.os }}
