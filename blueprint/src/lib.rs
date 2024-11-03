@@ -584,9 +584,11 @@ impl TryFrom<Data> for String {
     }
 }
 
-#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
-struct VersionExtractor {
-    version: Version,
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(untagged)]
+enum VersionExtractor {
+    Version { version: Version },
+    Other(serde_json::Value),
 }
 
 pub fn get_version(bp_string: impl AsRef<str>) -> Result<Version, BlueprintDecodeError> {
@@ -595,12 +597,17 @@ pub fn get_version(bp_string: impl AsRef<str>) -> Result<Version, BlueprintDecod
     let json = bp_string_to_json(bp_string.as_ref())?;
     let extractor: HashMap<String, VersionExtractor> = serde_json::from_str(&json)?;
 
-    let extractor = extractor
+    let version = extractor
         .values()
-        .next()
+        .find_map(|ext| {
+            let VersionExtractor::Version { version } = ext else {
+                return None;
+            };
+            Some(*version)
+        })
         .ok_or(BlueprintDecodeError::Parsing)?;
 
-    Ok(extractor.version)
+    Ok(version)
 }
 
 #[cfg(test)]
