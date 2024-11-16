@@ -15,21 +15,28 @@ pub type LabPrototype = EntityWithOwnerPrototype<EnergyEntityData<LabData>>;
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LabData {
     pub energy_usage: Energy,
-    pub on_animation: Animation,
-    pub off_animation: Animation,
+    pub on_animation: Option<Animation>,
+    pub off_animation: Option<Animation>,
+    pub frozen_patch: Option<Sprite>,
     pub inputs: FactorioArray<ItemID>,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub researching_speed: f64,
 
-    pub allowed_effects: Option<EffectTypeLimitation>,
-    pub light: Option<LightDefinition>,
+    pub effect_receiver: Option<EffectReceiver>,
+    pub module_slots: Option<ItemStackIndex>,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub base_productivity: f64,
+    pub uses_quality_drain_modifier: bool,
 
-    pub entity_info_icon_shift: Option<Vector>,
-    pub module_specification: Option<ModuleSpecification>,
+    #[serde(default = "helper::u8_100", skip_serializing_if = "helper::is_100_u8")]
+    pub science_pack_drain_rate_percent: u8,
+
+    pub allowed_effects: Option<EffectTypeLimitation>,
+    pub allowed_module_categories: Option<FactorioArray<ModuleCategoryID>>,
+
+    pub light: Option<LightDefinition>,
+    pub trash_inventory_size: Option<ItemStackIndex>,
 }
 
 impl super::Renderable for LabData {
@@ -40,12 +47,14 @@ impl super::Renderable for LabData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        let res = self.off_animation.render(
-            render_layers.scale(),
-            used_mods,
-            image_cache,
-            &options.into(),
-        )?;
+        let res = self.off_animation.as_ref().and_then(|oa| {
+            oa.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })?;
 
         render_layers.add_entity(res, &options.position);
 

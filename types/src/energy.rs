@@ -1,9 +1,13 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use crate::FactorioArray;
+use crate::{
+    AirbornePollutantID, BurnerUsageID, FactorioArray, FluidAmount, FuelCategoryID, ItemStackIndex,
+};
 
-use super::{helper, Direction, FluidBox, FuelCategory, MapPosition, Sprite4Way};
+use super::{helper, Direction, FluidBox, MapPosition, Sprite4Way};
 
 /// [`Types/Energy`](https://lua-api.factorio.com/latest/types/Energy.html)
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -33,7 +37,7 @@ impl std::default::Default for Energy {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BaseEnergySource<T> {
     #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub emissions_per_minute: f64,
+    pub emissions_per_minute: HashMap<AirbornePollutantID, f64>,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub render_no_power_icon: bool,
@@ -58,14 +62,14 @@ impl<T> std::ops::Deref for BaseEnergySource<T> {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BurnerEnergySourceData {
     #[serde(deserialize_with = "helper::truncating_deserializer")]
-    pub fuel_inventory_size: super::ItemStackIndex,
+    pub fuel_inventory_size: ItemStackIndex,
 
     #[serde(
         default,
         skip_serializing_if = "helper::is_default",
         deserialize_with = "helper::truncating_deserializer"
     )]
-    pub burnt_inventory_size: super::ItemStackIndex,
+    pub burnt_inventory_size: ItemStackIndex,
 
     // #[serde(default, skip_serializing_if = "Vec::is_empty"))]
     // smoke: FactorioArray<SmokeSource>,
@@ -73,8 +77,27 @@ pub struct BurnerEnergySourceData {
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub effectivity: f64,
 
-    #[serde(flatten)]
-    pub fuel: Option<FuelCategory>,
+    #[serde(default = "fuel_usage_id", skip_serializing_if = "is_fuel_usage_id")]
+    pub burner_usage: BurnerUsageID,
+
+    #[serde(default = "fuel_category", skip_serializing_if = "is_fuel_category")]
+    pub fuel_categories: FactorioArray<FuelCategoryID>,
+}
+
+fn fuel_usage_id() -> BurnerUsageID {
+    BurnerUsageID::new("burner")
+}
+
+fn is_fuel_usage_id(value: &BurnerUsageID) -> bool {
+    value == &fuel_usage_id()
+}
+
+fn fuel_category() -> FactorioArray<FuelCategoryID> {
+    FactorioArray::new(vec![FuelCategoryID::new("chemical")])
+}
+
+fn is_fuel_category(value: &FactorioArray<FuelCategoryID>) -> bool {
+    value.len() == 1 && value.first() == Some(&FuelCategoryID::new("chemical"))
 }
 
 /// [`Types/BurnerEnergySource`](https://lua-api.factorio.com/latest/types/BurnerEnergySource.html)
@@ -106,20 +129,20 @@ pub struct FluidEnergySourceData {
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub effectivity: f64,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub burns_fluid: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub scale_fluid_usage: bool,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub destroy_non_fuel_fluid: bool,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub fluid_usage_per_tick: f64,
+    pub fluid_usage_per_tick: FluidAmount,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub maximum_temperature: f64,
+    pub maximum_temperature: f32,
 }
 
 /// [`Types/FluidEnergySource`](https://lua-api.factorio.com/latest/types/FluidEnergySource.html)
@@ -146,6 +169,7 @@ pub struct HeatEnergySourceData {
     pub minimum_glow_temperature: f64,
 
     pub pipe_covers: Option<Sprite4Way>,
+    pub heat_pipe_covers: Option<Sprite4Way>,
     pub heat_picture: Option<Sprite4Way>,
     pub heat_glow: Option<Sprite4Way>,
 

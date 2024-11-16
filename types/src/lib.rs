@@ -30,6 +30,7 @@ pub const fn targeted_engine_version() -> Version {
 
 mod empty_array_fix;
 mod energy;
+mod fluid_box;
 mod graphics;
 mod icon;
 mod ids;
@@ -39,6 +40,7 @@ mod wire;
 
 pub use empty_array_fix::*;
 pub use energy::*;
+pub use fluid_box::*;
 pub use graphics::*;
 pub use icon::*;
 pub use ids::*;
@@ -134,11 +136,14 @@ pub struct BaseAttackParameters {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub lead_target_for_projectile_speed: f32,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub lead_target_for_projectile_delay: u32,
+
     // default is value of cooldown property
     pub movement_slow_down_cool_down: Option<f32>,
 
-    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
-    pub movement_slow_down_factor: f32,
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub movement_slow_down_factor: f64,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub activation_type: BaseAttackParametersActivationType,
@@ -158,6 +163,7 @@ pub enum BaseAttackParametersRangeMode {
     #[default]
     CenterToCenter,
     BoundingBoxToBoundingBox,
+    CenterToBoundingBox,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
@@ -178,7 +184,10 @@ pub enum AttackParameters {
     /// [`Types/ProjectileAttackParameters`](https://lua-api.factorio.com/latest/types/ProjectileAttackParameters.html)
     #[serde(rename = "projectile")]
     ProjectileAttackParameters {
-        #[serde(default, skip_serializing_if = "Vector::is_0_vector")]
+        #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+        apply_projection_to_projectile_creation_position: bool,
+
+        #[serde(default, skip_serializing_if = "helper::is_default")]
         projectile_center: Vector,
 
         #[serde(default, skip_serializing_if = "helper::is_default")]
@@ -209,7 +218,7 @@ pub enum AttackParameters {
     #[serde(rename = "stream")]
     StreamAttackParameters {
         #[serde(default, skip_serializing_if = "helper::is_default")]
-        fluid_consumption: f32,
+        fluid_consumption: FluidAmount,
 
         #[serde(default, skip_serializing_if = "helper::is_default")]
         gun_barrel_length: f32,
@@ -375,9 +384,9 @@ impl Default for Color {
     }
 }
 
-/// [`Types/DefaultRecipeTint`](https://lua-api.factorio.com/latest/types/DefaultRecipeTint.html)
+/// [`Types/GlobalRecipeTints`](https://lua-api.factorio.com/latest/types/GlobalRecipeTints.html)
 #[derive(Debug, Serialize, Deserialize)]
-pub struct DefaultRecipeTint {
+pub struct GlobalRecipeTints {
     #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
     pub primary: Color,
 
@@ -480,6 +489,20 @@ impl Vector {
     }
 
     #[must_use]
+    pub fn flip_x(&self) -> Self {
+        let (x, y) = self.as_tuple();
+
+        Self::Tuple(-x, y)
+    }
+
+    #[must_use]
+    pub fn flip_y(&self) -> Self {
+        let (x, y) = self.as_tuple();
+
+        Self::Tuple(x, -y)
+    }
+
+    #[must_use]
     pub fn is_0_vector(value: &Self) -> bool {
         value.x() == 0.0 && value.y() == 0.0
     }
@@ -502,6 +525,15 @@ impl Vector {
 impl Default for Vector {
     fn default() -> Self {
         Self::Tuple(Default::default(), Default::default())
+    }
+}
+
+impl PartialEq for Vector {
+    fn eq(&self, other: &Self) -> bool {
+        let (x1, y1) = self.as_tuple();
+        let (x2, y2) = other.as_tuple();
+
+        (x1 - x2).abs() < f64::EPSILON && (y1 - y2).abs() < f64::EPSILON
     }
 }
 
@@ -727,7 +759,7 @@ pub type Order = String;
 
 /// [`Types/RealOrientation`](https://lua-api.factorio.com/latest/types/RealOrientation.html)
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
-pub struct RealOrientation(f64);
+pub struct RealOrientation(f64); // TODO: should be f32
 
 impl RealOrientation {
     #[must_use]
@@ -1025,182 +1057,6 @@ impl std::ops::Neg for RealOrientation {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum FuelCategory {
-    Single {
-        // TODO: handle default value of: `chemical`
-        fuel_category: FuelCategoryID,
-    },
-    Multi {
-        fuel_categories: FactorioArray<FuelCategoryID>,
-    },
-}
-
-#[derive(Debug, Default, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum PipeConnectionType {
-    #[default]
-    InputOutput,
-    Input,
-    Output,
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum PipeConnectionDefinition {
-    Directional {
-        positions: FactorioArray<Vector>,
-
-        #[serde(
-            default,
-            skip_serializing_if = "helper::is_default",
-            deserialize_with = "helper::truncating_deserializer"
-        )]
-        max_underground_distance: u32,
-
-        #[serde(default, rename = "type")]
-        type_: PipeConnectionType,
-    },
-    Static {
-        position: Vector,
-
-        #[serde(
-            default,
-            skip_serializing_if = "helper::is_default",
-            deserialize_with = "helper::truncating_deserializer"
-        )]
-        max_underground_distance: u32,
-
-        #[serde(default, rename = "type")]
-        type_: PipeConnectionType,
-    },
-}
-
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "kebab-case")]
-pub enum FluidBoxProductionType {
-    #[default]
-    None,
-    #[serde(rename = "None")]
-    None2,
-    Input,
-    InputOutput,
-    Output,
-}
-
-/// [`Types/FluidBox.secondary_draw_orders`](https://lua-api.factorio.com/latest/types/FluidBox.html#secondary_draw_orders)
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum FluidBoxSecondaryDrawOrders {
-    Global {
-        #[serde(
-            default = "helper::i8_1",
-            skip_serializing_if = "helper::is_1_i8",
-            deserialize_with = "helper::truncating_deserializer"
-        )]
-        secondary_draw_order: i8,
-    },
-    Cardinal {
-        #[serde(
-            default = "helper::i8_1",
-            skip_serializing_if = "helper::is_1_i8",
-            deserialize_with = "helper::truncating_deserializer"
-        )]
-        north: i8,
-
-        #[serde(
-            default = "helper::i8_1",
-            skip_serializing_if = "helper::is_1_i8",
-            deserialize_with = "helper::truncating_deserializer"
-        )]
-        east: i8,
-
-        #[serde(
-            default = "helper::i8_1",
-            skip_serializing_if = "helper::is_1_i8",
-            deserialize_with = "helper::truncating_deserializer"
-        )]
-        south: i8,
-
-        #[serde(
-            default = "helper::i8_1",
-            skip_serializing_if = "helper::is_1_i8",
-            deserialize_with = "helper::truncating_deserializer"
-        )]
-        west: i8,
-    },
-}
-
-/// [`Types/FluidBox`](https://lua-api.factorio.com/latest/types/FluidBox.html)
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct FluidBox {
-    pub pipe_connections: FactorioArray<PipeConnectionDefinition>,
-
-    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
-    pub base_area: f64,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub base_level: f32,
-
-    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
-    pub height: f64,
-
-    pub filter: Option<FluidID>,
-    pub render_layer: Option<RenderLayer>,
-
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub hide_connection_info: bool,
-
-    pub pipe_covers: Option<Sprite4Way>,
-    pub pipe_picture: Option<Sprite4Way>,
-
-    pub minimum_temperature: Option<f64>,
-    pub maximum_temperature: Option<f64>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub production_type: FluidBoxProductionType,
-
-    #[serde(flatten)]
-    pub secondary_draw_order: Option<FluidBoxSecondaryDrawOrders>,
-}
-
-impl FluidBox {
-    #[must_use]
-    pub fn connection_points(&self, direction: Direction) -> Vec<MapPosition> {
-        self.pipe_connections
-            .iter()
-            .filter_map(|c| match c {
-                PipeConnectionDefinition::Directional {
-                    positions,
-                    max_underground_distance,
-                    ..
-                } => {
-                    if *max_underground_distance != 0 {
-                        return None;
-                    }
-
-                    let cardinal = direction as u8 / 2;
-                    positions.get(cardinal as usize).map(|v| (*v).into())
-                }
-                PipeConnectionDefinition::Static {
-                    position,
-                    max_underground_distance,
-                    ..
-                } => {
-                    if *max_underground_distance != 0 {
-                        return None;
-                    }
-
-                    Some(direction.rotate_vector(*position).into())
-                }
-            })
-            .collect()
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum SignalIDConnector {
     Virtual { name: VirtualSignalID },
@@ -1332,6 +1188,90 @@ pub enum EntityPrototypeFlag {
 
 /// [`Types/EntityPrototypeFlags`](https://lua-api.factorio.com/latest/types/EntityPrototypeFlags.html)
 pub type EntityPrototypeFlags = FactorioArray<EntityPrototypeFlag>;
+
+/// [`Types/EntityStatus`](https://lua-api.factorio.com/latest/types/EntityStatus.html)
+#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum EntityStatus {
+    Working,
+    #[default]
+    Normal,
+    Ghost,
+    NotPluggedInElectricNetwork,
+    NetworksConnected,
+    NetworksDisconnected,
+    NoAmmo,
+    WaitingForTargetToBeBuilt,
+    WaitingForTrain,
+    NoPower,
+    LowTemperature,
+    Charging,
+    Discharging,
+    FullyCharged,
+    NoFuel,
+    NoFood,
+    OutOfLogisticNetwork,
+    NoRecipe,
+    NoIngredients,
+    NoInputFluid,
+    NoResearchInProgress,
+    NoMinableResources,
+    LowInputFluid,
+    LowPower,
+    NotConnectedToRail,
+    CantDivideSegments,
+    RechargingAfterPowerOutage,
+    NoModulesToTransmit,
+    DisabledByControlBehavior,
+    OpenedByCircuitNetwork,
+    ClosedByCircuitNetwork,
+    DisabledByScript,
+    Disabled,
+    TurnedOffDuringDaytime,
+    FluidIngredientShortage,
+    ItemIngredientShortage,
+    FullOutput,
+    NotEnoughSpaceInOutput,
+    FullBurntResultOutput,
+    MarkedForDeconstruction,
+    MissingRequiredFluid,
+    MissingSciencePacks,
+    WaitingForSourceItems,
+    WaitingForSpaceInDestination,
+    PreparingRocketForLaunch,
+    WaitingToLaunchRocket,
+    WaitingForSpaceInPlatformHub,
+    LaunchingRocket,
+    ThrustNotRequired,
+    NotEnoughThrust,
+    OnTheWay,
+    WaitingInOrbit,
+    WaitingForRocketToArrive,
+    NoPath,
+    Broken,
+    None,
+    Frozen,
+    Paused,
+    NotConnectedToHubOrPad,
+    ComputingNavigation,
+    NoFilter,
+    WaitingAtStop,
+    DestinationStopFull,
+    PipelineOverextended,
+    NoSpotSeedableByInputs,
+    WaitingForPlantsToGrow,
+    RecipeNotResearched,
+}
+
+/// [`Types/Mirroring`](https://lua-api.factorio.com/latest/types/Mirroring.html)
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Mirroring {
+    Horizontal,
+    Vertical,
+    DiagonalPos,
+    DiagonalNeg,
+}
 
 /// [`Types/MapPosition`](https://lua-api.factorio.com/latest/types/MapPosition.html)
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -1779,6 +1719,15 @@ impl Direction {
     }
 
     #[must_use]
+    pub fn mirror_vector(self, vector: Vector) -> Vector {
+        match self {
+            Self::North | Self::South => vector.flip_x(),
+            Self::East | Self::West => vector.flip_y(),
+            _ => vector, // diagonal mirrors are not supported but this is a safe fallback
+        }
+    }
+
+    #[must_use]
     pub const fn is_straight(&self, other: &Self) -> bool {
         matches!(self, other) || matches!(self.flip(), other)
     }
@@ -1870,6 +1819,17 @@ impl Direction {
             _ => todo!(),
         }
     }
+
+    #[must_use]
+    pub const fn as_4way_idx(&self) -> Option<usize> {
+        match self {
+            Self::North => Some(0),
+            Self::East => Some(1),
+            Self::South => Some(2),
+            Self::West => Some(3),
+            _ => None,
+        }
+    }
 }
 
 impl TryFrom<u8> for Direction {
@@ -1952,17 +1912,30 @@ pub struct LightDefinitionData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub rotation_shift: RealOrientation,
 
-    pub intensity: f64,
-    pub size: f64,
+    pub intensity: f32,
+    pub size: f32,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub source_orientation_offset: RealOrientation,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub add_perspective: bool,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub flicker_interval: u8,
+
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub flicker_min_modifier: f32,
+
+    pub flicker_max_modifier: Option<f32>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub offset_flicker: bool,
+
     pub shift: Option<Vector>,
-    pub color: Option<Color>,
+
+    #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
+    pub color: Color,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub minimum_darkness: f64,
@@ -2515,18 +2488,20 @@ pub struct WorkingVisualisation {
     // TODO: get the default for this
     pub render_layer: Option<RenderLayer>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub fadeout: bool,
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub synced_fadeout: bool,
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub constant_speed: bool,
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub always_draw: bool,
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub animated_shift: bool,
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub align_to_waypoint: bool,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub mining_drill_scorch_mark: bool,
 
     #[serde(
         default,
@@ -2535,11 +2510,6 @@ pub struct WorkingVisualisation {
     )]
     pub secondary_draw_order: Option<i8>,
 
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_as_sprite: bool,
-
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub draw_as_light: bool,
     pub light: Option<LightDefinition>,
     pub effect: Option<WorkingVisualisationEffect>,
     pub apply_recipe_tint: Option<WorkingVisualisationRecipeTint>,
@@ -2552,6 +2522,34 @@ pub struct WorkingVisualisation {
     pub west_position: Option<Vector>,
     pub south_position: Option<Vector>,
     pub east_position: Option<Vector>,
+
+    pub north_secondary_draw_order: Option<i8>,
+    pub east_secondary_draw_order: Option<i8>,
+    pub south_secondary_draw_order: Option<i8>,
+    pub west_secondary_draw_order: Option<i8>,
+
+    pub draw_in_states: Option<FactorioArray<String>>,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub draw_when_state_filter_matches: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub enabled_by_name: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub name: String,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub enabled_in_animated_shift_during_waypoint_stop: bool,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub enabled_in_animated_shift_during_transition: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub frame_based_on_shift_animation_progress: bool,
+
+    #[serde(flatten)]
+    pub scorch_mark_data: Option<WorkingVisualisationScorchMarkData>,
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -2570,10 +2568,10 @@ impl From<&WorkingVisualisationRenderOpts> for AnimationRenderOpts {
     }
 }
 
-impl From<&MiningDrillGraphicsRenderOpts> for WorkingVisualisationRenderOpts {
-    fn from(value: &MiningDrillGraphicsRenderOpts) -> Self {
+impl From<&WorkingVisualisationRenderOpts> for Animation4WayRenderOpts {
+    fn from(value: &WorkingVisualisationRenderOpts) -> Self {
         Self {
-            progress: 0.0,
+            progress: value.progress,
             runtime_tint: value.runtime_tint,
             direction: value.direction,
         }
@@ -2590,16 +2588,13 @@ impl RenderableGraphics for WorkingVisualisation {
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
-        if self.draw_as_light {
-            return None;
-        }
-
         self.animation
             .as_ref()?
             .render(scale, used_mods, image_cache, opts)
     }
 }
 
+/// [Types/WorkingVisualisation/Effect](https://lua-api.factorio.com/latest/types/WorkingVisualisation.html#effect)
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum WorkingVisualisationEffect {
@@ -2608,6 +2603,7 @@ pub enum WorkingVisualisationEffect {
     UraniumGlow,
 }
 
+/// [Types/WorkingVisualisation/RecipeTint](https://lua-api.factorio.com/latest/types/WorkingVisualisation.html#apply_recipe_tint)
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum WorkingVisualisationRecipeTint {
@@ -2618,6 +2614,7 @@ pub enum WorkingVisualisationRecipeTint {
     Quaternary,
 }
 
+/// [Types/WorkingVisualisation/Tint](https://lua-api.factorio.com/latest/types/WorkingVisualisation.html#apply_tint)
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum WorkingVisualisationTint {
@@ -2626,6 +2623,7 @@ pub enum WorkingVisualisationTint {
     ResourceColor,
     InputFluidBaseColor,
     InputFluidFlowColor,
+    VisualStateColor,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -2671,6 +2669,122 @@ impl RenderableGraphics for WorkingVisualisationAnimation {
             .and_then(|a| a.render(scale, used_mods, image_cache, &opts.into())),
         }
     }
+}
+
+/// [`Types/WorkingVisualisation/ScorchMarkData`](https://lua-api.factorio.com/latest/types/WorkingVisualisation.html#scorch_mark_fade_out_duration)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WorkingVisualisationScorchMarkData {
+    #[serde(rename = "scorch_mark_fade_out_duration")]
+    pub fade_out_duration: u16,
+    #[serde(rename = "scorch_mark_lifetime")]
+    pub lifetime: u16,
+    #[serde(rename = "scorch_mark_fade_in_frames")]
+    pub fade_in_frames: u8,
+}
+
+/// [`Types/WorkingVisualisations`](https://lua-api.factorio.com/latest/types/WorkingVisualisations.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WorkingVisualisations<T> {
+    pub animation: Option<Animation4Way>,
+    pub idle_animation: Option<Animation4Way>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub always_draw_idle_animation: bool,
+
+    pub default_recipe_tint: Option<GlobalRecipeTints>,
+    pub recipe_not_set_tint: Option<GlobalRecipeTints>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub states: FactorioArray<VisualState>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub working_visualisations: FactorioArray<WorkingVisualisation>,
+
+    pub shift_animation_waypoints: Option<ShiftAnimationWaypoints>,
+
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_default",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
+    pub shift_animation_waypoint_stop_duration: u16,
+
+    #[serde(
+        default,
+        skip_serializing_if = "helper::is_default",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
+    pub shift_animation_transition_duration: u16,
+
+    pub status_colors: Option<StatusColors>,
+
+    #[serde(flatten)]
+    child: T,
+}
+
+impl<T> std::ops::Deref for WorkingVisualisations<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.child
+    }
+}
+
+impl<T> RenderableGraphics for WorkingVisualisations<T> {
+    type RenderOpts = WorkingVisualisationRenderOpts;
+
+    fn render(
+        &self,
+        scale: f64,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        opts: &Self::RenderOpts,
+    ) -> Option<GraphicsOutput> {
+        let mut renders = vec![
+            self.animation
+                .as_ref()
+                .and_then(|a| a.render(scale, used_mods, image_cache, &opts.into())),
+            self.idle_animation
+                .as_ref()
+                .and_then(|a| a.render(scale, used_mods, image_cache, &opts.into())),
+        ];
+
+        renders.extend(
+            self.working_visualisations
+                .iter()
+                .map(|wv| wv.render(scale, used_mods, image_cache, opts)),
+        );
+
+        merge_renders(&renders, scale)
+    }
+}
+
+/// [`Types/VisualState`](https://lua-api.factorio.com/latest/types/VisualState.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct VisualState {
+    pub name: String,
+    pub next_active: String,
+    pub next_inactive: String,
+    pub duration: u8,
+    pub color: Option<Color>,
+}
+
+/// [`Types/CraftingMachineGraphicsSet`](https://lua-api.factorio.com/latest/types/CraftingMachineGraphicsSet.html)
+pub type CraftingMachineGraphicsSet = WorkingVisualisations<CraftingMachineGraphicsSetData>;
+
+/// [`Types/CraftingMachineGraphicsSet`](https://lua-api.factorio.com/latest/types/CraftingMachineGraphicsSet.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CraftingMachineGraphicsSetData {
+    pub frozen_patch: Option<Sprite4Way>,
+
+    #[serde(default = "helper::f32_05", skip_serializing_if = "helper::is_05_f32")]
+    pub animation_progress: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub reset_animation_when_frozen: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -2947,37 +3061,19 @@ impl ForceCondition {
 }
 
 /// [`Types/MiningDrillGraphicsSet`](https://lua-api.factorio.com/latest/types/MiningDrillGraphicsSet.html)
+pub type MiningDrillGraphicsSet = WorkingVisualisations<MiningDrillGraphicsSetData>;
+
+/// [`Types/MiningDrillGraphicsSet`](https://lua-api.factorio.com/latest/types/MiningDrillGraphicsSet.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MiningDrillGraphicsSet {
-    pub animation: Option<Animation4Way>,
-    pub idle_animation: Option<Animation4Way>,
+pub struct MiningDrillGraphicsSetData {
+    pub frozen_patch: Option<Sprite4Way>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub always_draw_idle_animation: bool,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub reset_animation_when_frozen: bool,
 
-    pub default_recipe_tint: Option<Color>,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub working_visualisations: FactorioArray<WorkingVisualisation>,
-
-    pub shift_animation_waypoints: Option<ShiftAnimationWaypoints>,
-
-    #[serde(
-        default,
-        skip_serializing_if = "helper::is_default",
-        deserialize_with = "helper::truncating_deserializer"
-    )]
-    pub shift_animation_waypoint_stop_duration: u16,
-
-    #[serde(
-        default,
-        skip_serializing_if = "helper::is_default",
-        deserialize_with = "helper::truncating_deserializer"
-    )]
-    pub shift_animation_transition_duration: u16,
-
-    pub status_colors: Option<StatusColors>,
+    pub circuit_connector_layer: Option<CircuitConnectorLayer>, // TODO: fix that only the internal members need to be optional
+    pub circuit_connector_secondary_draw_order: Option<CircuitConnectorSecondaryDrawOrder>, // TODO: fix that only the internal members need to be optional
 
     #[serde(
         default,
@@ -2986,63 +3082,8 @@ pub struct MiningDrillGraphicsSet {
     )]
     pub drilling_vertical_movement_duration: u16,
 
-    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
-    pub animation_progress: f64, // specified as single precision in docs
-
-    #[serde(
-        default = "helper::f64_1000",
-        skip_serializing_if = "helper::is_1000_f64"
-    )]
-    pub max_animation_progress: f64, // specified as single precision in docs
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub min_animation_progress: f64, // specified as single precision in docs
-
-    pub circuit_connector_layer: Option<CircuitConnectorLayer>, // TODO: fix that only the internal members need to be optional
-    pub circuit_connector_secondary_draw_order: Option<CircuitConnectorSecondaryDrawOrder>, // TODO: fix that only the internal members need to be optional
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct MiningDrillGraphicsRenderOpts {
-    pub direction: Direction,
-    pub runtime_tint: Option<Color>,
-}
-
-impl From<&MiningDrillGraphicsRenderOpts> for Animation4WayRenderOpts {
-    fn from(value: &MiningDrillGraphicsRenderOpts) -> Self {
-        Self {
-            direction: value.direction,
-            progress: 0.0,
-            runtime_tint: value.runtime_tint,
-        }
-    }
-}
-
-impl RenderableGraphics for MiningDrillGraphicsSet {
-    type RenderOpts = MiningDrillGraphicsRenderOpts;
-
-    fn render(
-        &self,
-        scale: f64,
-        used_mods: &UsedMods,
-        image_cache: &mut ImageCache,
-        opts: &Self::RenderOpts,
-    ) -> Option<GraphicsOutput> {
-        // TODO: fix for electric drills
-        let mut renders = vec![self
-            .idle_animation
-            .as_ref()
-            .or(self.animation.as_ref())
-            .and_then(|a| a.render(scale, used_mods, image_cache, &opts.into()))];
-
-        renders.extend(
-            self.working_visualisations
-                .iter()
-                .map(|wv| wv.render(scale, used_mods, image_cache, &opts.into())),
-        );
-
-        merge_renders(&renders, scale)
-    }
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub animation_progress: f32,
 }
 
 #[skip_serializing_none]
@@ -3163,5 +3204,111 @@ pub enum ArithmeticOperation {
     Unknown,
 }
 
+/// [`Types/FluidAmount`](https://lua-api.factorio.com/latest/types/FluidAmount.html)
+pub type FluidAmount = f64;
+
 /// [`Types/Weight`](https://lua-api.factorio.com/latest/types/Weight.html)
 pub type Weight = f64;
+
+/// [`Types/LogisticFilterIndex`](https://lua-api.factorio.com/latest/types/LogisticFilterIndex.html)
+pub type LogisticFilterIndex = u16;
+
+/// [`Types/PerceivedPerformance`](https://lua-api.factorio.com/latest/types/PerceivedPerformance.html)
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub struct PerceivedPerformance {
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub minimum: f64,
+
+    #[serde(
+        default = "helper::f64_max",
+        skip_serializing_if = "helper::is_max_f64"
+    )]
+    pub maximum: f64,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub performance_to_activity_rate: f64,
+}
+
+impl Default for PerceivedPerformance {
+    fn default() -> Self {
+        Self {
+            minimum: 0.0,
+            maximum: f64::MAX,
+            performance_to_activity_rate: 1.0,
+        }
+    }
+}
+
+/// [`Types/ProductionHealthEffect`](https://lua-api.factorio.com/latest/types/ProductionHealthEffect.html)
+#[skip_serializing_none]
+#[derive(Debug, Default, Serialize, Deserialize, PartialEq)]
+pub struct ProductionHealthEffect {
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub producing: f32,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub not_producing: f32,
+}
+
+/// [`Types/CargoStationParameters`](https://lua-api.factorio.com/latest/types/CargoStationParameters.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CargoStationParameters {
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub prefer_packed_cargo_units: bool,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub hatch_definitions: FactorioArray<CargoHatchDefinition>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub giga_hatch_definitions: FactorioArray<GigaCargoHatchDefinition>,
+}
+
+/// [`Types/CargoHatchDefinition`](https://lua-api.factorio.com/latest/types/CargoHatchDefinition.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CargoHatchDefinition {
+    pub hatch_graphics: Option<Animation>,
+    pub hatch_render_layer: Option<RenderLayer>,
+    pub entering_render_layer: Option<RenderLayer>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub offset: Vector,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub pod_shadow_offset: Vector,
+
+    #[serde(default = "helper::f32_n1", skip_serializing_if = "helper::is_n1_f32")]
+    pub sky_slice_height: f32,
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub slice_height: f32,
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub travel_height: f32,
+    #[serde(
+        default = "helper::u32_120",
+        skip_serializing_if = "helper::is_120_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
+    pub busy_timeout_ticks: u32,
+    #[serde(
+        default = "helper::u32_80",
+        skip_serializing_if = "helper::is_80_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
+    pub hatch_opening_ticks: u32,
+
+    // pub opening_sound: Option<InterruptibleSound>,
+    // pub closing_sound: Option<InterruptibleSound>,
+    pub cargo_unit_entity_to_spawn: Option<EntityID>,
+    pub illumination_graphic_index: Option<u32>,
+}
+
+/// [`Types/GigaCargoHatchDefinition`](https://lua-api.factorio.com/latest/types/GigaCargoHatchDefinition.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GigaCargoHatchDefinition {
+    pub hatch_graphics_back: Option<Animation>,
+    pub hatch_graphics_front: Option<Animation>,
+    pub hatch_render_layer_back: Option<RenderLayer>,
+    pub hatch_render_layer_front: Option<RenderLayer>,
+    pub covered_hatches: FactorioArray<u32>,
+    // pub opening_sound: Option<InterruptibleSound>,
+    // pub closing_sound: Option<InterruptibleSound>,
+}

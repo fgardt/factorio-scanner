@@ -92,35 +92,63 @@ pub enum BlendMode {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum RenderLayer {
-    WaterTile,
-    GroundTile,
-    TileTransition,
+    Zero,
+    BackgroundTransitions,
+    UnderTiles,
     Decals,
+    AboveTiles,
+    GroundLayer1,
+    GroundLayer2,
+    GroundLayer3,
+    GroundLayer4,
+    GroundLayer5,
     LowerRadiusVisualization,
     RadiusVisualization,
     TransportBeltIntegration,
     Resource,
     BuildingSmoke,
+    RailStonePathLower,
+    RailStonePath,
+    RailTie,
     Decorative,
     GroundPatch,
     GroundPatchHigher,
     GroundPatchHigher2,
+    RailChainSignalMetal,
+    RailScrew,
+    RailMetal,
     Remnants,
     Floor,
     TransportBelt,
     TransportBeltEndings,
-    TransportBeltCircuitConnector,
     FloorMechanicsUnderCorpse,
     Corpse,
     FloorMechanics,
     Item,
+    TransportBeltReader,
     LowerObject,
+    TransportBeltCircuitConnector,
     LowerObjectAboveShadow,
+    LowerObjectOverlay,
+    ObjectUnder,
     Object,
+    CargoHatch,
     HigherObjectUnder,
     HigherObjectAbove,
+    TrainStopTop,
     ItemInInserterHand,
+    AboveInserter,
     Wires,
+    UnderElevated,
+    ElevatedRailStonePathLower,
+    ElevatedRailStonePath,
+    ElevatedRailTie,
+    ElevatedRailScrew,
+    ElevatedRailMetal,
+    ElevatedLowerObject,
+    ElevatedObject,
+    ElevatedHigherObject,
+    FluidVisualization,
     WiresAbove,
     EntityInfoIcon,
     EntityInfoIconAbove,
@@ -355,6 +383,13 @@ pub trait Scale {
 //     }
 // }
 
+// /// [`Types/SpriteSource`](https://lua-api.factorio.com/latest/types/SpriteSource.html)
+// #[skip_serializing_none]
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct SpriteSource<T> {
+//     pub filename: FileName,
+// }
+
 /// [`Types/SpriteParameters`](https://lua-api.factorio.com/latest/types/SpriteParameters.html)
 ///
 /// **MISSING THE `filename` FIELD**
@@ -553,9 +588,6 @@ pub enum SimpleGraphics<T: FetchSprite> {
 
         #[serde(flatten)]
         data: Box<T>,
-
-        #[serde(skip_serializing_if = "Option::is_none")]
-        hr_version: Option<Box<Self>>,
     },
     Layered {
         layers: FactorioArray<Self>,
@@ -579,18 +611,7 @@ impl<T: FetchSprite + Scale> RenderableGraphics for SimpleGraphics<T> {
     ) -> Option<GraphicsOutput> {
         match &self {
             Self::Layered { layers } => merge_layers(layers, scale, used_mods, image_cache, opts),
-            Self::Simple {
-                filename,
-                data,
-                hr_version,
-            } => {
-                // TODO: option to enable/disable HR mode
-                if let Some(hr_version) = hr_version {
-                    if scale < data.scale() {
-                        return hr_version.render(scale, used_mods, image_cache, opts);
-                    }
-                }
-
+            Self::Simple { filename, data } => {
                 data.fetch(scale, filename, used_mods, image_cache, opts.runtime_tint)
             }
         }
@@ -604,16 +625,10 @@ pub enum MultiFileGraphics<Single: RenderableGraphics, Multi: RenderableGraphics
     Simple {
         #[serde(flatten)]
         data: Box<Single>,
-
-        #[serde(skip_serializing_if = "Option::is_none")]
-        hr_version: Option<Box<Self>>,
     },
     MultiFile {
         #[serde(flatten)]
         data: Box<Multi>,
-
-        #[serde(skip_serializing_if = "Option::is_none")]
-        hr_version: Option<Box<Self>>,
     },
     Layered {
         layers: FactorioArray<Self>,
@@ -627,12 +642,8 @@ where
 {
     fn scale(&self) -> f64 {
         match self {
-            Self::Simple { data, hr_version } => hr_version
-                .as_ref()
-                .map_or_else(|| data.scale(), |hr| hr.scale()),
-            Self::MultiFile { data, hr_version } => hr_version
-                .as_ref()
-                .map_or_else(|| data.scale(), |hr| hr.scale()),
+            Self::Simple { data } => data.scale(),
+            Self::MultiFile { data } => data.scale(),
             Self::Layered { layers } => layers.first().map_or(1.0, Self::scale),
         }
     }
@@ -654,26 +665,8 @@ where
     ) -> Option<GraphicsOutput> {
         match self {
             Self::Layered { layers } => merge_layers(layers, scale, used_mods, image_cache, opts),
-            Self::Simple { data, hr_version } => {
-                // TODO: option to enable/disable HR mode
-                if let Some(hr_version) = hr_version {
-                    if scale < data.scale() {
-                        return hr_version.render(scale, used_mods, image_cache, opts);
-                    }
-                }
-
-                data.render(scale, used_mods, image_cache, opts)
-            }
-            Self::MultiFile { data, hr_version } => {
-                // TODO: option to enable/disable HR mode
-                if let Some(hr_version) = hr_version {
-                    if scale < data.scale() {
-                        return hr_version.render(scale, used_mods, image_cache, opts);
-                    }
-                }
-
-                data.render(scale, used_mods, image_cache, opts)
-            }
+            Self::Simple { data } => data.render(scale, used_mods, image_cache, opts),
+            Self::MultiFile { data } => data.render(scale, used_mods, image_cache, opts),
         }
     }
 }

@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
+use serde_helper as helper;
+
 use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
@@ -20,8 +22,15 @@ pub struct ElectricPoleData {
 
     pub light: Option<LightDefinition>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub track_coverage_during_build_by_moving: bool,
+
+    #[serde(
+        default = "helper::u8_5",
+        skip_serializing_if = "helper::is_5_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
+    pub auto_connect_up_to_n_wires: u8,
 }
 
 impl super::Renderable for ElectricPoleData {

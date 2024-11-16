@@ -136,6 +136,11 @@ mod u8 {
     }
 
     #[must_use]
+    pub const fn u8_100() -> u8 {
+        100
+    }
+
+    #[must_use]
     pub const fn u8_120() -> u8 {
         120
     }
@@ -256,6 +261,11 @@ mod u8 {
     }
 
     #[must_use]
+    pub const fn is_100_u8(value: &u8) -> bool {
+        *value == u8_100()
+    }
+
+    #[must_use]
     pub const fn is_120_u8(value: &u8) -> bool {
         *value == u8_120()
     }
@@ -338,6 +348,11 @@ mod u32 {
     }
 
     #[must_use]
+    pub const fn u32_80() -> u32 {
+        80
+    }
+
+    #[must_use]
     pub const fn u32_120() -> u32 {
         120
     }
@@ -375,6 +390,11 @@ mod u32 {
     #[must_use]
     pub const fn is_60_u32(value: &u32) -> bool {
         *value == u32_60()
+    }
+
+    #[must_use]
+    pub const fn is_80_u32(value: &u32) -> bool {
+        *value == u32_80()
     }
 
     #[must_use]

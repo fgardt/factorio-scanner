@@ -67,12 +67,15 @@ impl super::Renderable for WallData {
             }
             ConnectedDirections::DownLeftRight | ConnectedDirections::All => &self.pictures.t_up,
         }
-        .render(
-            render_layers.scale(),
-            used_mods,
-            image_cache,
-            &options.into(),
-        );
+        .as_ref()
+        .and_then(|s| {
+            s.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        });
 
         // TODO: fillings
         let mut gate_connection_north: Option<GraphicsOutput> = None;
@@ -137,14 +140,14 @@ impl super::Renderable for WallData {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WallPictures {
-    pub single: SpriteVariations,
-    pub straight_vertical: SpriteVariations,
-    pub straight_horizontal: SpriteVariations,
-    pub corner_right_down: SpriteVariations,
-    pub corner_left_down: SpriteVariations,
-    pub t_up: SpriteVariations,
-    pub ending_right: SpriteVariations,
-    pub ending_left: SpriteVariations,
+    pub single: Option<SpriteVariations>,
+    pub straight_vertical: Option<SpriteVariations>,
+    pub straight_horizontal: Option<SpriteVariations>,
+    pub corner_right_down: Option<SpriteVariations>,
+    pub corner_left_down: Option<SpriteVariations>,
+    pub t_up: Option<SpriteVariations>,
+    pub ending_right: Option<SpriteVariations>,
+    pub ending_left: Option<SpriteVariations>,
     pub filling: Option<SpriteVariations>,
     pub water_connection_patch: Option<Sprite4Way>,
     pub gate_connection_patch: Option<Sprite4Way>,
