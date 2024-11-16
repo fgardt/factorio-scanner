@@ -22,24 +22,28 @@ pub struct InserterData {
     pub insert_position: Vector,
     pub pickup_position: Vector,
 
-    pub platform_picture: Sprite4Way,
-    pub hand_base_picture: Sprite,
-    pub hand_open_picture: Sprite,
-    pub hand_closed_picture: Sprite,
-    pub hand_base_shadow: Sprite,
-    pub hand_open_shadow: Sprite,
-    pub hand_closed_shadow: Sprite,
+    pub platform_picture: Option<Sprite4Way>,
+    pub platform_frozen: Option<Sprite4Way>,
+    pub hand_base_picture: Option<Sprite>,
+    pub hand_open_picture: Option<Sprite>,
+    pub hand_closed_picture: Option<Sprite>,
+    pub hand_base_frozen: Option<Sprite>,
+    pub hand_open_frozen: Option<Sprite>,
+    pub hand_closed_frozen: Option<Sprite>,
+    pub hand_base_shadow: Option<Sprite>,
+    pub hand_open_shadow: Option<Sprite>,
+    pub hand_closed_shadow: Option<Sprite>,
 
     pub energy_per_movement: Option<Energy>,
     pub energy_per_rotation: Option<Energy>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub stack: bool,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub bulk: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub allow_custom_vectors: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub allow_burner_leech: bool,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -47,6 +51,22 @@ pub struct InserterData {
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub use_easter_egg: bool, // can the inserter fish or not?
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub grab_less_to_match_belt_stack: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub wait_for_full_hand: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub enter_drop_mode_if_held_stack_spoiled: bool,
+
+    #[serde(
+        default = "helper::u8_1",
+        skip_serializing_if = "helper::is_1_u8",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
+    pub max_belt_stack_size: u8,
 
     #[serde(
         default,
@@ -67,7 +87,7 @@ pub struct InserterData {
     pub draw_inserter_arrow: bool,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub chase_belt_items: bool,
+    pub chases_belt_items: bool,
 
     #[serde(
         default,
@@ -91,12 +111,15 @@ impl super::Renderable for InserterData {
 
         let hand = self
             .hand_open_picture
-            .render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &options.into(),
-            )
+            .as_ref()
+            .and_then(|hop| {
+                hop.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            })
             .and_then(|(img, shift)| {
                 let pickup_pos = self.get_pickup_position(direction, options.pickup_position);
 
@@ -155,12 +178,14 @@ impl super::Renderable for InserterData {
             ..options.clone()
         };
 
-        let platform = self.platform_picture.render(
-            render_layers.scale(),
-            used_mods,
-            image_cache,
-            &platform_options.into(),
-        );
+        let platform = self.platform_picture.as_ref().and_then(|pp| {
+            pp.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &platform_options.into(),
+            )
+        });
 
         if let Some(platform) = platform {
             empty = false;

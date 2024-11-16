@@ -2,23 +2,23 @@ use paste::paste;
 use serde::{Deserialize, Serialize};
 
 macro_rules! ids {
-    ( $( $name:ident ),* ) => {
+    ( $type:ident, $( $name:ident ),* ) => {
         $(
             paste!{
                 #[doc="[`Types/" $name "`](https://lua-api.factorio.com/latest/types/" $name ".html)"]
                 #[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-                pub struct $name(String);
+                pub struct $name($type);
             }
 
             impl $name {
                 #[allow(dead_code)]
-                pub fn new(id: impl Into<String>) -> Self {
+                pub fn new(id: impl Into<$type>) -> Self {
                     Self(id.into())
                 }
             }
 
             impl std::ops::Deref for $name {
-                type Target = String;
+                type Target = $type;
 
                 fn deref(&self) -> &Self::Target {
                     &self.0
@@ -35,6 +35,7 @@ macro_rules! ids {
 }
 
 ids!(
+    String,
     ActiveTriggerID,
     AirbornePollutantID,
     AmmoCategoryID,
@@ -73,3 +74,5 @@ ids!(
     TrivialSmokeID,
     VirtualSignalID
 );
+
+ids!(u32, FluidBoxLinkedConnectionID);

@@ -5,6 +5,8 @@ use super::EntityWithOwnerPrototype;
 use mod_util::UsedMods;
 use types::*;
 
+use serde_helper as helper;
+
 /// [`Prototypes/BeaconPrototype`](https://lua-api.factorio.com/latest/prototypes/BeaconPrototype.html)
 pub type BeaconPrototype = EntityWithOwnerPrototype<BeaconData>;
 
@@ -16,13 +18,24 @@ pub struct BeaconData {
     pub energy_source: AnyEnergySource, // must be electric or void
     pub supply_area_distance: f64,
     pub distribution_effectivity: f64,
-    pub module_specification: ModuleSpecification,
+    pub distribution_effectivity_bonus_per_quality_level: Option<f64>,
+    pub module_slots: ItemStackIndex,
 
     pub graphics_set: Option<BeaconGraphicsSet>,
     pub animation: Option<Animation>,
     pub base_picture: Option<Animation>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub perceived_performance: PerceivedPerformance,
+
     pub radius_visualisation_picture: Option<Sprite>,
+
     pub allowed_effects: Option<EffectTypeLimitation>,
+    pub allowed_module_categories: Option<FactorioArray<ModuleCategoryID>>,
+    pub profile: Option<FactorioArray<f64>>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub beacon_counter: BeaconCounter,
 }
 
 impl super::Renderable for BeaconData {
@@ -68,4 +81,12 @@ impl super::Renderable for BeaconData {
 
         Some(())
     }
+}
+
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum BeaconCounter {
+    #[default]
+    Total,
+    SameType,
 }

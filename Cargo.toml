@@ -42,6 +42,9 @@ tokio = "1.41"
 types = { path = "types" }
 regex = "1.11"
 
+[patch.crates-io]
+serde_with = { git = "https://github.com/fgardt/serde_with.git", branch = "feat/with_suffix" }
+
 [workspace.lints.rust]
 unsafe_code = "warn"
 

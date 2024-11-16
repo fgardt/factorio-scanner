@@ -14,8 +14,8 @@ pub type LampPrototype = EntityWithOwnerPrototype<WireEntityData<LampData>>;
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LampData {
-    pub picture_on: Sprite,
-    pub picture_off: Sprite,
+    pub picture_on: Option<Sprite>,
+    pub picture_off: Option<Sprite>,
     pub energy_usage_per_tick: Energy,
     pub energy_source: AnyEnergySource, // theoretically limited to electric / void source
 
@@ -37,7 +37,7 @@ pub struct LampData {
     #[serde(default = "helper::f64_03", skip_serializing_if = "helper::is_03_f64")]
     pub darkness_for_all_lamps_off: f64,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub always_on: bool,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -45,6 +45,11 @@ pub struct LampData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub glow_render_mode: GlowRenderMode,
+
+    pub default_red_signal: Option<SignalIDConnector>,
+    pub default_green_signal: Option<SignalIDConnector>,
+    pub default_blue_signal: Option<SignalIDConnector>,
+    pub default_rgb_signal: Option<SignalIDConnector>,
 }
 
 impl super::Renderable for LampData {
@@ -55,12 +60,14 @@ impl super::Renderable for LampData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        let res = self.picture_off.render(
-            render_layers.scale(),
-            used_mods,
-            image_cache,
-            &options.into(),
-        )?;
+        let res = self.picture_off.as_ref().and_then(|po| {
+            po.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })?;
 
         render_layers.add_entity(res, &options.position);
 

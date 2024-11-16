@@ -3,8 +3,38 @@
 pub use f32::*;
 mod f32 {
     #[must_use]
+    pub const fn f32_n1() -> f32 {
+        -1.0
+    }
+
+    #[must_use]
     pub const fn f32_001() -> f32 {
         0.01
+    }
+
+    #[must_use]
+    pub const fn f32_005() -> f32 {
+        0.05
+    }
+
+    #[must_use]
+    pub const fn f32_01() -> f32 {
+        0.1
+    }
+
+    #[must_use]
+    pub const fn f32_05() -> f32 {
+        0.5
+    }
+
+    #[must_use]
+    pub const fn f32_087() -> f32 {
+        0.87
+    }
+
+    #[must_use]
+    pub const fn f32_09() -> f32 {
+        0.9
     }
 
     #[must_use]
@@ -18,8 +48,38 @@ mod f32 {
     }
 
     #[must_use]
+    pub fn is_n1_f32(value: &f32) -> bool {
+        (*value - f32_n1()).abs() < f32::EPSILON
+    }
+
+    #[must_use]
     pub fn is_001_f32(value: &f32) -> bool {
         (*value - f32_001()).abs() < f32::EPSILON
+    }
+
+    #[must_use]
+    pub fn is_005_f32(value: &f32) -> bool {
+        (*value - f32_005()).abs() < f32::EPSILON
+    }
+
+    #[must_use]
+    pub fn is_01_f32(value: &f32) -> bool {
+        (*value - f32_01()).abs() < f32::EPSILON
+    }
+
+    #[must_use]
+    pub fn is_05_f32(value: &f32) -> bool {
+        (*value - f32_05()).abs() < f32::EPSILON
+    }
+
+    #[must_use]
+    pub fn is_087_f32(value: &f32) -> bool {
+        (*value - f32_087()).abs() < f32::EPSILON
+    }
+
+    #[must_use]
+    pub fn is_09_f32(value: &f32) -> bool {
+        (*value - f32_09()).abs() < f32::EPSILON
     }
 
     #[must_use]

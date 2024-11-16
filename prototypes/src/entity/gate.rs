@@ -14,20 +14,20 @@ pub type GatePrototype = EntityWithOwnerPrototype<GateData>;
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GateData {
-    pub vertical_animation: Animation,
-    pub horizontal_animation: Animation,
+    pub vertical_animation: Option<Animation>,
+    pub horizontal_animation: Option<Animation>,
 
-    pub vertical_rail_base: Animation,
-    pub vertical_rail_animation_left: Animation,
-    pub vertical_rail_animation_right: Animation,
+    pub vertical_rail_base: Option<Animation>,
+    pub vertical_rail_animation_left: Option<Animation>,
+    pub vertical_rail_animation_right: Option<Animation>,
 
-    pub horizontal_rail_base: Animation,
-    pub horizontal_rail_animation_left: Animation,
-    pub horizontal_rail_animation_right: Animation,
+    pub horizontal_rail_base: Option<Animation>,
+    pub horizontal_rail_animation_left: Option<Animation>,
+    pub horizontal_rail_animation_right: Option<Animation>,
 
-    pub wall_patch: Animation,
+    pub wall_patch: Option<Animation>,
 
-    pub opening_speed: f64, // docs say single precision, so f32. ¯\_(ツ)_/¯
+    pub opening_speed: f32,
     pub activation_distance: f64,
 
     #[serde(deserialize_with = "helper::truncating_deserializer")]
@@ -41,6 +41,9 @@ pub struct GateData {
     pub fadeout_interval: u32,
 
     pub opened_collision_mask: Option<CollisionMaskConnector>,
+    // not implemented
+    // pub opening_sound: Option<Sound>,
+    // pub closing_sound: Option<Sound>,
 }
 
 impl super::Renderable for GateData {
@@ -55,38 +58,46 @@ impl super::Renderable for GateData {
             Direction::North | Direction::South => {
                 let renders = if options.draw_gate_patch {
                     [
-                        self.vertical_animation.render(
-                            render_layers.scale(),
-                            used_mods,
-                            image_cache,
-                            &options.into(),
-                        ),
-                        self.wall_patch.render(
-                            render_layers.scale(),
-                            used_mods,
-                            image_cache,
-                            &options.into(),
-                        ),
+                        self.vertical_animation.as_ref().and_then(|a| {
+                            a.render(
+                                render_layers.scale(),
+                                used_mods,
+                                image_cache,
+                                &options.into(),
+                            )
+                        }),
+                        self.wall_patch.as_ref().and_then(|a| {
+                            a.render(
+                                render_layers.scale(),
+                                used_mods,
+                                image_cache,
+                                &options.into(),
+                            )
+                        }),
                     ]
                 } else {
                     [
-                        self.vertical_animation.render(
-                            render_layers.scale(),
-                            used_mods,
-                            image_cache,
-                            &options.into(),
-                        ),
+                        self.vertical_animation.as_ref().and_then(|a| {
+                            a.render(
+                                render_layers.scale(),
+                                used_mods,
+                                image_cache,
+                                &options.into(),
+                            )
+                        }),
                         None,
                     ]
                 };
                 merge_renders(&renders, render_layers.scale())
             }
-            Direction::West | Direction::East => self.horizontal_animation.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &options.into(),
-            ),
+            Direction::West | Direction::East => self.horizontal_animation.as_ref().and_then(|a| {
+                a.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            }),
             _ => None,
         }?;
 
