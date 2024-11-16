@@ -177,8 +177,9 @@ pub enum Error {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct DataRaw {
-    // #[serde(flatten)]
-    // pub entity: entity::AllTypes,
+    #[serde(flatten)]
+    pub entity: entity::AllTypes,
+
     #[serde(flatten)]
     pub item: item::AllTypes,
 

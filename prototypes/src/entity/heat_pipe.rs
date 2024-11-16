@@ -10,8 +10,8 @@ pub type HeatPipePrototype = EntityWithOwnerPrototype<HeatBufferEntityData<HeatP
 /// [`Prototypes/HeatPipePrototype`](https://lua-api.factorio.com/latest/prototypes/HeatPipePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct HeatPipeData {
-    pub connection_sprites: ConnectableEntityGraphics,
-    pub heat_glow_sprites: ConnectableEntityGraphics,
+    pub connection_sprites: Option<ConnectableEntityGraphics>,
+    pub heat_glow_sprites: Option<ConnectableEntityGraphics>,
 }
 
 impl super::Renderable for HeatPipeData {
@@ -22,15 +22,14 @@ impl super::Renderable for HeatPipeData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        let res = self
-            .connection_sprites
-            .get(options.connections.unwrap_or_default())
-            .render(
+        let res = self.connection_sprites.as_ref().and_then(|cs| {
+            cs.get(options.connections.unwrap_or_default()).render(
                 render_layers.scale(),
                 used_mods,
                 image_cache,
                 &options.into(),
-            )?;
+            )
+        })?;
 
         render_layers.add_entity(res, &options.position);
 

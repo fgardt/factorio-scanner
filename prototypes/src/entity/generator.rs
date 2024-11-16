@@ -15,35 +15,29 @@ pub type GeneratorPrototype = EntityWithOwnerPrototype<FluidBoxEntityData<Genera
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GeneratorData {
     pub energy_source: ElectricEnergySource,
+
     pub horizontal_animation: Option<Animation>,
     pub vertical_animation: Option<Animation>,
+    pub horizontal_frozen_animation: Option<Sprite>,
+    pub vertical_frozen_animation: Option<Sprite>,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub effectivity: f64,
 
-    pub fluid_usage_per_tick: f64,
-    pub maximum_temperature: f64,
+    pub fluid_usage_per_tick: FluidAmount,
+    pub maximum_temperature: f32,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub burns_fluid: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub scale_fluid_usage: bool,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub destroy_non_fuel_fluid: bool,
 
-    #[serde(
-        default = "helper::f64_quarter",
-        skip_serializing_if = "helper::is_quarter_f64"
-    )]
-    pub min_perceived_performance: f64,
-
-    #[serde(
-        default = "helper::f64_half",
-        skip_serializing_if = "helper::is_half_f64"
-    )]
-    pub performance_to_sound_speedup: f64,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub perceived_performance: PerceivedPerformance,
 
     pub max_power_output: Option<Energy>,
     // not implemented

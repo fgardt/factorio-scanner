@@ -101,6 +101,8 @@ pub struct RenderOpts {
 
     pub direction: Direction,
     pub orientation: Option<RealOrientation>,
+    pub mirrored: bool,
+
     pub variation: Option<NonZeroU32>,
 
     pub pickup_position: Option<Vector>,
@@ -240,9 +242,10 @@ impl From<&RenderOpts> for TransportBeltAnimationSetRenderOpts {
     }
 }
 
-impl From<&RenderOpts> for MiningDrillGraphicsRenderOpts {
+impl From<&RenderOpts> for WorkingVisualisationRenderOpts {
     fn from(value: &RenderOpts) -> Self {
         Self {
+            progress: 0.0,
             direction: value.direction,
             runtime_tint: value.runtime_tint,
         }
@@ -335,9 +338,12 @@ where
     }
 
     fn drawing_box(&self) -> BoundingBox {
-        self.drawing_box
-            .clone()
-            .unwrap_or_else(|| self.selection_box())
+        self.collision_box()
+
+        // TODO: figure out how this works in 2.0
+        // self.drawing_box
+        //     .clone()
+        //     .unwrap_or_else(|| self.selection_box())
     }
 
     fn pipe_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
@@ -445,20 +451,19 @@ pub struct EntityData<T: Renderable> {
 
     pub map_generator_bounding_box: Option<BoundingBox>,
     pub selection_box: Option<BoundingBox>,
-    pub drawing_box: Option<BoundingBox>,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub drawing_box_vertical_extension: f64,
     pub sticker_box: Option<BoundingBox>,
     pub hit_visualization_box: Option<BoundingBox>,
 
     // TODO: get a proper default and serializing skip (?)
     //#[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub flags: Option<EntityPrototypeFlags>,
-    pub subgroup: Option<ItemSubGroupID>,
 
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub allow_copy_paste: bool,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub surface_conditions: FactorioArray<SurfaceCondition>,
 
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub selectable_in_game: bool,
+    pub deconstruction_alternative: Option<EntityID>,
 
     #[serde(
         default = "helper::u8_50",
@@ -477,10 +482,14 @@ pub struct EntityData<T: Renderable> {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub remove_decoratives: DecorativeRemoveMode,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub emissions_per_second: f64,
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub emissions_per_second: HashMap<AirbornePollutantID, f64>,
 
-    pub shooting_cursor_size: Option<f32>,
+    pub shooting_cursor_size: Option<f64>,
+
+    pub impact_category: Option<String>,
+
+    pub placeable_position_visualization: Option<Sprite>,
 
     pub radius_visualisation_specification: Option<RadiusVisualisationSpecification>,
 
@@ -498,6 +507,14 @@ pub struct EntityData<T: Renderable> {
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub protected_from_tile_building: bool,
+
+    pub heating_energy: Option<Energy>,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub allow_copy_paste: bool,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub selectable_in_game: bool,
 
     pub placeable_by: Option<PlaceableBy>,
 
@@ -523,8 +540,10 @@ pub struct EntityData<T: Renderable> {
     pub enemy_map_color: Option<Color>,
 
     pub water_reflection: Option<WaterReflectionDefinition>,
+
     // not implemented
     // pub trigger_target_mask: Option<TriggerTargetMask>,
+    // pub tile_buildability_rules: FactorioArray<TileBuildabilityRule>,
     // pub minable: Option<MinableProperties>,
     // pub created_smoke: Option<CreateTrivialSmokeEffectItem>,
     // pub working_sound: Option<WorkingSound>,
@@ -533,11 +552,16 @@ pub struct EntityData<T: Renderable> {
     // pub mined_sound: Option<Sound>,
     // pub mining_sound: Option<Sound>,
     // pub rotated_sound: Option<Sound>,
-    // pub vehicle_impact_sound: Option<Sound>,
     // pub open_sound: Option<Sound>,
     // pub close_sound: Option<Sound>,
+    // pub stateless_visualisation: Option<StatelessVisualisations>,
     // pub remains_when_mined: Option<RemainsWhenMined>,
+    // pub diagonal_tile_grid_size: Option<TilePosition>,
     // pub autoplace: Option<AutoplaceSpecification>,
+    // pub ambient_sounds_group: Option<EntityID>,
+    // pub ambient_sounds: Option<WorldAmbientSoundDefinitions>,
+    // pub icon_draw_specification: Option<IconDrawSpecification>,
+    // pub icons_positioning: FactorioArray<IconSequencePositioning>,
     #[serde(flatten)]
     child: T,
 }
@@ -575,58 +599,13 @@ impl<T: Renderable> Renderable for EntityData<T> {
     }
 }
 
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
 pub enum DecorativeRemoveMode {
     #[default]
     Automatic,
     True,
     False,
-}
-
-impl serde::ser::Serialize for DecorativeRemoveMode {
-    fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        match self {
-            Self::Automatic => serializer.serialize_str("automatic"),
-            Self::True => serializer.serialize_str("true"),
-            Self::False => serializer.serialize_str("false"),
-        }
-    }
-}
-
-struct DecorativeRemoveModeVisitor;
-
-impl<'de> serde::de::Visitor<'de> for DecorativeRemoveModeVisitor {
-    type Value = DecorativeRemoveMode;
-
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("one of 'automatic', 'true' or 'false'")
-    }
-
-    fn visit_bool<E: serde::de::Error>(self, value: bool) -> Result<Self::Value, E> {
-        Ok(if value {
-            DecorativeRemoveMode::True
-        } else {
-            DecorativeRemoveMode::False
-        })
-    }
-
-    fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<Self::Value, E> {
-        match value {
-            "automatic" => Ok(DecorativeRemoveMode::Automatic),
-            "true" => Ok(DecorativeRemoveMode::True),
-            "false" => Ok(DecorativeRemoveMode::False),
-            _ => Err(serde::de::Error::unknown_variant(
-                value,
-                &["automatic", "true", "false"],
-            )),
-        }
-    }
-}
-
-impl<'de> serde::de::Deserialize<'de> for DecorativeRemoveMode {
-    fn deserialize<D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        deserializer.deserialize_any(DecorativeRemoveModeVisitor)
-    }
 }
 
 /// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
@@ -662,6 +641,12 @@ pub struct EntityWithHealthData<T: Renderable> {
 
     pub integration_patch_render_layer: Option<RenderLayer>,
     pub integration_patch: Option<Sprite4Way>,
+
+    #[serde(
+        default = "helper::f32_005",
+        skip_serializing_if = "helper::is_005_f32"
+    )]
+    pub overkill_fraction: f32,
     // not implemented
     // pub dying_explosion: Option<ExplosionDefinition>,
     // pub dying_trigger_effect: Option<TriggerEffect>,
@@ -726,17 +711,19 @@ impl<T: Renderable> Renderable for EntityWithHealthData<T> {
     }
 }
 
-/// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
+/// [`Prototypes/EntityWithOwnerPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithOwnerPrototype.html)
 pub type EntityWithOwnerPrototype<T> = EntityWithHealthPrototype<EntityWithOwnerData<T>>;
 
-/// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
+/// [`Prototypes/EntityWithOwnerPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithOwnerPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EntityWithOwnerData<T: Renderable> {
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub is_military_target: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub allow_run_time_change_of_is_military_target: bool,
+
+    pub quality_indicator_scale: Option<f64>,
 
     #[serde(flatten)]
     child: T,
@@ -923,7 +910,7 @@ impl<T: Renderable> Deref for EntityPrototypeMap<T> {
 }
 
 // workaround for prototype type string not matching the actual type name
-type LoaderPrototype = Loader1x2Prototype;
+// type LoaderPrototype = Loader1x2Prototype;
 
 namespace_struct! {
     AllTypes,
@@ -971,29 +958,29 @@ namespace_struct! {
     "simple-entity",
     "simple-entity-with-owner",
     "simple-entity-with-force",
-    "solar-panel",
-    "storage-tank",
-    "linked-belt",
-    "loader-1x1",
-    "loader",
-    "splitter",
-    "transport-belt",
-    "underground-belt",
-    "radar",
-    "turret",
-    "ammo-turret",
-    "electric-turret",
-    "fluid-turret",
-    "car",
-    "curved-rail",
-    "straight-rail",
-    "rail-signal",
-    "rail-chain-signal",
-    "train-stop",
-    "locomotive",
-    "cargo-wagon",
-    "fluid-wagon",
-    "artillery-wagon"
+    // "solar-panel",
+    // "storage-tank",
+    // "linked-belt",
+    // "loader-1x1",
+    // "loader",
+    // "splitter",
+    // "transport-belt",
+    // "underground-belt",
+    "radar"
+    // "turret",
+    // "ammo-turret",
+    // "electric-turret",
+    // "fluid-turret",
+    // "car",
+    // "curved-rail",
+    // "straight-rail",
+    // "rail-signal",
+    // "rail-chain-signal",
+    // "train-stop",
+    // "locomotive",
+    // "cargo-wagon",
+    // "fluid-wagon",
+    // "artillery-wagon"
 
     // not implemented
     // character,

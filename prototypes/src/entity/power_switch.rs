@@ -12,11 +12,12 @@ pub type PowerSwitchPrototype = EntityWithOwnerPrototype<WireEntityData<PowerSwi
 /// [`Prototypes/PowerSwitchPrototype`](https://lua-api.factorio.com/latest/prototypes/PowerSwitchPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PowerSwitchData {
-    pub power_on_animation: Animation,
-    pub overlay_start: Animation,
-    pub overlay_loop: Animation,
-    pub led_on: Sprite,
-    pub led_off: Sprite,
+    pub power_on_animation: Option<Animation>,
+    pub overlay_start: Option<Animation>,
+    pub overlay_loop: Option<Animation>,
+    pub led_on: Option<Sprite>,
+    pub led_off: Option<Sprite>,
+    pub frozen_patch: Option<Sprite>,
 
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub overlay_start_delay: u8,
@@ -30,7 +31,7 @@ impl super::Renderable for PowerSwitchData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        let res = self.power_on_animation.render(
+        let res = self.power_on_animation.as_ref()?.render(
             render_layers.scale(),
             used_mods,
             image_cache,

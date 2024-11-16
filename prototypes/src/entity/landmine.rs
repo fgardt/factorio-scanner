@@ -14,8 +14,8 @@ pub type LandMinePrototype = EntityWithOwnerPrototype<LandMineData>;
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LandMineData {
-    pub picture_safe: Sprite,
-    pub picture_set: Sprite,
+    pub picture_safe: Option<Sprite>,
+    pub picture_set: Option<Sprite>,
     pub trigger_radius: f64,
 
     pub picture_set_enemy: Option<Sprite>,
@@ -51,12 +51,14 @@ impl super::Renderable for LandMineData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        let res = self.picture_set.render(
-            render_layers.scale(),
-            used_mods,
-            image_cache,
-            &options.into(),
-        )?;
+        let res = self.picture_set.as_ref().and_then(|ps| {
+            ps.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })?;
 
         render_layers.add_entity(res, &options.position);
 

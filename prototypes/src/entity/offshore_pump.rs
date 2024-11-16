@@ -3,43 +3,34 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::{EntityWithOwnerPrototype, FluidBoxEntityData, WireEntityData};
+use super::{EnergyEntityData, EntityWithOwnerPrototype, FluidBoxEntityData, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/OffshorePumpPrototype`](https://lua-api.factorio.com/latest/prototypes/OffshorePumpPrototype.html)
-pub type OffshorePumpPrototype =
-    EntityWithOwnerPrototype<WireEntityData<FluidBoxEntityData<OffshorePumpData>>>;
+pub type OffshorePumpPrototype = EntityWithOwnerPrototype<
+    WireEntityData<EnergyEntityData<FluidBoxEntityData<OffshorePumpData>>>,
+>;
 
 /// [`Prototypes/OffshorePumpPrototype`](https://lua-api.factorio.com/latest/prototypes/OffshorePumpPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct OffshorePumpData {
-    pub pumping_speed: f64,
-    pub fluid: FluidID,
+    pub pumping_speed: FluidAmount,
+    pub fluid_source_offset: Vector,
 
-    #[serde(flatten)]
-    pub graphics: OffshorePumpGraphicsVariant,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub perceived_performance: PerceivedPerformance,
 
-    #[serde(
-        default = "helper::f64_quarter",
-        skip_serializing_if = "helper::is_quarter_f64"
-    )]
-    pub min_perceived_performance: f64,
+    pub graphics_set: Option<OffshorePumpGraphicsSet>,
 
-    pub fluid_box_tile_collision_test: Option<CollisionMaskConnector>,
-    pub adjacent_tile_collision_test: Option<CollisionMaskConnector>,
-    pub center_collision_mask: Option<CollisionMaskConnector>,
-    pub adjacent_tile_collision_box: Option<BoundingBox>,
-    pub placeable_position_visualization: Option<Sprite>,
+    pub energy_usage: Option<Energy>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub remove_on_tile_collision: bool,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub always_draw_fluid: bool,
-
-    pub check_bounding_box_collides_with_tiles: Option<bool>,
 }
 
 impl super::Renderable for OffshorePumpData {
@@ -50,55 +41,17 @@ impl super::Renderable for OffshorePumpData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        self.graphics
-            .render(options, used_mods, render_layers, image_cache)
+        self.graphics_set
+            .as_ref()
+            .and_then(|gs| gs.render(options, used_mods, render_layers, image_cache))
     }
 }
 
-#[skip_serializing_none]
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(untagged)]
-pub enum OffshorePumpGraphicsVariant {
-    GraphicsSet {
-        graphics_set: OffshorePumpGraphicsSet,
-    },
-    Deprecated {
-        picture: Animation4Way,
-    },
-}
-
-impl super::Renderable for OffshorePumpGraphicsVariant {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        render_layers: &mut crate::RenderLayerBuffer,
-        image_cache: &mut ImageCache,
-    ) -> super::RenderOutput {
-        match self {
-            Self::GraphicsSet { graphics_set } => {
-                graphics_set.render(options, used_mods, render_layers, image_cache)
-            }
-            Self::Deprecated { picture } => {
-                let res = picture.render(
-                    render_layers.scale(),
-                    used_mods,
-                    image_cache,
-                    &options.into(),
-                )?;
-
-                render_layers.add_entity(res, &options.position);
-
-                Some(())
-            }
-        }
-    }
-}
-
+/// [`Types/OffshorePumpGraphicsSet`](https://lua-api.factorio.com/latest/types/OffshorePumpGraphicsSet.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct OffshorePumpGraphicsSet {
-    pub animation: Animation4Way,
+    pub animation: Option<Animation4Way>,
 
     // TODO: default value
     pub base_render_layer: Option<RenderLayer>,
@@ -134,12 +87,14 @@ impl super::Renderable for OffshorePumpGraphicsSet {
                         &options.into(),
                     )
                 }),
-                self.animation.render(
-                    render_layers.scale(),
-                    used_mods,
-                    image_cache,
-                    &options.into(),
-                ),
+                self.animation.as_ref().and_then(|a| {
+                    a.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &options.into(),
+                    )
+                }),
                 self.glass_pictures.as_ref().and_then(|g| {
                     g.render(
                         render_layers.scale(),
