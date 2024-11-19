@@ -117,7 +117,8 @@ mod portal {
         }
     }
 
-    #[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    #[non_exhaustive]
+    #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum PortalSearchVersion {
         #[serde(rename = "0.13")]
         V0_13,
@@ -142,6 +143,12 @@ mod portal {
 
         #[serde(rename = "1.1")]
         V1_1,
+
+        #[serde(rename = "2.0")]
+        V2_0,
+
+        #[serde(untagged)]
+        Unknown(String),
     }
 
     impl fmt::Display for PortalSearchVersion {
@@ -155,6 +162,8 @@ mod portal {
                 Self::V0_18 => write!(f, "0.18"),
                 Self::V1_0 => write!(f, "1.0"),
                 Self::V1_1 => write!(f, "1.1"),
+                Self::V2_0 => write!(f, "2.0"),
+                Self::Unknown(val) => write!(f, "{val}"),
             }
         }
     }
@@ -217,7 +226,7 @@ mod portal {
         }
 
         #[must_use]
-        pub const fn version(mut self, version: PortalSearchVersion) -> Self {
+        pub fn version(mut self, version: PortalSearchVersion) -> Self {
             self.version = Some(version);
             self
         }
