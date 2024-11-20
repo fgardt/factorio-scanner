@@ -92,10 +92,10 @@ impl Mod {
 
         let name = name_extractor
             .captures(name)
-            .ok_or(ModError::InvalidFilename(name.into()))?
+            .ok_or_else(|| ModError::InvalidFilename(name.into()))?
             .get(1)
             .map(|n| n.as_str().to_owned())
-            .ok_or(ModError::InvalidFilename(name.into()))?;
+            .ok_or_else(|| ModError::InvalidFilename(name.into()))?;
 
         if name != info.name {
             return Err(ModError::NameMismatch {
@@ -267,7 +267,7 @@ fn get_zip_internal_folder(path: impl AsRef<Path>, zip: &ZipArchive<File>) -> Re
         .ok_or_else(|| ModError::ZipEmpty(path.as_ref().into()))?
         .split('/')
         .next()
-        .ok_or(ModError::UnknownInternalFolder(path.as_ref().into()))?
+        .ok_or_else(|| ModError::UnknownInternalFolder(path.as_ref().into()))?
         .to_owned()
         + "/";
 
