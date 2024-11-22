@@ -29,8 +29,8 @@ pub struct LampData {
     pub glow_color_intensity: f64,
 
     #[serde(
-        default = "helper::f64_half",
-        skip_serializing_if = "helper::is_half_f64"
+        default = "helper::f64_05",
+        skip_serializing_if = "helper::is_05_f64"
     )]
     pub darkness_for_all_lamps_on: f64,
 

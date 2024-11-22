@@ -40,10 +40,7 @@ pub struct RecipePrototypeData {
 
     pub main_product: Option<String>,
 
-    #[serde(
-        default = "helper::f64_half",
-        skip_serializing_if = "helper::is_half_f64"
-    )]
+    #[serde(default = "helper::f64_05", skip_serializing_if = "helper::is_05_f64")]
     pub energy_required: f64,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]

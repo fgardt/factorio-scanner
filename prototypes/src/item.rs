@@ -94,10 +94,7 @@ pub struct ItemPrototypeData {
 
     pub weight: Option<Weight>,
 
-    #[serde(
-        default = "helper::f64_half",
-        skip_serializing_if = "helper::is_half_f64"
-    )]
+    #[serde(default = "helper::f64_05", skip_serializing_if = "helper::is_05_f64")]
     pub ingredient_to_weight_coefficient: f64,
 
     pub fuel_glow_color: Option<Color>,
