@@ -2425,10 +2425,7 @@ pub struct RotatedAnimationParams {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub counterclockwise: bool,
 
-    #[serde(
-        default = "helper::f64_half",
-        skip_serializing_if = "helper::is_half_f64"
-    )]
+    #[serde(default = "helper::f64_05", skip_serializing_if = "helper::is_05_f64")]
     pub middle_orientation: f64,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]

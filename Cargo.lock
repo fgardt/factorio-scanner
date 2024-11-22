@@ -2405,6 +2405,7 @@ name = "serde_helper"
 version = "0.1.0"
 dependencies = [
  "num",
+ "paste",
  "serde",
 ]
 
