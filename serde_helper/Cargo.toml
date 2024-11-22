@@ -9,4 +9,5 @@ workspace = true
 
 [dependencies]
 num = "0.4"
+paste.workspace = true
 serde.workspace = true
