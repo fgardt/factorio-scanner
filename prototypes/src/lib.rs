@@ -1258,10 +1258,10 @@ impl RenderLayerBuffer {
     fn store_wire_connection_points(
         &mut self,
         bp_entity_id: u64,
-        wire_connection_points: GenericWireConnectionPoint,
+        wire_connection_points: &GenericWireConnectionPoint,
     ) {
         self.wire_connection_points
-            .insert(bp_entity_id, wire_connection_points);
+            .insert(bp_entity_id, *wire_connection_points);
     }
 
     #[instrument(skip_all)]

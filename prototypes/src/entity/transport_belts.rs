@@ -364,10 +364,7 @@ pub type Loader1x2Prototype = EntityWithOwnerPrototype<Loader1x2Data>;
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Loader1x2Data {
-    #[serde(
-        default = "helper::f64_05",
-        skip_serializing_if = "helper::is_05_f64"
-    )]
+    #[serde(default = "helper::f64_05", skip_serializing_if = "helper::is_05_f64")]
     pub belt_length: f64,
 
     #[serde(flatten)]
