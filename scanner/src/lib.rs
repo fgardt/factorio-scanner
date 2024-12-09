@@ -337,7 +337,7 @@ pub async fn load_data(
 ) -> Result<(DataUtil, UsedMods), ScannerError> {
     let bp = bp
         .as_blueprint()
-        .ok_or(report!(ScannerError::NoBlueprint))?;
+        .ok_or_else(|| report!(ScannerError::NoBlueprint))?;
 
     info!("loaded BP");
 
@@ -419,7 +419,7 @@ pub fn render(
 ) -> Result<(Vec<u8>, HashSet<String>, Option<Vec<u8>>), ScannerError> {
     let bp = raw_bp
         .as_blueprint()
-        .ok_or(report!(ScannerError::NoBlueprint))?;
+        .ok_or_else(|| report!(ScannerError::NoBlueprint))?;
 
     let size =
         calculate_target_size(bp, data, target_res, min_scale).ok_or(ScannerError::RenderError)?;
