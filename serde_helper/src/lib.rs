@@ -11,7 +11,7 @@ struct TruncatingVisitor<T> {
     _marker: std::marker::PhantomData<T>,
 }
 
-impl<'de, T> serde::de::Visitor<'de> for TruncatingVisitor<T>
+impl<T> serde::de::Visitor<'_> for TruncatingVisitor<T>
 where
     T: Bounded + Integer + ToPrimitive + FromPrimitive,
 {
@@ -151,7 +151,7 @@ where
 
 struct InfFloatVisitor;
 
-impl<'de> serde::de::Visitor<'de> for InfFloatVisitor {
+impl serde::de::Visitor<'_> for InfFloatVisitor {
     type Value = f32;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -277,7 +277,7 @@ where
 
 struct InfDoubleVisitor;
 
-impl<'de> serde::de::Visitor<'de> for InfDoubleVisitor {
+impl serde::de::Visitor<'_> for InfDoubleVisitor {
     type Value = f64;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -403,7 +403,7 @@ where
 
 struct BoolVisitor;
 
-impl<'de> serde::de::Visitor<'de> for BoolVisitor {
+impl serde::de::Visitor<'_> for BoolVisitor {
     type Value = bool;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {

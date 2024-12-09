@@ -86,7 +86,7 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
         if let Some(gs) = if options.mirrored {
             self.graphics_set_flipped
                 .as_ref()
-                .or_else(|| self.graphics_set.as_ref())
+                .or(self.graphics_set.as_ref())
         } else {
             self.graphics_set.as_ref()
         } {
@@ -95,7 +95,7 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
             } else {
                 None
             }
-            .or_else(|| gs.animation.as_ref())
+            .or(gs.animation.as_ref())
             .and_then(|anim| {
                 anim.render(
                     render_layers.scale(),

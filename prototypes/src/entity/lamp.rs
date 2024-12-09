@@ -28,10 +28,7 @@ pub struct LampData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub glow_color_intensity: f64,
 
-    #[serde(
-        default = "helper::f64_05",
-        skip_serializing_if = "helper::is_05_f64"
-    )]
+    #[serde(default = "helper::f64_05", skip_serializing_if = "helper::is_05_f64")]
     pub darkness_for_all_lamps_on: f64,
 
     #[serde(default = "helper::f64_03", skip_serializing_if = "helper::is_03_f64")]
