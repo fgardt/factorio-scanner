@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use serde_helper as helper;
 
-use types::{AmmoType, FactorioArray};
+use types::{AmmoCategoryID, AmmoType, FactorioArray};
 
 /// [`Prototypes/AmmoItemPrototype`](https://lua-api.factorio.com/latest/prototypes/AmmoItemPrototype.html)
 pub type AmmoItemPrototype = crate::BasePrototype<AmmoItemPrototypeData>;
@@ -17,6 +17,11 @@ pub struct AmmoItemPrototypeData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub reload_time: f32,
+
+    pub ammo_category: AmmoCategoryID,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub shoot_protected: bool,
 
     #[serde(flatten)]
     parent: super::ItemPrototypeData,

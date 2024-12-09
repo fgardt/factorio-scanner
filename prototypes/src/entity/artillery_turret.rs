@@ -3,12 +3,12 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/ArtilleryTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/ArtilleryTurretPrototype.html)
-pub type ArtilleryTurretPrototype = EntityWithOwnerPrototype<ArtilleryTurretData>;
+pub type ArtilleryTurretPrototype = EntityWithOwnerPrototype<WireEntityData<ArtilleryTurretData>>;
 
 /// [`Prototypes/ArtilleryTurretPrototype`](https://lua-api.factorio.com/latest/prototypes/ArtilleryTurretPrototype.html)
 #[skip_serializing_none]
@@ -41,8 +41,8 @@ pub struct ArtilleryTurretData {
     pub base_picture_secondary_draw_order: u8,
 
     pub base_picture_render_layer: Option<RenderLayer>,
-    pub base_shift: Option<Vector>,
     pub base_picture: Option<Animation4Way>,
+    pub cannon_base_shift: Vector3D,
     pub cannon_base_pictures: Option<RotatedSprite>,
     pub cannon_barrel_pictures: Option<RotatedSprite>,
 

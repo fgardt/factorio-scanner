@@ -34,6 +34,10 @@ pub struct SimpleEntityData {
 
     #[serde(flatten)]
     pub graphics: Option<SimpleEntityGraphics>,
+
+    pub lower_render_layer: Option<RenderLayer>,
+    pub lower_pictures: Option<SpriteVariations>,
+    // pub stateless_visualisation_variations: FactorioArray<StatelessVisualisations>,
 }
 
 impl super::Renderable for SimpleEntityData {
@@ -82,11 +86,15 @@ pub struct SimpleEntityWithOwnerData {
     #[serde(flatten)]
     pub graphics: Option<SimpleEntityGraphics>,
 
+    pub lower_render_layer: Option<RenderLayer>,
+    pub lower_pictures: Option<SpriteVariations>,
+
     #[serde(
         default = "ForceCondition::all",
         skip_serializing_if = "ForceCondition::is_all"
     )]
     pub force_visibility: ForceCondition,
+    // pub stateless_visualisation_variations: FactorioArray<StatelessVisualisations>,
 }
 
 impl super::Renderable for SimpleEntityWithOwnerData {

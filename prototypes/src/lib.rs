@@ -27,10 +27,13 @@ use types::*;
 pub mod entity;
 pub mod fluid;
 pub mod item;
+pub mod quality;
 pub mod recipe;
 pub mod signal;
 pub mod tile;
 pub mod utility_sprites;
+
+// `Prototype` not implemented since it only holds the `factoriopedia_alternative` field
 
 /// [`Prototypes/PrototypeBase`](https://lua-api.factorio.com/latest/PrototypeBase.html)
 #[skip_serializing_none]
@@ -42,12 +45,21 @@ pub struct BasePrototype<T> {
 
     pub name: String,
 
-    #[serde(default, skip_serializing_if = "String::is_empty")]
+    #[serde(default, skip_serializing_if = "serde_helper::is_default")]
     pub order: Order,
 
     pub localised_name: Option<LocalisedString>,
     pub localised_description: Option<LocalisedString>,
+    pub factoriopedia_description: Option<LocalisedString>,
 
+    #[serde(default, skip_serializing_if = "serde_helper::is_default")]
+    pub hidden: bool,
+    pub hidden_in_factoriopedia: Option<bool>,
+
+    #[serde(default, skip_serializing_if = "serde_helper::is_default")]
+    pub parameter: bool,
+
+    // pub factoriopedia_simulation: Option<SimulationDefinition>,
     #[serde(flatten)]
     child: T,
 }
@@ -112,6 +124,7 @@ mod helper_macro {
                 #[serde(rename_all = "kebab-case")]
                 pub struct $name {
                     $(
+                        #[serde(default)]
                         pub [< $member:snake >]: std::collections::HashMap<$id, [< $member:camel Prototype >]>,
                     )+
                 }
@@ -183,6 +196,9 @@ pub struct DataRaw {
     #[serde(flatten)]
     pub tile: tile::AllTypes,
 
+    #[serde(flatten)]
+    pub quality: quality::AllTypes,
+
     pub utility_sprites: HashMap<String, utility_sprites::UtilitySprites>,
 }
 
@@ -209,6 +225,8 @@ impl DataUtil {
     #[allow(clippy::too_many_lines)]
     #[must_use]
     pub fn new(raw: DataRaw) -> Self {
+        // TODO: undo this
+        /*
         let mut entities: HashMap<EntityID, entity::Type> = HashMap::new();
 
         {
@@ -490,6 +508,12 @@ impl DataUtil {
         }
 
         Self { raw, entities }
+        */
+
+        Self {
+            raw,
+            entities: HashMap::new(),
+        }
     }
 
     #[must_use]
@@ -510,6 +534,10 @@ impl DataUtil {
     #[allow(clippy::too_many_lines)]
     #[must_use]
     pub fn get_entity(&self, name: &str) -> Option<&dyn RenderableEntity> {
+        None
+
+        // TODO: undo this
+        /*
         let entity_type = self.get_entity_type(name)?;
         let name = &EntityID::new(name);
 
@@ -905,6 +933,7 @@ impl DataUtil {
                 .get(name)
                 .map(|x| x as &dyn RenderableEntity),
         }
+        */
     }
 
     #[must_use]
@@ -997,7 +1026,10 @@ impl DataUtilAccess<EntityID, entity::AllTypes> for DataUtil {
     where
         entity::AllTypes: IdNamespaceAccess<T>,
     {
-        self.raw.entity.get_proto(id)
+        None
+
+        // TODO: undo this
+        // self.raw.entity.get_proto(id)
     }
 }
 
@@ -1043,6 +1075,15 @@ impl DataUtilAccess<TileID, tile::AllTypes> for DataUtil {
         tile::AllTypes: IdNamespaceAccess<T>,
     {
         self.raw.tile.get_proto(id)
+    }
+}
+
+impl DataUtilAccess<QualityID, quality::AllTypes> for DataUtil {
+    fn get_proto<T>(&self, id: &QualityID) -> Option<&T>
+    where
+        quality::AllTypes: IdNamespaceAccess<T>,
+    {
+        self.raw.quality.get_proto(id)
     }
 }
 
@@ -1217,10 +1258,10 @@ impl RenderLayerBuffer {
     fn store_wire_connection_points(
         &mut self,
         bp_entity_id: u64,
-        wire_connection_points: GenericWireConnectionPoint,
+        wire_connection_points: &GenericWireConnectionPoint,
     ) {
         self.wire_connection_points
-            .insert(bp_entity_id, wire_connection_points);
+            .insert(bp_entity_id, *wire_connection_points);
     }
 
     #[instrument(skip_all)]

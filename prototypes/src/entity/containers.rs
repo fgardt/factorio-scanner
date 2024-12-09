@@ -28,11 +28,8 @@ pub struct ContainerData {
     #[serde(default)]
     pub inventory_type: InventoryType,
 
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub enable_inventory_bar: bool,
-
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub scale_info_icons: bool,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub default_status: EntityStatus,
 }
 
 impl super::Renderable for ContainerData {
@@ -61,6 +58,7 @@ impl super::Renderable for ContainerData {
 #[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum InventoryType {
+    Normal,
     #[default]
     WithBar,
     WithFiltersAndBar,
@@ -83,6 +81,9 @@ pub struct LogisticContainerData {
     )]
     pub max_logistic_slots: Option<u16>,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub trash_inventory_size: ItemStackIndex,
+
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub render_not_in_network_icon: bool, // overridden in `InfinityContainerPrototype`
 
@@ -96,7 +97,7 @@ pub struct LogisticContainerData {
     pub animation: Option<Animation>,
     pub landing_location_offset: Option<Vector>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub use_exact_mode: bool,
 
     #[serde(flatten)]
@@ -204,9 +205,6 @@ pub struct LinkedContainerData {
 
     #[serde(default = "GuiMode::all", skip_serializing_if = "GuiMode::is_all")]
     pub gui_mode: GuiMode,
-
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub scale_info_icons: bool,
 }
 
 impl super::Renderable for LinkedContainerData {

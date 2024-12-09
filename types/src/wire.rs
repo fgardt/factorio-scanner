@@ -47,6 +47,14 @@ pub struct CircuitConnectorSprites {
     pub red_green_led_light_offset: Option<Vector>,
 }
 
+/// [`Types/CircuitConnectorDefinition`](https://lua-api.factorio.com/latest/types/CircuitConnectorDefinition.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CircuitConnectorDefinition {
+    pub sprites: Option<CircuitConnectorSprites>,
+    pub points: Option<WireConnectionPoint>,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WireDrawFlags {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -70,9 +78,9 @@ pub enum WireConnectionData {
         draw_flags: WireDrawFlags,
     },
     PowerSwitch {
+        circuit_wire_connection_point: Box<WireConnectionPoint>,
         left_wire_connection_point: Box<WireConnectionPoint>,
         right_wire_connection_point: Box<WireConnectionPoint>,
-        circuit_wire_connection_point: Box<WireConnectionPoint>,
 
         #[serde(default, skip_serializing_if = "helper::is_default")]
         wire_max_distance: f64,
@@ -91,30 +99,27 @@ pub enum WireConnectionData {
         draw_flags: WireDrawFlags,
     },
     Oriented {
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        circuit_wire_connection_points: FactorioArray<WireConnectionPoint>,
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        circuit_connector_sprites: FactorioArray<CircuitConnectorSprites>,
-
         #[serde(default, skip_serializing_if = "helper::is_default")]
         circuit_wire_max_distance: f64,
 
         #[serde(flatten)]
         draw_flags: WireDrawFlags,
+
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        circuit_connector: FactorioArray<CircuitConnectorDefinition>,
     },
     Single {
-        circuit_wire_connection_point: Option<Box<WireConnectionPoint>>,
-        circuit_connector_sprites: Option<Box<CircuitConnectorSprites>>,
-
         #[serde(default, skip_serializing_if = "helper::is_default")]
         circuit_wire_max_distance: f64,
 
         #[serde(flatten)]
         draw_flags: WireDrawFlags,
+
+        circuit_connector: Option<CircuitConnectorDefinition>,
     },
 }
 
-pub type GenericWireConnectionPoint = [Option<Box<WireConnectionPoint>>; 3];
+pub type GenericWireConnectionPoint = [Option<WireConnectionPoint>; 3];
 
 impl WireConnectionData {
     #[must_use]
@@ -165,9 +170,9 @@ impl WireConnectionData {
                 circuit_wire_connection_point: circuit_cp,
                 ..
             } => Some([
-                Some(circuit_cp.clone()),
-                Some(left_cp.clone()),
-                Some(right_cp.clone()),
+                Some(*circuit_cp.clone()),
+                Some(*left_cp.clone()),
+                Some(*right_cp.clone()),
             ]),
             Self::Combinator {
                 input_connection_points: in_cp,
@@ -175,22 +180,14 @@ impl WireConnectionData {
                 ..
             } => {
                 let index = ((orientation + 0.125).rem(1.0) * 4.0).floor() as usize;
-                Some([
-                    Some(Box::new(in_cp[index])),
-                    Some(Box::new(out_cp[index])),
-                    None,
-                ])
+                Some([Some(in_cp[index]), Some(out_cp[index]), None])
             }
             Self::Single {
-                circuit_wire_connection_point: point,
+                circuit_connector: cc,
                 ..
-            } => point.as_ref().map(|p| [Some(p.clone()), None, None]),
+            } => cc.as_ref().map(|p| [p.points, None, None]),
             Self::PowerPole {
                 connection_points: points,
-                ..
-            }
-            | Self::Oriented {
-                circuit_wire_connection_points: points,
                 ..
             } => {
                 let directions = points.len();
@@ -202,7 +199,23 @@ impl WireConnectionData {
                     let index =
                         ((orientation + (0.5 / directions)).rem(1.0) * directions).floor() as usize;
 
-                    points.get(index).map(|p| [Some(Box::new(*p)), None, None])
+                    Some([Some(points[index]), None, None])
+                }
+            }
+            Self::Oriented {
+                circuit_connector: points,
+                ..
+            } => {
+                let directions = points.len();
+
+                if directions == 0 {
+                    None
+                } else {
+                    let directions = directions as f64;
+                    let index =
+                        ((orientation + (0.5 / directions)).rem(1.0) * directions).floor() as usize;
+
+                    points.get(index).map(|cc| [cc.points, None, None])
                 }
             }
         }
@@ -216,14 +229,14 @@ impl WireConnectionData {
         match self {
             Self::PowerPole { .. } | Self::PowerSwitch { .. } | Self::Combinator { .. } => None,
             Self::Single {
-                circuit_connector_sprites,
-                ..
-            } => circuit_connector_sprites.as_deref(),
+                circuit_connector, ..
+            } => circuit_connector
+                .as_ref()
+                .and_then(|cc| cc.sprites.as_ref()),
             Self::Oriented {
-                circuit_connector_sprites,
-                ..
+                circuit_connector, ..
             } => {
-                let directions = circuit_connector_sprites.len();
+                let directions = circuit_connector.len();
 
                 if directions == 0 {
                     None
@@ -232,7 +245,9 @@ impl WireConnectionData {
                     let index =
                         ((orientation + (0.5 / directions)).rem(1.0) * directions).floor() as usize;
 
-                    circuit_connector_sprites.get(index)
+                    circuit_connector
+                        .get(index)
+                        .and_then(|cc| cc.sprites.as_ref())
                 }
             }
         }

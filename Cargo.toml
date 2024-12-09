@@ -35,11 +35,15 @@ serde = { version = "1.0", features = ["derive"] }
 serde_helper = { path = "serde_helper" }
 serde_json = "1.0"
 serde_repr = "0.1"
-serde_with = "3.7"
-thiserror = "1.0"
+serde_with = "3.11"
+thiserror = "2"
 tracing = { version = "0.1", features = ["attributes", "log"] }
-tokio = "1.36"
+tokio = "1.41"
 types = { path = "types" }
+regex = "1.11"
+
+[patch.crates-io]
+serde_with = { git = "https://github.com/fgardt/serde_with.git", branch = "feat/with_suffix" }
 
 [workspace.lints.rust]
 unsafe_code = "warn"

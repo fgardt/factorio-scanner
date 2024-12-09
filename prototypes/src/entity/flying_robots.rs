@@ -78,8 +78,8 @@ pub struct CombatRobotData {
     pub attack_parameters: AttackParameters,
 
     pub idle: RotatedAnimation,
-    pub in_motion: RotatedAnimation,
     pub shadow_idle: RotatedAnimation,
+    pub in_motion: RotatedAnimation,
     pub shadow_in_motion: RotatedAnimation,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
@@ -88,7 +88,7 @@ pub struct CombatRobotData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub friction: f64,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub follows_player: bool,
 
     pub light: Option<LightDefinition>,
@@ -119,8 +119,6 @@ pub struct RobotWithLogisticInterfaceData<T: super::Renderable> {
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub max_payload_size: ItemCountType,
 
-    pub cargo_centered: Vector,
-
     pub idle: Option<RotatedAnimation>,
     pub in_motion: Option<RotatedAnimation>,
     pub shadow_idle: Option<RotatedAnimation>,
@@ -133,6 +131,7 @@ pub struct RobotWithLogisticInterfaceData<T: super::Renderable> {
     child: T,
     // not implemented
     // pub destroy_action: Option<Trigger>,
+    // pub charging_sound: Option<InterruptibleSound>,
 }
 
 impl<T: super::Renderable> Deref for RobotWithLogisticInterfaceData<T> {
@@ -175,6 +174,10 @@ pub struct ConstructionRobotData {
     pub shadow_working: Option<RotatedAnimation>,
     pub smoke: Option<Animation>,
     pub sparks: Option<AnimationVariations>,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub mined_sound_volume_modifier: f64,
+
     pub working_light: Option<LightDefinition>,
     // not implemented
     // pub reparing_sound: Option<Sound>,

@@ -92,35 +92,63 @@ pub enum BlendMode {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum RenderLayer {
-    WaterTile,
-    GroundTile,
-    TileTransition,
+    Zero,
+    BackgroundTransitions,
+    UnderTiles,
     Decals,
+    AboveTiles,
+    GroundLayer1,
+    GroundLayer2,
+    GroundLayer3,
+    GroundLayer4,
+    GroundLayer5,
     LowerRadiusVisualization,
     RadiusVisualization,
     TransportBeltIntegration,
     Resource,
     BuildingSmoke,
+    RailStonePathLower,
+    RailStonePath,
+    RailTie,
     Decorative,
     GroundPatch,
     GroundPatchHigher,
     GroundPatchHigher2,
+    RailChainSignalMetal,
+    RailScrew,
+    RailMetal,
     Remnants,
     Floor,
     TransportBelt,
     TransportBeltEndings,
-    TransportBeltCircuitConnector,
     FloorMechanicsUnderCorpse,
     Corpse,
     FloorMechanics,
     Item,
+    TransportBeltReader,
     LowerObject,
+    TransportBeltCircuitConnector,
     LowerObjectAboveShadow,
+    LowerObjectOverlay,
+    ObjectUnder,
     Object,
+    CargoHatch,
     HigherObjectUnder,
     HigherObjectAbove,
+    TrainStopTop,
     ItemInInserterHand,
+    AboveInserter,
     Wires,
+    UnderElevated,
+    ElevatedRailStonePathLower,
+    ElevatedRailStonePath,
+    ElevatedRailTie,
+    ElevatedRailScrew,
+    ElevatedRailMetal,
+    ElevatedLowerObject,
+    ElevatedObject,
+    ElevatedHigherObject,
+    FluidVisualization,
     WiresAbove,
     EntityInfoIcon,
     EntityInfoIconAbove,
@@ -355,6 +383,13 @@ pub trait Scale {
 //     }
 // }
 
+// /// [`Types/SpriteSource`](https://lua-api.factorio.com/latest/types/SpriteSource.html)
+// #[skip_serializing_none]
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct SpriteSource<T> {
+//     pub filename: FileName,
+// }
+
 /// [`Types/SpriteParameters`](https://lua-api.factorio.com/latest/types/SpriteParameters.html)
 ///
 /// **MISSING THE `filename` FIELD**
@@ -553,9 +588,6 @@ pub enum SimpleGraphics<T: FetchSprite> {
 
         #[serde(flatten)]
         data: Box<T>,
-
-        #[serde(skip_serializing_if = "Option::is_none")]
-        hr_version: Option<Box<Self>>,
     },
     Layered {
         layers: FactorioArray<Self>,
@@ -579,18 +611,7 @@ impl<T: FetchSprite + Scale> RenderableGraphics for SimpleGraphics<T> {
     ) -> Option<GraphicsOutput> {
         match &self {
             Self::Layered { layers } => merge_layers(layers, scale, used_mods, image_cache, opts),
-            Self::Simple {
-                filename,
-                data,
-                hr_version,
-            } => {
-                // TODO: option to enable/disable HR mode
-                if let Some(hr_version) = hr_version {
-                    if scale < data.scale() {
-                        return hr_version.render(scale, used_mods, image_cache, opts);
-                    }
-                }
-
+            Self::Simple { filename, data } => {
                 data.fetch(scale, filename, used_mods, image_cache, opts.runtime_tint)
             }
         }
@@ -604,16 +625,10 @@ pub enum MultiFileGraphics<Single: RenderableGraphics, Multi: RenderableGraphics
     Simple {
         #[serde(flatten)]
         data: Box<Single>,
-
-        #[serde(skip_serializing_if = "Option::is_none")]
-        hr_version: Option<Box<Self>>,
     },
     MultiFile {
         #[serde(flatten)]
         data: Box<Multi>,
-
-        #[serde(skip_serializing_if = "Option::is_none")]
-        hr_version: Option<Box<Self>>,
     },
     Layered {
         layers: FactorioArray<Self>,
@@ -627,12 +642,8 @@ where
 {
     fn scale(&self) -> f64 {
         match self {
-            Self::Simple { data, hr_version } => hr_version
-                .as_ref()
-                .map_or_else(|| data.scale(), |hr| hr.scale()),
-            Self::MultiFile { data, hr_version } => hr_version
-                .as_ref()
-                .map_or_else(|| data.scale(), |hr| hr.scale()),
+            Self::Simple { data } => data.scale(),
+            Self::MultiFile { data } => data.scale(),
             Self::Layered { layers } => layers.first().map_or(1.0, Self::scale),
         }
     }
@@ -654,26 +665,8 @@ where
     ) -> Option<GraphicsOutput> {
         match self {
             Self::Layered { layers } => merge_layers(layers, scale, used_mods, image_cache, opts),
-            Self::Simple { data, hr_version } => {
-                // TODO: option to enable/disable HR mode
-                if let Some(hr_version) = hr_version {
-                    if scale < data.scale() {
-                        return hr_version.render(scale, used_mods, image_cache, opts);
-                    }
-                }
-
-                data.render(scale, used_mods, image_cache, opts)
-            }
-            Self::MultiFile { data, hr_version } => {
-                // TODO: option to enable/disable HR mode
-                if let Some(hr_version) = hr_version {
-                    if scale < data.scale() {
-                        return hr_version.render(scale, used_mods, image_cache, opts);
-                    }
-                }
-
-                data.render(scale, used_mods, image_cache, opts)
-            }
+            Self::Simple { data } => data.render(scale, used_mods, image_cache, opts),
+            Self::MultiFile { data } => data.render(scale, used_mods, image_cache, opts),
         }
     }
 }
@@ -1153,6 +1146,9 @@ impl RenderableGraphics for Sprite8Way {
                 Direction::SouthWest => south_west,
                 Direction::West => west,
                 Direction::NorthWest => north_west,
+                _ => {
+                    unimplemented!("Sprite8Way does not support half-diagonals");
+                }
             }
             .render(scale, used_mods, image_cache, &opts.into()),
         }
@@ -1348,8 +1344,6 @@ pub struct TileGraphics<T: FetchSprite> {
 
     #[serde(flatten)]
     data: Box<T>,
-
-    pub hr_version: Option<Box<Self>>,
 }
 
 impl<T: FetchSprite> std::ops::Deref for TileGraphics<T> {
@@ -1385,14 +1379,7 @@ impl<T: FetchSprite> RenderableGraphics for TileGraphics<T> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TileSpriteParams {
-    #[serde(
-        default,
-        deserialize_with = "helper::truncating_deserializer",
-        skip_serializing_if = "helper::is_default"
-    )]
-    pub count: u32,
-
+pub struct TileSpriteLayout {
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub scale: f64,
 
@@ -1416,9 +1403,16 @@ pub struct TileSpriteParams {
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub line_length: u32,
+
+    #[serde(
+        default,
+        deserialize_with = "helper::truncating_deserializer",
+        skip_serializing_if = "helper::is_default"
+    )]
+    pub count: u32,
 }
 
-impl FetchSprite for TileSpriteParams {
+impl FetchSprite for TileSpriteLayout {
     fn fetch(
         &self,
         scale: f64,
@@ -1523,31 +1517,21 @@ impl FetchSprite for TileSpriteParams {
     }
 }
 
-impl Scale for TileSpriteParams {
+impl Scale for TileSpriteLayout {
     fn scale(&self) -> f64 {
         self.scale
     }
 }
 
-/// [`Types/TileSprite`](https://lua-api.factorio.com/latest/types/TileSprite.html)
-pub type TileSprite = TileGraphics<TileSpriteParams>;
-
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TileSpriteProbabilityParams {
-    #[serde(deserialize_with = "helper::truncating_deserializer")]
+pub struct TileLightPicturesParams {
     pub size: u32,
 
-    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
-    pub probability: f64,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub weights: FactorioArray<f64>,
-
     #[serde(flatten)]
-    tile_sprite_params: TileSpriteParams,
+    tile_sprite_layout: TileSpriteLayout,
 }
 
-impl FetchSprite for TileSpriteProbabilityParams {
+impl FetchSprite for TileLightPicturesParams {
     fn fetch(
         &self,
         scale: f64,
@@ -1644,52 +1628,171 @@ impl FetchSprite for TileSpriteProbabilityParams {
     }
 
     fn get_position(&self) -> (i16, i16) {
-        self.tile_sprite_params.get_position()
+        self.tile_sprite_layout.get_position()
     }
 
     fn get_size(&self) -> (i16, i16) {
         let size = self.size as i16;
-        let (w, h) = self.tile_sprite_params.get_size();
+        let (w, h) = self.tile_sprite_layout.get_size();
         (w * size, h * size)
     }
 }
 
-impl Scale for TileSpriteProbabilityParams {
+impl Scale for TileLightPicturesParams {
     fn scale(&self) -> f64 {
-        self.tile_sprite_params.scale()
+        self.tile_sprite_layout.scale()
     }
 }
 
-impl std::ops::Deref for TileSpriteProbabilityParams {
-    type Target = TileSpriteParams;
+impl std::ops::Deref for TileLightPicturesParams {
+    type Target = TileSpriteLayout;
 
     fn deref(&self) -> &Self::Target {
-        &self.tile_sprite_params
+        &self.tile_sprite_layout
     }
 }
 
-/// [`Types/TileSpriteWithProbability`](https://lua-api.factorio.com/latest/types/TileSpriteWithProbability.html)
-pub type TileSpriteWithProbability = TileGraphics<TileSpriteProbabilityParams>;
+/// [`Types/TileLightPictures`](https://lua-api.factorio.com/latest/types/TileLightPictures.html)
+pub type TileLightPictures = TileGraphics<TileLightPicturesParams>;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TileTransitionSpriteParams {
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub tall: bool,
+pub struct TileMainPicturesParams {
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
+    pub size: u32,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub probability: f64,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub weights: FactorioArray<f64>,
 
     #[serde(flatten)]
-    tile_sprite_params: TileSpriteParams,
+    tile_sprite_layout: TileSpriteLayout,
 }
 
-impl std::ops::Deref for TileTransitionSpriteParams {
-    type Target = TileSpriteParams;
+impl FetchSprite for TileMainPicturesParams {
+    fn fetch(
+        &self,
+        scale: f64,
+        filename: &FileName,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        runtime_tint: Option<Color>,
+    ) -> Option<GraphicsOutput> {
+        self.fetch_offset_by_pixels(
+            scale,
+            filename,
+            used_mods,
+            image_cache,
+            runtime_tint,
+            (0, 0),
+        )
+    }
 
-    fn deref(&self) -> &Self::Target {
-        &self.tile_sprite_params
+    fn fetch_offset(
+        &self,
+        scale: f64,
+        filename: &FileName,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        runtime_tint: Option<Color>,
+        offset: (i16, i16),
+    ) -> Option<GraphicsOutput> {
+        let (width, height) = self.get_size();
+
+        let size = self.size as i16;
+        let count = self.count as i16;
+        let line_length = self.line_length as i16;
+        let mut offset_x = offset.0.rem_euclid(size * count);
+        let mut offset_y = offset.1.rem_euclid(size);
+
+        if self.line_length > 0 {
+            let line_length = self.line_length as i16;
+            offset_y += offset_x / line_length * size;
+            offset_x %= line_length;
+        }
+
+        self.fetch_offset_by_pixels(
+            scale,
+            filename,
+            used_mods,
+            image_cache,
+            runtime_tint,
+            (offset_x * width, offset_y * height),
+        )
+    }
+
+    fn fetch_offset_by_pixels(
+        &self,
+        scale: f64,
+        filename: &FileName,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        runtime_tint: Option<Color>,
+        offset: (i16, i16),
+    ) -> Option<GraphicsOutput> {
+        let (x, y) = self.get_position();
+        let (offset_x, offset_y) = offset;
+        let (width, height) = self.get_size();
+
+        let img = filename.load(used_mods, image_cache)?.crop_imm(
+            (x + offset_x) as u32,
+            (y + offset_y) as u32,
+            width as u32,
+            height as u32,
+        );
+
+        let mut img = img.resize(
+            (f64::from(img.width()) * self.scale / scale).round() as u32,
+            (f64::from(img.height()) * self.scale / scale).round() as u32,
+            image::imageops::FilterType::Nearest,
+        );
+
+        if let Some(tint) = runtime_tint {
+            if !Color::is_white(&tint) {
+                let mut img_buf = img.to_rgba8();
+                let [tint_r, tint_g, tint_b, tint_a] = tint.to_rgba();
+
+                for Rgba([r, g, b, a]) in img_buf.pixels_mut() {
+                    *r = (f64::from(*r) * tint_r).round() as u8;
+                    *g = (f64::from(*g) * tint_g).round() as u8;
+                    *b = (f64::from(*b) * tint_b).round() as u8;
+                    *a = (f64::from(*a) * tint_a).round() as u8;
+                }
+                img = img_buf.into();
+            }
+        }
+
+        Some((img, Vector::default()))
+    }
+
+    fn get_position(&self) -> (i16, i16) {
+        self.tile_sprite_layout.get_position()
+    }
+
+    fn get_size(&self) -> (i16, i16) {
+        let size = self.size as i16;
+        let (w, h) = self.tile_sprite_layout.get_size();
+        (w * size, h * size)
     }
 }
 
-/// [`Types/TileTransitionSprite`](https://lua-api.factorio.com/latest/types/TileTransitionSprite.html)
-pub type TileTransitionSprite = TileGraphics<TileTransitionSpriteParams>;
+impl Scale for TileMainPicturesParams {
+    fn scale(&self) -> f64 {
+        self.tile_sprite_layout.scale()
+    }
+}
+
+impl std::ops::Deref for TileMainPicturesParams {
+    type Target = TileSpriteLayout;
+
+    fn deref(&self) -> &Self::Target {
+        &self.tile_sprite_layout
+    }
+}
+
+/// [`Types/TileMainPictures`](https://lua-api.factorio.com/latest/types/TileMainPictures.html)
+pub type TileMainPictures = TileGraphics<TileMainPicturesParams>;
 
 // ======================== //
 // =====[ Animations ]===== //
@@ -2129,22 +2232,13 @@ impl RenderableGraphics for Animation4Way {
                 west,
             } => match opts.direction {
                 Direction::North => north,
-                Direction::NorthEast => {
-                    unimplemented!("Animation4Way does not support diagonals")
-                }
                 Direction::East => east.as_ref().unwrap_or(north),
-                Direction::SouthEast => {
-                    unimplemented!("Animation4Way does not support diagonals")
-                }
                 Direction::South => south.as_ref().unwrap_or(north),
-                Direction::SouthWest => {
-                    unimplemented!("Animation4Way does not support diagonals")
-                }
                 Direction::West => west
                     .as_ref()
                     .unwrap_or_else(|| east.as_ref().unwrap_or(north)),
-                Direction::NorthWest => {
-                    unimplemented!("Animation4Way does not support diagonals")
+                _ => {
+                    unimplemented!("Animation4Way only supports cardinal directions")
                 }
             }
             .render(scale, used_mods, image_cache, &opts.into()),
@@ -2331,10 +2425,7 @@ pub struct RotatedAnimationParams {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub counterclockwise: bool,
 
-    #[serde(
-        default = "helper::f64_half",
-        skip_serializing_if = "helper::is_half_f64"
-    )]
+    #[serde(default = "helper::f64_05", skip_serializing_if = "helper::is_05_f64")]
     pub middle_orientation: f64,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]

@@ -291,6 +291,7 @@ pub fn bp_entity2render_opts(
         position: (&value.position).into(),
         direction: value.direction,
         orientation: value.orientation,
+        mirrored: value.mirror.unwrap_or_default(),
         variation: value.variation,
         pickup_position: value
             .pickup_position
@@ -336,7 +337,7 @@ pub async fn load_data(
 ) -> Result<(DataUtil, UsedMods), ScannerError> {
     let bp = bp
         .as_blueprint()
-        .ok_or(report!(ScannerError::NoBlueprint))?;
+        .ok_or_else(|| report!(ScannerError::NoBlueprint))?;
 
     info!("loaded BP");
 
@@ -399,7 +400,7 @@ pub async fn load_data(
             &mod_list,
             (
                 bp_helper::get_used_startup_settings(bp).unwrap_or(&BTreeMap::new()),
-                bp.version,
+                *bp.version,
             ),
         )?
     };
@@ -418,7 +419,7 @@ pub fn render(
 ) -> Result<(Vec<u8>, HashSet<String>, Option<Vec<u8>>), ScannerError> {
     let bp = raw_bp
         .as_blueprint()
-        .ok_or(report!(ScannerError::NoBlueprint))?;
+        .ok_or_else(|| report!(ScannerError::NoBlueprint))?;
 
     let size =
         calculate_target_size(bp, data, target_res, min_scale).ok_or(ScannerError::RenderError)?;
@@ -853,8 +854,9 @@ pub fn render_bp(
                 }
             }
 
+            // TODO: update item requests rendering
             // modules / item requests
-            {
+            /*{
                 if !e.items.is_empty() {
                     let mut items = e.items.iter().collect::<Vec<_>>();
                     items.sort_unstable_by_key(|a| a.0);
@@ -914,7 +916,7 @@ pub fn render_bp(
                         offset = Vector::Tuple(0.0, offset.y() + 0.5);
                     }
                 }
-            }
+            }*/
 
             // inserter indicators
             'inserter_indicators: {
@@ -1115,25 +1117,27 @@ pub fn render_thumbnail(
                 offset += Vector::Tuple(-1.0, 0.5);
             }
 
+            // TODO: render quality indicator
             let res = match &icon.signal {
-                SignalID::Item { name } => data.get_item_icon(
+                SignalID::Item { name, .. } => data.get_item_icon(
                     name.clone().unwrap_or_default().as_str(),
                     scale,
                     used_mods,
                     image_cache,
                 ),
-                SignalID::Fluid { name } => data.get_fluid_icon(
+                SignalID::Fluid { name, .. } => data.get_fluid_icon(
                     name.clone().unwrap_or_default().as_str(),
                     scale,
                     used_mods,
                     image_cache,
                 ),
-                SignalID::Virtual { name } => data.get_signal_icon(
+                SignalID::Virtual { name, .. } => data.get_signal_icon(
                     name.clone().unwrap_or_default().as_str(),
                     scale,
                     used_mods,
                     image_cache,
                 ),
+                _ => None, // TODO: render more signal types
             };
 
             let Some((res, _)) = res else {

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use serde_helper as helper;
-use types::{Color, Energy, FluidID, Icon, ItemSubGroupID, RenderableGraphics};
+use types::{Color, Energy, FluidID, Icon, RenderableGraphics};
 
 use crate::helper_macro::namespace_struct;
 
@@ -14,7 +14,11 @@ pub struct FluidPrototypeData {
     #[serde(flatten)]
     pub icon: Icon,
 
-    pub default_temperature: f64,
+    pub default_temperature: f32,
+
+    pub base_color: Color,
+    pub flow_color: Color,
+    pub visualization_color: Option<Color>,
 
     #[serde(
         default,
@@ -22,18 +26,7 @@ pub struct FluidPrototypeData {
         serialize_with = "helper::inf_float_opt_serializer",
         skip_serializing_if = "Option::is_none"
     )]
-    pub max_temperature: Option<f64>,
-
-    #[serde(
-        default = "helper::f64_max",
-        deserialize_with = "helper::inf_float_deserializer",
-        serialize_with = "helper::inf_float_serializer",
-        skip_serializing_if = "helper::is_max_f64"
-    )]
-    pub gas_temperature: f64,
-
-    pub base_color: Color,
-    pub flow_color: Color,
+    pub max_temperature: Option<f32>,
 
     #[serde(
         default = "default_capacity",
@@ -41,26 +34,21 @@ pub struct FluidPrototypeData {
     )]
     pub heat_capacity: Energy,
 
-    #[serde(
-        default = "default_fuel_value",
-        skip_serializing_if = "is_default_fuel_value"
-    )]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub fuel_value: Energy,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub emissions_multiplier: f64,
 
     #[serde(
-        default = "default_subgroup",
-        skip_serializing_if = "is_default_subgroup"
+        default = "helper::f32_max",
+        deserialize_with = "helper::inf_float_deserializer",
+        serialize_with = "helper::inf_float_serializer",
+        skip_serializing_if = "helper::is_max_f32"
     )]
-    pub subgroup: ItemSubGroupID,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub hidden: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub auto_barrel: bool,
+    pub gas_temperature: f32,
+    // auto_barrel is not loaded by the game, only used by base mods data-updates.lua
+    // pub auto_barrel: bool,
 }
 
 impl FluidPrototypeData {
@@ -75,27 +63,11 @@ impl FluidPrototypeData {
 }
 
 fn default_capacity() -> Energy {
-    "1KJ".to_owned()
-}
-
-fn default_fuel_value() -> Energy {
-    "0J".to_owned()
-}
-
-fn default_subgroup() -> ItemSubGroupID {
-    ItemSubGroupID::new("fluid")
+    Energy::new("1kJ")
 }
 
 fn is_default_capacity(capacity: &Energy) -> bool {
     *capacity == default_capacity()
-}
-
-fn is_default_fuel_value(fuel_value: &Energy) -> bool {
-    *fuel_value == default_fuel_value()
-}
-
-fn is_default_subgroup(subgroup: &ItemSubGroupID) -> bool {
-    *subgroup == default_subgroup()
 }
 
 namespace_struct! {

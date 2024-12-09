@@ -24,30 +24,46 @@ pub struct RoboportData {
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub material_slots_count: ItemStackIndex,
 
-    pub base: Sprite,
-    pub base_patch: Sprite,
-    pub base_animation: Animation,
-    pub door_animation_up: Animation,
-    pub door_animation_down: Animation,
+    pub base: Option<Sprite>,
+    pub base_patch: Option<Sprite>,
+    pub frozen_patch: Option<Sprite>,
+    pub base_animation: Option<Animation>,
+    pub door_animation_up: Option<Animation>,
+    pub door_animation_down: Option<Animation>,
 
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub request_to_open_door_timeout: u32,
 
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "helper::truncating_opt_deserializer"
+    )]
+    pub radar_range: Option<u32>,
+
     pub recharging_animation: Animation,
-    pub spawn_and_station_height: f64, // docs specify single precision float
-    pub charge_approach_distance: f64, // docs specify single precision float
-    pub logistics_radius: f64,         // docs specify single precision float
-    pub construction_radius: f64,      // docs specify single precision float
+    pub spawn_and_station_height: f32,
+    pub charge_approach_distance: f32,
+    pub logistics_radius: f32,
+    pub construction_radius: f32,
     pub charging_energy: Energy,
 
     pub default_available_logistic_output_signal: Option<SignalIDConnector>,
     pub default_total_logistic_output_signal: Option<SignalIDConnector>,
     pub default_available_construction_output_signal: Option<SignalIDConnector>,
     pub default_total_construction_output_signal: Option<SignalIDConnector>,
+    pub default_roboports_output_signal: Option<SignalIDConnector>,
 
-    // docs specify single precision float
+    pub max_logistic_slots: Option<LogisticFilterIndex>,
+
     #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub spawn_and_station_shadow_height_offset: f64,
+    pub spawn_and_station_shadow_height_offset: f32,
+
+    #[serde(
+        default = "helper::f32_087",
+        skip_serializing_if = "helper::is_087_f32"
+    )]
+    pub stationing_render_layer_swap_height: f32,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub draw_logistic_radius_visualization: bool,
@@ -63,6 +79,9 @@ pub struct RoboportData {
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub charging_station_count: u32,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub charging_station_count_affected_by_quality: bool,
 
     // docs specify single precision float
     #[serde(default, skip_serializing_if = "helper::is_default")]
@@ -86,7 +105,7 @@ pub struct RoboportData {
     // unused
     pub robot_limit: Option<ItemCountType>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub robots_shrink_when_entering_and_exiting: bool,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -109,30 +128,38 @@ impl super::Renderable for RoboportData {
     ) -> super::RenderOutput {
         let res = merge_renders(
             &[
-                self.base.render(
-                    render_layers.scale(),
-                    used_mods,
-                    image_cache,
-                    &options.into(),
-                ),
-                self.base_animation.render(
-                    render_layers.scale(),
-                    used_mods,
-                    image_cache,
-                    &options.into(),
-                ),
-                self.door_animation_up.render(
-                    render_layers.scale(),
-                    used_mods,
-                    image_cache,
-                    &options.into(),
-                ),
-                self.door_animation_down.render(
-                    render_layers.scale(),
-                    used_mods,
-                    image_cache,
-                    &options.into(),
-                ),
+                self.base.as_ref().and_then(|base| {
+                    base.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &options.into(),
+                    )
+                }),
+                self.base_animation.as_ref().and_then(|anim| {
+                    anim.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &options.into(),
+                    )
+                }),
+                self.door_animation_up.as_ref().and_then(|anim| {
+                    anim.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &options.into(),
+                    )
+                }),
+                self.door_animation_down.as_ref().and_then(|anim| {
+                    anim.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &options.into(),
+                    )
+                }),
             ],
             render_layers.scale(),
         )?;
@@ -140,7 +167,5 @@ impl super::Renderable for RoboportData {
         render_layers.add_entity(res, &options.position);
 
         Some(())
-
-        // TODO: include base_animation & doors
     }
 }

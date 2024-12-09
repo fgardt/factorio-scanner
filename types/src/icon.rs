@@ -10,83 +10,28 @@ pub type IconMipMapType = u8;
 
 /// [`Types/IconData`](https://lua-api.factorio.com/latest/types/IconData.html)
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(untagged)]
-pub enum IconData {
-    Default {
-        icon: FileName,
+pub struct IconData {
+    pub icon: FileName,
 
-        #[serde(flatten)]
-        common: CommonIconData,
-    },
-    DarkBackground {
-        dark_background_icon: FileName,
+    #[serde(
+        deserialize_with = "helper::truncating_deserializer",
+        default = "helper::i16_64",
+        skip_serializing_if = "helper::is_64_i16"
+    )]
+    pub icon_size: SpriteSizeType,
 
-        #[serde(flatten)]
-        common: CommonIconData,
-    },
-    Tintable {
-        icon_tintable: FileName,
+    #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
+    pub tint: Color,
 
-        #[serde(flatten)]
-        common: CommonIconData,
-    },
-    TintableMask {
-        icon_tintable_mask: FileName,
+    #[serde(default, skip_serializing_if = "Vector::is_0_vector")]
+    pub shift: Vector,
 
-        #[serde(flatten)]
-        common: CommonIconData,
-    },
-    ColorIndicatorMask {
-        icon_color_indicator_mask: FileName,
-
-        #[serde(flatten)]
-        common: CommonIconData,
-    },
-}
-
-impl IconData {
-    #[must_use]
-    pub const fn icon(&self) -> &FileName {
-        match self {
-            Self::Default { icon, .. } => icon,
-            Self::DarkBackground {
-                dark_background_icon,
-                ..
-            } => dark_background_icon,
-            Self::Tintable { icon_tintable, .. } => icon_tintable,
-            Self::TintableMask {
-                icon_tintable_mask, ..
-            } => icon_tintable_mask,
-            Self::ColorIndicatorMask {
-                icon_color_indicator_mask,
-                ..
-            } => icon_color_indicator_mask,
-        }
-    }
-}
-
-impl std::ops::Deref for IconData {
-    type Target = CommonIconData;
-
-    fn deref(&self) -> &Self::Target {
-        match self {
-            Self::Default { common, .. }
-            | Self::DarkBackground { common, .. }
-            | Self::Tintable { common, .. }
-            | Self::TintableMask { common, .. }
-            | Self::ColorIndicatorMask { common, .. } => common,
-        }
-    }
-}
-
-#[derive(Debug, Default)]
-pub struct IconDataRenderOpts {
-    pub icon_size: Option<SpriteSizeType>,
-    pub icon_mipmaps: Option<IconMipMapType>,
+    pub scale: Option<f64>,
+    pub draw_background: Option<bool>,
 }
 
 impl RenderableGraphics for IconData {
-    type RenderOpts = IconDataRenderOpts;
+    type RenderOpts = ();
 
     fn render(
         &self,
@@ -95,12 +40,7 @@ impl RenderableGraphics for IconData {
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
-        let ((Some(icon_size), _) | (None, Some(icon_size))) = (self.icon_size, opts.icon_size)
-        else {
-            return None;
-        };
-
-        let icon_size = icon_size as u32;
+        let icon_size = self.icon_size as u32;
 
         // technically not 100% correct, technology icons default to 256/icon_size
         let icon_scale = self
@@ -108,13 +48,14 @@ impl RenderableGraphics for IconData {
             .map_or_else(|| 32.0 / f64::from(icon_size), |scale| scale);
 
         let img = self
-            .icon()
+            .icon
             .load(used_mods, image_cache)?
             .crop_imm(0, 0, icon_size, icon_size);
 
+        let icon_size = f64::from(icon_size);
         let mut img = img.resize(
-            (f64::from(img.width()) * icon_scale / scale).round() as u32,
-            (f64::from(img.height()) * icon_scale / scale).round() as u32,
+            (icon_size * icon_scale / scale).round() as u32,
+            (icon_size * icon_scale / scale).round() as u32,
             image::imageops::FilterType::Nearest,
         );
 
@@ -135,119 +76,60 @@ impl RenderableGraphics for IconData {
     }
 }
 
-/// [`Types/IconData`](https://lua-api.factorio.com/latest/types/IconData.html)
-///
-/// this is needed because the fun `ItemPrototype` and `ItemWithEntityDataPrototype` think
-/// its funny to change the name of a field in a different type
-/// (`icon` -> `dark_background_icon` / `icon_tintable` / `icon_tintable_mask`)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct CommonIconData {
-    #[serde(
-        deserialize_with = "helper::truncating_opt_deserializer",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub icon_size: Option<SpriteSizeType>,
+macro_rules! icon_enum {
+    ( $( $name:ident ),+ ) => {
+        $(
+            paste::paste! {
+                #[derive(Debug, Deserialize, Serialize)]
+                #[serde(untagged)]
+                pub enum $name {
+                    Single {
+                        [<$name:snake>]: FileName,
 
-    #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
-    pub tint: Color,
+                        #[serde(
+                            deserialize_with = "helper::truncating_deserializer",
+                            default = "helper::i16_64",
+                            skip_serializing_if = "helper::is_64_i16"
+                        )]
+                        [<$name:snake _size>]: SpriteSizeType,
+                    },
+                    Layered {
+                        [<$name:snake s>]: FactorioArray<IconData>,
+                    },
+                }
 
-    #[serde(default, skip_serializing_if = "Vector::is_0_vector")]
-    pub shift: Vector,
+                impl RenderableGraphics for $name {
+                    type RenderOpts = ();
 
-    // TODO: Defaults to `32/icon_size` for items and recipes, `256/icon_size` for technologies.
-    pub scale: Option<f64>,
-
-    #[serde(
-        default,
-        skip_serializing_if = "helper::is_default",
-        deserialize_with = "helper::truncating_deserializer"
-    )]
-    pub icon_mipmaps: IconMipMapType,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(untagged)]
-pub enum Icon {
-    Array {
-        icons: FactorioArray<IconData>,
-
-        #[serde(
-            deserialize_with = "helper::truncating_opt_deserializer",
-            default,
-            skip_serializing_if = "Option::is_none"
-        )]
-        icon_size: Option<SpriteSizeType>,
-
-        #[serde(
-            default,
-            skip_serializing_if = "helper::is_default",
-            deserialize_with = "helper::truncating_deserializer"
-        )]
-        icon_mipmaps: IconMipMapType,
-    },
-    Single {
-        icon: FileName,
-
-        #[serde(deserialize_with = "helper::truncating_deserializer")]
-        icon_size: SpriteSizeType,
-
-        #[serde(
-            default,
-            skip_serializing_if = "helper::is_default",
-            deserialize_with = "helper::truncating_deserializer"
-        )]
-        icon_mipmaps: IconMipMapType,
-    },
-}
-
-impl RenderableGraphics for Icon {
-    type RenderOpts = ();
-
-    fn render(
-        &self,
-        scale: f64,
-        used_mods: &mod_util::UsedMods,
-        image_cache: &mut ImageCache,
-        opts: &Self::RenderOpts,
-    ) -> Option<GraphicsOutput> {
-        match self {
-            Self::Array {
-                icons,
-                icon_size,
-                icon_mipmaps,
-            } => merge_icon_layers(
-                icons,
-                scale,
-                used_mods,
-                image_cache,
-                &IconDataRenderOpts {
-                    icon_size: *icon_size,
-                    icon_mipmaps: Some(*icon_mipmaps),
-                },
-            ),
-            Self::Single {
-                icon,
-                icon_size,
-                icon_mipmaps,
-            } => IconData::Default {
-                icon: icon.clone(),
-                common: CommonIconData {
-                    icon_size: Some(*icon_size),
-                    icon_mipmaps: *icon_mipmaps,
-                    tint: Color::white(),
-                    shift: Vector::default(),
-                    scale: None,
-                },
+                    fn render(
+                        &self,
+                        scale: f64,
+                        used_mods: &mod_util::UsedMods,
+                        image_cache: &mut ImageCache,
+                        opts: &Self::RenderOpts,
+                    ) -> Option<GraphicsOutput> {
+                        match self {
+                            Self::Single { [<$name:snake>], [<$name:snake _size>] } => IconData {
+                                icon: [<$name:snake>].clone(),
+                                icon_size: *[<$name:snake _size>],
+                                tint: Color::white(),
+                                shift: Vector::default(),
+                                scale: None,
+                                draw_background: None,
+                            }
+                            .render(scale, used_mods, image_cache, &()),
+                            Self::Layered { [<$name:snake s>] } => merge_icon_layers([<$name:snake s>], scale, used_mods, image_cache, &()),
+                        }
+                    }
+                }
             }
-            .render(
-                scale,
-                used_mods,
-                image_cache,
-                &IconDataRenderOpts::default(),
-            ),
-        }
+        )+
     }
+}
+
+icon_enum! {
+    Icon,
+    DarkBackgroundIcon
 }
 
 pub fn merge_icon_layers<O, T: RenderableGraphics<RenderOpts = O>>(

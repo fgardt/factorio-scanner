@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use types::{Icon, ItemSubGroupID, RenderableGraphics, VirtualSignalID};
+use types::{Icon, RenderableGraphics, VirtualSignalID};
 
 use crate::helper_macro::namespace_struct;
 
@@ -12,12 +12,6 @@ pub type VirtualSignalPrototype = crate::BasePrototype<VirtualSignalPrototypeDat
 pub struct VirtualSignalPrototypeData {
     #[serde(flatten)]
     pub icon: Icon,
-
-    #[serde(
-        default = "default_subgroup",
-        skip_serializing_if = "is_default_subgroup"
-    )]
-    pub subgroup: ItemSubGroupID,
 }
 
 impl VirtualSignalPrototypeData {
@@ -29,14 +23,6 @@ impl VirtualSignalPrototypeData {
     ) -> Option<types::GraphicsOutput> {
         self.icon.render(scale, used_mods, image_cache, &())
     }
-}
-
-fn default_subgroup() -> ItemSubGroupID {
-    ItemSubGroupID::new("virtual-signal")
-}
-
-fn is_default_subgroup(subgroup: &ItemSubGroupID) -> bool {
-    *subgroup == default_subgroup()
 }
 
 namespace_struct! {

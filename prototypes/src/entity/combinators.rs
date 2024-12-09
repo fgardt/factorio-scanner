@@ -17,6 +17,7 @@ pub struct CombinatorData<T: super::Renderable> {
     pub energy_source: AnyEnergySource, // theoretically only electric and void are valid
     pub active_energy_usage: Energy,
     pub sprites: Option<Sprite4Way>,
+    pub frozen_patch: Option<Sprite4Way>,
     pub activity_led_sprites: Option<Sprite4Way>,
     pub input_connection_bounding_box: BoundingBox,
     pub output_connection_bounding_box: BoundingBox,
@@ -201,9 +202,6 @@ pub type ConstantCombinatorPrototype =
 /// [`Prototypes/ConstantCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/ConstantCombinatorPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ConstantCombinatorData {
-    #[serde(deserialize_with = "helper::truncating_deserializer")]
-    pub item_slot_count: u32,
-
     pub sprites: Option<Sprite4Way>,
     pub activity_led_sprites: Option<Sprite4Way>,
     pub activity_led_light_offsets: (Vector, Vector, Vector, Vector),

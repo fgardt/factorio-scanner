@@ -16,7 +16,7 @@ pub type PumpPrototype =
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PumpData {
     pub energy_usage: Energy,
-    pub pumping_speed: f64,
+    pub pumping_speed: FluidAmount,
     pub animations: Animation4Way,
 
     #[serde(
@@ -40,6 +40,7 @@ pub struct PumpData {
 
     pub fluid_animation: Option<Animation4Way>,
     pub glass_pictures: Option<Sprite4Way>,
+    pub frozen_patch: Option<Sprite4Way>,
     pub fluid_wagon_connector_graphics: Option<FluidWagonConnectorGraphics>,
 }
 
