@@ -1550,38 +1550,20 @@ mod test {
         serde_json::from_slice(&bytes).unwrap()
     }
 
-    #[test]
-    fn deserialize_vanilla() {
-        let _ = load_data("vanilla");
-    }
+    mod deserialize {
+        use super::load_data;
 
-    #[test]
-    fn deserialize_k2_se() {
-        let _ = load_data("k2-se");
-    }
+        macro_rules! deserialize_tests {
+            ($($name:ident),+) => {
+                $(
+                    #[test]
+                    fn $name() {
+                        let _ = load_data(stringify!($name));
+                    }
+                )+
+            };
+        }
 
-    #[test]
-    fn deserialize_seablock() {
-        let _ = load_data("seablock");
-    }
-
-    #[test]
-    fn deserialize_pyanodon() {
-        let _ = load_data("py");
-    }
-
-    #[test]
-    fn deserialize_exotic_industries() {
-        let _ = load_data("ei");
-    }
-
-    #[test]
-    fn deserialize_248k() {
-        let _ = load_data("248k");
-    }
-
-    #[test]
-    fn deserialize_ultracube() {
-        let _ = load_data("ultracube");
+        deserialize_tests!(base, space_age, py);
     }
 }
