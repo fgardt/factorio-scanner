@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_helper as helper;
 
 use super::{EntityWithOwnerPrototype, HeatBufferEntityData};
 use mod_util::UsedMods;
@@ -12,6 +13,9 @@ pub type HeatPipePrototype = EntityWithOwnerPrototype<HeatBufferEntityData<HeatP
 pub struct HeatPipeData {
     pub connection_sprites: Option<ConnectableEntityGraphics>,
     pub heat_glow_sprites: Option<ConnectableEntityGraphics>,
+
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub heating_radius: f32,
 }
 
 impl super::Renderable for HeatPipeData {

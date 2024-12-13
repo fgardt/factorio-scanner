@@ -119,6 +119,9 @@ pub struct ItemPrototypeData {
     pub send_to_orbit_mode: SendToOrbitMode,
 
     pub random_tint_color: Option<Color>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub spoil_level: u8,
 }
 
 impl ItemPrototypeData {

@@ -22,8 +22,8 @@ pub struct ArtilleryTurretData {
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub ammo_stack_limit: ItemCountType,
 
-    #[serde(deserialize_with = "helper::truncating_deserializer")]
-    pub automated_ammo_count: ItemCountType,
+    #[serde(deserialize_with = "helper::truncating_opt_deserializer")]
+    pub automated_ammo_count: Option<ItemCountType>,
     pub turret_rotation_speed: f64,
     pub manual_range_modifier: f64,
 
