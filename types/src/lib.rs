@@ -31,6 +31,7 @@ pub const fn targeted_engine_version() -> Version {
 mod empty_array_fix;
 mod energy;
 mod fluid_box;
+mod g2;
 mod graphics;
 mod icon;
 mod ids;

@@ -97,10 +97,15 @@ pub enum RenderLayer {
     UnderTiles,
     Decals,
     AboveTiles,
+    #[serde(rename = "ground-layer-1")]
     GroundLayer1,
+    #[serde(rename = "ground-layer-2")]
     GroundLayer2,
+    #[serde(rename = "ground-layer-3")]
     GroundLayer3,
+    #[serde(rename = "ground-layer-4")]
     GroundLayer4,
+    #[serde(rename = "ground-layer-5")]
     GroundLayer5,
     LowerRadiusVisualization,
     RadiusVisualization,
