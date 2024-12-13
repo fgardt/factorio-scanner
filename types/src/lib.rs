@@ -2529,6 +2529,11 @@ pub struct WorkingVisualisation {
     pub south_secondary_draw_order: Option<i8>,
     pub west_secondary_draw_order: Option<i8>,
 
+    // pub north_fog_mask: Option<FogMaskShapeDefinition>,
+    // pub east_fog_mask: Option<FogMaskShapeDefinition>,
+    // pub south_fog_mask: Option<FogMaskShapeDefinition>,
+    // pub west_fog_mask: Option<FogMaskShapeDefinition>,
+    // pub fog_mask: Option<FogMaskShapeDefinition>,
     pub draw_in_states: Option<FactorioArray<String>>,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]

@@ -82,7 +82,6 @@ pub trait IdNamespace {
     fn contains(&self, id: &Self::Id) -> bool;
 }
 
-// TODO: write macro to generate impls for these
 pub trait IdNamespaceAccess<T>: IdNamespace {
     #[must_use]
     fn get_proto(&self, id: &Self::Id) -> Option<&T>;

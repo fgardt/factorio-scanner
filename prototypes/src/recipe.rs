@@ -248,6 +248,7 @@ pub enum ProductPrototype {
 
 /// [`Types/ItemProductPrototype`](https://lua-api.factorio.com/latest/types/ItemProductPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
+#[skip_serializing_none]
 pub struct ItemProductPrototype {
     pub name: ItemID,
 
@@ -259,9 +260,7 @@ pub struct ItemProductPrototype {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub ignored_by_stats: u16,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub ignored_by_productivity: u16,
+    pub ignored_by_productivity: Option<u16>,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub show_details_in_recipe_tooltip: bool,
@@ -291,6 +290,7 @@ pub enum ProductItemAmount {
 
 /// [`Types/FluidProductPrototype`](https://lua-api.factorio.com/latest/types/FluidProductPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
+#[skip_serializing_none]
 pub struct FluidProductPrototype {
     pub name: FluidID,
 
@@ -302,9 +302,7 @@ pub struct FluidProductPrototype {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub ignored_by_stats: FluidAmount,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub ignored_by_productivity: FluidAmount,
+    pub ignored_by_productivity: Option<FluidAmount>,
 
     pub temperature: Option<f32>,
 

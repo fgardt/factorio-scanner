@@ -115,6 +115,8 @@ pub struct FluidBox {
     pub pipe_covers_frozen: Option<Sprite4Way>,
     pub pipe_picture: Option<Sprite4Way>,
     pub pipe_picture_frozen: Option<Sprite4Way>,
+    pub mirrored_pipe_picture: Option<Sprite4Way>,
+    pub mirrored_pipe_picture_frozen: Option<Sprite4Way>,
 
     pub minimum_temperature: Option<f64>,
     pub maximum_temperature: Option<f64>,
