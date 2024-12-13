@@ -23,6 +23,9 @@ pub struct ContainerData {
     )]
     pub inventory_size: Option<ItemStackIndex>, // overridden in `InfinityContainerPrototype`
 
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub quality_affects_inventory_size: bool,
+
     pub picture: Option<Sprite>, // overridden in `LogisticContainerPrototype`
 
     #[serde(default)]
@@ -159,6 +162,9 @@ pub type InfinityContainerPrototype =
 #[derive(Debug, Deserialize, Serialize)]
 pub struct InfinityContainerData {
     pub erase_contents_when_mined: bool,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub preserve_contents_when_created: bool,
 
     #[serde(default = "GuiMode::all", skip_serializing_if = "GuiMode::is_all")]
     pub gui_mode: GuiMode,

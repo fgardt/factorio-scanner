@@ -40,6 +40,7 @@ pub struct RoboportData {
         deserialize_with = "helper::truncating_opt_deserializer"
     )]
     pub radar_range: Option<u32>,
+    pub radar_visualisation_color: Option<Color>,
 
     pub recharging_animation: Animation,
     pub spawn_and_station_height: f32,

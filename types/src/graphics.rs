@@ -142,7 +142,7 @@ pub enum RenderLayer {
     HigherObjectAbove,
     TrainStopTop,
     ItemInInserterHand,
-    AboveInserter,
+    AboveInserters,
     Wires,
     UnderElevated,
     ElevatedRailStonePathLower,

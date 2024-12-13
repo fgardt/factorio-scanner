@@ -17,6 +17,9 @@ pub type ReactorPrototype =
 pub struct ReactorData {
     pub working_light_picture: Option<Animation>,
 
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub heating_radius: f64,
+
     pub consumption: Energy,
 
     pub connection_patches_connected: Option<SpriteVariations>,

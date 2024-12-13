@@ -19,6 +19,10 @@ pub type InserterPrototype =
 pub struct InserterData {
     pub extension_speed: f64,
     pub rotation_speed: f64,
+
+    #[serde(default = "helper::f64_07", skip_serializing_if = "helper::is_07_f64")]
+    pub starting_distance: f64,
+
     pub insert_position: Vector,
     pub pickup_position: Vector,
 

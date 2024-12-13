@@ -4,7 +4,8 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use crate::{
-    AirbornePollutantID, BurnerUsageID, FactorioArray, FluidAmount, FuelCategoryID, ItemStackIndex,
+    AirbornePollutantID, BurnerUsageID, FactorioArray, FluidAmount, FuelCategoryID, ItemID,
+    ItemStackIndex,
 };
 
 use super::{helper, Direction, FluidBox, MapPosition, Sprite4Way};
@@ -82,6 +83,14 @@ pub struct BurnerEnergySourceData {
 
     #[serde(default = "fuel_category", skip_serializing_if = "is_fuel_category")]
     pub fuel_categories: FactorioArray<FuelCategoryID>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub initial_fuel: ItemID,
+    #[serde(
+        default = "helper::f64_025",
+        skip_serializing_if = "helper::is_025_f64"
+    )]
+    pub initial_fuel_percent: f64,
 }
 
 fn fuel_usage_id() -> BurnerUsageID {
