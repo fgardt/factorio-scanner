@@ -196,25 +196,25 @@ pub enum AnyEnergySource {
     /// [`Types/BurnerEnergySource`](https://lua-api.factorio.com/latest/types/BurnerEnergySource.html)
     Burner {
         #[serde(flatten)]
-        data: BurnerEnergySource,
+        data: Box<BurnerEnergySource>,
     },
 
     /// [`Types/ElectricEnergySource`](https://lua-api.factorio.com/latest/types/ElectricEnergySource.html)
     Electric {
         #[serde(flatten)]
-        data: ElectricEnergySource,
+        data: Box<ElectricEnergySource>,
     },
 
     /// [`Types/FluidEnergySource`](https://lua-api.factorio.com/latest/types/FluidEnergySource.html)
     Fluid {
         #[serde(flatten)]
-        data: FluidEnergySource,
+        data: Box<FluidEnergySource>,
     },
 
     /// [`Types/HeatEnergySource`](https://lua-api.factorio.com/latest/types/HeatEnergySource.html)
     Heat {
         #[serde(flatten)]
-        data: HeatEnergySource,
+        data: Box<HeatEnergySource>,
     },
 
     /// [`Types/VoidEnergySource`](https://lua-api.factorio.com/latest/types/VoidEnergySource.html)
