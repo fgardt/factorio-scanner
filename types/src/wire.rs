@@ -8,7 +8,7 @@ use serde_helper as helper;
 
 use crate::{
     FactorioArray, GraphicsOutput, ImageCache, LightDefinition, RealOrientation,
-    RenderableGraphics, SimpleGraphicsRenderOpts, Sprite, Vector,
+    RenderableGraphics, Sprite, TintableRenderOpts, Vector,
 };
 
 /// [`Types/WirePosition`](https://lua-api.factorio.com/latest/types/WirePosition.html)
@@ -115,7 +115,7 @@ pub enum WireConnectionData {
         #[serde(flatten)]
         draw_flags: WireDrawFlags,
 
-        circuit_connector: Option<CircuitConnectorDefinition>,
+        circuit_connector: Option<Box<CircuitConnectorDefinition>>,
     },
 }
 
@@ -268,7 +268,7 @@ impl WireConnectionData {
                     scale,
                     used_mods,
                     image_cache,
-                    &SimpleGraphicsRenderOpts::default(),
+                    &TintableRenderOpts::default(),
                 )
             })
     }
@@ -288,7 +288,7 @@ impl WireConnectionData {
                     scale,
                     used_mods,
                     image_cache,
-                    &SimpleGraphicsRenderOpts::default(),
+                    &TintableRenderOpts::default(),
                 )
             })
     }
