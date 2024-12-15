@@ -1,138 +1,303 @@
+use image::DynamicImage;
+use mod_util::UsedMods;
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
-use crate::{
-    BlendMode, Color, FileName, SpriteFlags, SpritePriority, SpriteSizeParam, SpriteSizeType,
-    Vector,
-};
+use crate::{FactorioArray, FileName, ImageCache, Vector};
 
+mod animation;
+mod beacon;
+mod rotated;
 mod sheet;
+mod sprite;
+mod tile;
+mod transport_belt;
+mod util;
+mod variations;
+mod working_visualisation;
 
-/// [`Types/SpriteSource`](https://lua-api.factorio.com/latest/types/SpriteSource.html)
+pub use animation::*;
+pub use beacon::*;
+pub use rotated::*;
+pub use sheet::*;
+pub use sprite::*;
+pub use tile::*;
+pub use transport_belt::*;
+pub use util::*;
+pub use variations::*;
+pub use working_visualisation::*;
+
+/// [`Types/SpritePriority`](https://lua-api.factorio.com/latest/types/SpritePriority.html)
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum SpritePriority {
+    ExtraHighNoScale,
+    ExtraHigh,
+    High,
+    #[default]
+    Medium,
+    Low,
+    VeryLow,
+    NoAtlas,
+}
+
+/// Union used in [`Types/SpriteFlags`](https://lua-api.factorio.com/latest/types/SpriteFlags.html)
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum SpriteFlag {
+    NoCrop,
+    NotCompressed,
+    AlwaysCompressed,
+    Mipmap,
+    LinearMinification,
+    LinearMagnification,
+    LinearMipLevel,
+    AlphaMask,
+    NoScale,
+    Mask,
+    Icon,
+    Gui,
+    GuiIcon,
+    Light,
+    Terrain,
+    TerrainEffectMap,
+    Shadow,
+    Smoke,
+    Decal,
+    LowObject,
+    TrilinearFiltering,
+    #[serde(rename = "group=none")]
+    GroupNone,
+    #[serde(rename = "group=terrain")]
+    GroupTerrain,
+    #[serde(rename = "group=shadow")]
+    GroupShadow,
+    #[serde(rename = "group=smoke")]
+    GroupSmoke,
+    #[serde(rename = "group=decal")]
+    GroupDecal,
+    #[serde(rename = "group=low-object")]
+    GroupLowObject,
+    #[serde(rename = "group=gui")]
+    GroupGui,
+    #[serde(rename = "group=icon")]
+    GroupIcon,
+    #[serde(rename = "group=icon-background")]
+    GroupIconBackground,
+    Compressed,
+}
+
+/// [`Types/SpriteFlags`](https://lua-api.factorio.com/latest/types/SpriteFlags.html)
+pub type SpriteFlags = FactorioArray<SpriteFlag>;
+
+/// [`Types/SpriteSizeType`](https://lua-api.factorio.com/latest/types/SpriteSizeType.html)
+pub type SpriteSizeType = i16;
+
+/// [`Types/BlendMode`](https://lua-api.factorio.com/latest/types/BlendMode.html)
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum BlendMode {
+    #[default]
+    Normal,
+    Additive,
+    AdditiveSoft,
+    Multiplicative,
+    MultiplicativeWithAlpha,
+    Overwrite,
+}
+
+/// [`Types/RenderLayer`](https://lua-api.factorio.com/latest/types/RenderLayer.html)
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "kebab-case")]
+pub enum RenderLayer {
+    Zero,
+    BackgroundTransitions,
+    UnderTiles,
+    Decals,
+    AboveTiles,
+    #[serde(rename = "ground-layer-1")]
+    GroundLayer1,
+    #[serde(rename = "ground-layer-2")]
+    GroundLayer2,
+    #[serde(rename = "ground-layer-3")]
+    GroundLayer3,
+    #[serde(rename = "ground-layer-4")]
+    GroundLayer4,
+    #[serde(rename = "ground-layer-5")]
+    GroundLayer5,
+    LowerRadiusVisualization,
+    RadiusVisualization,
+    TransportBeltIntegration,
+    Resource,
+    BuildingSmoke,
+    RailStonePathLower,
+    RailStonePath,
+    RailTie,
+    Decorative,
+    GroundPatch,
+    GroundPatchHigher,
+    GroundPatchHigher2,
+    RailChainSignalMetal,
+    RailScrew,
+    RailMetal,
+    Remnants,
+    Floor,
+    TransportBelt,
+    TransportBeltEndings,
+    FloorMechanicsUnderCorpse,
+    Corpse,
+    FloorMechanics,
+    Item,
+    TransportBeltReader,
+    LowerObject,
+    TransportBeltCircuitConnector,
+    LowerObjectAboveShadow,
+    LowerObjectOverlay,
+    ObjectUnder,
+    Object,
+    CargoHatch,
+    HigherObjectUnder,
+    HigherObjectAbove,
+    TrainStopTop,
+    ItemInInserterHand,
+    AboveInserters,
+    Wires,
+    UnderElevated,
+    ElevatedRailStonePathLower,
+    ElevatedRailStonePath,
+    ElevatedRailTie,
+    ElevatedRailScrew,
+    ElevatedRailMetal,
+    ElevatedLowerObject,
+    ElevatedObject,
+    ElevatedHigherObject,
+    FluidVisualization,
+    WiresAbove,
+    EntityInfoIcon,
+    EntityInfoIconAbove,
+    Explosion,
+    Projectile,
+    Smoke,
+    AirObject,
+    AirEntityInfoIcon,
+    LightEffect,
+    SelectionBox,
+    HigherSelectionBox,
+    CollisionSelectionBox,
+    Arrow,
+    Cursor,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SpriteSizeParam {
+    Size {
+        #[serde(deserialize_with = "helper::truncating_deserializer")]
+        size: SpriteSizeType,
+    },
+    Size2 {
+        // TODO: truncating deserializer (in case someone is very funny and has floats here....)
+        size: (SpriteSizeType, SpriteSizeType),
+    },
+    Explicit {
+        #[serde(deserialize_with = "helper::truncating_deserializer")]
+        width: SpriteSizeType,
+
+        #[serde(deserialize_with = "helper::truncating_deserializer")]
+        height: SpriteSizeType,
+    },
+}
+
+pub trait SourceProvider {}
+
+pub type GraphicsOutput = (DynamicImage, Vector);
+
+pub trait RenderableGraphics {
+    type RenderOpts;
+
+    fn render(
+        &self,
+        scale: f64,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        opts: &Self::RenderOpts,
+    ) -> Option<GraphicsOutput>;
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SingleSource {
+    filename: FileName,
+}
+
+impl SourceProvider for SingleSource {}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum MultiSingleSource {
+    Multi {
+        filenames: FactorioArray<FileName>,
+        lines_per_file: u32,
+    },
+    Single(SingleSource),
+}
+
+impl SourceProvider for MultiSingleSource {}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[skip_serializing_none]
-pub struct SpriteSource {
+pub struct Stripe {
+    pub width_in_frames: u32,
+    pub height_in_frames: Option<u32>,
+
     pub filename: FileName,
 
-    #[serde(flatten)]
-    pub size: SpriteSizeParam,
-
-    // TODO: turn position, x, y into some enum?
-    // TODO: truncating deserializer
-    #[serde(default)]
-    pub position: Option<(SpriteSizeType, SpriteSizeType)>,
-    #[serde(default, deserialize_with = "helper::truncating_deserializer")]
-    pub x: SpriteSizeType,
-    #[serde(default, deserialize_with = "helper::truncating_deserializer")]
-    pub y: SpriteSizeType,
-
     #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub load_in_minimal_mode: bool,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub premul_alpha: bool,
-
+    pub x: u32,
     #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub allow_forced_downscale: bool,
+    pub y: u32,
 }
 
-/// [`Types/SpriteParameters`](https://lua-api.factorio.com/latest/types/SpriteParameters.html)
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
 #[skip_serializing_none]
-pub struct SpriteParameters {
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub priority: SpritePriority,
-
-    pub flags: Option<SpriteFlags>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub shift: Vector,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub rotate_shift: bool,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub apply_special_effect: bool,
-
-    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
-    pub scale: f64,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub draw_as_shadow: bool,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub draw_as_glow: bool,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub draw_as_light: bool,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub mipmap_count: u8,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub apply_runtime_tint: bool,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub tint_as_overlay: bool,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub invert_colors: bool,
-
-    #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
-    pub tint: Color,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub blend_mode: BlendMode,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub generate_sdf: bool,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub surface: SpriteUsageSurfaceHint,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub usage: SpriteUsageHint,
-
-    #[serde(flatten)]
-    parent: SpriteSource,
+pub enum StripeMultiSingleSource {
+    Stripe {
+        stripes: FactorioArray<Stripe>,
+    },
+    Multi {
+        filenames: FactorioArray<FileName>,
+        slice: Option<u32>,
+        lines_per_file: u32,
+    },
+    Single(SingleSource),
 }
 
-impl std::ops::Deref for SpriteParameters {
-    type Target = SpriteSource;
+impl SourceProvider for StripeMultiSingleSource {}
 
-    fn deref(&self) -> &Self::Target {
-        &self.parent
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum LayeredGraphic<G: RenderableGraphics> {
+    Layered { layers: FactorioArray<G> },
+    Data(G),
+}
+
+impl<G, O> RenderableGraphics for LayeredGraphic<G>
+where
+    G: RenderableGraphics<RenderOpts = O>,
+{
+    type RenderOpts = O;
+
+    fn render(
+        &self,
+        scale: f64,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        opts: &Self::RenderOpts,
+    ) -> Option<GraphicsOutput> {
+        match self {
+            Self::Layered { layers } => todo!(),
+            Self::Data(g) => g.render(scale, used_mods, image_cache, opts),
+        }
     }
-}
-
-/// [`Types/SpriteUsageSurfaceHint`](https://lua-api.factorio.com/latest/types/SpriteUsageSurfaceHint.html)
-#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum SpriteUsageSurfaceHint {
-    #[default]
-    Any,
-    Nauvis,
-    Vulcanus,
-    Gleba,
-    Fulgora,
-    Aquilo,
-    Space,
-}
-
-/// [`Types/SpriteUsageHint`](https://lua-api.factorio.com/latest/types/SpriteUsageHint.html)
-#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum SpriteUsageHint {
-    #[default]
-    Any,
-    Mining,
-    TileArtifical,
-    CorpseDecay,
-    Enemy,
-    Player,
-    Train,
-    Vehicle,
-    Explosion,
-    Rail,
-    ElevatedRail,
-    Air,
-    Remnant,
-    Decorative,
 }
