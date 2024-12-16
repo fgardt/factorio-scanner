@@ -80,7 +80,7 @@ pub enum BeltGraphics {
         starting_bottom: Animation,
         starting_side: Animation,
 
-        ending_patch: Sprite4Way,
+        ending_patch: Box<Sprite4Way>,
 
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         ends_with_stopper: bool,
@@ -574,7 +574,7 @@ impl super::Renderable for TransportBeltData {
 #[serde(untagged)]
 pub enum BeltGraphicsWithCorners {
     BeltAnimationSetWithCorners {
-        belt_animation_set: TransportBeltAnimationSetWithCorners,
+        belt_animation_set: Box<TransportBeltAnimationSetWithCorners>,
     },
     Animations {
         animations: RotatedAnimation, // must have 12 animations

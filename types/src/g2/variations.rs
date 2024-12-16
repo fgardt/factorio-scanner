@@ -23,6 +23,12 @@ impl<M> std::ops::Deref for VariationRenderOpts<M> {
     }
 }
 
+impl<M> std::ops::DerefMut for VariationRenderOpts<M> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.more
+    }
+}
+
 impl<M: Default> Default for VariationRenderOpts<M> {
     #[expect(clippy::unwrap_used)]
     fn default() -> Self {
@@ -30,6 +36,12 @@ impl<M: Default> Default for VariationRenderOpts<M> {
             variation: NonZeroU32::new(1).unwrap(),
             more: M::default(),
         }
+    }
+}
+
+impl<M> VariationRenderOpts<M> {
+    pub const fn new(variation: NonZeroU32, more: M) -> Self {
+        Self { variation, more }
     }
 }
 

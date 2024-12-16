@@ -127,7 +127,7 @@ pub struct RenderOpts {
 }
 
 // From impls for RenderOpts variants from types
-impl From<&RenderOpts> for SimpleGraphicsRenderOpts {
+impl From<&RenderOpts> for TintableRenderOpts {
     fn from(opts: &RenderOpts) -> Self {
         Self {
             runtime_tint: opts.runtime_tint,
@@ -135,120 +135,44 @@ impl From<&RenderOpts> for SimpleGraphicsRenderOpts {
     }
 }
 
-impl From<&RenderOpts> for RotatedSpriteRenderOpts {
-    fn from(value: &RenderOpts) -> Self {
-        Self {
-            orientation: value.clone().orientation.unwrap_or_default(),
-            runtime_tint: value.runtime_tint,
-        }
+impl<'a, M: From<&'a RenderOpts>> From<&'a RenderOpts> for RotatedRenderOpts<M> {
+    fn from(opts: &'a RenderOpts) -> Self {
+        Self::new(opts.orientation.unwrap_or_default(), opts.into())
     }
 }
 
-impl From<&RenderOpts> for SpriteNWayRenderOpts {
-    fn from(opts: &RenderOpts) -> Self {
-        Self {
-            direction: opts.direction,
-            runtime_tint: opts.runtime_tint,
-        }
+impl<'a, M: From<&'a RenderOpts>> From<&'a RenderOpts> for DirectionalRenderOpts<M> {
+    fn from(opts: &'a RenderOpts) -> Self {
+        Self::new(opts.direction, opts.into())
     }
 }
 
-impl From<&RenderOpts> for SpriteVariationsRenderOpts {
-    fn from(opts: &RenderOpts) -> Self {
-        #[allow(unsafe_code)]
-        Self {
-            variation: opts
-                .variation
+impl<'a, M: From<&'a RenderOpts>> From<&'a RenderOpts> for VariationRenderOpts<M> {
+    fn from(opts: &'a RenderOpts) -> Self {
+        #[expect(unsafe_code)]
+        Self::new(
+            opts.variation
                 .unwrap_or(unsafe { NonZeroU32::new_unchecked(1) }),
-            runtime_tint: opts.runtime_tint,
-        }
+            opts.into(),
+        )
     }
 }
 
-impl From<&RenderOpts> for AnimationRenderOpts {
-    fn from(value: &RenderOpts) -> Self {
-        Self {
-            progress: 0.0,
-            runtime_tint: value.runtime_tint,
-        }
+impl<'a, M: From<&'a RenderOpts>> From<&'a RenderOpts> for AnimationRenderOpts<M> {
+    fn from(opts: &'a RenderOpts) -> Self {
+        Self::new(0.0, opts.into())
     }
 }
 
-impl From<&RenderOpts> for Animation4WayRenderOpts {
-    fn from(value: &RenderOpts) -> Self {
-        Self {
-            direction: value.direction,
-            progress: 0.0,
-            runtime_tint: value.runtime_tint,
-        }
+impl<'a, M: From<&'a RenderOpts>> From<&'a RenderOpts> for LocationalRenderOpts<M> {
+    fn from(opts: &'a RenderOpts) -> Self {
+        Self::new(opts.position, opts.into())
     }
 }
 
-impl From<&RenderOpts> for AnimationVariationsRenderOpts {
-    fn from(value: &RenderOpts) -> Self {
-        #[allow(unsafe_code)]
-        Self {
-            variation: value
-                .variation
-                .unwrap_or(unsafe { NonZeroU32::new_unchecked(1) }),
-            progress: 0.0,
-            runtime_tint: value.runtime_tint,
-        }
-    }
-}
-
-impl From<&RenderOpts> for RotatedAnimationRenderOpts {
-    fn from(value: &RenderOpts) -> Self {
-        Self {
-            orientation: value
-                .orientation
-                .unwrap_or_else(|| value.direction.to_orientation()),
-            progress: 0.0,
-            runtime_tint: value.runtime_tint,
-            override_index: None,
-        }
-    }
-}
-
-impl From<&RenderOpts> for RotatedAnimation4WayRenderOpts {
-    fn from(value: &RenderOpts) -> Self {
-        Self {
-            direction: value.direction,
-            orientation: value.orientation.unwrap_or_default(),
-            progress: 0.0,
-            runtime_tint: value.runtime_tint,
-        }
-    }
-}
-
-impl From<&RenderOpts> for BeaconGraphicsSetRenderOpts {
-    fn from(value: &RenderOpts) -> Self {
-        Self {
-            runtime_tint: value.runtime_tint,
-        }
-    }
-}
-
-impl From<&RenderOpts> for TransportBeltAnimationSetRenderOpts {
-    fn from(opts: &RenderOpts) -> Self {
-        Self {
-            direction: opts.direction,
-            connections: opts.connections,
-
-            runtime_tint: opts.runtime_tint,
-
-            index_override: None,
-        }
-    }
-}
-
-impl From<&RenderOpts> for WorkingVisualisationRenderOpts {
-    fn from(value: &RenderOpts) -> Self {
-        Self {
-            progress: 0.0,
-            direction: value.direction,
-            runtime_tint: value.runtime_tint,
-        }
+impl<'a, M: From<&'a RenderOpts>> From<&'a RenderOpts> for ConnectedRenderOpts<M> {
+    fn from(opts: &'a RenderOpts) -> Self {
+        Self::new(opts.connections, opts.into())
     }
 }
 

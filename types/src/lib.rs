@@ -32,7 +32,7 @@ mod empty_array_fix;
 mod energy;
 mod fluid_box;
 mod g2;
-mod graphics;
+// mod graphics;
 mod icon;
 mod ids;
 mod item;
@@ -2527,4 +2527,17 @@ pub struct GigaCargoHatchDefinition {
     pub covered_hatches: FactorioArray<u32>,
     // pub opening_sound: Option<InterruptibleSound>,
     // pub closing_sound: Option<InterruptibleSound>,
+}
+
+/// [`Types/WaterReflectionDefinition`](https://lua-api.factorio.com/latest/types/WaterReflectionDefinition.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WaterReflectionDefinition {
+    pub pictures: Option<SpriteVariations>,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub orientation_to_variation: bool,
+
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub rotate: bool,
 }

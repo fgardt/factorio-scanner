@@ -273,10 +273,10 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
                 );
             }
 
-            let other_wheel_opts = RotatedSpriteRenderOpts {
-                orientation: (orientation.projected_orientation() + 0.5).rem(1.0),
-                runtime_tint: options.runtime_tint,
-            };
+            let other_wheel_opts = RotatedRenderOpts::new(
+                (orientation.projected_orientation() + 0.5).rem(1.0),
+                options.into(),
+            );
 
             if let Some((img, shift)) = self.wheels.as_ref().and_then(|b| {
                 b.render(

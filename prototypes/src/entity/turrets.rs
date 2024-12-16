@@ -18,7 +18,7 @@ pub type TurretPrototype = EntityWithOwnerPrototype<TurretData>;
 pub struct TurretData {
     pub attack_parameters: AttackParameters,
 
-    pub folded_animation: RotatedAnimation4Way,
+    pub folded_animation: RotatedAnimation8Way,
     pub call_for_help_radius: f64,
 
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -58,13 +58,13 @@ pub struct TurretData {
     pub gun_animation_render_layer: Option<RenderLayer>,
 
     pub base_picture: Option<Animation4Way>,
-    pub preparing_animation: Option<RotatedAnimation4Way>,
-    pub prepared_animation: Option<RotatedAnimation4Way>,
-    pub prepared_alternative_animation: Option<RotatedAnimation4Way>,
-    pub starting_attack_animation: Option<RotatedAnimation4Way>,
-    pub energy_glow_animation: Option<RotatedAnimation4Way>,
-    pub ending_attack_animation: Option<RotatedAnimation4Way>,
-    pub folding_animation: Option<RotatedAnimation4Way>,
+    pub preparing_animation: Option<RotatedAnimation8Way>,
+    pub prepared_animation: Option<RotatedAnimation8Way>,
+    pub prepared_alternative_animation: Option<RotatedAnimation8Way>,
+    pub starting_attack_animation: Option<RotatedAnimation8Way>,
+    pub energy_glow_animation: Option<RotatedAnimation8Way>,
+    pub ending_attack_animation: Option<RotatedAnimation8Way>,
+    pub folding_animation: Option<RotatedAnimation8Way>,
     pub integration: Option<Sprite>,
 
     // docs specify single precision float for all of these except `prepare_range`

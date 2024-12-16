@@ -85,10 +85,14 @@ impl BoilerPictureSet {
     #[must_use]
     pub fn structure(&self) -> Animation4Way {
         Animation4Way::Struct {
-            north: self.north.structure.clone(),
-            east: Some(self.east.structure.clone()),
-            south: Some(self.south.structure.clone()),
-            west: Some(self.west.structure.clone()),
+            north: Box::new(self.north.structure.clone()),
+            east: Some(Box::new(self.east.structure.clone())),
+            south: Some(Box::new(self.south.structure.clone())),
+            west: Some(Box::new(self.west.structure.clone())),
+            north_east: None,
+            south_east: None,
+            south_west: None,
+            north_west: None,
         }
     }
 }
