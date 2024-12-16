@@ -38,7 +38,7 @@ serde_repr = "0.1"
 serde_with = "3.11"
 thiserror = "2"
 tracing = { version = "0.1", features = ["attributes", "log"] }
-tokio = "1.41"
+tokio = "1.42"
 types = { path = "types" }
 regex = "1.11"
 
