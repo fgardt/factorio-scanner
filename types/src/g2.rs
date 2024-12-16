@@ -278,7 +278,7 @@ impl SourceProvider for StripeMultiSingleSource {}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum LayeredGraphic<G: RenderableGraphics> {
-    Layered { layers: FactorioArray<G> },
+    Layered { layers: FactorioArray<Self> },
     Data(G),
 }
 

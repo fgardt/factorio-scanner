@@ -1319,19 +1319,6 @@ impl RenderableGraphics for SpriteVariations {
     }
 }
 
-/// [`Types/WaterReflectionDefinition`](https://lua-api.factorio.com/latest/types/WaterReflectionDefinition.html)
-#[skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct WaterReflectionDefinition {
-    pub pictures: Option<SpriteVariations>,
-
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub orientation_to_variation: bool,
-
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub rotate: bool,
-}
-
 // ======================= //
 // =======[ Tiles ]======= //
 // ======================= //

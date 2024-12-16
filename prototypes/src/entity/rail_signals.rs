@@ -57,10 +57,7 @@ impl super::Renderable for RailSignalBaseData {
             options.direction.to_orientation().into()
         };
 
-        let rail_piece_opts = AnimationRenderOpts {
-            progress: prog,
-            runtime_tint: options.runtime_tint,
-        };
+        let rail_piece_opts = AnimationRenderOpts::new(prog, options.into());
 
         if let Some(res) = self.rail_piece.as_ref().and_then(|r| {
             r.render(
@@ -125,12 +122,8 @@ impl super::Renderable for RailChainSignalData {
             Vector::new(offset_x, offset_y)
         };
 
-        let animation_opts = RotatedAnimationRenderOpts {
-            progress: (1.0 / 5.0) * 2.5, // green light
-            orientation: options.direction.to_orientation(),
-            runtime_tint: options.runtime_tint,
-            override_index: None,
-        };
+        let mut animation_opts: RotatedRenderOpts<AnimationRenderOpts> = options.into();
+        animation_opts.progress = (1.0 / 5.0) * 2.5; // green light
 
         if let Some((img, shift)) = self.animation.render(
             render_layers.scale(),

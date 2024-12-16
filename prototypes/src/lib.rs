@@ -1403,7 +1403,7 @@ impl RenderLayerBuffer {
                 self.scale(),
                 used_mods,
                 image_cache,
-                &SimpleGraphicsRenderOpts::default(),
+                &TintableRenderOpts::default(),
             ) else {
                 continue;
             };

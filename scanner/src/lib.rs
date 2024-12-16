@@ -31,7 +31,7 @@ use prototypes::{
 };
 use types::{
     ConnectedDirections, Direction, ImageCache, MapPosition, RenderableGraphics,
-    SimpleGraphicsRenderOpts, Vector,
+    TintableRenderOpts, Vector,
 };
 
 pub mod bp_helper;
@@ -489,7 +489,7 @@ pub fn render_bp(
         render_layers.scale() * 1.25,
         used_mods,
         image_cache,
-        &SimpleGraphicsRenderOpts::default(),
+        &TintableRenderOpts::default(),
     ) else {
         warn!("failed to load indicator arrow sprite, required for alt mode");
         return None;
@@ -499,7 +499,7 @@ pub fn render_bp(
         render_layers.scale() * 1.25,
         used_mods,
         image_cache,
-        &SimpleGraphicsRenderOpts::default(),
+        &TintableRenderOpts::default(),
     ) else {
         warn!("failed to load indicator line sprite, required for alt mode");
         return None;

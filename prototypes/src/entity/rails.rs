@@ -197,7 +197,7 @@ pub struct RailPictureSet {
     pub curved_rail_horizontal_right_top: RailPieceLayers,
     pub curved_rail_horizontal_right_bottom: RailPieceLayers,
     pub curved_rail_horizontal_left_bottom: RailPieceLayers,
-    pub rail_endings: Sprite8Way,
+    pub rail_endings: Sprite16Way,
 }
 
 /// [`Types/RailPieceLayers`](https://lua-api.factorio.com/latest/types/RailPieceLayers.html)

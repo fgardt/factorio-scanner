@@ -123,11 +123,7 @@ impl RenderableGraphics for TransportBeltAnimationSet {
             scale,
             used_mods,
             image_cache,
-            &RotatedRenderOpts {
-                orientation: RealOrientation::default(),
-                override_index: Some(index),
-                more: **opts,
-            },
+            &RotatedRenderOpts::new_override(index, **opts),
         )
     }
 }
@@ -202,6 +198,18 @@ impl<M> std::ops::Deref for ConnectedRenderOpts<M> {
     }
 }
 
+impl<M> std::ops::DerefMut for ConnectedRenderOpts<M> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.more
+    }
+}
+
+impl<M> ConnectedRenderOpts<M> {
+    pub const fn new(connections: Option<ConnectedDirections>, more: M) -> Self {
+        Self { connections, more }
+    }
+}
+
 impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
     type RenderOpts = ConnectedRenderOpts<DirectionalRenderOpts<AnimationRenderOpts>>;
 
@@ -251,11 +259,7 @@ impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
             scale,
             used_mods,
             image_cache,
-            &RotatedRenderOpts {
-                orientation: RealOrientation::default(),
-                override_index: Some(index),
-                more: ***opts,
-            },
+            &RotatedRenderOpts::new_override(index, ***opts),
         )
     }
 }
