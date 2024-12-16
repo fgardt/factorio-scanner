@@ -25,7 +25,7 @@ serde_with.workspace = true
 thiserror.workspace = true
 types.workspace = true
 dotenv = "0.15"
-rustc-hash = "2.0"
+rustc-hash = "2.1"
 strum = { version = "0.26", features = ["derive"] }
 tracing.workspace = true
 tokio = { workspace = true, features = ["rt"] }
