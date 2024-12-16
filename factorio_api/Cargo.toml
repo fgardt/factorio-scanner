@@ -24,4 +24,4 @@ tokio.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
-tokio-test = "0.4.3"
+tokio-test = "0.4.4"
