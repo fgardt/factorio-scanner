@@ -13,6 +13,14 @@ pub struct TintableRenderOpts {
     pub runtime_tint: Option<Color>,
 }
 
+impl From<Color> for TintableRenderOpts {
+    fn from(color: Color) -> Self {
+        Self {
+            runtime_tint: Some(color),
+        }
+    }
+}
+
 /// [`Types/SpriteSource`](https://lua-api.factorio.com/latest/types/SpriteSource.html)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[skip_serializing_none]

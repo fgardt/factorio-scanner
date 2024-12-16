@@ -7,9 +7,9 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 use types::{
     AirbornePollutantID, Animation4Way, CollisionMaskConnector, Color, FactorioArray, FluidID,
-    Icon, ImageCache, MapPosition, PlaceableBy, RenderableGraphics, TileEffectDefinitionID,
-    TileGraphics, TileID, TileLightPictures, TileMainPictures, TileRenderOpts, TileSpriteLayout,
-    Weight,
+    Icon, ImageCache, LocationalRenderOpts, MapPosition, PlaceableBy, RenderableGraphics,
+    SpriteUsageSurfaceHint, TileEffectDefinitionID, TileID, TileRenderLayer, TileTransitions,
+    TileTransitionsVariants, Weight,
 };
 
 use crate::{helper_macro::namespace_struct, InternalRenderLayer};
@@ -25,10 +25,7 @@ impl TilePrototype {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<()> {
-        let opts = TileRenderOpts {
-            runtime_tint: Some(self.tint),
-            position: *position,
-        };
+        let opts = LocationalRenderOpts::new(*position, self.tint.into());
 
         self.variants
             .material_background
@@ -156,63 +153,6 @@ pub struct TilePrototypeData {
     // pub bound_decoratives: DecorativeID or array[DecorativeID],
     // pub ambient_sounds_group: Option<TileID>,
     // pub ambient_sounds: WorldAmbientSoundDefinition or array[WorldAmbientSoundDefinition],
-}
-
-/// [`Types/TileRenderLayer`](https://lua-api.factorio.com/latest/types/TileRenderLayer.html)
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum TileRenderLayer {
-    Zero,
-    Water,
-    WaterOverlay,
-    GroundNatural,
-    GroundArtificial,
-    Top,
-}
-
-#[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "kebab-case")]
-pub enum SpriteUsageSurfaceHint {
-    #[default]
-    Any,
-    Nauvis,
-    Vulcanus,
-    Gleba,
-    Fulgora,
-    Aquilo,
-    Space,
-}
-
-// the only difference between `TileSpriteLayout` and `MaterialTextureParameters`
-// is that 2 u32 fields are u8 instead
-type MaterialTextureParameters = TileGraphics<TileSpriteLayout>;
-
-/// [`TypesTileTransitionsVariants`](https://lua-api.factorio.com/latest/types/TileTransitionsVariants.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct TileTransitionsVariants {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub main: FactorioArray<TileMainPictures>,
-
-    #[serde(default = "helper::u8_8", skip_serializing_if = "helper::is_8_u8")]
-    pub material_texture_width_in_tiles: u8,
-    #[serde(default = "helper::u8_8", skip_serializing_if = "helper::is_8_u8")]
-    pub material_texture_height_in_tiles: u8,
-    pub material_background: Option<MaterialTextureParameters>,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub light: FactorioArray<TileLightPictures>,
-    pub material_light: Option<MaterialTextureParameters>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub empty_transitions: bool,
-
-    pub transition: Option<TileTransitions>,
-}
-
-/// [`Types/TileTransitions`](https://lua-api.factorio.com/latest/types/TileTransitions.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct TileTransitions {
-    // lots of fields
 }
 
 /// [`Prototypes/TilePrototype/TileTransitionsToTiles`](https://lua-api.factorio.com/latest/prototypes/TilePrototype.html#transitions)

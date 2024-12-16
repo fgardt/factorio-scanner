@@ -23,6 +23,18 @@ impl<M> std::ops::Deref for DirectionalRenderOpts<M> {
     }
 }
 
+impl<M> std::ops::DerefMut for DirectionalRenderOpts<M> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.more
+    }
+}
+
+impl<M> DirectionalRenderOpts<M> {
+    pub const fn new(direction: Direction, more: M) -> Self {
+        Self { direction, more }
+    }
+}
+
 /// [`Types/SpriteSheet`](https://lua-api.factorio.com/latest/types/SpriteSheet.html)
 pub type SpriteSheet = LayeredGraphic<SpriteSheetData>;
 

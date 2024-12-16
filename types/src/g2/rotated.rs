@@ -187,3 +187,27 @@ impl<M> std::ops::Deref for RotatedRenderOpts<M> {
         &self.more
     }
 }
+
+impl<M> std::ops::DerefMut for RotatedRenderOpts<M> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.more
+    }
+}
+
+impl<M> RotatedRenderOpts<M> {
+    pub const fn new(orientation: RealOrientation, more: M) -> Self {
+        Self {
+            orientation,
+            override_index: None,
+            more,
+        }
+    }
+
+    pub const fn new_override(override_index: u8, more: M) -> Self {
+        Self {
+            orientation: RealOrientation::new(0.0),
+            override_index: Some(override_index),
+            more,
+        }
+    }
+}

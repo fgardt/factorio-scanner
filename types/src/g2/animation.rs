@@ -23,6 +23,18 @@ impl<M> std::ops::Deref for AnimationRenderOpts<M> {
     }
 }
 
+impl<M> std::ops::DerefMut for AnimationRenderOpts<M> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.more
+    }
+}
+
+impl<M> AnimationRenderOpts<M> {
+    pub const fn new(progress: f64, more: M) -> Self {
+        Self { progress, more }
+    }
+}
+
 // TODO: truncating deserializer for arrays....
 /// [`Types/AnimationFrameSequence`](https://lua-api.factorio.com/latest/types/AnimationFrameSequence.html)
 pub type AnimationFrameSequence = FactorioArray<u16>;
@@ -99,6 +111,24 @@ impl RenderableGraphics for AnimationData {
     }
 }
 
+impl std::ops::Deref for AnimationData {
+    type Target = AnimationParameters;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl LayeredGraphic<AnimationData> {
+    #[must_use]
+    pub fn frame_count(&self) -> u32 {
+        match self {
+            Self::Layered { layers } => layers.first().map_or(1, Self::frame_count),
+            Self::Data(d) => d.frame_count,
+        }
+    }
+}
+
 /// [`Types/AnimationElement`](https://lua-api.factorio.com/latest/types/AnimationElement.html)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[skip_serializing_none]
@@ -141,6 +171,7 @@ impl RenderableGraphics for AnimationElement {
 
 /// [`Types/Animation4Way`](https://lua-api.factorio.com/latest/types/Animation4Way.html)
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum Animation4Way {
     Struct {
         north: Box<Animation>,

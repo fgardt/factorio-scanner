@@ -2,8 +2,35 @@ use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
-use super::SpriteSizeType;
-use crate::{FactorioArray, FileName};
+use super::{RenderableGraphics, SpriteSizeType, TintableRenderOpts};
+use crate::{FactorioArray, FileName, MapPosition};
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct LocationalRenderOpts<M = TintableRenderOpts> {
+    pub position: MapPosition,
+
+    pub(crate) more: M,
+}
+
+impl<M> std::ops::Deref for LocationalRenderOpts<M> {
+    type Target = M;
+
+    fn deref(&self) -> &Self::Target {
+        &self.more
+    }
+}
+
+impl<M> std::ops::DerefMut for LocationalRenderOpts<M> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.more
+    }
+}
+
+impl<M> LocationalRenderOpts<M> {
+    pub const fn new(position: MapPosition, more: M) -> Self {
+        Self { position, more }
+    }
+}
 
 /// [`Types/TileRenderLayer`](https://lua-api.factorio.com/latest/types/TileRenderLayer.html)
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -81,6 +108,20 @@ impl std::ops::Deref for TileMainPictures {
     }
 }
 
+impl RenderableGraphics for TileMainPictures {
+    type RenderOpts = LocationalRenderOpts;
+
+    fn render(
+        &self,
+        scale: f64,
+        used_mods: &mod_util::UsedMods,
+        image_cache: &mut crate::ImageCache,
+        opts: &Self::RenderOpts,
+    ) -> Option<super::GraphicsOutput> {
+        todo!()
+    }
+}
+
 /// [`Types/TileLightPictures`](https://lua-api.factorio.com/latest/types/TileLightPictures.html)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TileLightPictures {
@@ -95,6 +136,20 @@ impl std::ops::Deref for TileLightPictures {
 
     fn deref(&self) -> &Self::Target {
         &self.parent
+    }
+}
+
+impl RenderableGraphics for TileLightPictures {
+    type RenderOpts = LocationalRenderOpts;
+
+    fn render(
+        &self,
+        scale: f64,
+        used_mods: &mod_util::UsedMods,
+        image_cache: &mut crate::ImageCache,
+        opts: &Self::RenderOpts,
+    ) -> Option<super::GraphicsOutput> {
+        todo!()
     }
 }
 
@@ -114,6 +169,20 @@ pub struct MaterialTextureParameters {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub line_length: u32,
+}
+
+impl RenderableGraphics for MaterialTextureParameters {
+    type RenderOpts = LocationalRenderOpts;
+
+    fn render(
+        &self,
+        scale: f64,
+        used_mods: &mod_util::UsedMods,
+        image_cache: &mut crate::ImageCache,
+        opts: &Self::RenderOpts,
+    ) -> Option<super::GraphicsOutput> {
+        todo!()
+    }
 }
 
 /// [`Types/TileTransitions`](https://lua-api.factorio.com/latest/types/TileTransitions.html)
