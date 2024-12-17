@@ -123,7 +123,7 @@ impl RenderableGraphics for TransportBeltAnimationSet {
             scale,
             used_mods,
             image_cache,
-            &RotatedRenderOpts::new_override(index, **opts),
+            &RotatedRenderOpts::new_override(index.into(), **opts),
         )
     }
 }
@@ -259,7 +259,7 @@ impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
             scale,
             used_mods,
             image_cache,
-            &RotatedRenderOpts::new_override(index, ***opts),
+            &RotatedRenderOpts::new_override(index.into(), ***opts),
         )
     }
 }

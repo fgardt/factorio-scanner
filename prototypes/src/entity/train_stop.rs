@@ -24,6 +24,7 @@ pub struct TrainStopData {
     pub default_train_stopped_signal: Option<SignalIDConnector>,
     pub default_trains_count_signal: Option<SignalIDConnector>,
     pub default_trains_limit_signal: Option<SignalIDConnector>,
+    pub default_priority_signal: Option<SignalIDConnector>,
 
     pub color: Option<Color>,
 

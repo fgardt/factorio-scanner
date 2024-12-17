@@ -102,6 +102,7 @@ pub struct RenderOpts {
     pub direction: Direction,
     pub orientation: Option<RealOrientation>,
     pub mirrored: bool,
+    pub elevated: bool,
 
     pub variation: Option<NonZeroU32>,
 
