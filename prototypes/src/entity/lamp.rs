@@ -23,16 +23,16 @@ pub struct LampData {
     pub light_when_colored: Option<LightDefinition>,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub glow_size: f64,
+    pub glow_size: f32,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub glow_color_intensity: f64,
+    pub glow_color_intensity: f32,
 
-    #[serde(default = "helper::f64_05", skip_serializing_if = "helper::is_05_f64")]
-    pub darkness_for_all_lamps_on: f64,
+    #[serde(default = "helper::f32_05", skip_serializing_if = "helper::is_05_f32")]
+    pub darkness_for_all_lamps_on: f32,
 
-    #[serde(default = "helper::f64_03", skip_serializing_if = "helper::is_03_f64")]
-    pub darkness_for_all_lamps_off: f64,
+    #[serde(default = "helper::f32_03", skip_serializing_if = "helper::is_03_f32")]
+    pub darkness_for_all_lamps_off: f32,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub always_on: bool,
