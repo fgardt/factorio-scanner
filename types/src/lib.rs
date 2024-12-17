@@ -152,7 +152,7 @@ pub struct BaseAttackParameters {
 
     pub animation: Option<RotatedAnimation>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub use_shooter_direction: bool,
     // not implemented
     // ammo_type, ammo_categories, ammo_category: are these mutually exclusive?
@@ -2555,9 +2555,9 @@ pub struct GigaCargoHatchDefinition {
 pub struct WaterReflectionDefinition {
     pub pictures: Option<SpriteVariations>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub orientation_to_variation: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub rotate: bool,
 }

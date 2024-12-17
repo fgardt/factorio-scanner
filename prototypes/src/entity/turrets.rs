@@ -21,22 +21,22 @@ pub struct TurretData {
     pub folded_animation: RotatedAnimation8Way,
     pub call_for_help_radius: f64,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub shoot_in_prepare_state: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub turret_base_has_direction: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub random_animation_offset: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub secondary_animation: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub attack_from_start_frame: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub allow_turning_when_starting_attack: bool,
 
     #[serde(
@@ -119,7 +119,7 @@ pub struct TurretData {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub alert_when_attacking: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub spawn_decorations_on_expansion: bool,
     // TODO: overridden `corpse` & `is_military_target`
 

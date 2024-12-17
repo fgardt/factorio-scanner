@@ -7,6 +7,7 @@ use logistics::{LogisticSections, RequestFilters};
 use mod_util::{mod_info::DependencyVersion, AnyBasic, DependencyList};
 use parameters::ParameterData;
 use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
+use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
 use types::{
@@ -122,7 +123,7 @@ pub type Blueprint = crate::CommonData<BlueprintData>;
 pub struct SnapData {
     pub snap_to_grid: Option<Position>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub absolute_snapping: bool,
 
     pub position_relative_to_grid: Option<Position>,
@@ -463,7 +464,7 @@ pub struct Entity {
     pub parameters: Option<SpeakerParameter>,
     pub alert_parameters: Option<SpeakerAlertParameter>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub auto_launch: bool,
 
     pub variation: Option<GraphicsVariation>,
@@ -484,7 +485,7 @@ pub struct Entity {
     )]
     pub copy_color_from_train_stop: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub switch_state: bool,
 
     // electric energy interface
@@ -659,7 +660,7 @@ pub struct ScheduleRecord {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub wait_conditions: Vec<WaitCondition>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub temporary: bool,
 
     #[serde(
@@ -686,7 +687,7 @@ pub struct ScheduleInterrupt {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub targets: Vec<ScheduleRecord>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub inside_interrupt: bool,
 }
 
@@ -1564,7 +1565,7 @@ impl crate::GetIDs for DeciderCondition {
 pub struct DeciderOutput {
     pub signal: Option<SignalID>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub copy_count_from_input: bool,
 
     #[serde(
@@ -1675,7 +1676,7 @@ pub struct QualitySourceStatic {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct SpeakerCircuitParameters {
-    //#[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    //#[serde(default, skip_serializing_if = "helper::is_default")]
     pub signal_value_is_pitch: bool,
     pub instrument_id: u8,
     pub note_id: u8,

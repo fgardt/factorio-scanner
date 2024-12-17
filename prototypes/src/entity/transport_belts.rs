@@ -82,7 +82,7 @@ pub enum BeltGraphics {
 
         ending_patch: Box<Sprite4Way>,
 
-        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        #[serde(default, skip_serializing_if = "helper::is_default")]
         ends_with_stopper: bool,
     },
 }
@@ -166,7 +166,7 @@ pub struct LinkedBeltData {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub allow_blueprint_connection: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub allow_side_loading: bool,
     // TODO: collision_mask overridden
     #[serde(flatten)]

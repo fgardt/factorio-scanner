@@ -104,7 +104,7 @@ pub type CopyPasteToolPrototype = crate::BasePrototype<CopyPasteToolPrototypeDat
 /// [`Prototypes/CopyPasteToolPrototype`](https://lua-api.factorio.com/latest/prototypes/CopyPasteToolPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CopyPasteToolPrototypeData {
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub cuts: bool,
 
     #[serde(flatten)]
