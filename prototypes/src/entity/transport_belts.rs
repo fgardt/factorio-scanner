@@ -168,7 +168,7 @@ pub struct LinkedBeltData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub allow_side_loading: bool,
-    // TODO: collision_mask overridden
+
     #[serde(flatten)]
     parent: TransportBeltConnectableData<BeltGraphics>,
 }
@@ -271,8 +271,8 @@ impl super::Renderable for LoaderData {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoaderStructure {
-    pub direction_in: Sprite4Way,
-    pub direction_out: Sprite4Way,
+    pub direction_in: Option<Sprite4Way>,
+    pub direction_out: Option<Sprite4Way>,
 
     pub back_patch: Option<Sprite4Way>,
     pub front_patch: Option<Sprite4Way>,
@@ -287,23 +287,27 @@ impl super::Renderable for LoaderStructure {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         let res = if options.underground_in.unwrap_or_default() {
-            self.direction_in.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &options.into(),
-            )
+            self.direction_in.as_ref().and_then(|d_in| {
+                d_in.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            })
         } else {
             let flipped_opts = &super::RenderOpts {
                 direction: options.direction.flip(),
                 ..options.clone()
             };
-            self.direction_out.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &flipped_opts.into(),
-            )
+            self.direction_out.as_ref().and_then(|d_out| {
+                d_out.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &flipped_opts.into(),
+                )
+            })
         }?;
 
         render_layers.add_entity(res, &options.position);

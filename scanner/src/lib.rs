@@ -292,6 +292,7 @@ pub fn bp_entity2render_opts(
         direction: value.direction,
         orientation: value.orientation,
         mirrored: value.mirror.unwrap_or_default(),
+        elevated: value.rail_layer == Some("elevated".to_owned()),
         variation: value.variation,
         pickup_position: value
             .pickup_position
