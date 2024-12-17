@@ -175,7 +175,7 @@ impl RenderableGraphics for RotatedSpriteData {
 #[derive(Debug, Clone, Copy, Default)]
 pub struct RotatedRenderOpts<M = TintableRenderOpts> {
     pub orientation: RealOrientation,
-    pub override_index: Option<u8>,
+    pub override_rot_index: Option<u16>,
 
     pub(crate) more: M,
 }
@@ -198,15 +198,15 @@ impl<M> RotatedRenderOpts<M> {
     pub const fn new(orientation: RealOrientation, more: M) -> Self {
         Self {
             orientation,
-            override_index: None,
+            override_rot_index: None,
             more,
         }
     }
 
-    pub const fn new_override(override_index: u8, more: M) -> Self {
+    pub const fn new_override(override_index: u16, more: M) -> Self {
         Self {
             orientation: RealOrientation::new(0.0),
-            override_index: Some(override_index),
+            override_rot_index: Some(override_index),
             more,
         }
     }

@@ -16,7 +16,7 @@ pub type StorageTankPrototype =
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StorageTankData {
     pub window_bounding_box: BoundingBox,
-    pub pictures: StorageTankPictures,
+    pub pictures: Option<StorageTankPictures>,
 
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub flow_length_in_ticks: u32,
@@ -39,39 +39,41 @@ impl super::Renderable for StorageTankData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        let background = self
-            .pictures
-            .window_background
-            .render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &options.into(),
-            )
-            .map(|(img, shift)| {
-                let (shift_x, shift_y) = shift.as_tuple();
-                let (tl_x, tl_y) = self.window_bounding_box.0.as_tuple();
-                let (br_x, br_y) = self.window_bounding_box.1.as_tuple();
-
-                (
-                    img,
-                    (
-                        shift_x, // + f64::from(br_x - tl_x) / 2.0, // TODO: figure out how to calculate this position
-                        shift_y + tl_y + (br_y - tl_y) / 2.0,
-                    )
-                        .into(),
-                )
-            });
-
-        let res = merge_renders(
-            &[
-                background,
-                self.pictures.picture.render(
+        let background = self.pictures.as_ref().and_then(|p| {
+            p.window_background
+                .render(
                     render_layers.scale(),
                     used_mods,
                     image_cache,
                     &options.into(),
-                ),
+                )
+                .map(|(img, shift)| {
+                    let (shift_x, shift_y) = shift.as_tuple();
+                    let (tl_x, tl_y) = self.window_bounding_box.0.as_tuple();
+                    let (br_x, br_y) = self.window_bounding_box.1.as_tuple();
+
+                    (
+                        img,
+                        (
+                            shift_x, // + f64::from(br_x - tl_x) / 2.0, // TODO: figure out how to calculate this position
+                            shift_y + tl_y + (br_y - tl_y) / 2.0,
+                        )
+                            .into(),
+                    )
+                })
+        });
+
+        let res = merge_renders(
+            &[
+                background,
+                self.pictures.as_ref().and_then(|p| {
+                    p.picture.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &options.into(),
+                    )
+                }),
             ],
             render_layers.scale(),
         )?;
