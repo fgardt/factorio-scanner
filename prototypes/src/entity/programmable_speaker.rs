@@ -16,7 +16,7 @@ pub type ProgrammableSpeakerPrototype =
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProgrammableSpeakerData {
     pub energy_usage_per_tick: Energy,
-    pub sprite: Sprite,
+    pub sprite: Option<Sprite>,
 
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub maximum_polyphony: u32,
@@ -35,7 +35,7 @@ impl super::Renderable for ProgrammableSpeakerData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        let res = self.sprite.render(
+        let res = self.sprite.as_ref()?.render(
             render_layers.scale(),
             used_mods,
             image_cache,

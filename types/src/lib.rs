@@ -1644,6 +1644,26 @@ pub enum Direction {
 }
 
 impl Direction {
+    pub const COUNT: usize = 16;
+    pub const ALL: [Self; Self::COUNT] = [
+        Self::North,
+        Self::NorthNorthEast,
+        Self::NorthEast,
+        Self::EastNorthEast,
+        Self::East,
+        Self::EastSouthEast,
+        Self::SouthEast,
+        Self::SouthSouthEast,
+        Self::South,
+        Self::SouthSouthWest,
+        Self::SouthWest,
+        Self::WestSouthWest,
+        Self::West,
+        Self::WestNorthWest,
+        Self::NorthWest,
+        Self::NorthNorthWest,
+    ];
+
     #[must_use]
     pub const fn flip(self) -> Self {
         match self {

@@ -11,6 +11,7 @@ use crate::FactorioArray;
 #[derive(Debug, Clone, Copy, Default)]
 pub struct AnimationRenderOpts<M = TintableRenderOpts> {
     pub progress: f64,
+    pub override_anim_index: Option<u32>,
 
     pub(crate) more: M,
 }
@@ -31,7 +32,19 @@ impl<M> std::ops::DerefMut for AnimationRenderOpts<M> {
 
 impl<M> AnimationRenderOpts<M> {
     pub const fn new(progress: f64, more: M) -> Self {
-        Self { progress, more }
+        Self {
+            progress,
+            override_anim_index: None,
+            more,
+        }
+    }
+
+    pub const fn new_override(override_index: u32, more: M) -> Self {
+        Self {
+            progress: 0.0,
+            override_anim_index: Some(override_index),
+            more,
+        }
     }
 }
 
