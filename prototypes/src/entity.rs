@@ -561,7 +561,7 @@ pub struct EntityWithHealthData<T: Renderable> {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub create_ghost_on_death: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub random_corpse_variation: bool,
 
     pub integration_patch_render_layer: Option<RenderLayer>,

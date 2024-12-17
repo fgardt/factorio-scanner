@@ -21,7 +21,7 @@ pub struct BurnerGeneratorData {
 
     pub idle_animation: Option<Animation4Way>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub always_draw_idle_animation: bool,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]

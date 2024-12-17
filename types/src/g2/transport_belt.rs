@@ -93,7 +93,7 @@ pub struct TransportBeltAnimationSet {
 
     pub ending_patch: Option<Sprite4Way>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub ends_with_stopper: bool,
 }
 

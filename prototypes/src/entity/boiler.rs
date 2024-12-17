@@ -24,10 +24,10 @@ pub struct BoilerData {
 
     pub target_temperature: Option<f32>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub fire_glow_flicker_enabled: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub fire_flicker_enabled: bool,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
