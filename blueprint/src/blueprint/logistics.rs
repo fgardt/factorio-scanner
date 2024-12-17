@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_helper as helper;
 use serde_with::skip_serializing_none;
 use types::{Comparator, ItemCountType, QualityID, SpaceLocationID};
 
@@ -9,7 +10,7 @@ use crate::IndexedVec;
 pub struct LogisticSections {
     pub sections: IndexedVec<LogisticSection>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub trash_not_requested: bool,
 }
 
@@ -24,7 +25,7 @@ impl crate::GetIDs for LogisticSections {
 pub struct RequestFilters {
     pub sections: IndexedVec<LogisticSection>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub request_from_buffers: bool,
 }
 

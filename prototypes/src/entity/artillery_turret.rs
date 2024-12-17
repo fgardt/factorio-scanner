@@ -30,7 +30,7 @@ pub struct ArtilleryTurretData {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub alert_when_attacking: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub disable_automatic_firing: bool,
 
     #[serde(

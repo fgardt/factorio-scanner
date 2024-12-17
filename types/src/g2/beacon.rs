@@ -13,10 +13,10 @@ use crate::{Color, FactorioArray, ImageCache, LightDefinition, ModuleTint, Modul
 #[skip_serializing_none]
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct BeaconModuleVisualization {
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub has_empty_slot: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub draw_as_light: bool,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -41,7 +41,7 @@ pub struct BeaconModuleVisualization {
 pub struct BeaconModuleVisualizations {
     pub art_style: String,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub use_for_empty_slots: bool,
 
     #[serde(
@@ -100,13 +100,13 @@ pub struct BeaconGraphicsSet {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub draw_animation_when_idle: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub draw_light_when_idle: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub random_animation_offset: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub module_icons_suppressed: bool,
 
     pub base_layer: Option<RenderLayer>,

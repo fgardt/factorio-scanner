@@ -21,7 +21,7 @@ pub struct StorageTankData {
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub flow_length_in_ticks: u32,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub two_direction_only: bool,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]

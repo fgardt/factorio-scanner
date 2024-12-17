@@ -424,13 +424,13 @@ pub struct SpriteParams {
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub scale: f64,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub draw_as_shadow: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub draw_as_glow: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub draw_as_light: bool,
 
     #[serde(
@@ -440,7 +440,7 @@ pub struct SpriteParams {
     )]
     pub mipmap_count: u8,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub apply_runtime_tint: bool,
 
     #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
@@ -449,13 +449,13 @@ pub struct SpriteParams {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub blend_mode: BlendMode,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub load_in_minimal_mode: bool,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub premul_alpha: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub generate_sdf: bool,
 }
 
@@ -693,16 +693,16 @@ pub struct RotatedSpriteParams {
     )]
     pub lines_per_file: u64,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub axially_symmetrical: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub back_equals_front: bool,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub apply_projection: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub counterclockwise: bool,
 
     #[serde(
@@ -712,7 +712,7 @@ pub struct RotatedSpriteParams {
     )]
     pub line_length: u32,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub allow_low_quality_rotation: bool,
 
     #[serde(flatten)]
@@ -804,16 +804,16 @@ pub struct RotatedSpriteParamsMultiFile {
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub lines_per_file: u64,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub axially_symmetrical: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub back_equals_front: bool,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub apply_projection: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub counterclockwise: bool,
 
     #[serde(
@@ -823,7 +823,7 @@ pub struct RotatedSpriteParamsMultiFile {
     )]
     pub line_length: u32,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub allow_low_quality_rotation: bool,
 
     #[serde(flatten)]
@@ -2254,10 +2254,10 @@ pub struct AnimationElement {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub draw_as_sprite: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub draw_as_light: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub apply_tint: bool,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -2411,10 +2411,10 @@ pub struct RotatedAnimationParams {
     )]
     pub still_frame: u32,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub axially_symmetrical: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub counterclockwise: bool,
 
     #[serde(default = "helper::f64_05", skip_serializing_if = "helper::is_05_f64")]

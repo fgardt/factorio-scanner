@@ -121,16 +121,16 @@ pub struct CarData {
     // TODO: default
     pub render_layer: Option<RenderLayer>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub tank_driving: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub has_belt_immunity: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub immune_to_tree_impacts: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub immune_to_rock_impacts: bool,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -208,7 +208,7 @@ pub struct RollingStockData<T: super::Renderable> {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub allow_manual_color: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub allow_robot_dispatch_in_automatic_mode: bool,
 
     #[serde(flatten)]
@@ -349,7 +349,7 @@ pub struct ArtilleryWagonData {
     pub turret_rotation_speed: f64,
     pub manual_range_modifier: f64,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub disable_automatic_firing: bool,
 
     pub cannon_base_pictures: Option<RotatedSprite>,
