@@ -173,7 +173,7 @@ impl super::Renderable for InserterData {
             render_layers.add(
                 hand,
                 &options.position,
-                crate::InternalRenderLayer::InserterHand,
+                RenderLayer::HigherObjectUnder, // TODO: is this sensible?
             );
         }
 

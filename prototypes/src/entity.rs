@@ -611,11 +611,7 @@ impl<T: Renderable> Renderable for EntityWithHealthData<T> {
                 image_cache,
                 &options.into(),
             ) {
-                render_layers.add(
-                    res,
-                    &options.position,
-                    crate::InternalRenderLayer::GroundPatch,
-                );
+                render_layers.add(res, &options.position, crate::RenderLayer::GroundPatch);
                 return Some(());
             }
         }
