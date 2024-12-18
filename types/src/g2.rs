@@ -108,7 +108,7 @@ pub enum BlendMode {
 }
 
 /// [`Types/RenderLayer`](https://lua-api.factorio.com/latest/types/RenderLayer.html)
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(rename_all = "kebab-case")]
 pub enum RenderLayer {
     Zero,

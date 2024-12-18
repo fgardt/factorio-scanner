@@ -58,11 +58,7 @@ impl super::Renderable for TrainStopData {
         }) {
             empty = false;
 
-            render_layers.add(
-                rail,
-                &options.position,
-                crate::InternalRenderLayer::RailBackplate,
-            );
+            render_layers.add(rail, &options.position, RenderLayer::RailScrew);
         }
 
         if let Some(anim) = self.animations.as_ref().and_then(|a| {
@@ -88,11 +84,7 @@ impl super::Renderable for TrainStopData {
         }) {
             empty = false;
 
-            render_layers.add(
-                top_anim,
-                &options.position,
-                crate::InternalRenderLayer::AboveEntity,
-            );
+            render_layers.add(top_anim, &options.position, RenderLayer::HigherObjectAbove);
         }
 
         let l1 = self
@@ -144,11 +136,7 @@ impl super::Renderable for TrainStopLight {
             &options.into(),
         )?;
 
-        render_layers.add(
-            res,
-            &options.position,
-            crate::InternalRenderLayer::AboveEntity,
-        );
+        render_layers.add(res, &options.position, RenderLayer::TrainStopTop);
 
         Some(())
     }

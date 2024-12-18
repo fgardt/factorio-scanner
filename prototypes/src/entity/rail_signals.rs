@@ -227,11 +227,7 @@ impl super::Renderable for RailSignalBaseData {
             image_cache,
             &rail_piece_opts,
         )?;
-        render_layers.add(
-            res,
-            &opts.position,
-            crate::InternalRenderLayer::RailBackplate,
-        );
+        render_layers.add(res, &opts.position, RenderLayer::RailScrew);
 
         Some(())
     }
