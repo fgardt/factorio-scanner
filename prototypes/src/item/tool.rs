@@ -3,7 +3,7 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use types::{EquipmentGridID, ItemStackIndex, Resistances};
+use types::{BoundingBox, EquipmentGridID, ItemStackIndex, Resistances};
 
 /// [`Prototypes/ToolPrototype`](https://lua-api.factorio.com/latest/prototypes/ToolPrototype.html)
 pub type ToolPrototype = crate::BasePrototype<ToolPrototypeData>;
@@ -18,7 +18,7 @@ pub struct ToolPrototypeData {
     pub durability_description_key: Option<String>,
     pub durability_description_value: Option<String>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub infinite: bool,
 
     #[serde(flatten)]
@@ -47,6 +47,17 @@ pub struct ArmorPrototypeData {
 
     pub inventory_size_bonus: Option<ItemStackIndex>,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub provides_flight: bool,
+
+    pub collision_box: Option<BoundingBox>,
+    pub drawing_box: Option<BoundingBox>,
+
+    // pub takeoff_sound: Option<Sound>,
+    // pub flight_sound: Option<InterruptibleSound>,
+    // pub landing_sound: Option<Sound>,
+    // pub steps_sound: Option<Sound>,
+    // pub moving_sound: Option<Sound>,
     #[serde(flatten)]
     parent: ToolPrototypeData,
 }
@@ -56,21 +67,6 @@ impl std::ops::Deref for ArmorPrototypeData {
 
     fn deref(&self) -> &Self::Target {
         &self.parent
-    }
-}
-
-// MiningTool = Tool
-// using newtype pattern to avoid type collisions
-/// [`Prototypes/MiningToolPrototype`](https://lua-api.factorio.com/latest/prototypes/MiningToolPrototype.html)
-/// _deprecated_
-#[derive(Debug, Deserialize, Serialize)]
-pub struct MiningToolPrototype(ToolPrototype);
-
-impl std::ops::Deref for MiningToolPrototype {
-    type Target = ToolPrototype;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
     }
 }
 

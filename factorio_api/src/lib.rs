@@ -1,12 +1,8 @@
 #![allow(clippy::module_name_repetitions)]
 
-use std::time::Instant;
-
-use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, Extension};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
-use reqwest_tracing::{
-    default_on_request_end, reqwest_otel_span, ReqwestOtelSpanBackend, TracingMiddleware,
-};
+use reqwest_tracing::{OtelName, TracingMiddleware};
 use serde::{Deserialize, Serialize};
 
 use mod_util::mod_info::Version;
@@ -78,7 +74,6 @@ mod auth {
 }
 
 pub use portal::*;
-use task_local_extensions::Extensions;
 mod portal {
     use core::fmt;
 
@@ -122,7 +117,8 @@ mod portal {
         }
     }
 
-    #[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    #[non_exhaustive]
+    #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum PortalSearchVersion {
         #[serde(rename = "0.13")]
         V0_13,
@@ -147,6 +143,12 @@ mod portal {
 
         #[serde(rename = "1.1")]
         V1_1,
+
+        #[serde(rename = "2.0")]
+        V2_0,
+
+        #[serde(untagged)]
+        Unknown(String),
     }
 
     impl fmt::Display for PortalSearchVersion {
@@ -160,6 +162,8 @@ mod portal {
                 Self::V0_18 => write!(f, "0.18"),
                 Self::V1_0 => write!(f, "1.0"),
                 Self::V1_1 => write!(f, "1.1"),
+                Self::V2_0 => write!(f, "2.0"),
+                Self::Unknown(val) => write!(f, "{val}"),
             }
         }
     }
@@ -222,7 +226,7 @@ mod portal {
         }
 
         #[must_use]
-        pub const fn version(mut self, version: PortalSearchVersion) -> Self {
+        pub fn version(mut self, version: PortalSearchVersion) -> Self {
             self.version = Some(version);
             self
         }
@@ -518,30 +522,6 @@ pub async fn fetch_mod_with_password(
     fetch_mod(mod_name, version, &auth_res.username, &auth_res.token).await
 }
 
-struct TimeTrace;
-
-impl ReqwestOtelSpanBackend for TimeTrace {
-    fn on_request_start(req: &reqwest::Request, extension: &mut Extensions) -> tracing::Span {
-        extension.insert(Instant::now());
-        reqwest_otel_span!(
-            name = "factorio_api_request",
-            req,
-            time_elapsed = tracing::field::Empty
-        )
-    }
-
-    fn on_request_end(
-        span: &tracing::Span,
-        outcome: &reqwest_middleware::Result<reqwest::Response>,
-        extension: &mut Extensions,
-    ) {
-        #[allow(clippy::unwrap_used)]
-        let time_elapsed = extension.get::<Instant>().unwrap().elapsed().as_millis() as i64;
-        default_on_request_end(span, outcome);
-        span.record("time_elapsed", time_elapsed);
-    }
-}
-
 fn client() -> Result<ClientWithMiddleware, FactorioApiError> {
     let rqc = if let Ok(agent) = std::env::var(ENV_AGENT) {
         reqwest::ClientBuilder::new().user_agent(agent).build()?
@@ -549,12 +529,15 @@ fn client() -> Result<ClientWithMiddleware, FactorioApiError> {
         reqwest::Client::new()
     };
 
-    let tracer = TracingMiddleware::<TimeTrace>::new();
     let retry = RetryTransientMiddleware::new_with_policy(
         ExponentialBackoff::builder().build_with_max_retries(3),
     );
 
-    Ok(ClientBuilder::new(rqc).with(tracer).with(retry).build())
+    Ok(ClientBuilder::new(rqc)
+        .with_init(Extension(OtelName("factorio_api_request".into())))
+        .with(TracingMiddleware::default())
+        .with(retry)
+        .build())
 }
 
 fn endpoint() -> String {

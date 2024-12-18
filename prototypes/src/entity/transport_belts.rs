@@ -80,9 +80,9 @@ pub enum BeltGraphics {
         starting_bottom: Animation,
         starting_side: Animation,
 
-        ending_patch: Sprite4Way,
+        ending_patch: Box<Sprite4Way>,
 
-        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        #[serde(default, skip_serializing_if = "helper::is_default")]
         ends_with_stopper: bool,
     },
 }
@@ -166,9 +166,9 @@ pub struct LinkedBeltData {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub allow_blueprint_connection: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub allow_side_loading: bool,
-    // TODO: collision_mask overridden
+
     #[serde(flatten)]
     parent: TransportBeltConnectableData<BeltGraphics>,
 }
@@ -271,8 +271,8 @@ impl super::Renderable for LoaderData {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoaderStructure {
-    pub direction_in: Sprite4Way,
-    pub direction_out: Sprite4Way,
+    pub direction_in: Option<Sprite4Way>,
+    pub direction_out: Option<Sprite4Way>,
 
     pub back_patch: Option<Sprite4Way>,
     pub front_patch: Option<Sprite4Way>,
@@ -287,23 +287,27 @@ impl super::Renderable for LoaderStructure {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         let res = if options.underground_in.unwrap_or_default() {
-            self.direction_in.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &options.into(),
-            )
+            self.direction_in.as_ref().and_then(|d_in| {
+                d_in.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            })
         } else {
             let flipped_opts = &super::RenderOpts {
                 direction: options.direction.flip(),
                 ..options.clone()
             };
-            self.direction_out.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &flipped_opts.into(),
-            )
+            self.direction_out.as_ref().and_then(|d_out| {
+                d_out.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &flipped_opts.into(),
+                )
+            })
         }?;
 
         render_layers.add_entity(res, &options.position);
@@ -364,10 +368,7 @@ pub type Loader1x2Prototype = EntityWithOwnerPrototype<Loader1x2Data>;
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Loader1x2Data {
-    #[serde(
-        default = "helper::f64_half",
-        skip_serializing_if = "helper::is_half_f64"
-    )]
+    #[serde(default = "helper::f64_05", skip_serializing_if = "helper::is_05_f64")]
     pub belt_length: f64,
 
     #[serde(flatten)]
@@ -577,7 +578,7 @@ impl super::Renderable for TransportBeltData {
 #[serde(untagged)]
 pub enum BeltGraphicsWithCorners {
     BeltAnimationSetWithCorners {
-        belt_animation_set: TransportBeltAnimationSetWithCorners,
+        belt_animation_set: Box<TransportBeltAnimationSetWithCorners>,
     },
     Animations {
         animations: RotatedAnimation, // must have 12 animations

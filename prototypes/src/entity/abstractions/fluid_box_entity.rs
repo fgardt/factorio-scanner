@@ -32,7 +32,9 @@ impl<T: Renderable> Renderable for FluidBoxEntityData<T> {
     }
 
     fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        let mut res = self.fluid_box.connection_points(options.direction);
+        let mut res = self
+            .fluid_box
+            .connection_points(options.direction, options.mirrored);
         res.append(&mut self.child.fluid_box_connections(options));
         res
     }

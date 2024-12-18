@@ -13,7 +13,7 @@ pub type SolarPanelPrototype = EntityWithOwnerPrototype<SolarPanelData>;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SolarPanelData {
     pub energy_source: ElectricEnergySource,
-    pub picture: SpriteVariations,
+    pub picture: Option<SpriteVariations>,
     pub production: Energy,
     pub overlay: Option<SpriteVariations>,
 }
@@ -26,7 +26,7 @@ impl super::Renderable for SolarPanelData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        let res = self.picture.render(
+        let res = self.picture.as_ref()?.render(
             render_layers.scale(),
             used_mods,
             image_cache,

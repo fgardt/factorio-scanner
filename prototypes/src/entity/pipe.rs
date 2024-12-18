@@ -1,6 +1,9 @@
 use std::ops::Deref;
 
 use serde::{Deserialize, Serialize};
+use serde_with::{skip_serializing_none, with_suffix};
+
+use serde_helper as helper;
 
 use super::{EntityWithOwnerPrototype, FluidBoxEntityData};
 use mod_util::UsedMods;
@@ -25,30 +28,33 @@ impl super::Renderable for PipeData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
+        let pictures = self.pictures.normal.as_ref();
         let res = match options.connections.unwrap_or_default() {
-            super::ConnectedDirections::None => &self.pictures.straight_vertical_single,
-            super::ConnectedDirections::Up => &self.pictures.ending_up,
-            super::ConnectedDirections::Down => &self.pictures.ending_down,
-            super::ConnectedDirections::Left => &self.pictures.ending_left,
-            super::ConnectedDirections::Right => &self.pictures.ending_right,
-            super::ConnectedDirections::UpDown => &self.pictures.straight_vertical,
-            super::ConnectedDirections::UpLeft => &self.pictures.corner_up_left,
-            super::ConnectedDirections::UpRight => &self.pictures.corner_up_right,
-            super::ConnectedDirections::DownLeft => &self.pictures.corner_down_left,
-            super::ConnectedDirections::DownRight => &self.pictures.corner_down_right,
-            super::ConnectedDirections::LeftRight => &self.pictures.straight_horizontal,
-            super::ConnectedDirections::UpDownLeft => &self.pictures.t_left,
-            super::ConnectedDirections::UpDownRight => &self.pictures.t_right,
-            super::ConnectedDirections::UpLeftRight => &self.pictures.t_up,
-            super::ConnectedDirections::DownLeftRight => &self.pictures.t_down,
-            super::ConnectedDirections::All => &self.pictures.cross,
+            super::ConnectedDirections::None => pictures.straight_vertical_single.as_ref(),
+            super::ConnectedDirections::Up => pictures.ending_up.as_ref(),
+            super::ConnectedDirections::Down => pictures.ending_down.as_ref(),
+            super::ConnectedDirections::Left => pictures.ending_left.as_ref(),
+            super::ConnectedDirections::Right => pictures.ending_right.as_ref(),
+            super::ConnectedDirections::UpDown => pictures.straight_vertical.as_ref(),
+            super::ConnectedDirections::UpLeft => pictures.corner_up_left.as_ref(),
+            super::ConnectedDirections::UpRight => pictures.corner_up_right.as_ref(),
+            super::ConnectedDirections::DownLeft => pictures.corner_down_left.as_ref(),
+            super::ConnectedDirections::DownRight => pictures.corner_down_right.as_ref(),
+            super::ConnectedDirections::LeftRight => pictures.straight_horizontal.as_ref(),
+            super::ConnectedDirections::UpDownLeft => pictures.t_left.as_ref(),
+            super::ConnectedDirections::UpDownRight => pictures.t_right.as_ref(),
+            super::ConnectedDirections::UpLeftRight => pictures.t_up.as_ref(),
+            super::ConnectedDirections::DownLeftRight => pictures.t_down.as_ref(),
+            super::ConnectedDirections::All => pictures.cross.as_ref(),
         }
-        .render(
-            render_layers.scale(),
-            used_mods,
-            image_cache,
-            &options.into(),
-        )?;
+        .and_then(|s| {
+            s.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })?;
 
         render_layers.add_entity(res, &options.position);
 
@@ -56,33 +62,53 @@ impl super::Renderable for PipeData {
     }
 }
 
+/// [`Types/PipePictures`](https://lua-api.factorio.com/latest/types/PipePictures.html)
+#[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PipePictures {
-    pub straight_vertical_single: Sprite,
-    pub straight_vertical: Sprite,
-    pub straight_vertical_window: Sprite,
-    pub straight_horizontal: Sprite,
-    pub straight_horizontal_window: Sprite,
-    pub corner_up_right: Sprite,
-    pub corner_up_left: Sprite,
-    pub corner_down_right: Sprite,
-    pub corner_down_left: Sprite,
-    pub t_up: Sprite,
-    pub t_down: Sprite,
-    pub t_right: Sprite,
-    pub t_left: Sprite,
-    pub cross: Sprite,
-    pub ending_up: Sprite,
-    pub ending_down: Sprite,
-    pub ending_right: Sprite,
-    pub ending_left: Sprite,
-    pub horizontal_window_background: Sprite,
-    pub vertical_window_background: Sprite,
-    pub fluid_background: Sprite,
-    pub low_temperature_flow: Sprite,
-    pub middle_temperature_flow: Sprite,
-    pub high_temperature_flow: Sprite,
-    pub gas_flow: Animation,
+    #[serde(flatten)]
+    pub normal: Box<PipePicturesGroup>,
+    #[serde(flatten, with = "suffix_frozen")]
+    pub frozen: Box<PipePicturesGroup>,
+    #[serde(flatten, with = "suffix_visualization")]
+    pub visualization: Box<PipePicturesGroup>,
+    #[serde(flatten, with = "suffix_disabled_visualization")]
+    pub disabled_visualization: Box<PipePicturesGroup>,
+
+    pub horizontal_window_background: Option<Sprite>,
+    pub vertical_window_background: Option<Sprite>,
+    pub fluid_background: Option<Sprite>,
+    pub low_temperature_flow: Option<Sprite>,
+    pub middle_temperature_flow: Option<Sprite>,
+    pub high_temperature_flow: Option<Sprite>,
+    pub gas_flow: Option<Animation>,
+}
+
+with_suffix!(suffix_frozen "_frozen");
+with_suffix!(suffix_visualization "_visualization");
+with_suffix!(suffix_disabled_visualization "_disabled_visualization");
+
+#[skip_serializing_none]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct PipePicturesGroup {
+    pub straight_vertical_single: Option<Sprite>,
+    pub straight_vertical: Option<Sprite>,
+    pub straight_vertical_window: Option<Sprite>,
+    pub straight_horizontal: Option<Sprite>,
+    pub straight_horizontal_window: Option<Sprite>,
+    pub corner_up_right: Option<Sprite>,
+    pub corner_up_left: Option<Sprite>,
+    pub corner_down_right: Option<Sprite>,
+    pub corner_down_left: Option<Sprite>,
+    pub t_up: Option<Sprite>,
+    pub t_down: Option<Sprite>,
+    pub t_right: Option<Sprite>,
+    pub t_left: Option<Sprite>,
+    pub cross: Option<Sprite>,
+    pub ending_up: Option<Sprite>,
+    pub ending_down: Option<Sprite>,
+    pub ending_right: Option<Sprite>,
+    pub ending_left: Option<Sprite>,
 }
 
 /// [`Prototypes/InfinityPipePrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityPipePrototype.html)
@@ -133,9 +159,12 @@ pub type PipeToGroundPrototype = EntityWithOwnerPrototype<FluidBoxEntityData<Pip
 /// [`Prototypes/PipeToGroundPrototype`](https://lua-api.factorio.com/latest/prototypes/PipeToGroundPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PipeToGroundData {
-    pub pictures: PipeToGroundPictures,
+    pub pictures: Option<Sprite4Way>,
+    pub frozen_patch: Option<Sprite4Way>,
+    pub visualization: Option<Sprite4Way>,
+    pub disabled_visualization: Option<Sprite4Way>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub draw_fluid_icon_override: bool,
 }
 
@@ -147,30 +176,17 @@ impl super::Renderable for PipeToGroundData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        let res = match options.direction {
-            Direction::North => &self.pictures.up,
-            Direction::East => &self.pictures.right,
-            Direction::South => &self.pictures.down,
-            Direction::West => &self.pictures.left,
-            _ => unimplemented!("PipeToGround only supports cardinal directions"),
-        }
-        .render(
-            render_layers.scale(),
-            used_mods,
-            image_cache,
-            &options.into(),
-        )?;
+        let res = self.pictures.as_ref().and_then(|p| {
+            p.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })?;
 
         render_layers.add_entity(res, &options.position);
 
         Some(())
     }
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct PipeToGroundPictures {
-    pub down: Sprite,
-    pub up: Sprite,
-    pub left: Sprite,
-    pub right: Sprite,
 }

@@ -33,7 +33,7 @@ pub type ItemWithLabelPrototype = crate::BasePrototype<ItemWithLabelPrototypeDat
 pub struct ItemWithLabelPrototypeData {
     pub default_label_color: Option<Color>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub draw_label_for_cursor_render: bool,
 
     #[serde(flatten)]
@@ -77,7 +77,7 @@ pub struct ItemWithInventoryPrototypeData {
     )]
     pub filter_message_key: String,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub extends_inventory_by_default: bool,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]

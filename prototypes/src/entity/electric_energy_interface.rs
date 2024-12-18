@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
+use serde_helper as helper;
+
 use super::EntityWithOwnerPrototype;
 use mod_util::UsedMods;
 use types::*;
@@ -20,7 +22,7 @@ pub struct ElectricEnergyInterfaceData {
     #[serde(default = "GuiMode::none", skip_serializing_if = "GuiMode::is_none")]
     pub gui_mode: GuiMode,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub continuous_animation: bool,
 
     // TODO: skip serializing if default

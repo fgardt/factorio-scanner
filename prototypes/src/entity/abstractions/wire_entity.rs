@@ -57,7 +57,7 @@ impl<T: Renderable> Renderable for WireEntityData<T> {
 
                 // cache connection point
                 if let Some(c) = self.wire_connection_data.get_connection_point(orientation) {
-                    render_layers.store_wire_connection_points(options.entity_id, c);
+                    render_layers.store_wire_connection_points(options.entity_id, &c);
                 }
             }
         }

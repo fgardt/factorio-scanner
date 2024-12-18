@@ -38,7 +38,11 @@ impl<T: Renderable> Renderable for EnergyEntityData<T> {
         let mut child = self.child.fluid_box_connections(options);
 
         if let AnyEnergySource::Fluid { data } = &self.energy_source {
-            child.append(&mut data.fluid_box.connection_points(options.direction));
+            child.append(
+                &mut data
+                    .fluid_box
+                    .connection_points(options.direction, options.mirrored),
+            );
         };
 
         child

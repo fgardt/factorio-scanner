@@ -35,6 +35,7 @@ impl<T: Renderable> Renderable for HeatBufferEntityData<T> {
         self.child.fluid_box_connections(options)
     }
 
+    // TODO: mirroring
     fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
         let mut res = self.heat_buffer.connection_points();
         res.append(&mut self.child.heat_buffer_connections(options));

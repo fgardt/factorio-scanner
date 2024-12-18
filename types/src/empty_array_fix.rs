@@ -12,7 +12,7 @@ pub struct FactorioArray<T>(Vec<T>);
 
 impl<T> FactorioArray<T> {
     #[must_use]
-    pub fn new(data: Vec<T>) -> Self {
+    pub const fn new(data: Vec<T>) -> Self {
         Self(data)
     }
 }
