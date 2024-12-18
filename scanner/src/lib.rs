@@ -26,11 +26,11 @@ use mod_util::{
 use prototypes::{
     entity::{InserterPrototype, Type as EntityType, WallPrototype},
     tile::TilePrototype,
-    ConnectedEntities, DataRaw, DataUtil, DataUtilAccess, EntityWireConnections,
-    InternalRenderLayer, RenderLayerBuffer, TargetSize,
+    ConnectedEntities, DataRaw, DataUtil, DataUtilAccess, EntityWireConnections, RenderLayerBuffer,
+    TargetSize,
 };
 use types::{
-    ConnectedDirections, Direction, ImageCache, MapPosition, RenderableGraphics,
+    ConnectedDirections, Direction, ImageCache, MapPosition, RenderLayer, RenderableGraphics,
     TintableRenderOpts, Vector,
 };
 
@@ -740,7 +740,7 @@ pub fn render_bp(
                         render_layers.add(
                             icon,
                             &render_opts.position,
-                            InternalRenderLayer::IconOverlay,
+                            RenderLayer::EntityInfoIconAbove,
                         );
                     } else {
                         warn!(
@@ -769,7 +769,7 @@ pub fn render_bp(
                     render_layers.add(
                         (arrow, offset),
                         &render_opts.position,
-                        InternalRenderLayer::DirectionOverlay,
+                        RenderLayer::EntityInfoIcon,
                     );
                 }
 
@@ -790,7 +790,7 @@ pub fn render_bp(
                         render_layers.add(
                             (arrow, offset),
                             &render_opts.position,
-                            InternalRenderLayer::DirectionOverlay,
+                            RenderLayer::EntityInfoIcon,
                         );
                     } else {
                         let Some(filter) = data.get_item_icon(
@@ -811,7 +811,7 @@ pub fn render_bp(
                         render_layers.add(
                             (filter.0, offset),
                             &render_opts.position,
-                            InternalRenderLayer::IconOverlay,
+                            RenderLayer::EntityInfoIconAbove,
                         );
                     }
                 }
@@ -847,7 +847,7 @@ pub fn render_bp(
                         render_layers.add(
                             (filter.0, filter.1 + offset),
                             &render_opts.position,
-                            InternalRenderLayer::IconOverlay,
+                            RenderLayer::EntityInfoIconAbove,
                         );
 
                         offset += Vector::Tuple(0.5, 0.0);
@@ -954,7 +954,7 @@ pub fn render_bp(
                     layers.add(
                         (img, pos.shorten_by(0.45)),
                         &opts.position,
-                        InternalRenderLayer::DirectionOverlay,
+                        RenderLayer::EntityInfoIcon,
                     );
                 }
 
@@ -1090,7 +1090,7 @@ pub fn render_thumbnail(
             ground_offset,
         ),
         &MapPosition::default(),
-        InternalRenderLayer::Entity,
+        RenderLayer::Object,
     );
 
     let icons = bp.icons();
@@ -1148,7 +1148,7 @@ pub fn render_thumbnail(
             layers.add(
                 (res, offset),
                 &MapPosition::default(),
-                InternalRenderLayer::AboveEntity,
+                RenderLayer::HigherObjectAbove,
             );
 
             offset += Vector::Tuple(0.5, 0.0);

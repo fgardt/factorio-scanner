@@ -7,12 +7,12 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 use types::{
     AirbornePollutantID, Animation4Way, CollisionMaskConnector, Color, FactorioArray, FluidID,
-    Icon, ImageCache, LocationalRenderOpts, MapPosition, PlaceableBy, RenderableGraphics,
-    SpriteUsageSurfaceHint, TileEffectDefinitionID, TileID, TileRenderLayer, TileTransitions,
-    TileTransitionsVariants, Weight,
+    Icon, ImageCache, LocationalRenderOpts, MapPosition, PlaceableBy, RenderLayer,
+    RenderableGraphics, SpriteUsageSurfaceHint, TileEffectDefinitionID, TileID, TileRenderLayer,
+    TileTransitions, TileTransitionsVariants, Weight,
 };
 
-use crate::{helper_macro::namespace_struct, InternalRenderLayer};
+use crate::helper_macro::namespace_struct;
 
 /// [`Prototypes/TilePrototype`](https://lua-api.factorio.com/latest/prototypes/TilePrototype.html)
 pub type TilePrototype = crate::BasePrototype<TilePrototypeData>;
@@ -39,7 +39,7 @@ impl TilePrototype {
                     &opts,
                 )
             })
-            .map(|res| render_layers.add(res, position, InternalRenderLayer::Ground))
+            .map(|res| render_layers.add(res, position, RenderLayer::Decals)) // TODO: RenderLayer has no actual layer for terrain (?)
     }
 }
 

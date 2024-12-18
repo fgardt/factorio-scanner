@@ -297,7 +297,7 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
                 render_layers.add(
                     (img, shift + offset.flip() + rail_offset),
                     &opts.position,
-                    crate::InternalRenderLayer::EntityHigh,
+                    RenderLayer::Object,
                 );
             }
 
@@ -317,7 +317,7 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
                 render_layers.add(
                     (img, shift + offset + rail_offset),
                     &opts.position,
-                    crate::InternalRenderLayer::EntityHigh,
+                    RenderLayer::ObjectUnder,
                 );
             }
         }
@@ -328,7 +328,7 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
         }) {
             empty = false;
 
-            render_layers.add(res, &opts.position, crate::InternalRenderLayer::EntityHigh);
+            render_layers.add(res, &opts.position, RenderLayer::ObjectUnder);
         }
 
         let child = self
@@ -475,7 +475,7 @@ impl super::Renderable for ArtilleryWagonData {
             render_layers.add(
                 (img, shift + offset),
                 &options.position,
-                crate::InternalRenderLayer::EntityHigher,
+                RenderLayer::HigherObjectAbove,
             );
         }
 
@@ -492,7 +492,7 @@ impl super::Renderable for ArtilleryWagonData {
             render_layers.add(
                 (img, shift + offset),
                 &options.position,
-                crate::InternalRenderLayer::EntityHigher,
+                RenderLayer::HigherObjectAbove,
             );
         }
 
