@@ -37,7 +37,76 @@ pub struct RailData {
     // pub walking_sound: Option<Sound>,
 }
 
+impl super::Renderable for RailData {
+    fn render(
+        &self,
+        opts: &super::RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+        image_cache: &mut ImageCache,
+    ) -> super::RenderOutput {
+        self.pictures
+            .render(opts, used_mods, render_layers, image_cache)
+    }
+}
+
+macro_rules! deref_newtype {
+    ($inner:ident, $name:ident) => {
+        #[derive(Debug, Serialize, Deserialize)]
+        pub struct $name($inner);
+
+        impl Deref for $name {
+            type Target = $inner;
+
+            fn deref(&self) -> &Self::Target {
+                &self.0
+            }
+        }
+    };
+    ($inner:ident, $($name:ident),+) => {
+        $(deref_newtype!($inner, $name);)+
+    }
+}
+
+deref_newtype! {
+    RailPrototype,
+
+    CurvedRailAPrototype,
+    CurvedRailBPrototype,
+    HalfDiagonalRailPrototype,
+    StraightRailPrototype,
+
+    ElevatedCurvedRailAPrototype,
+    ElevatedCurvedRailBPrototype,
+    ElevatedHalfDiagonalRailPrototype,
+    ElevatedStraightRailPrototype,
+
+    LegacyCurvedRailPrototype,
+    LegacyStraightRailPrototype
+}
+
+/// [`Prototypes/RailRampPrototype`](https://lua-api.factorio.com/latest/prototypes/RailRampPrototype.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RailRampPrototype {
+    #[serde(default = "helper::f32_15", skip_serializing_if = "helper::is_15_f32")]
+    pub support_range: f32,
+    pub collision_mask_allow_on_deep_oil_ocean: Option<CollisionMaskConnector>,
+
+    #[serde(flatten)]
+    parent: RailPrototype,
+}
+
+impl Deref for RailRampPrototype {
+    type Target = RailPrototype;
+
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
+}
+
 /// [`Types/RailPictureSet`](https://lua-api.factorio.com/latest/types/RailPictureSet.html)
+#[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RailPictureSet {
     pub north: Box<RailPieceLayers>,
@@ -49,7 +118,9 @@ pub struct RailPictureSet {
     pub west: Box<RailPieceLayers>,
     pub northwest: Box<RailPieceLayers>,
 
-    pub rail_endings: Box<Sprite16Way>,
+    pub front_rail_endings: Option<Box<Sprite16Way>>,
+    pub back_rail_endings: Option<Box<Sprite16Way>>,
+    pub rail_endings: Option<Box<Sprite16Way>>,
 
     pub segment_visualisation_endings: Option<Box<RotatedAnimation>>, // 16 directions, 6 frames each
 
@@ -64,12 +135,12 @@ pub struct RailPictureSet {
 impl super::Renderable for RailPictureSet {
     fn render(
         &self,
-        options: &super::RenderOpts,
+        opts: &super::RenderOpts,
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        let piece = match options.direction {
+        let piece = match opts.direction {
             Direction::North => &self.north,
             Direction::NorthEast => &self.northeast,
             Direction::East => &self.east,
@@ -82,9 +153,64 @@ impl super::Renderable for RailPictureSet {
                 warn!("Invalid direction for rail");
                 return None;
             }
-        };
+        }
+        .as_ref();
 
-        Some(())
+        let mut empty = true;
+        let rl = &self.render_layers;
+        let scale = render_layers.scale();
+        let render_opts = opts.into();
+
+        if let Some(metals) = piece
+            .metals
+            .as_ref()
+            .and_then(|m| m.render(scale, used_mods, image_cache, &render_opts))
+        {
+            empty = false;
+            render_layers.add(metals, &opts.position, rl.metal);
+        }
+
+        if let Some(backplates) = piece
+            .backplates
+            .as_ref()
+            .and_then(|bp| bp.render(scale, used_mods, image_cache, &render_opts))
+        {
+            empty = false;
+            render_layers.add(backplates, &opts.position, rl.screw);
+        }
+
+        if let Some(ties) = piece
+            .ties
+            .as_ref()
+            .and_then(|t| t.render(scale, used_mods, image_cache, &render_opts))
+        {
+            empty = false;
+            render_layers.add(ties, &opts.position, rl.tie);
+        }
+
+        if let Some(stone_path) = piece
+            .stone_path
+            .as_ref()
+            .and_then(|sp| sp.render(scale, used_mods, image_cache, &render_opts))
+        {
+            empty = false;
+            render_layers.add(stone_path, &opts.position, rl.stone_path);
+        }
+
+        if let Some(stone_path_lower) = piece
+            .stone_path_background
+            .as_ref()
+            .and_then(|spb| spb.render(scale, used_mods, image_cache, &render_opts))
+        {
+            empty = false;
+            render_layers.add(stone_path_lower, &opts.position, rl.stone_path_lower);
+        }
+
+        if empty {
+            None
+        } else {
+            Some(())
+        }
     }
 }
 
@@ -173,11 +299,7 @@ impl super::Renderable for RailPieceLayers {
         }) {
             empty = false;
 
-            render_layers.add(
-                res,
-                &options.position,
-                crate::InternalRenderLayer::RailStonePathBackground,
-            );
+            render_layers.add(res, &options.position, RenderLayer::RailStonePathLower);
         };
 
         if let Some(res) = self.stone_path.as_ref().and_then(|sp| {
@@ -190,11 +312,7 @@ impl super::Renderable for RailPieceLayers {
         }) {
             empty = false;
 
-            render_layers.add(
-                res,
-                &options.position,
-                crate::InternalRenderLayer::RailStonePath,
-            );
+            render_layers.add(res, &options.position, RenderLayer::RailStonePath);
         }
 
         if let Some(res) = self.ties.as_ref().and_then(|t| {
@@ -207,7 +325,7 @@ impl super::Renderable for RailPieceLayers {
         }) {
             empty = false;
 
-            render_layers.add(res, &options.position, crate::InternalRenderLayer::RailTies);
+            render_layers.add(res, &options.position, RenderLayer::RailTie);
         }
 
         if let Some(res) = self.backplates.as_ref().and_then(|b| {
@@ -220,11 +338,7 @@ impl super::Renderable for RailPieceLayers {
         }) {
             empty = false;
 
-            render_layers.add(
-                res,
-                &options.position,
-                crate::InternalRenderLayer::RailBackplate,
-            );
+            render_layers.add(res, &options.position, RenderLayer::RailScrew);
         }
 
         if let Some(res) = self.metals.as_ref().and_then(|m| {
@@ -237,11 +351,7 @@ impl super::Renderable for RailPieceLayers {
         }) {
             empty = false;
 
-            render_layers.add(
-                res,
-                &options.position,
-                crate::InternalRenderLayer::RailMetal,
-            );
+            render_layers.add(res, &options.position, RenderLayer::RailMetal);
         }
 
         if empty {
