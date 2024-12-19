@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
-use super::{EntityWithOwnerPrototype, WireEntityData};
+use super::EntityWithOwnerPrototype;
 use mod_util::UsedMods;
 use types::*;
 
@@ -149,7 +149,7 @@ pub struct RailSignalLightDefinition {
 /// [`Prototypes/RailSignalBasePrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalBasePrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RailSignalBaseData {
+pub struct RailSignalBasePrototype {
     pub ground_picture_set: RailSignalPictureSet,
     pub elevated_picture_set: RailSignalPictureSet,
 
@@ -170,7 +170,7 @@ pub struct RailSignalBaseData {
     pub elevated_selection_priority: u8,
 }
 
-impl RailSignalBaseData {
+impl RailSignalBasePrototype {
     const fn picture_set(&self, opts: &super::RenderOpts) -> &RailSignalPictureSet {
         if opts.elevated {
             &self.elevated_picture_set
@@ -202,7 +202,7 @@ impl RailSignalBaseData {
     }
 }
 
-impl super::Renderable for RailSignalBaseData {
+impl super::Renderable for RailSignalBasePrototype {
     fn render(
         &self,
         opts: &super::RenderOpts,
@@ -234,22 +234,18 @@ impl super::Renderable for RailSignalBaseData {
 }
 
 /// [`Prototypes/RailChainSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailChainSignalPrototype.html)
-pub type RailChainSignalPrototype = EntityWithOwnerPrototype<WireEntityData<RailChainSignalData>>;
-
-/// [`Prototypes/RailChainSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailChainSignalPrototype.html)
-#[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RailChainSignalData(RailSignalBaseData);
+pub struct RailChainSignalPrototype(EntityWithOwnerPrototype<RailSignalBasePrototype>);
 
-impl Deref for RailChainSignalData {
-    type Target = RailSignalBaseData;
+impl Deref for RailChainSignalPrototype {
+    type Target = EntityWithOwnerPrototype<RailSignalBasePrototype>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl super::Renderable for RailChainSignalData {
+impl super::Renderable for RailChainSignalPrototype {
     fn render(
         &self,
         opts: &super::RenderOpts,
@@ -289,21 +285,18 @@ impl super::Renderable for RailChainSignalData {
 }
 
 /// [`Prototypes/RailSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalPrototype.html)
-pub type RailSignalPrototype = EntityWithOwnerPrototype<WireEntityData<RailSignalData>>;
-
-/// [`Prototypes/RailSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalPrototype.html)
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RailSignalData(RailSignalBaseData);
+pub struct RailSignalPrototype(EntityWithOwnerPrototype<RailSignalBasePrototype>);
 
-impl Deref for RailSignalData {
-    type Target = RailSignalBaseData;
+impl Deref for RailSignalPrototype {
+    type Target = EntityWithOwnerPrototype<RailSignalBasePrototype>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl super::Renderable for RailSignalData {
+impl super::Renderable for RailSignalPrototype {
     fn render(
         &self,
         opts: &super::RenderOpts,

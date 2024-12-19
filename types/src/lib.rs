@@ -1134,6 +1134,8 @@ pub enum EntityPrototypeFlag {
     PlayerCreation,
     #[serde(rename = "building-direction-8-way")]
     BuildingDirection8Way,
+    #[serde(rename = "building-direction-16-way")]
+    BuildingDirection16Way,
     FilterDirections,
     FastReplaceableNoBuildWhileMoving,
     BreathsAir,
