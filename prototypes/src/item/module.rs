@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
-use types::{Effect, FactorioArray, ModuleCategoryID, RecipeID};
+use types::{Color, Effect, ModuleCategoryID};
 
 /// [`Prototypes/ModulePrototype`](https://lua-api.factorio.com/latest/prototypes/ModulePrototype.html)
 pub type ModulePrototype = crate::BasePrototype<ModulePrototypeData>;
@@ -18,11 +18,9 @@ pub struct ModulePrototypeData {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub requires_beacon_alt_mode: bool,
 
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub limitation: FactorioArray<RecipeID>,
+    pub art_style: Option<String>,
 
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub limitation_blacklist: FactorioArray<RecipeID>,
+    pub beacon_tint: Option<BeaconVisualizationTints>,
 
     #[serde(flatten)]
     parent: super::ItemPrototypeData,
@@ -34,4 +32,14 @@ impl std::ops::Deref for ModulePrototypeData {
     fn deref(&self) -> &Self::Target {
         &self.parent
     }
+}
+
+/// [`Prototypes/ModulePrototype/BeaconVisualizationTints`](https://lua-api.factorio.com/latest/prototypes/ModulePrototype.html#beacon_tint)
+#[skip_serializing_none]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct BeaconVisualizationTints {
+    pub primary: Option<Color>,
+    pub secondary: Option<Color>,
+    pub tertiary: Option<Color>,
+    pub quaternary: Option<Color>,
 }

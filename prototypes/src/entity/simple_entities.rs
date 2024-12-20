@@ -14,7 +14,7 @@ pub type SimpleEntityPrototype = EntityWithHealthPrototype<SimpleEntityData>;
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SimpleEntityData {
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub count_as_rock_for_filtered_deconstruction: bool,
 
     pub render_layer: Option<RenderLayer>,
@@ -26,7 +26,7 @@ pub struct SimpleEntityData {
     )]
     pub secondary_draw_order: i8,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub random_animation_offset: bool,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -34,6 +34,10 @@ pub struct SimpleEntityData {
 
     #[serde(flatten)]
     pub graphics: Option<SimpleEntityGraphics>,
+
+    pub lower_render_layer: Option<RenderLayer>,
+    pub lower_pictures: Option<SpriteVariations>,
+    // pub stateless_visualisation_variations: FactorioArray<StatelessVisualisations>,
 }
 
 impl super::Renderable for SimpleEntityData {
@@ -73,7 +77,7 @@ pub struct SimpleEntityWithOwnerData {
     )]
     pub secondary_draw_order: i8,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub random_animation_offset: bool,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -82,11 +86,15 @@ pub struct SimpleEntityWithOwnerData {
     #[serde(flatten)]
     pub graphics: Option<SimpleEntityGraphics>,
 
+    pub lower_render_layer: Option<RenderLayer>,
+    pub lower_pictures: Option<SpriteVariations>,
+
     #[serde(
         default = "ForceCondition::all",
         skip_serializing_if = "ForceCondition::is_all"
     )]
     pub force_visibility: ForceCondition,
+    // pub stateless_visualisation_variations: FactorioArray<StatelessVisualisations>,
 }
 
 impl super::Renderable for SimpleEntityWithOwnerData {

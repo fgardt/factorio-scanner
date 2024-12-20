@@ -92,10 +92,10 @@ pub struct StringSetting {
 
     pub default_value: String,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub allow_blank: bool,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub auto_trim: bool,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

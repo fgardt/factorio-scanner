@@ -32,7 +32,7 @@ pub struct DeconPlannerData {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub entity_filters: IndexedVec<NameString<EntityID>>,
 
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub trees_and_rocks_only: bool,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]

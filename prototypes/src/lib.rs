@@ -27,10 +27,13 @@ use types::*;
 pub mod entity;
 pub mod fluid;
 pub mod item;
+pub mod quality;
 pub mod recipe;
 pub mod signal;
 pub mod tile;
 pub mod utility_sprites;
+
+// `Prototype` not implemented since it only holds the `factoriopedia_alternative` field
 
 /// [`Prototypes/PrototypeBase`](https://lua-api.factorio.com/latest/PrototypeBase.html)
 #[skip_serializing_none]
@@ -42,12 +45,21 @@ pub struct BasePrototype<T> {
 
     pub name: String,
 
-    #[serde(default, skip_serializing_if = "String::is_empty")]
+    #[serde(default, skip_serializing_if = "serde_helper::is_default")]
     pub order: Order,
 
     pub localised_name: Option<LocalisedString>,
     pub localised_description: Option<LocalisedString>,
+    pub factoriopedia_description: Option<LocalisedString>,
 
+    #[serde(default, skip_serializing_if = "serde_helper::is_default")]
+    pub hidden: bool,
+    pub hidden_in_factoriopedia: Option<bool>,
+
+    #[serde(default, skip_serializing_if = "serde_helper::is_default")]
+    pub parameter: bool,
+
+    // pub factoriopedia_simulation: Option<SimulationDefinition>,
     #[serde(flatten)]
     child: T,
 }
@@ -70,7 +82,6 @@ pub trait IdNamespace {
     fn contains(&self, id: &Self::Id) -> bool;
 }
 
-// TODO: write macro to generate impls for these
 pub trait IdNamespaceAccess<T>: IdNamespace {
     #[must_use]
     fn get_proto(&self, id: &Self::Id) -> Option<&T>;
@@ -112,6 +123,7 @@ mod helper_macro {
                 #[serde(rename_all = "kebab-case")]
                 pub struct $name {
                     $(
+                        #[serde(default)]
                         pub [< $member:snake >]: std::collections::HashMap<$id, [< $member:camel Prototype >]>,
                     )+
                 }
@@ -183,6 +195,9 @@ pub struct DataRaw {
     #[serde(flatten)]
     pub tile: tile::AllTypes,
 
+    #[serde(flatten)]
+    pub quality: quality::AllTypes,
+
     pub utility_sprites: HashMap<String, utility_sprites::UtilitySprites>,
 }
 
@@ -209,6 +224,8 @@ impl DataUtil {
     #[allow(clippy::too_many_lines)]
     #[must_use]
     pub fn new(raw: DataRaw) -> Self {
+        // TODO: undo this
+        /*
         let mut entities: HashMap<EntityID, entity::Type> = HashMap::new();
 
         {
@@ -490,6 +507,12 @@ impl DataUtil {
         }
 
         Self { raw, entities }
+        */
+
+        Self {
+            raw,
+            entities: HashMap::new(),
+        }
     }
 
     #[must_use]
@@ -510,6 +533,10 @@ impl DataUtil {
     #[allow(clippy::too_many_lines)]
     #[must_use]
     pub fn get_entity(&self, name: &str) -> Option<&dyn RenderableEntity> {
+        None
+
+        // TODO: undo this
+        /*
         let entity_type = self.get_entity_type(name)?;
         let name = &EntityID::new(name);
 
@@ -905,6 +932,7 @@ impl DataUtil {
                 .get(name)
                 .map(|x| x as &dyn RenderableEntity),
         }
+        */
     }
 
     #[must_use]
@@ -997,7 +1025,10 @@ impl DataUtilAccess<EntityID, entity::AllTypes> for DataUtil {
     where
         entity::AllTypes: IdNamespaceAccess<T>,
     {
-        self.raw.entity.get_proto(id)
+        None
+
+        // TODO: undo this
+        // self.raw.entity.get_proto(id)
     }
 }
 
@@ -1046,56 +1077,12 @@ impl DataUtilAccess<TileID, tile::AllTypes> for DataUtil {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum InternalRenderLayer {
-    Background,
-
-    Ground,
-    GroundPatch,
-
-    RailStonePathBackground,
-    RailStonePath,
-    RailTies,
-    RailBackplate,
-    RailMetal,
-
-    Shadow,
-    Entity,
-    EntityHigh,
-    EntityHigher,
-    InserterHand,
-    AboveEntity,
-
-    Wire,
-
-    DirectionOverlay,
-    IconOutline,
-    IconOverlay,
-}
-
-impl InternalRenderLayer {
-    #[must_use]
-    pub const fn all() -> [Self; 18] {
-        [
-            Self::Background,
-            Self::Ground,
-            Self::GroundPatch,
-            Self::RailStonePathBackground,
-            Self::RailStonePath,
-            Self::RailTies,
-            Self::RailBackplate,
-            Self::RailMetal,
-            Self::Shadow,
-            Self::Entity,
-            Self::EntityHigh,
-            Self::EntityHigher,
-            Self::InserterHand,
-            Self::AboveEntity,
-            Self::Wire,
-            Self::DirectionOverlay,
-            Self::IconOutline,
-            Self::IconOverlay,
-        ]
+impl DataUtilAccess<QualityID, quality::AllTypes> for DataUtil {
+    fn get_proto<T>(&self, id: &QualityID) -> Option<&T>
+    where
+        quality::AllTypes: IdNamespaceAccess<T>,
+    {
+        self.raw.quality.get_proto(id)
     }
 }
 
@@ -1163,7 +1150,7 @@ impl std::fmt::Display for TargetSize {
 #[derive(Debug, Clone)]
 pub struct RenderLayerBuffer {
     target_size: TargetSize,
-    layers: HashMap<InternalRenderLayer, image::DynamicImage>,
+    layers: HashMap<RenderLayer, image::DynamicImage>,
 
     wire_connection_points: HashMap<u64, GenericWireConnectionPoint>,
 }
@@ -1181,7 +1168,7 @@ impl RenderLayerBuffer {
         }
     }
 
-    fn get_layer(&mut self, layer: InternalRenderLayer) -> &mut image::DynamicImage {
+    fn get_layer(&mut self, layer: RenderLayer) -> &mut image::DynamicImage {
         self.layers.entry(layer).or_insert_with(|| {
             image::DynamicImage::new_rgba8(self.target_size.width, self.target_size.height)
         })
@@ -1191,7 +1178,7 @@ impl RenderLayerBuffer {
         &mut self,
         (img, shift): (image::DynamicImage, Vector),
         position: &MapPosition,
-        layer: InternalRenderLayer,
+        layer: RenderLayer,
     ) {
         let (x, y) = self
             .target_size
@@ -1202,11 +1189,11 @@ impl RenderLayerBuffer {
     }
 
     pub fn add_entity(&mut self, input: (image::DynamicImage, Vector), position: &MapPosition) {
-        self.add(input, position, InternalRenderLayer::Entity);
+        self.add(input, position, RenderLayer::Object);
     }
 
     pub fn add_shadow(&mut self, input: (image::DynamicImage, Vector), position: &MapPosition) {
-        self.add(input, position, InternalRenderLayer::Shadow);
+        self.add(input, position, RenderLayer::Floor);
     }
 
     #[must_use]
@@ -1217,10 +1204,10 @@ impl RenderLayerBuffer {
     fn store_wire_connection_points(
         &mut self,
         bp_entity_id: u64,
-        wire_connection_points: GenericWireConnectionPoint,
+        wire_connection_points: &GenericWireConnectionPoint,
     ) {
         self.wire_connection_points
-            .insert(bp_entity_id, wire_connection_points);
+            .insert(bp_entity_id, *wire_connection_points);
     }
 
     #[instrument(skip_all)]
@@ -1344,7 +1331,7 @@ impl RenderLayerBuffer {
         tracing::info!("drawing wires");
 
         let target_size = self.target_size.clone();
-        let layer = self.get_layer(InternalRenderLayer::Wire);
+        let layer = self.get_layer(RenderLayer::Wires);
 
         for i in 0..3u8 {
             let d = &dd[usize::from(i)];
@@ -1363,7 +1350,7 @@ impl RenderLayerBuffer {
                 self.scale(),
                 used_mods,
                 image_cache,
-                &SimpleGraphicsRenderOpts::default(),
+                &TintableRenderOpts::default(),
             ) else {
                 continue;
             };
@@ -1428,7 +1415,7 @@ impl RenderLayerBuffer {
                 self.add(
                     (rotated.into(), Vector::default()),
                     &start.center_to(&end),
-                    InternalRenderLayer::Wire,
+                    RenderLayer::Wires,
                 );
             }
         }
@@ -1457,15 +1444,14 @@ impl RenderLayerBuffer {
                 }
             });
 
-        self.layers
-            .insert(InternalRenderLayer::Background, background.into());
+        self.layers.insert(RenderLayer::Zero, background.into());
     }
 
     #[must_use]
     #[instrument(skip_all)]
     pub fn combine(&mut self) -> image::DynamicImage {
         'sdf_outline: {
-            if let Some(icons) = self.layers.get(&InternalRenderLayer::IconOverlay) {
+            if let Some(icons) = self.layers.get(&RenderLayer::EntityInfoIconAbove) {
                 let (width, height) = icons.dimensions();
                 let mask = image::ImageBuffer::from_fn(width, height, |x, y| {
                     let alpha = icons.get_pixel(x, y).0[3];
@@ -1500,7 +1486,7 @@ impl RenderLayerBuffer {
                     break 'sdf_outline;
                 };
 
-                let outline = self.get_layer(InternalRenderLayer::IconOutline);
+                let outline = self.get_layer(RenderLayer::EntityInfoIcon);
                 outline.clone_from(&outline_img.into());
             }
         }
@@ -1508,8 +1494,11 @@ impl RenderLayerBuffer {
         let mut combined =
             image::DynamicImage::new_rgba8(self.target_size.width, self.target_size.height);
 
-        for layer in InternalRenderLayer::all() {
-            if let Some(img) = self.layers.get(&layer) {
+        let mut layer_keys = self.layers.keys().collect::<Vec<_>>();
+        layer_keys.sort_unstable();
+
+        for layer in layer_keys {
+            if let Some(img) = self.layers.get(layer) {
                 imageops::overlay(&mut combined, img, 0, 0);
             }
         }

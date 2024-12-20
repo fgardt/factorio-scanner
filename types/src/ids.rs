@@ -2,22 +2,23 @@ use paste::paste;
 use serde::{Deserialize, Serialize};
 
 macro_rules! ids {
-    ( $( $name:ident ),* ) => {
+    ( $type:ident, $( $name:ident ),* ) => {
         $(
             paste!{
                 #[doc="[`Types/" $name "`](https://lua-api.factorio.com/latest/types/" $name ".html)"]
                 #[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-                pub struct $name(String);
+                pub struct $name($type);
             }
 
             impl $name {
-                pub fn new(id: impl Into<String>) -> Self {
+                #[allow(dead_code)]
+                pub fn new(id: impl Into<$type>) -> Self {
                     Self(id.into())
                 }
             }
 
             impl std::ops::Deref for $name {
-                type Target = String;
+                type Target = $type;
 
                 fn deref(&self) -> &Self::Target {
                     &self.0
@@ -34,20 +35,44 @@ macro_rules! ids {
 }
 
 ids!(
+    String,
+    ActiveTriggerID,
+    AirbornePollutantID,
     AmmoCategoryID,
+    AsteroidChunkID,
+    AutoplaceControlID,
+    BurnerUsageID,
+    CollisionLayerID,
     DamageTypeID,
+    DecorativeID,
     EntityID,
+    EquipmentCategoryID,
     EquipmentGridID,
     EquipmentID,
+    // FluidBoxLinkedConnectionID, // not done here since its a u32
     FluidID,
     FuelCategoryID,
     ItemGroupID,
     ItemID,
     ItemSubGroupID,
+    ModuleCategoryID,
     MouseCursorID,
+    ParticleID,
+    ProcessionID,
+    ProcessionLayerInheritanceGroupID,
+    QualityID,
     RecipeCategoryID,
     RecipeID,
     ResourceCategoryID,
+    SpaceConnectionID,
+    SpaceLocationID,
+    SurfaceID,
+    SurfacePropertyID,
+    TechnologyID,
+    TileEffectDefinitionID,
     TileID,
+    TrivialSmokeID,
     VirtualSignalID
 );
+
+ids!(u32, FluidBoxLinkedConnectionID);

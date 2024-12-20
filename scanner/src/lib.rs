@@ -26,12 +26,12 @@ use mod_util::{
 use prototypes::{
     entity::{InserterPrototype, Type as EntityType, WallPrototype},
     tile::TilePrototype,
-    ConnectedEntities, DataRaw, DataUtil, DataUtilAccess, EntityWireConnections,
-    InternalRenderLayer, RenderLayerBuffer, TargetSize,
+    ConnectedEntities, DataRaw, DataUtil, DataUtilAccess, EntityWireConnections, RenderLayerBuffer,
+    TargetSize,
 };
 use types::{
-    ConnectedDirections, Direction, ImageCache, MapPosition, RenderableGraphics,
-    SimpleGraphicsRenderOpts, Vector,
+    ConnectedDirections, Direction, ImageCache, MapPosition, RenderLayer, RenderableGraphics,
+    TintableRenderOpts, Vector,
 };
 
 pub mod bp_helper;
@@ -291,6 +291,8 @@ pub fn bp_entity2render_opts(
         position: (&value.position).into(),
         direction: value.direction,
         orientation: value.orientation,
+        mirrored: value.mirror.unwrap_or_default(),
+        elevated: value.rail_layer == Some("elevated".to_owned()),
         variation: value.variation,
         pickup_position: value
             .pickup_position
@@ -336,7 +338,7 @@ pub async fn load_data(
 ) -> Result<(DataUtil, UsedMods), ScannerError> {
     let bp = bp
         .as_blueprint()
-        .ok_or(report!(ScannerError::NoBlueprint))?;
+        .ok_or_else(|| report!(ScannerError::NoBlueprint))?;
 
     info!("loaded BP");
 
@@ -399,7 +401,7 @@ pub async fn load_data(
             &mod_list,
             (
                 bp_helper::get_used_startup_settings(bp).unwrap_or(&BTreeMap::new()),
-                bp.version,
+                *bp.version,
             ),
         )?
     };
@@ -418,7 +420,7 @@ pub fn render(
 ) -> Result<(Vec<u8>, HashSet<String>, Option<Vec<u8>>), ScannerError> {
     let bp = raw_bp
         .as_blueprint()
-        .ok_or(report!(ScannerError::NoBlueprint))?;
+        .ok_or_else(|| report!(ScannerError::NoBlueprint))?;
 
     let size =
         calculate_target_size(bp, data, target_res, min_scale).ok_or(ScannerError::RenderError)?;
@@ -488,7 +490,7 @@ pub fn render_bp(
         render_layers.scale() * 1.25,
         used_mods,
         image_cache,
-        &SimpleGraphicsRenderOpts::default(),
+        &TintableRenderOpts::default(),
     ) else {
         warn!("failed to load indicator arrow sprite, required for alt mode");
         return None;
@@ -498,7 +500,7 @@ pub fn render_bp(
         render_layers.scale() * 1.25,
         used_mods,
         image_cache,
-        &SimpleGraphicsRenderOpts::default(),
+        &TintableRenderOpts::default(),
     ) else {
         warn!("failed to load indicator line sprite, required for alt mode");
         return None;
@@ -738,7 +740,7 @@ pub fn render_bp(
                         render_layers.add(
                             icon,
                             &render_opts.position,
-                            InternalRenderLayer::IconOverlay,
+                            RenderLayer::EntityInfoIconAbove,
                         );
                     } else {
                         warn!(
@@ -767,7 +769,7 @@ pub fn render_bp(
                     render_layers.add(
                         (arrow, offset),
                         &render_opts.position,
-                        InternalRenderLayer::DirectionOverlay,
+                        RenderLayer::EntityInfoIcon,
                     );
                 }
 
@@ -788,7 +790,7 @@ pub fn render_bp(
                         render_layers.add(
                             (arrow, offset),
                             &render_opts.position,
-                            InternalRenderLayer::DirectionOverlay,
+                            RenderLayer::EntityInfoIcon,
                         );
                     } else {
                         let Some(filter) = data.get_item_icon(
@@ -809,7 +811,7 @@ pub fn render_bp(
                         render_layers.add(
                             (filter.0, offset),
                             &render_opts.position,
-                            InternalRenderLayer::IconOverlay,
+                            RenderLayer::EntityInfoIconAbove,
                         );
                     }
                 }
@@ -845,7 +847,7 @@ pub fn render_bp(
                         render_layers.add(
                             (filter.0, filter.1 + offset),
                             &render_opts.position,
-                            InternalRenderLayer::IconOverlay,
+                            RenderLayer::EntityInfoIconAbove,
                         );
 
                         offset += Vector::Tuple(0.5, 0.0);
@@ -853,8 +855,9 @@ pub fn render_bp(
                 }
             }
 
+            // TODO: update item requests rendering
             // modules / item requests
-            {
+            /*{
                 if !e.items.is_empty() {
                     let mut items = e.items.iter().collect::<Vec<_>>();
                     items.sort_unstable_by_key(|a| a.0);
@@ -914,7 +917,7 @@ pub fn render_bp(
                         offset = Vector::Tuple(0.0, offset.y() + 0.5);
                     }
                 }
-            }
+            }*/
 
             // inserter indicators
             'inserter_indicators: {
@@ -951,7 +954,7 @@ pub fn render_bp(
                     layers.add(
                         (img, pos.shorten_by(0.45)),
                         &opts.position,
-                        InternalRenderLayer::DirectionOverlay,
+                        RenderLayer::EntityInfoIcon,
                     );
                 }
 
@@ -1087,7 +1090,7 @@ pub fn render_thumbnail(
             ground_offset,
         ),
         &MapPosition::default(),
-        InternalRenderLayer::Entity,
+        RenderLayer::Object,
     );
 
     let icons = bp.icons();
@@ -1115,25 +1118,27 @@ pub fn render_thumbnail(
                 offset += Vector::Tuple(-1.0, 0.5);
             }
 
+            // TODO: render quality indicator
             let res = match &icon.signal {
-                SignalID::Item { name } => data.get_item_icon(
+                SignalID::Item { name, .. } => data.get_item_icon(
                     name.clone().unwrap_or_default().as_str(),
                     scale,
                     used_mods,
                     image_cache,
                 ),
-                SignalID::Fluid { name } => data.get_fluid_icon(
+                SignalID::Fluid { name, .. } => data.get_fluid_icon(
                     name.clone().unwrap_or_default().as_str(),
                     scale,
                     used_mods,
                     image_cache,
                 ),
-                SignalID::Virtual { name } => data.get_signal_icon(
+                SignalID::Virtual { name, .. } => data.get_signal_icon(
                     name.clone().unwrap_or_default().as_str(),
                     scale,
                     used_mods,
                     image_cache,
                 ),
+                _ => None, // TODO: render more signal types
             };
 
             let Some((res, _)) = res else {
@@ -1143,7 +1148,7 @@ pub fn render_thumbnail(
             layers.add(
                 (res, offset),
                 &MapPosition::default(),
-                InternalRenderLayer::AboveEntity,
+                RenderLayer::HigherObjectAbove,
             );
 
             offset += Vector::Tuple(0.5, 0.0);

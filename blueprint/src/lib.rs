@@ -15,7 +15,10 @@ mod planner;
 pub use blueprint::*;
 pub use book::*;
 pub use planner::*;
-use types::{EntityID, FluidID, ItemID, RecipeID, TileID, VirtualSignalID};
+use types::{
+    AsteroidChunkID, EntityID, FluidID, ItemID, QualityID, RecipeID, SpaceLocationID, TileID,
+    VirtualSignalID,
+};
 
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
 #[serde(default, rename_all = "kebab-case")]
@@ -26,6 +29,9 @@ pub struct UsedIDs {
     pub fluid: HashSet<FluidID>,
     pub item: HashSet<ItemID>,
     pub virtual_signal: HashSet<VirtualSignalID>,
+    pub quality: HashSet<QualityID>,
+    pub space_location: HashSet<SpaceLocationID>,
+    pub asteroid_chunk: HashSet<AsteroidChunkID>,
 }
 
 impl UsedIDs {
@@ -36,6 +42,9 @@ impl UsedIDs {
         self.fluid.extend(other.fluid);
         self.item.extend(other.item);
         self.virtual_signal.extend(other.virtual_signal);
+        self.quality.extend(other.quality);
+        self.space_location.extend(other.space_location);
+        self.asteroid_chunk.extend(other.asteroid_chunk);
     }
 }
 
@@ -61,6 +70,94 @@ impl<T: GetIDs> GetIDs for Box<T> {
     }
 }
 
+/// see <https://wiki.factorio.com/Version_string_format>
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+pub struct Version(u64);
+
+impl Version {
+    #[must_use]
+    pub const fn new(major: u16, minor: u16, patch: u16, dev: u16) -> Self {
+        Self(
+            (major as u64) << (6 * 8)
+                | (minor as u64) << (4 * 8)
+                | (patch as u64) << (2 * 8)
+                | (dev as u64),
+        )
+    }
+
+    #[must_use]
+    pub const fn major(&self) -> u16 {
+        (self.0 >> (6 * 8)) as u16
+    }
+
+    #[must_use]
+    pub const fn minor(&self) -> u16 {
+        (self.0 >> (4 * 8) & 0xFF) as u16
+    }
+
+    #[must_use]
+    pub const fn patch(&self) -> u16 {
+        (self.0 >> (2 * 8) & 0xFF) as u16
+    }
+
+    #[must_use]
+    pub const fn dev(&self) -> u16 {
+        (self.0 & 0xFF) as u16
+    }
+}
+
+impl From<u64> for Version {
+    fn from(value: u64) -> Self {
+        Self(value)
+    }
+}
+
+impl std::ops::Deref for Version {
+    type Target = u64;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl PartialOrd for Version {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Version {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        if self == other {
+            return std::cmp::Ordering::Equal;
+        }
+
+        let s_major = self.major();
+        let o_major = other.major();
+
+        if s_major != o_major {
+            return s_major.cmp(&o_major);
+        }
+
+        let s_minor = self.minor();
+        let o_minor = other.minor();
+
+        if s_minor != o_minor {
+            return s_minor.cmp(&o_minor);
+        }
+
+        let s_patch = self.patch();
+        let o_patch = other.patch();
+        s_patch.cmp(&o_patch)
+    }
+}
+
+impl std::fmt::Display for Version {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{}.{}", self.major(), self.minor(), self.patch())
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CommonData<T> {
     #[serde(flatten)]
@@ -74,19 +171,7 @@ pub struct CommonData<T> {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label_color: Option<Color>,
 
-    pub version: u64, // see https://wiki.factorio.com/Version_string_format
-}
-
-impl<T> CommonData<T> {
-    #[must_use]
-    pub fn version_string(&self) -> String {
-        let major = self.version >> (64 - 2 * 8);
-        let minor = self.version >> (64 - 4 * 8) & 0xFF;
-        let patch = self.version >> (64 - 6 * 8) & 0xFF;
-        //let dev = self.version & 0xFF;
-
-        format!("{major}.{minor}.{patch}") //-{dev}")
-    }
+    pub version: Version,
 }
 
 impl TryFrom<Blueprint> for String {
@@ -214,7 +299,7 @@ impl Data {
     }
 
     #[must_use]
-    pub const fn version(&self) -> u64 {
+    pub const fn version(&self) -> Version {
         match self {
             Self::Blueprint(data) => data.version,
             Self::BlueprintBook(data) => data.version,
@@ -499,6 +584,32 @@ impl TryFrom<Data> for String {
     }
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(untagged)]
+enum VersionExtractor {
+    Version { version: Version },
+    Other(serde_json::Value),
+}
+
+pub fn get_version(bp_string: impl AsRef<str>) -> Result<Version, BlueprintDecodeError> {
+    use std::collections::HashMap;
+
+    let json = bp_string_to_json(bp_string.as_ref())?;
+    let extractor: HashMap<String, VersionExtractor> = serde_json::from_str(&json)?;
+
+    let version = extractor
+        .values()
+        .find_map(|ext| {
+            let VersionExtractor::Version { version } = ext else {
+                return None;
+            };
+            Some(*version)
+        })
+        .ok_or(BlueprintDecodeError::Parsing)?;
+
+    Ok(version)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -508,19 +619,53 @@ mod tests {
         Data::try_from(data).unwrap()
     }
 
+    macro_rules! bp_tests {
+        ($prefix:literal, $($name:ident),+) => {
+            $(
+                #[test]
+                fn $name() {
+                    load_bp(include_str!(concat!(
+                        "../tests/",
+                        $prefix,
+                        stringify!($name),
+                        ".txt"
+                    )));
+                }
+            )+
+        };
+    }
+
     mod bp {
         use super::*;
 
-        #[test]
-        fn train_schedule_temporary_record() {
-            load_bp(include_str!("../tests/train_schedule_temporary_record.txt"));
-        }
+        // #[test]
+        // fn train_schedule_temporary_record() {
+        //     load_bp(include_str!("../tests/train_schedule_temporary_record.txt"));
+        // }
 
-        #[test]
-        fn comparators_operators_and_invalids() {
-            load_bp(include_str!(
-                "../tests/comparators_operators_and_invalids.txt"
-            ));
+        // #[test]
+        // fn comparators_operators_and_invalids() {
+        //     load_bp(include_str!(
+        //         "../tests/comparators_operators_and_invalids.txt"
+        //     ));
+        // }
+
+        mod v2 {
+            use super::*;
+
+            bp_tests!(
+                "2.0/",
+                quality_chemplants,
+                constant_logistic_group,
+                platform_hub,
+                train_schedule,
+                parametrics,
+                elevated_rails,
+                combinators,
+                flipped_fluidboxes,
+                long_train,
+                artillery
+            );
         }
     }
 }
