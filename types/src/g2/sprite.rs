@@ -1,12 +1,14 @@
+use image::Rgba;
+use mod_util::UsedMods;
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
 use super::{
-    BlendMode, LayeredGraphic, RenderLayer, RenderableGraphics, SingleSource, SourceProvider,
-    SpriteFlags, SpritePriority, SpriteSizeParam, SpriteSizeType,
+    merge_layers, BlendMode, LayeredGraphic, RenderLayer, RenderableGraphics, SingleSource,
+    SourceProvider, SpriteFlags, SpritePriority, SpriteSizeParam, SpriteSizeType,
 };
-use crate::{Color, Vector};
+use crate::{Color, ImageCache, SingleOrArray, Vector};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TintableRenderOpts {
@@ -50,9 +52,71 @@ pub struct SpriteSource<S: SourceProvider = SingleSource> {
     pub allow_forced_downscale: bool,
 }
 
+impl<S: SourceProvider> SpriteSource<S> {
+    pub const fn get_position(&self) -> (SpriteSizeType, SpriteSizeType) {
+        if self.x == 0 && self.y == 0 {
+            match self.position {
+                Some((x, y)) => (x, y),
+                None => (0, 0),
+            }
+        } else {
+            (self.x, self.y)
+        }
+    }
+
+    pub const fn get_size(&self) -> (SpriteSizeType, SpriteSizeType) {
+        match self.size {
+            SpriteSizeParam::Size { size } => (size, size),
+            SpriteSizeParam::Size2 { size } => size,
+            SpriteSizeParam::Explicit { width, height } => (width, height),
+        }
+    }
+
+    pub fn fetch(
+        &self,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        fetch_args: S::FetchArgs,
+    ) -> Option<image::DynamicImage> {
+        self.source.fetch(
+            used_mods,
+            image_cache,
+            self.get_position(),
+            self.get_size(),
+            fetch_args,
+        )
+    }
+
+    pub fn fetch_offset(
+        &self,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        fetch_args: S::FetchArgs,
+        (offset_x, offset_y): (i16, i16),
+    ) -> Option<image::DynamicImage> {
+        let (x, y) = self.get_position();
+        let (width, height) = self.get_size();
+        self.source.fetch(
+            used_mods,
+            image_cache,
+            (x + offset_x * width, y + offset_y * width),
+            (width, height),
+            fetch_args,
+        )
+    }
+}
+
 /// [`Types/EffectTexture`](https://lua-api.factorio.com/latest/types/EffectTexture.html)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EffectTexture(SpriteSource);
+
+impl std::ops::Deref for EffectTexture {
+    type Target = SpriteSource;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 impl RenderableGraphics for EffectTexture {
     type RenderOpts = ();
@@ -62,9 +126,9 @@ impl RenderableGraphics for EffectTexture {
         scale: f64,
         used_mods: &mod_util::UsedMods,
         image_cache: &mut crate::ImageCache,
-        opts: &Self::RenderOpts,
+        (): &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        Some((self.fetch(used_mods, image_cache, ())?, (Vector::default())))
     }
 }
 
@@ -133,6 +197,63 @@ impl<S: SourceProvider> std::ops::Deref for SpriteParameters<S> {
     }
 }
 
+impl<S: SourceProvider> SpriteParameters<S> {
+    pub fn fetch_scale_tint(
+        &self,
+        scale: f64,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        fetch_args: S::FetchArgs,
+        tint: Option<Color>,
+    ) -> Option<super::GraphicsOutput> {
+        self.fetch_offset_scale_tint(scale, used_mods, image_cache, fetch_args, tint, (0, 0))
+    }
+
+    pub fn fetch_offset_scale_tint(
+        &self,
+        scale: f64,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        fetch_args: S::FetchArgs,
+        tint: Option<Color>,
+        offset: (i16, i16),
+    ) -> Option<super::GraphicsOutput> {
+        let img = self.fetch_offset(used_mods, image_cache, fetch_args, offset)?;
+
+        let mut img = if (scale - self.scale).abs() < f64::EPSILON {
+            img
+        } else {
+            let scalar = self.scale / scale;
+            img.resize(
+                (f64::from(img.width()) * scalar).round() as u32,
+                (f64::from(img.height()) * scalar).round() as u32,
+                image::imageops::FilterType::Nearest,
+            )
+        };
+
+        let tint = if self.apply_runtime_tint {
+            tint.unwrap_or(self.tint)
+        } else {
+            self.tint
+        };
+
+        if !Color::is_white(&tint) {
+            let mut img_buf = img.to_rgba8();
+            let [tint_r, tint_g, tint_b, tint_a] = tint.to_rgba();
+
+            for Rgba([r, g, b, a]) in img_buf.pixels_mut() {
+                *r = (f64::from(*r) * tint_r).round() as u8;
+                *g = (f64::from(*g) * tint_g).round() as u8;
+                *b = (f64::from(*b) * tint_b).round() as u8;
+                *a = (f64::from(*a) * tint_a).round() as u8;
+            }
+            img = img_buf.into();
+        }
+
+        Some((img, self.shift))
+    }
+}
+
 /// [`Types/SpriteUsageSurfaceHint`](https://lua-api.factorio.com/latest/types/SpriteUsageSurfaceHint.html)
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -194,7 +315,7 @@ impl RenderableGraphics for SpriteData {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        self.fetch_scale_tint(scale, used_mods, image_cache, (), opts.runtime_tint)
     }
 }
 
@@ -208,11 +329,11 @@ pub struct LayeredSpriteData {
 
     // technically there are `dice` fields here but we'll ignore them
     #[serde(flatten)]
-    parent: SpriteParameters,
+    parent: Sprite,
 }
 
 impl std::ops::Deref for LayeredSpriteData {
-    type Target = SpriteParameters;
+    type Target = Sprite;
 
     fn deref(&self) -> &Self::Target {
         &self.parent
@@ -229,9 +350,27 @@ impl RenderableGraphics for LayeredSpriteData {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        // TODO: respect the render_layer property, requires major refactor
+        self.parent.render(scale, used_mods, image_cache, opts)
     }
 }
 
 /// [`Types/LayeredSprite`](https://lua-api.factorio.com/latest/types/LayeredSprite.html)
-pub type LayeredSprite = LayeredGraphic<LayeredSpriteData>;
+pub type LayeredSprite = SingleOrArray<LayeredSpriteData>;
+
+impl RenderableGraphics for SingleOrArray<LayeredSpriteData> {
+    type RenderOpts = TintableRenderOpts;
+
+    fn render(
+        &self,
+        scale: f64,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        opts: &Self::RenderOpts,
+    ) -> Option<super::GraphicsOutput> {
+        match self {
+            Self::Single(g) => g.render(scale, used_mods, image_cache, opts),
+            Self::Array(layers) => merge_layers(layers, scale, used_mods, image_cache, opts),
+        }
+    }
+}

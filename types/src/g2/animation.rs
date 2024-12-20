@@ -1,12 +1,13 @@
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
+use tracing::warn;
 
 use super::{
     DirectionalRenderOpts, LayeredGraphic, RenderLayer, RenderableGraphics, SourceProvider,
     SpriteParameters, StripeMultiSingleSource, TintableRenderOpts,
 };
-use crate::FactorioArray;
+use crate::{Direction, FactorioArray};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct AnimationRenderOpts<M = TintableRenderOpts> {
@@ -178,7 +179,9 @@ impl RenderableGraphics for AnimationElement {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        self.animation
+            .as_ref()?
+            .render(scale, used_mods, image_cache, opts)
     }
 }
 
@@ -209,6 +212,36 @@ impl RenderableGraphics for Animation4Way {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        match self {
+            Self::Struct {
+                north,
+                north_east,
+                east,
+                south_east,
+                south,
+                south_west,
+                west,
+                north_west,
+            } => match opts.direction {
+                Direction::North => Some(north),
+                Direction::NorthEast => north_east.as_ref(),
+                Direction::East => east.as_ref(),
+                Direction::SouthEast => south_east.as_ref(),
+                Direction::South => south.as_ref(),
+                Direction::SouthWest => south_west.as_ref(),
+                Direction::West => west.as_ref(),
+                Direction::NorthWest => north_west.as_ref(),
+                _ => {
+                    warn!(
+                        "Animation4Way render called with invalid direction: {:?}",
+                        opts.direction
+                    );
+                    return None;
+                }
+            }
+            .unwrap_or(north)
+            .render(scale, used_mods, image_cache, opts),
+            Self::Single(anim) => anim.render(scale, used_mods, image_cache, opts),
+        }
     }
 }
