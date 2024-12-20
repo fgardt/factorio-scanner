@@ -1,12 +1,14 @@
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
+use tracing::warn;
 
 use super::{
     AnimationParameters, AnimationRenderOpts, DirectionalRenderOpts, LayeredGraphic,
-    MultiSingleSource, RenderableGraphics, SpriteParameters, SpriteSizeType, TintableRenderOpts,
+    MultiSingleSource, MultiSingleSourceFetchArgs, RenderableGraphics, SpriteParameters,
+    SpriteSizeType, TintableRenderOpts,
 };
-use crate::{FactorioArray, RealOrientation, Vector};
+use crate::{Direction, FactorioArray, RealOrientation, Vector};
 
 /// [`Types/RotatedAnimation`](https://lua-api.factorio.com/latest/types/RotatedAnimation.html)
 pub type RotatedAnimation = LayeredGraphic<RotatedAnimationData>;
@@ -66,6 +68,16 @@ impl RenderableGraphics for RotatedAnimationData {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
+        let orientation = if self.apply_projection {
+            opts.orientation.projected_orientation()
+        } else {
+            opts.orientation
+        };
+
+        let idx = opts.override_rot_index.unwrap_or_else(|| {
+            orientation_to_index(orientation, self.direction_count as u16, false)
+        });
+
         todo!()
     }
 }
@@ -98,7 +110,37 @@ impl RenderableGraphics for RotatedAnimation8Way {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        match self {
+            Self::Struct {
+                north,
+                north_east,
+                east,
+                south_east,
+                south,
+                south_west,
+                west,
+                north_west,
+            } => match opts.direction {
+                Direction::North => Some(north),
+                Direction::NorthEast => north_east.as_ref(),
+                Direction::East => east.as_ref(),
+                Direction::SouthEast => south_east.as_ref(),
+                Direction::South => south.as_ref(),
+                Direction::SouthWest => south_west.as_ref(),
+                Direction::West => west.as_ref(),
+                Direction::NorthWest => north_west.as_ref(),
+                _ => {
+                    warn!(
+                        "RotatedAnimation8Way render called with invalid direction: {:?}",
+                        opts.direction
+                    );
+                    return None;
+                }
+            }
+            .unwrap_or(north)
+            .render(scale, used_mods, image_cache, opts),
+            Self::Single(g) => g.render(scale, used_mods, image_cache, opts),
+        }
     }
 }
 
@@ -168,8 +210,51 @@ impl RenderableGraphics for RotatedSpriteData {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        let orientation = if self.apply_projection {
+            opts.orientation.projected_orientation()
+        } else {
+            opts.orientation
+        };
+
+        let idx = opts.override_rot_index.unwrap_or_else(|| {
+            orientation_to_index(orientation, self.direction_count, self.back_equals_front)
+        });
+
+        // TODO: implement `frames` logic, have not seen it used in base / DLC
+
+        let (img, shift) = self.fetch_scale_tint(
+            scale,
+            used_mods,
+            image_cache,
+            MultiSingleSourceFetchArgs {
+                index: u32::from(idx),
+                line_length: self.line_length,
+            },
+            opts.runtime_tint,
+        )?;
+
+        let shift = if self.rotate_shift {
+            shift.rotate(orientation)
+        } else {
+            shift
+        };
+
+        Some((img, shift))
     }
+}
+
+fn orientation_to_index(
+    orientation: RealOrientation,
+    direction_count: u16,
+    back_equals_front: bool,
+) -> u16 {
+    let orientation = if back_equals_front {
+        orientation * 2.0 % 1.0
+    } else {
+        orientation
+    };
+
+    (f64::from(direction_count) * orientation).round() as u16 % direction_count
 }
 
 #[derive(Debug, Clone, Copy, Default)]

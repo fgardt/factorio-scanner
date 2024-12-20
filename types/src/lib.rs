@@ -50,6 +50,14 @@ pub use item::*;
 pub use module::*;
 pub use wire::*;
 
+/// Generic type for Factorio's commonly used pattern of
+/// allowing either a single direct value or an array of values.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum SingleOrArray<T> {
+    Single(T),
+    Array(FactorioArray<T>),
+}
+
 /// [`Types/AmmoType`](https://lua-api.factorio.com/latest/types/AmmoType.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
