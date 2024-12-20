@@ -1,10 +1,12 @@
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
+use tracing::warn;
 
 use super::{
-    AnimationParameters, AnimationRenderOpts, LayeredGraphic, MultiSingleSource,
-    RenderableGraphics, Sprite, SpriteParameters, TintableRenderOpts, VariationRenderOpts,
+    merge_layers, AnimationParameters, AnimationRenderOpts, LayeredGraphic, MultiSingleSource,
+    MultiSingleSourceFetchArgs, RenderableGraphics, Sprite, SpriteParameters, TintableRenderOpts,
+    VariationRenderOpts,
 };
 use crate::{Direction, FactorioArray};
 
@@ -76,7 +78,16 @@ impl RenderableGraphics for SpriteSheetData {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        self.fetch_scale_tint(
+            scale,
+            used_mods,
+            image_cache,
+            MultiSingleSourceFetchArgs {
+                index: u32::from(opts.variation) % self.variation_count,
+                line_length: self.line_length.unwrap_or(self.variation_count),
+            },
+            opts.runtime_tint,
+        )
     }
 }
 
@@ -122,7 +133,35 @@ impl<const N: u32> RenderableGraphics for SpriteNWaySheet<N> {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        let idx = match N {
+            4 => match opts.direction {
+                Direction::North => 0,
+                Direction::East => 1,
+                Direction::South => 2,
+                Direction::West => 3,
+                _ => {
+                    warn!(
+                        "Sprite4WaySheet render called with invalid direction {:?}",
+                        opts.direction
+                    );
+                    return None;
+                }
+            },
+            16 => opts.direction as u32,
+            _ => {
+                warn!("SpriteNWaySheet render called with invalid N: {N}");
+                return None;
+            }
+        } % self.frames;
+
+        self.fetch_offset_scale_tint(
+            scale,
+            used_mods,
+            image_cache,
+            (),
+            opts.runtime_tint,
+            (idx as i16, 0),
+        )
     }
 }
 
@@ -156,7 +195,30 @@ impl RenderableGraphics for Sprite4Way {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        match self {
+            Self::Sheets { sheets } => merge_layers(sheets, scale, used_mods, image_cache, opts),
+            Self::Sheet { sheet } => sheet.render(scale, used_mods, image_cache, opts),
+            Self::Struct {
+                north,
+                east,
+                south,
+                west,
+            } => match opts.direction {
+                Direction::North => north.as_ref(),
+                Direction::East => east.as_ref(),
+                Direction::South => south.as_ref(),
+                Direction::West => west.as_ref(),
+                _ => {
+                    warn!(
+                        "Sprite4Way render called with invalid direction {:?}",
+                        opts.direction
+                    );
+                    return None;
+                }
+            }
+            .render(scale, used_mods, image_cache, opts),
+            Self::Single(sprite) => sprite.render(scale, used_mods, image_cache, opts),
+        }
     }
 }
 
@@ -201,7 +263,46 @@ impl RenderableGraphics for Sprite16Way {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        match self {
+            Self::Sheets { sheets } => merge_layers(sheets, scale, used_mods, image_cache, opts),
+            Self::Sheet { sheet } => sheet.render(scale, used_mods, image_cache, opts),
+            Self::Struct {
+                north,
+                north_north_east,
+                north_east,
+                east_north_east,
+                east,
+                east_south_east,
+                south_east,
+                south_south_east,
+                south,
+                south_south_west,
+                south_west,
+                west_south_west,
+                west,
+                west_north_west,
+                north_west,
+                north_north_west,
+            } => match opts.direction {
+                Direction::North => north.as_ref(),
+                Direction::NorthNorthEast => north_north_east.as_ref(),
+                Direction::NorthEast => north_east.as_ref(),
+                Direction::EastNorthEast => east_north_east.as_ref(),
+                Direction::East => east.as_ref(),
+                Direction::EastSouthEast => east_south_east.as_ref(),
+                Direction::SouthEast => south_east.as_ref(),
+                Direction::SouthSouthEast => south_south_east.as_ref(),
+                Direction::South => south.as_ref(),
+                Direction::SouthSouthWest => south_south_west.as_ref(),
+                Direction::SouthWest => south_west.as_ref(),
+                Direction::WestSouthWest => west_south_west.as_ref(),
+                Direction::West => west.as_ref(),
+                Direction::WestNorthWest => west_north_west.as_ref(),
+                Direction::NorthWest => north_west.as_ref(),
+                Direction::NorthNorthWest => north_north_west.as_ref(),
+            }
+            .render(scale, used_mods, image_cache, opts),
+        }
     }
 }
 

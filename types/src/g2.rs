@@ -209,7 +209,18 @@ pub enum SpriteSizeParam {
     },
 }
 
-pub trait SourceProvider {}
+pub trait SourceProvider {
+    type FetchArgs;
+
+    fn fetch(
+        &self,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        position: (SpriteSizeType, SpriteSizeType),
+        size: (SpriteSizeType, SpriteSizeType),
+        fetch_args: Self::FetchArgs,
+    ) -> Option<DynamicImage>;
+}
 
 pub type GraphicsOutput = (DynamicImage, Vector);
 
@@ -230,19 +241,102 @@ pub struct SingleSource {
     filename: FileName,
 }
 
-impl SourceProvider for SingleSource {}
+impl SourceProvider for SingleSource {
+    type FetchArgs = ();
+
+    fn fetch(
+        &self,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        (x, y): (SpriteSizeType, SpriteSizeType),
+        (width, height): (SpriteSizeType, SpriteSizeType),
+        (): Self::FetchArgs,
+    ) -> Option<DynamicImage> {
+        let img = self.filename.load(used_mods, image_cache)?.crop_imm(
+            x as u32,
+            y as u32,
+            width as u32,
+            height as u32,
+        );
+        Some(img)
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum MultiSingleSource {
     Multi {
         filenames: FactorioArray<FileName>,
+        /// technically [`RotatedSprite`] requires this to be u64 but
+        /// 2^32 lines in a single file (with a max size of 8k) is nonsense
         lines_per_file: u32,
     },
     Single(SingleSource),
 }
 
-impl SourceProvider for MultiSingleSource {}
+#[derive(Debug, Clone, Copy)]
+pub struct MultiSingleSourceFetchArgs {
+    pub index: u32,
+    pub line_length: u32,
+}
+
+impl MultiSingleSource {
+    fn multi_source(
+        filenames: &[FileName],
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        (x, y): (SpriteSizeType, SpriteSizeType),
+        (width, height): (SpriteSizeType, SpriteSizeType),
+        lines_per_file: u32,
+        fetch_args: MultiSingleSourceFetchArgs,
+    ) -> Option<DynamicImage> {
+        let line_idx = fetch_args.index / fetch_args.line_length;
+        let col_idx = fetch_args.index % fetch_args.line_length;
+        let row_idx = line_idx % lines_per_file;
+        let file_idx = line_idx / lines_per_file;
+
+        let width = width as u32;
+        let height = height as u32;
+        let x = x as u32 + col_idx * width;
+        let y = y as u32 + row_idx * height;
+
+        let img = filenames
+            .get(file_idx as usize)?
+            .load(used_mods, image_cache)?
+            .crop_imm(x, y, width, height);
+
+        Some(img)
+    }
+}
+
+impl SourceProvider for MultiSingleSource {
+    type FetchArgs = MultiSingleSourceFetchArgs;
+
+    fn fetch(
+        &self,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        position: (SpriteSizeType, SpriteSizeType),
+        size: (SpriteSizeType, SpriteSizeType),
+        fetch_args: Self::FetchArgs,
+    ) -> Option<DynamicImage> {
+        match self {
+            Self::Multi {
+                filenames,
+                lines_per_file,
+            } => Self::multi_source(
+                filenames,
+                used_mods,
+                image_cache,
+                position,
+                size,
+                *lines_per_file,
+                fetch_args,
+            ),
+            Self::Single(s) => s.fetch(used_mods, image_cache, position, size, ()),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[skip_serializing_none]
@@ -268,12 +362,89 @@ pub enum StripeMultiSingleSource {
     Multi {
         filenames: FactorioArray<FileName>,
         slice: Option<u32>,
+        /// only [`RotatedSprite`] requires this to be u64, otherwise it's u32
         lines_per_file: u32,
     },
     Single(SingleSource),
 }
 
-impl SourceProvider for StripeMultiSingleSource {}
+#[derive(Debug, Clone, Copy)]
+pub struct StripeMultiSingleSourceFetchArgs {
+    pub index: u32,
+    pub line_length: u32,
+
+    /// [`Stripe::height_in_frames`] is optional when [`StripeMultiSingleSource`] is used
+    /// in [`RotatedAnimation`] which then defaults to [`RotatedAnimationData::direction_count`].
+    pub direction_count: Option<u32>,
+}
+
+impl SourceProvider for StripeMultiSingleSource {
+    type FetchArgs = StripeMultiSingleSourceFetchArgs;
+
+    fn fetch(
+        &self,
+        used_mods: &UsedMods,
+        image_cache: &mut ImageCache,
+        position: (SpriteSizeType, SpriteSizeType),
+        size: (SpriteSizeType, SpriteSizeType),
+        fetch_args: Self::FetchArgs,
+    ) -> Option<DynamicImage> {
+        match self {
+            Self::Stripe { stripes } => {
+                let mut target_idx = fetch_args.index;
+                for stripe in stripes {
+                    let Some(stripe_height) =
+                        stripe.height_in_frames.or(fetch_args.direction_count)
+                    else {
+                        continue;
+                    };
+
+                    let stripe_width = stripe.width_in_frames;
+                    let stripe_frames = stripe_width * stripe_height;
+
+                    if target_idx >= stripe_frames {
+                        target_idx -= stripe_frames;
+                        continue;
+                    }
+
+                    let stripe_col = target_idx % stripe_width;
+                    let stripe_row = target_idx / stripe_width;
+                    let width = size.0 as u32;
+                    let height = size.1 as u32;
+                    // unsure if adding position x/y to stripe x/y is correct
+                    let x = position.0 as u32 + stripe.x + stripe_col * width;
+                    let y = position.1 as u32 + stripe.y + stripe_row * height;
+
+                    let img = stripe
+                        .filename
+                        .load(used_mods, image_cache)?
+                        .crop_imm(x, y, width, height);
+
+                    return Some(img);
+                }
+
+                None
+            }
+            Self::Multi {
+                filenames,
+                slice,
+                lines_per_file,
+            } => MultiSingleSource::multi_source(
+                filenames,
+                used_mods,
+                image_cache,
+                position,
+                size,
+                *lines_per_file,
+                MultiSingleSourceFetchArgs {
+                    index: fetch_args.index,
+                    line_length: fetch_args.line_length,
+                },
+            ),
+            Self::Single(s) => s.fetch(used_mods, image_cache, position, size, ()),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -296,7 +467,7 @@ where
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
         match self {
-            Self::Layered { layers } => todo!(),
+            Self::Layered { layers } => merge_layers(layers, scale, used_mods, image_cache, opts),
             Self::Data(g) => g.render(scale, used_mods, image_cache, opts),
         }
     }

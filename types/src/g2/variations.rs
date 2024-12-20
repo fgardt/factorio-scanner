@@ -3,8 +3,9 @@ use std::num::NonZeroU32;
 use serde::{Deserialize, Serialize};
 
 use super::{
-    Animation, AnimationRenderOpts, AnimationSheet, LayeredSprite, RenderableGraphics,
-    RotatedAnimation, RotatedRenderOpts, Sprite, SpriteSheet, TintableRenderOpts,
+    merge_layers, Animation, AnimationRenderOpts, AnimationSheet, LayeredSprite,
+    RenderableGraphics, RotatedAnimation, RotatedRenderOpts, Sprite, SpriteSheet,
+    TintableRenderOpts,
 };
 use crate::FactorioArray;
 
@@ -64,13 +65,31 @@ impl RenderableGraphics for SpriteVariations {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        match self {
+            Self::Struct { sheet } | Self::Sheet(sheet) => {
+                sheet.render(scale, used_mods, image_cache, opts)
+            }
+            Self::Array(sprites) => sprites.get(opts.variation.get() as usize - 1)?.render(
+                scale,
+                used_mods,
+                image_cache,
+                opts,
+            ),
+        }
     }
 }
 
 /// [`Types/LayeredSpriteVariations`](https://lua-api.factorio.com/latest/types/LayeredSpriteVariations.html)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LayeredSpriteVariations(FactorioArray<LayeredSprite>);
+
+impl std::ops::Deref for LayeredSpriteVariations {
+    type Target = FactorioArray<LayeredSprite>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 impl RenderableGraphics for LayeredSpriteVariations {
     type RenderOpts = VariationRenderOpts;
@@ -82,7 +101,8 @@ impl RenderableGraphics for LayeredSpriteVariations {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        self.get(opts.variation.get() as usize - 1)?
+            .render(scale, used_mods, image_cache, opts)
     }
 }
 
@@ -110,7 +130,19 @@ impl RenderableGraphics for AnimationVariations {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        match self {
+            Self::SingleSheet { sheet } => sheet.render(scale, used_mods, image_cache, opts),
+            Self::MultiSheets { sheets } => {
+                merge_layers(sheets, scale, used_mods, image_cache, opts)
+            }
+            Self::Animation(anim) => anim.render(scale, used_mods, image_cache, opts),
+            Self::Array(arr) => arr.get(opts.variation.get() as usize - 1)?.render(
+                scale,
+                used_mods,
+                image_cache,
+                opts,
+            ),
+        }
     }
 }
 
@@ -132,6 +164,14 @@ impl RenderableGraphics for RotatedAnimationVariations {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        match self {
+            Self::Single(rot_anim) => rot_anim.render(scale, used_mods, image_cache, opts),
+            Self::Array(arr) => arr.get(opts.variation.get() as usize - 1)?.render(
+                scale,
+                used_mods,
+                image_cache,
+                opts,
+            ),
+        }
     }
 }
