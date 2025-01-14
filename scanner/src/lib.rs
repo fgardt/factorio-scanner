@@ -201,15 +201,15 @@ pub fn calculate_target_size(
     let mut max_y = f64::MIN;
 
     for entity in &bp.entities {
-        let Some(e_proto) = data.get_entity(&entity.name) else {
-            continue;
-        };
-
         let e_pos: MapPosition = (&entity.position).into();
-        let c_box = e_proto.drawing_box();
 
-        let tl = e_pos + c_box.top_left();
-        let br = e_pos + c_box.bottom_right();
+        let (tl, br) = data
+            .get_entity(&entity.name)
+            .map_or((e_pos, e_pos), |e_proto| {
+                let c_box = e_proto.drawing_box();
+
+                (e_pos + c_box.top_left(), e_pos + c_box.bottom_right())
+            });
 
         if tl.x() < min_x {
             min_x = tl.x();
@@ -251,6 +251,10 @@ pub fn calculate_target_size(
         if y > max_y {
             max_y = y;
         }
+    }
+
+    if min_x == f64::MAX || min_y == f64::MAX || max_x == f64::MIN || max_y == f64::MIN {
+        return None;
     }
 
     let min_x = (min_x - 0.5).floor();
