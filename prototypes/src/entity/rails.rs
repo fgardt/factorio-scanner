@@ -62,6 +62,18 @@ macro_rules! deref_newtype {
                 &self.0
             }
         }
+
+        impl super::Renderable for $name {
+            fn render(
+                &self,
+                opts: &super::RenderOpts,
+                used_mods: &UsedMods,
+                render_layers: &mut crate::RenderLayerBuffer,
+                image_cache: &mut ImageCache,
+            ) -> super::RenderOutput {
+                self.0.render(opts, used_mods, render_layers, image_cache)
+            }
+        }
     };
     ($inner:ident, $($name:ident),+) => {
         $(deref_newtype!($inner, $name);)+
@@ -102,6 +114,19 @@ impl Deref for RailRampPrototype {
 
     fn deref(&self) -> &Self::Target {
         &self.parent
+    }
+}
+
+impl super::Renderable for RailRampPrototype {
+    fn render(
+        &self,
+        opts: &super::RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+        image_cache: &mut ImageCache,
+    ) -> super::RenderOutput {
+        self.parent
+            .render(opts, used_mods, render_layers, image_cache)
     }
 }
 

@@ -74,12 +74,16 @@ impl<T> std::ops::Deref for BasePrototype<T> {
 
 pub trait IdNamespace {
     type Id;
+    type Type;
 
     #[must_use]
     fn all_ids(&self) -> HashSet<&Self::Id>;
 
     #[must_use]
     fn contains(&self, id: &Self::Id) -> bool;
+
+    #[must_use]
+    fn build_mapping(&self) -> HashMap<Self::Id, Self::Type>;
 }
 
 pub trait IdNamespaceAccess<T>: IdNamespace {
@@ -98,8 +102,13 @@ mod helper_macro {
                     pub [< $member:snake >]: std::collections::HashMap<$id, [< $member:camel Prototype >]>,
                 }
 
+                pub enum Type {
+                    [< $member:camel >]
+                }
+
                 impl crate::IdNamespace for $name {
                     type Id = $id;
+                    type Type = Type;
 
                     fn all_ids(&self) -> std::collections::HashSet<&Self::Id> {
                         self.[< $member:snake >].keys().collect()
@@ -107,6 +116,16 @@ mod helper_macro {
 
                     fn contains(&self, id: &Self::Id) -> bool {
                         self.[< $member:snake >].contains_key(id)
+                    }
+
+                    fn build_mapping(&self) -> std::collections::HashMap<Self::Id, Self::Type> {
+                        let mut res = std::collections::HashMap::new();
+
+                        self.[< $member:snake >].keys().for_each(|id| {
+                            res.insert(id.clone(), Type::[< $member:camel >]);
+                        });
+
+                        res
                     }
                 }
 
@@ -128,8 +147,15 @@ mod helper_macro {
                     )+
                 }
 
+                pub enum Type {
+                    $(
+                        [< $member:camel >],
+                    )+
+                }
+
                 impl crate::IdNamespace for $name {
                     type Id = $id;
+                    type Type = Type;
 
                     fn all_ids(&self) -> std::collections::HashSet<&Self::Id> {
                         let mut res = std::collections::HashSet::new();
@@ -148,6 +174,17 @@ mod helper_macro {
                         false
                     }
 
+                    fn build_mapping(&self) -> std::collections::HashMap<Self::Id, Self::Type> {
+                        let mut res = std::collections::HashMap::new();
+
+                        $(
+                            self.[< $member:snake >].keys().for_each(|id| {
+                                res.insert(id.clone(), Type::[< $member:camel >]);
+                            });
+                        )+
+
+                        res
+                    }
                 }
 
                 $(
@@ -159,6 +196,22 @@ mod helper_macro {
                 )+
             }
         };
+        ( $name:ident, $id:ty, $map:ty, $( $member:literal ),+ ) => {
+            namespace_struct!($name, $id, $( $member ),+);
+            paste::paste! {
+                impl $name {
+                    #[must_use]
+                    pub fn get(&self, id: &$id, map: &std::collections::HashMap<$id, Type>) -> Option<$map> {
+                        match map.get(id) {
+                            $(
+                                Some(Type::[< $member:camel >]) => self.[< $member:snake >].get(id).map(|x| x as $map),
+                            )+
+                            None => None,
+                        }
+                    }
+                }
+            }
+        }
     }
 
     pub(crate) use namespace_struct;
@@ -224,295 +277,9 @@ impl DataUtil {
     #[allow(clippy::too_many_lines)]
     #[must_use]
     pub fn new(raw: DataRaw) -> Self {
-        // TODO: undo this
-        /*
-        let mut entities: HashMap<EntityID, entity::Type> = HashMap::new();
-
-        {
-            raw.entity.accumulator.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Accumulator);
-            });
-
-            raw.entity.artillery_turret.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::ArtilleryTurret);
-            });
-
-            raw.entity.beacon.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Beacon);
-            });
-
-            raw.entity.boiler.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Boiler);
-            });
-
-            raw.entity.burner_generator.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::BurnerGenerator);
-            });
-
-            raw.entity
-                .arithmetic_combinator
-                .keys()
-                .fold((), |(), name| {
-                    entities.insert(name.clone(), entity::Type::ArithmeticCombinator);
-                });
-
-            raw.entity.decider_combinator.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::DeciderCombinator);
-            });
-
-            raw.entity.constant_combinator.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::ConstantCombinator);
-            });
-
-            raw.entity.programmable_speaker.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::ProgrammableSpeaker);
-            });
-
-            raw.entity.container.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Container);
-            });
-
-            raw.entity.logistic_container.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::LogisticContainer);
-            });
-
-            raw.entity.infinity_container.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::InfinityContainer);
-            });
-
-            raw.entity.linked_container.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::LinkedContainer);
-            });
-
-            raw.entity.assembling_machine.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::AssemblingMachine);
-            });
-
-            raw.entity.rocket_silo.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::RocketSilo);
-            });
-
-            raw.entity.furnace.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Furnace);
-            });
-
-            raw.entity
-                .electric_energy_interface
-                .keys()
-                .fold((), |(), name| {
-                    entities.insert(name.clone(), entity::Type::ElectricEnergyInterface);
-                });
-
-            raw.entity.electric_pole.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::ElectricPole);
-            });
-
-            raw.entity.power_switch.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::PowerSwitch);
-            });
-
-            raw.entity.combat_robot.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::CombatRobot);
-            });
-
-            raw.entity.construction_robot.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::ConstructionRobot);
-            });
-
-            raw.entity.logistic_robot.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::LogisticRobot);
-            });
-
-            raw.entity.roboport.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Roboport);
-            });
-
-            raw.entity.gate.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Gate);
-            });
-
-            raw.entity.gate.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Gate);
-            });
-
-            raw.entity.wall.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Wall);
-            });
-
-            raw.entity.generator.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Generator);
-            });
-
-            raw.entity.reactor.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Reactor);
-            });
-
-            raw.entity.heat_interface.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::HeatInterface);
-            });
-
-            raw.entity.heat_pipe.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::HeatPipe);
-            });
-
-            raw.entity.inserter.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Inserter);
-            });
-
-            raw.entity.lab.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Lab);
-            });
-
-            raw.entity.lamp.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Lamp);
-            });
-
-            raw.entity.land_mine.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::LandMine);
-            });
-
-            raw.entity.market.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Market);
-            });
-
-            raw.entity.mining_drill.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::MiningDrill);
-            });
-
-            raw.entity.offshore_pump.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::OffshorePump);
-            });
-
-            raw.entity.pipe.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Pipe);
-            });
-
-            raw.entity.infinity_pipe.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::InfinityPipe);
-            });
-
-            raw.entity.pipe_to_ground.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::PipeToGround);
-            });
-
-            raw.entity.pump.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Pump);
-            });
-
-            raw.entity
-                .simple_entity_with_owner
-                .keys()
-                .fold((), |(), name| {
-                    entities.insert(name.clone(), entity::Type::SimpleEntityWithOwner);
-                });
-
-            raw.entity
-                .simple_entity_with_force
-                .keys()
-                .fold((), |(), name| {
-                    entities.insert(name.clone(), entity::Type::SimpleEntityWithForce);
-                });
-
-            raw.entity.solar_panel.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::SolarPanel);
-            });
-
-            raw.entity.storage_tank.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::StorageTank);
-            });
-
-            raw.entity.linked_belt.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::LinkedBelt);
-            });
-
-            raw.entity.loader_1x1.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Loader1x1);
-            });
-
-            raw.entity.loader.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Loader);
-            });
-
-            raw.entity.splitter.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Splitter);
-            });
-
-            raw.entity.transport_belt.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::TransportBelt);
-            });
-
-            raw.entity.underground_belt.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::UndergroundBelt);
-            });
-
-            raw.entity.radar.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Radar);
-            });
-
-            raw.entity.turret.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Turret);
-            });
-
-            raw.entity.ammo_turret.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::AmmoTurret);
-            });
-
-            raw.entity.electric_turret.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::ElectricTurret);
-            });
-
-            raw.entity.fluid_turret.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::FluidTurret);
-            });
-
-            raw.entity.car.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Car);
-            });
-
-            raw.entity.curved_rail.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::CurvedRail);
-            });
-
-            raw.entity.straight_rail.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::StraightRail);
-            });
-
-            raw.entity.rail_signal.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::RailSignal);
-            });
-
-            raw.entity.rail_chain_signal.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::RailChainSignal);
-            });
-
-            raw.entity.train_stop.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::TrainStop);
-            });
-
-            raw.entity.locomotive.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::Locomotive);
-            });
-
-            raw.entity.cargo_wagon.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::CargoWagon);
-            });
-
-            raw.entity.fluid_wagon.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::FluidWagon);
-            });
-
-            raw.entity.artillery_wagon.keys().fold((), |(), name| {
-                entities.insert(name.clone(), entity::Type::ArtilleryWagon);
-            });
-        }
+        let entities = raw.entity.build_mapping();
 
         Self { raw, entities }
-        */
-
-        Self {
-            raw,
-            entities: HashMap::new(),
-        }
     }
 
     #[must_use]
@@ -533,406 +300,7 @@ impl DataUtil {
     #[allow(clippy::too_many_lines)]
     #[must_use]
     pub fn get_entity(&self, name: &str) -> Option<&dyn RenderableEntity> {
-        None
-
-        // TODO: undo this
-        /*
-        let entity_type = self.get_entity_type(name)?;
-        let name = &EntityID::new(name);
-
-        match entity_type {
-            entity::Type::Accumulator => self
-                .raw
-                .entity
-                .accumulator
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::ArtilleryTurret => self
-                .raw
-                .entity
-                .artillery_turret
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Beacon => self
-                .raw
-                .entity
-                .beacon
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Boiler => self
-                .raw
-                .entity
-                .boiler
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::BurnerGenerator => self
-                .raw
-                .entity
-                .burner_generator
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::ArithmeticCombinator => self
-                .raw
-                .entity
-                .arithmetic_combinator
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::DeciderCombinator => self
-                .raw
-                .entity
-                .decider_combinator
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::ConstantCombinator => self
-                .raw
-                .entity
-                .constant_combinator
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::ProgrammableSpeaker => self
-                .raw
-                .entity
-                .programmable_speaker
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Container => self
-                .raw
-                .entity
-                .container
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::LogisticContainer => self
-                .raw
-                .entity
-                .logistic_container
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::InfinityContainer => self
-                .raw
-                .entity
-                .infinity_container
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::LinkedContainer => self
-                .raw
-                .entity
-                .linked_container
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::AssemblingMachine => self
-                .raw
-                .entity
-                .assembling_machine
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::RocketSilo => self
-                .raw
-                .entity
-                .rocket_silo
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Furnace => self
-                .raw
-                .entity
-                .furnace
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::ElectricEnergyInterface => self
-                .raw
-                .entity
-                .electric_energy_interface
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::ElectricPole => self
-                .raw
-                .entity
-                .electric_pole
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::PowerSwitch => self
-                .raw
-                .entity
-                .power_switch
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::CombatRobot => self
-                .raw
-                .entity
-                .combat_robot
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::ConstructionRobot => self
-                .raw
-                .entity
-                .construction_robot
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::LogisticRobot => self
-                .raw
-                .entity
-                .logistic_robot
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Roboport => self
-                .raw
-                .entity
-                .roboport
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Gate => self
-                .raw
-                .entity
-                .gate
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Wall => self
-                .raw
-                .entity
-                .wall
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Generator => self
-                .raw
-                .entity
-                .generator
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Reactor => self
-                .raw
-                .entity
-                .reactor
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::HeatInterface => self
-                .raw
-                .entity
-                .heat_interface
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::HeatPipe => self
-                .raw
-                .entity
-                .heat_pipe
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Inserter => self
-                .raw
-                .entity
-                .inserter
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Lab => self
-                .raw
-                .entity
-                .lab
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Lamp => self
-                .raw
-                .entity
-                .lamp
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::LandMine => self
-                .raw
-                .entity
-                .land_mine
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Market => self
-                .raw
-                .entity
-                .market
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::MiningDrill => self
-                .raw
-                .entity
-                .mining_drill
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::OffshorePump => self
-                .raw
-                .entity
-                .offshore_pump
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Pipe => self
-                .raw
-                .entity
-                .pipe
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::InfinityPipe => self
-                .raw
-                .entity
-                .infinity_pipe
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::PipeToGround => self
-                .raw
-                .entity
-                .pipe_to_ground
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Pump => self
-                .raw
-                .entity
-                .pump
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::SimpleEntityWithOwner => self
-                .raw
-                .entity
-                .simple_entity_with_owner
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::SimpleEntityWithForce => self
-                .raw
-                .entity
-                .simple_entity_with_force
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::SolarPanel => self
-                .raw
-                .entity
-                .solar_panel
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::StorageTank => self
-                .raw
-                .entity
-                .storage_tank
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::LinkedBelt => self
-                .raw
-                .entity
-                .linked_belt
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Loader1x1 => self
-                .raw
-                .entity
-                .loader_1x1
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Loader => self
-                .raw
-                .entity
-                .loader
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Splitter => self
-                .raw
-                .entity
-                .splitter
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::TransportBelt => self
-                .raw
-                .entity
-                .transport_belt
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::UndergroundBelt => self
-                .raw
-                .entity
-                .underground_belt
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Radar => self
-                .raw
-                .entity
-                .radar
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Turret => self
-                .raw
-                .entity
-                .turret
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::AmmoTurret => self
-                .raw
-                .entity
-                .ammo_turret
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::ElectricTurret => self
-                .raw
-                .entity
-                .electric_turret
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::FluidTurret => self
-                .raw
-                .entity
-                .fluid_turret
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Car => self
-                .raw
-                .entity
-                .car
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::CurvedRail => self
-                .raw
-                .entity
-                .curved_rail
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::StraightRail => self
-                .raw
-                .entity
-                .straight_rail
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::RailSignal => self
-                .raw
-                .entity
-                .rail_signal
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::RailChainSignal => self
-                .raw
-                .entity
-                .rail_chain_signal
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::TrainStop => self
-                .raw
-                .entity
-                .train_stop
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::Locomotive => self
-                .raw
-                .entity
-                .locomotive
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::CargoWagon => self
-                .raw
-                .entity
-                .cargo_wagon
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::FluidWagon => self
-                .raw
-                .entity
-                .fluid_wagon
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-            entity::Type::ArtilleryWagon => self
-                .raw
-                .entity
-                .artillery_wagon
-                .get(name)
-                .map(|x| x as &dyn RenderableEntity),
-        }
-        */
+        self.raw.entity.get(&EntityID::new(name), &self.entities)
     }
 
     #[must_use]
