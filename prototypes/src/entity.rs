@@ -249,11 +249,7 @@ pub trait RenderableEntity: Renderable {
     fn show_recipe(&self) -> bool;
 }
 
-impl<R, T> RenderableEntity for T
-where
-    R: Renderable,
-    T: Renderable + Deref<Target = BasePrototype<EntityData<R>>>,
-{
+impl<T: Renderable> RenderableEntity for EntityPrototype<T> {
     fn collision_box(&self) -> BoundingBox {
         self.collision_box.clone().unwrap_or_default()
     }
@@ -361,6 +357,36 @@ where
 
     fn show_recipe(&self) -> bool {
         self.recipe_visible()
+    }
+}
+
+impl<T, R> RenderableEntity for T
+where
+    T: Deref<Target = EntityWithOwnerPrototype<R>> + Renderable,
+    R: Renderable,
+{
+    fn collision_box(&self) -> BoundingBox {
+        self.deref().collision_box()
+    }
+
+    fn selection_box(&self) -> BoundingBox {
+        self.deref().selection_box()
+    }
+
+    fn drawing_box(&self) -> BoundingBox {
+        self.deref().drawing_box()
+    }
+
+    fn pipe_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
+        self.deref().pipe_connections(options)
+    }
+
+    fn heat_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
+        self.deref().heat_connections(options)
+    }
+
+    fn show_recipe(&self) -> bool {
+        self.deref().show_recipe()
     }
 }
 
@@ -683,83 +709,15 @@ impl<T: Renderable> Renderable for EntityWithOwnerData<T> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Type {
-    Accumulator,
-    ArtilleryTurret,
-    Beacon,
-    Boiler,
-    BurnerGenerator,
-    ArithmeticCombinator,
-    DeciderCombinator,
-    ConstantCombinator,
-    ProgrammableSpeaker,
-    Container,
-    LogisticContainer,
-    InfinityContainer,
-    LinkedContainer,
-    AssemblingMachine,
-    RocketSilo,
-    Furnace,
-    ElectricEnergyInterface,
-    ElectricPole,
-    PowerSwitch,
-    CombatRobot,
-    ConstructionRobot,
-    LogisticRobot,
-    Roboport,
-    Gate,
-    Wall,
-    Generator,
-    Reactor,
-    HeatInterface,
-    HeatPipe,
-    Inserter,
-    Lab,
-    Lamp,
-    LandMine,
-    Market,
-    MiningDrill,
-    OffshorePump,
-    Pipe,
-    InfinityPipe,
-    PipeToGround,
-    Pump,
-    SimpleEntityWithOwner,
-    SimpleEntityWithForce,
-    SolarPanel,
-    StorageTank,
-    LinkedBelt,
-    Loader1x1,
-    Loader,
-    Splitter,
-    TransportBelt,
-    UndergroundBelt,
-    Radar,
-    Turret,
-    AmmoTurret,
-    ElectricTurret,
-    FluidTurret,
-    Car,
-    CurvedRail,
-    StraightRail,
-    RailSignal,
-    RailChainSignal,
-    TrainStop,
-    Locomotive,
-    CargoWagon,
-    FluidWagon,
-    ArtilleryWagon,
-}
-
 #[allow(clippy::match_like_matches_macro)]
 impl Type {
     #[must_use]
     pub const fn connectable(&self) -> bool {
+        #[allow(clippy::match_same_arms)]
         match self {
             Self::HeatPipe | Self::HeatInterface => true,
             Self::Pipe | Self::InfinityPipe => true,
-            Self::TransportBelt => true,
+            // Self::TransportBelt => true,
             Self::Wall | Self::Gate => true,
             _ => false,
         }
@@ -775,14 +733,14 @@ impl Type {
                 Self::Gate => true, // when direction fits
                 _ => false,
             },
-            Self::TransportBelt => match other {
-                Self::Loader | Self::Loader1x1 => true,
-                Self::UndergroundBelt => true,
-                Self::TransportBelt => true,
-                Self::LinkedBelt => true,
-                Self::Splitter => true,
-                _ => false,
-            },
+            // Self::TransportBelt => match other {
+            //     Self::Loader | Self::Loader1x1 => true,
+            //     Self::UndergroundBelt => true,
+            //     Self::TransportBelt => true,
+            //     Self::LinkedBelt => true,
+            //     Self::Splitter => true,
+            //     _ => false,
+            // },
             Self::Pipe | Self::InfinityPipe => match other {
                 Self::Pipe | Self::InfinityPipe | Self::PipeToGround => true,
                 Self::Pump | Self::OffshorePump | Self::StorageTank => true,
@@ -836,6 +794,7 @@ impl<T: Renderable> Deref for EntityPrototypeMap<T> {
 namespace_struct! {
     AllTypes,
     EntityID,
+    &dyn RenderableEntity,
     "accumulator",
     "artillery-turret",
     "beacon",
