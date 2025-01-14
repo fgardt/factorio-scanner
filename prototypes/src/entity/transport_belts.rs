@@ -16,31 +16,19 @@ use types::*;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TransportBeltConnectableData<G>
 where
-    G: super::Renderable,
+    G: super::RenderableGraphics,
 {
+    pub belt_animation_set: Option<Box<G>>,
+
     pub speed: f64,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub animation_speed_coefficient: f64,
-
-    #[serde(flatten)]
-    graphics_set: G,
-}
-
-impl<G> Deref for TransportBeltConnectableData<G>
-where
-    G: super::Renderable,
-{
-    type Target = G;
-
-    fn deref(&self) -> &Self::Target {
-        &self.graphics_set
-    }
 }
 
 impl<G> super::Renderable for TransportBeltConnectableData<G>
 where
-    G: super::Renderable,
+    G: super::RenderableGraphics<RenderOpts: for<'a> From<&'a super::RenderOpts>>,
 {
     fn render(
         &self,
@@ -49,66 +37,16 @@ where
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        self.graphics_set
-            .render(options, used_mods, render_layers, image_cache)
-    }
-
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        self.graphics_set.fluid_box_connections(options)
-    }
-
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
-        self.graphics_set.heat_buffer_connections(options)
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum BeltGraphics {
-    BeltAnimationSet {
-        belt_animation_set: TransportBeltAnimationSet,
-    },
-    Individual {
-        belt_horizontal: Animation,
-        belt_vertical: Animation,
-
-        ending_top: Animation,
-        ending_bottom: Animation,
-        ending_side: Animation,
-
-        starting_top: Animation,
-        starting_bottom: Animation,
-        starting_side: Animation,
-
-        ending_patch: Box<Sprite4Way>,
-
-        #[serde(default, skip_serializing_if = "helper::is_default")]
-        ends_with_stopper: bool,
-    },
-}
-
-impl super::Renderable for BeltGraphics {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        render_layers: &mut crate::RenderLayerBuffer,
-        image_cache: &mut ImageCache,
-    ) -> super::RenderOutput {
-        // TODO: handle individual graphics case
-        let res = match self {
-            Self::BeltAnimationSet { belt_animation_set } => belt_animation_set.render(
+        let res = self.belt_animation_set.as_ref().and_then(|bas| {
+            bas.render(
                 render_layers.scale(),
                 used_mods,
                 image_cache,
                 &options.into(),
-            ),
-            Self::Individual { .. } => None,
-        }?;
+            )
+        })?;
 
-        let res = split_belt(res, options);
-
-        render_layers.add_entity(res, &options.position);
+        render_layers.add_entity(split_belt(res, options), &options.position);
 
         Some(())
     }
@@ -170,11 +108,11 @@ pub struct LinkedBeltData {
     pub allow_side_loading: bool,
 
     #[serde(flatten)]
-    parent: TransportBeltConnectableData<BeltGraphics>,
+    parent: TransportBeltConnectableData<TransportBeltAnimationSet>,
 }
 
 impl Deref for LinkedBeltData {
-    type Target = TransportBeltConnectableData<BeltGraphics>;
+    type Target = TransportBeltConnectableData<TransportBeltAnimationSet>;
 
     fn deref(&self) -> &Self::Target {
         &self.parent
@@ -216,6 +154,7 @@ pub struct LoaderData {
 
     // TODO: default
     pub structure_render_layer: Option<RenderLayer>,
+    pub circuit_connector_layer: Option<RenderLayer>,
 
     #[serde(
         default = "helper::f64_1_5",
@@ -229,16 +168,22 @@ pub struct LoaderData {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub allow_container_interaction: bool,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub per_lane_filters: bool,
+
+    #[serde(default = "helper::u8_1", skip_serializing_if = "helper::is_1_u8")]
+    pub max_belt_stack_size: u8,
+
     //pub belt_length: f64, // -> moved to specific variants
     pub energy_source: Option<AnyEnergySource>, // any except burner
     pub energy_per_item: Option<Energy>,
 
     #[serde(flatten)]
-    parent: TransportBeltConnectableData<BeltGraphics>,
+    parent: TransportBeltConnectableData<TransportBeltAnimationSet>,
 }
 
 impl Deref for LoaderData {
-    type Target = TransportBeltConnectableData<BeltGraphics>;
+    type Target = TransportBeltConnectableData<TransportBeltAnimationSet>;
 
     fn deref(&self) -> &Self::Target {
         &self.parent
@@ -276,6 +221,9 @@ pub struct LoaderStructure {
 
     pub back_patch: Option<Sprite4Way>,
     pub front_patch: Option<Sprite4Way>,
+
+    pub frozen_patch_in: Option<Sprite4Way>,
+    pub frozen_patch_out: Option<Sprite4Way>,
 }
 
 impl super::Renderable for LoaderStructure {
@@ -316,7 +264,7 @@ impl super::Renderable for LoaderStructure {
 }
 
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
-pub type Loader1x1Prototype = EntityWithOwnerPrototype<Loader1x1Data>;
+pub type Loader1x1Prototype = EntityWithOwnerPrototype<WireEntityData<Loader1x1Data>>;
 
 /// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -362,10 +310,14 @@ impl super::Renderable for Loader1x1Data {
     }
 }
 
-/// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
-pub type Loader1x2Prototype = EntityWithOwnerPrototype<Loader1x2Data>;
+/// [`Prototypes/Loader1x2Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x2Prototype.html)
+pub type Loader1x2Prototype = EntityWithOwnerPrototype<WireEntityData<Loader1x2Data>>;
 
-/// [`Prototypes/Loader1x1Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x1Prototype.html)
+// this is required since the namespace_struct macro would not be able to map "loader" to "Loader1x2Prototype" otherwise
+/// [`Prototypes/Loader1x2Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x2Prototype.html)
+pub type LoaderPrototype = Loader1x2Prototype;
+
+/// [`Prototypes/Loader1x2Prototype`](https://lua-api.factorio.com/latest/prototypes/Loader1x2Prototype.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Loader1x2Data {
     #[serde(default = "helper::f64_05", skip_serializing_if = "helper::is_05_f64")]
@@ -431,6 +383,7 @@ pub type SplitterPrototype = EntityWithOwnerPrototype<SplitterData>;
 pub struct SplitterData {
     pub structure: Animation4Way,
     pub structure_patch: Option<Animation4Way>,
+    pub frozen_patch: Option<Box<Sprite4Way>>,
 
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub structure_animation_speed_coefficient: f64,
@@ -438,12 +391,14 @@ pub struct SplitterData {
     #[serde(default = "helper::u32_10", skip_serializing_if = "helper::is_10_u32")]
     pub structure_animation_movement_cooldown: u32,
 
+    pub related_transport_belt: Option<EntityID>,
+
     #[serde(flatten)]
-    parent: TransportBeltConnectableData<BeltGraphics>,
+    parent: TransportBeltConnectableData<TransportBeltAnimationSet>,
 }
 
 impl Deref for SplitterData {
-    type Target = TransportBeltConnectableData<BeltGraphics>;
+    type Target = TransportBeltConnectableData<TransportBeltAnimationSet>;
 
     fn deref(&self) -> &Self::Target {
         &self.parent
@@ -516,6 +471,76 @@ impl super::Renderable for SplitterData {
     }
 }
 
+/// [`Prototypes/LaneSplitterPrototype`](https://lua-api.factorio.com/latest/prototypes/LaneSplitterPrototype.html)
+pub type LaneSplitterPrototype = EntityWithOwnerPrototype<LaneSplitterData>;
+
+/// [`Prototypes/LaneSplitterPrototype`](https://lua-api.factorio.com/latest/prototypes/LaneSplitterPrototype.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LaneSplitterData {
+    pub structure_animation_speed_coefficient: f64,
+    pub structure_animation_movement_cooldown: u32,
+
+    pub structure: Animation4Way,
+    pub structure_patch: Option<Animation4Way>,
+
+    #[serde(flatten)]
+    parent: TransportBeltConnectableData<TransportBeltAnimationSet>,
+}
+
+impl Deref for LaneSplitterData {
+    type Target = TransportBeltConnectableData<TransportBeltAnimationSet>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
+}
+
+impl super::Renderable for LaneSplitterData {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+        image_cache: &mut ImageCache,
+    ) -> super::RenderOutput {
+        self.parent
+            .render(options, used_mods, render_layers, image_cache);
+
+        let res = merge_renders(
+            &[
+                self.structure_patch.as_ref().and_then(|a| {
+                    a.render(
+                        render_layers.scale(),
+                        used_mods,
+                        image_cache,
+                        &options.into(),
+                    )
+                }),
+                self.structure.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                ),
+            ],
+            render_layers.scale(),
+        )?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
+    }
+
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.parent.fluid_box_connections(options)
+    }
+
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        self.parent.heat_buffer_connections(options)
+    }
+}
+
 /// [`Prototypes/TransportBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/TransportBeltPrototype.html)
 pub type TransportBeltPrototype = EntityWithOwnerPrototype<WireEntityData<TransportBeltData>>;
 
@@ -527,11 +552,11 @@ pub struct TransportBeltData {
     pub related_underground_belt: Option<EntityID>,
 
     #[serde(flatten)]
-    parent: TransportBeltConnectableData<BeltGraphicsWithCorners>,
+    parent: TransportBeltConnectableData<TransportBeltAnimationSetWithCorners>,
 }
 
 impl Deref for TransportBeltData {
-    type Target = TransportBeltConnectableData<BeltGraphicsWithCorners>;
+    type Target = TransportBeltConnectableData<TransportBeltAnimationSetWithCorners>;
 
     fn deref(&self) -> &Self::Target {
         &self.parent
@@ -574,41 +599,6 @@ impl super::Renderable for TransportBeltData {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum BeltGraphicsWithCorners {
-    BeltAnimationSetWithCorners {
-        belt_animation_set: Box<TransportBeltAnimationSetWithCorners>,
-    },
-    Animations {
-        animations: RotatedAnimation, // must have 12 animations
-    },
-}
-
-impl super::Renderable for BeltGraphicsWithCorners {
-    fn render(
-        &self,
-        options: &super::RenderOpts,
-        used_mods: &UsedMods,
-        render_layers: &mut crate::RenderLayerBuffer,
-        image_cache: &mut ImageCache,
-    ) -> super::RenderOutput {
-        let res = match self {
-            Self::BeltAnimationSetWithCorners { belt_animation_set } => belt_animation_set.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &options.into(),
-            ),
-            Self::Animations { .. } => None,
-        }?;
-
-        render_layers.add_entity(res, &options.position);
-
-        Some(())
-    }
-}
-
 /// [`Prototypes/UndergroundBeltPrototype`](https://lua-api.factorio.com/latest/prototypes/UndergroundBeltPrototype.html)
 pub type UndergroundBeltPrototype = EntityWithOwnerPrototype<UndergroundBeltData>;
 
@@ -619,16 +609,19 @@ pub struct UndergroundBeltData {
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub max_distance: u8,
 
-    pub structure: UndergroundBeltStructure,
-    pub underground_sprite: Sprite,
+    pub structure: Option<UndergroundBeltStructure>,
+    pub underground_sprite: Option<Sprite>,
     pub underground_remove_belts_sprite: Option<Sprite>,
+    pub max_distance_underground_remove_belts_sprite: Option<Sprite>,
+    pub underground_collision_mask: Option<CollisionMaskConnector>,
+    pub max_distance_tint: Option<Color>,
 
     #[serde(flatten)]
-    parent: TransportBeltConnectableData<BeltGraphics>,
+    parent: TransportBeltConnectableData<TransportBeltAnimationSet>,
 }
 
 impl Deref for UndergroundBeltData {
-    type Target = TransportBeltConnectableData<BeltGraphics>;
+    type Target = TransportBeltConnectableData<TransportBeltAnimationSet>;
 
     fn deref(&self) -> &Self::Target {
         &self.parent
@@ -647,7 +640,8 @@ impl super::Renderable for UndergroundBeltData {
             .render(options, used_mods, render_layers, image_cache);
 
         self.structure
-            .render(options, used_mods, render_layers, image_cache)
+            .as_ref()
+            .and_then(|s| s.render(options, used_mods, render_layers, image_cache))
     }
 
     fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
