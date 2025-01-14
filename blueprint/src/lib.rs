@@ -655,16 +655,18 @@ mod tests {
 
             bp_tests!(
                 "2.0/",
-                quality_chemplants,
-                constant_logistic_group,
-                platform_hub,
-                train_schedule,
-                parametrics,
-                elevated_rails,
+                artillery,
                 combinators,
+                constant_logistic_group,
+                elevated_rails,
                 flipped_fluidboxes,
                 long_train,
-                artillery
+                parametrics,
+                platform_hub,
+                quality_chemplants,
+                rail_test_circle,
+                test_book,
+                train_schedule
             );
         }
     }
