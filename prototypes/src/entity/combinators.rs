@@ -206,6 +206,9 @@ pub struct ConstantCombinatorData {
     pub activity_led_sprites: Option<Sprite4Way>,
     pub activity_led_light_offsets: (Vector, Vector, Vector, Vector),
     pub activity_led_light: Option<LightDefinition>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub pulse_duration: u32,
 }
 
 impl super::Renderable for ConstantCombinatorData {

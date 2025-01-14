@@ -512,6 +512,9 @@ pub type CargoWagonPrototype = RollingStockPrototype<CargoWagonData>;
 pub struct CargoWagonData {
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub inventory_size: ItemStackIndex,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub quality_affects_inventory_size: bool,
 }
 
 impl super::Renderable for CargoWagonData {
@@ -533,6 +536,9 @@ pub type FluidWagonPrototype = RollingStockPrototype<FluidWagonData>;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FluidWagonData {
     pub capacity: FluidAmount,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub quality_affects_capacity: bool,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub tank_count: FluidWagonTankCount,
