@@ -337,7 +337,7 @@ impl ModList {
 
     #[must_use]
     pub fn is_enabled(&self, name: &str) -> bool {
-        self.list.get(name).map_or(false, |e| e.enabled)
+        self.list.get(name).is_some_and(|e| e.enabled)
     }
 
     #[must_use]
