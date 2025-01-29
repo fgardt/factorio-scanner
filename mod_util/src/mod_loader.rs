@@ -216,7 +216,7 @@ impl ModType {
 
         if path.is_dir() {
             Ok(Self::Folder { path: path.into() })
-        } else if path.is_file() && path.extension().map_or(false, |ext| ext == "zip") {
+        } else if path.is_file() && path.extension().is_some_and(|ext| ext == "zip") {
             let zip = ZipArchive::new(File::open(path)?)?;
             let internal_prefix = get_zip_internal_folder(path, &zip)?;
 
