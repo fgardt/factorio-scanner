@@ -380,6 +380,8 @@ mod portal {
         pub summary: String,
         pub title: String,
         pub category: Option<PortalCategory>, // not sure if this is actually optional
+
+        pub score: Option<f64>,
     }
 
     pub async fn short_info(mod_name: &str) -> Result<PortalShortEntry, crate::FactorioApiError> {
@@ -454,8 +456,12 @@ mod portal {
         pub title: String,
         pub category: Option<PortalCategory>, // not sure if this is actually optional
 
+        pub score: Option<f64>,
+
         pub changelog: Option<String>,
         pub created_at: String,
+        pub updated_at: String,
+        pub last_highlighted_at: Option<String>,
         pub description: Option<String>,
         pub source_url: Option<String>,
         pub homepage: String,
