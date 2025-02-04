@@ -293,7 +293,20 @@ mod portal {
         pub factorio_version: String,
 
         #[serde(default)]
-        pub dependencies: Vec<mod_util::mod_info::Dependency>,
+        pub dependencies: Vec<String>,
+    }
+
+    impl InfoJson {
+        /// Returns dependencies as a slice of [`mod_util::mod_info::Dependency`].
+        ///
+        /// This method will ignore any dependencies that fail to parse.
+        #[must_use]
+        pub fn dependencies(&self) -> Box<[mod_util::mod_info::Dependency]> {
+            self.dependencies
+                .iter()
+                .filter_map(|d| d.parse().ok())
+                .collect()
+        }
     }
 
     #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -687,6 +700,15 @@ mod tests {
                 );
             }
             Err(err) => panic!("portal list error: {err}"),
+        }
+    }
+
+    #[test]
+    fn problematic_deps() {
+        let result = tokio_test::block_on(full_info("PLORD_Prometheus_GrenadeLauncher2"));
+
+        if let Err(e) = result {
+            panic!("error: {e}");
         }
     }
 }

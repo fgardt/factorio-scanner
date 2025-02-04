@@ -586,6 +586,14 @@ impl Dependency {
     }
 }
 
+impl std::str::FromStr for Dependency {
+    type Err = serde::de::value::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        DependencyVisitor::visit_str(DependencyVisitor, s)
+    }
+}
+
 pub trait DependencyUtil {
     fn allows(&self, name: &str, version: Version) -> bool;
     fn conflicts(&self, name: &str, version: Version) -> bool;
