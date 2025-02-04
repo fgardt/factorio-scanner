@@ -1266,7 +1266,7 @@ pub async fn resolve_mod_dependencies(
         let deps_info = info
             .releases
             .into_iter()
-            .map(|r| (r.version, r.info_json.dependencies))
+            .map(|r| (r.version, r.info_json.dependencies().into_vec()))
             .collect::<HashMap<_, _>>();
 
         mod_list.set_dependency_info(&name.clone(), deps_info.clone());
