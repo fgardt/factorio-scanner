@@ -3,6 +3,8 @@
 - **Mod settings** (de)serialization
   - `mod-settings-dump.json` as well as `mod-settings.dat`
 - **Mod list** (de)serialization
+- **Accessing mod files** either as zips or folders
+- **Dependency solver**
 - **Property Tree** (de)serialization (binary format only)
 
 ### https://wiki.factorio.com/Tutorial:Mod_settings
