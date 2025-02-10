@@ -162,6 +162,9 @@ pub struct BaseAttackParameters {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub use_shooter_direction: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub true_collinear_ejection: bool,
     // not implemented
     // ammo_type, ammo_categories, ammo_category: are these mutually exclusive?
     // sound, cyclic_sound
