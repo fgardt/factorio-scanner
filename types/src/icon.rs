@@ -28,6 +28,9 @@ pub struct IconData {
 
     pub scale: Option<f64>,
     pub draw_background: Option<bool>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub floating: bool,
 }
 
 impl RenderableGraphics for IconData {
@@ -116,6 +119,7 @@ macro_rules! icon_enum {
                                 shift: Vector::default(),
                                 scale: None,
                                 draw_background: None,
+                                floating: false,
                             }
                             .render(scale, used_mods, image_cache, &()),
                             Self::Layered { [<$name:snake s>] } => merge_icon_layers([<$name:snake s>], scale, used_mods, image_cache, &()),

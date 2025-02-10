@@ -16,7 +16,9 @@ pub type BeaconPrototype = EntityWithOwnerPrototype<BeaconData>;
 pub struct BeaconData {
     pub energy_usage: Energy,
     pub energy_source: AnyEnergySource, // must be electric or void
-    pub supply_area_distance: f64,
+
+    #[serde(deserialize_with = "helper::truncating_deserializer")]
+    pub supply_area_distance: u32,
     pub distribution_effectivity: f64,
     pub distribution_effectivity_bonus_per_quality_level: Option<f64>,
     pub module_slots: ItemStackIndex,
