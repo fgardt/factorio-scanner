@@ -670,4 +670,70 @@ mod tests {
             );
         }
     }
+
+    #[allow(clippy::unwrap_used)]
+    mod entity {
+        use super::*;
+
+        #[test]
+        fn selector() {
+            let src = r#"{
+  "entity_number": 7,
+  "name": "selector-combinator",
+  "position": {
+    "x": 44,
+    "y": -26.5
+  },
+  "direction": 4,
+  "control_behavior": {
+    "operation": "select",
+    "select_max": false,
+    "index_signal": {
+      "type": "virtual",
+      "name": "signal-dot",
+      "quality": "legendary"
+    }
+  }
+}"#;
+
+            let sc = serde_json::from_str::<blueprint::Entity>(src).unwrap();
+            assert_eq!(src, serde_json::to_string_pretty(&sc).unwrap());
+
+            assert_eq!(sc.name, EntityID::new("selector-combinator"));
+            assert_eq!(sc.entity_number, 7);
+            assert_eq!(sc.direction, types::Direction::East);
+            assert_eq!(sc.position, Position { x: 44.0, y: -26.5 });
+
+            let Some(cb) = sc.control_behavior else {
+                panic!("control_behavior is None");
+            };
+
+            let Some(scd) = cb.selector_conditions else {
+                panic!("selector_conditions is None");
+            };
+
+            let SelectorData::Select {
+                select_max,
+                index_signal,
+                index_constant,
+            } = scd
+            else {
+                panic!("selector_conditions is not Select");
+            };
+
+            assert!(!select_max);
+            assert_eq!(index_constant, None);
+
+            let Some(index_signal) = index_signal else {
+                panic!("index_signal is None");
+            };
+
+            let SignalID::Virtual { name, quality } = index_signal else {
+                panic!("index_signal is not Virtual");
+            };
+
+            assert_eq!(name, Some(VirtualSignalID::new("signal-dot")));
+            assert_eq!(quality, Some(QualityID::new("legendary")));
+        }
+    }
 }
