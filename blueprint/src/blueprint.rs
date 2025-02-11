@@ -1162,7 +1162,6 @@ impl From<&Color> for types::Color {
 #[allow(clippy::struct_excessive_bools)]
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
 pub struct ControlBehavior {
     pub logistic_condition: Option<Condition>,
     pub connect_to_logistic_network: Option<bool>,
