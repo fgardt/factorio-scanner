@@ -30,6 +30,7 @@ pub mod item;
 pub mod quality;
 pub mod recipe;
 pub mod signal;
+pub mod space_location;
 pub mod tile;
 pub mod utility_sprites;
 
@@ -251,6 +252,9 @@ pub struct DataRaw {
     #[serde(flatten)]
     pub quality: quality::AllTypes,
 
+    #[serde(flatten)]
+    pub space_location: space_location::AllTypes,
+
     pub utility_sprites: HashMap<String, utility_sprites::UtilitySprites>,
 }
 
@@ -451,6 +455,15 @@ impl DataUtilAccess<QualityID, quality::AllTypes> for DataUtil {
         quality::AllTypes: IdNamespaceAccess<T>,
     {
         self.raw.quality.get_proto(id)
+    }
+}
+
+impl DataUtilAccess<SpaceLocationID, space_location::AllTypes> for DataUtil {
+    fn get_proto<T>(&self, id: &SpaceLocationID) -> Option<&T>
+    where
+        space_location::AllTypes: IdNamespaceAccess<T>,
+    {
+        self.raw.space_location.get_proto(id)
     }
 }
 
