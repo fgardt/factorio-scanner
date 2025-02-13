@@ -133,7 +133,8 @@ macro_rules! icon_enum {
 
 icon_enum! {
     Icon,
-    DarkBackgroundIcon
+    DarkBackgroundIcon,
+    StarMapIcon
 }
 
 pub fn merge_icon_layers<O, T: RenderableGraphics<RenderOpts = O>>(
