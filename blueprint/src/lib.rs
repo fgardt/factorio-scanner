@@ -736,4 +736,27 @@ mod tests {
             assert_eq!(quality, Some(QualityID::new("legendary")));
         }
     }
+
+    #[allow(clippy::unwrap_used)]
+    mod version_extractor {
+        use super::*;
+
+        #[test]
+        fn simple() {
+            let json = r#"{"foo":{"version":0}}"#;
+            let encoded = json_to_bp_string(json).unwrap();
+
+            let version = get_version(&encoded).unwrap();
+            assert_eq!(version, Version::new(0, 0, 0, 0));
+        }
+
+        #[test]
+        fn with_index() {
+            let json = r#"{"bar":{"version":0},"index":123}"#;
+            let encoded = json_to_bp_string(json).unwrap();
+
+            let version = get_version(&encoded).unwrap();
+            assert_eq!(version, Version::new(0, 0, 0, 0));
+        }
+    }
 }
