@@ -25,7 +25,8 @@ pub fn get_used_versions(bp: &blueprint::Blueprint) -> DependencyList {
         }
 
         for filter in &entity.filters {
-            check_prefix(filter, &mut auto_detected);
+            check_prefix(&filter.name, &mut auto_detected);
+            check_prefix(&filter.quality, &mut auto_detected);
         }
 
         // for item in entity.items.keys() {

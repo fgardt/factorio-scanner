@@ -400,6 +400,7 @@ impl<'de> Deserialize<'de> for WireData {
 }
 
 // todo: reduce optionals count by skipping serialization of defaults?
+#[allow(clippy::struct_excessive_bools)]
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields)]
@@ -450,7 +451,9 @@ pub struct Entity {
     pub filter: ItemID,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub filters: IndexedVec<NameString<ItemID>>,
+    pub filters: IndexedVec<ItemFilter>,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub use_filters: bool,
 
     pub filter_mode: Option<FilterMode>,
     pub override_stack_size: Option<u8>,
@@ -504,6 +507,9 @@ pub struct Entity {
     pub text: Option<String>,
     pub icon: Option<SignalID>,
     pub always_show: Option<bool>,
+
+    // inserter
+    pub spoil_priority: Option<SpoilPriority>,
 }
 
 impl PartialOrd for Entity {
@@ -567,6 +573,31 @@ impl crate::GetIDs for Entity {
         if let Some(icon) = &self.icon {
             ids.merge(icon.get_ids());
         }
+
+        ids
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum SpoilPriority {
+    SpoiledFirst,
+    FreshFirst,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub struct ItemFilter {
+    pub comparator: Comparator,
+    pub name: ItemID,
+    pub quality: QualityID,
+}
+
+impl crate::GetIDs for ItemFilter {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = crate::UsedIDs::default();
+
+        ids.item.insert(self.name.clone());
+        ids.quality.insert(self.quality.clone());
 
         ids
     }
