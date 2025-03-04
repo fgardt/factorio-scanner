@@ -650,6 +650,8 @@ mod tests {
         //     ));
         // }
 
+        bp_tests!("", bilka);
+
         mod v2 {
             use super::*;
 
@@ -660,6 +662,7 @@ mod tests {
                 constant_logistic_group,
                 elevated_rails,
                 flipped_fluidboxes,
+                inserters,
                 long_train,
                 parametrics,
                 platform_hub,
