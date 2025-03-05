@@ -529,6 +529,46 @@ impl super::Renderable for CargoWagonData {
     }
 }
 
+/// [`Prototypes/InfinityCargoWagonPrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityCargoWagonPrototype.html)
+pub type InfinityCargoWagonPrototype = RollingStockPrototype<InfinityCargoWagonData>;
+
+/// [`Prototypes/InfinityCargoWagonPrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityCargoWagonPrototype.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InfinityCargoWagonData {
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub erase_contents_when_mined: bool,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub preserve_contents_when_created: bool,
+
+    #[serde(default = "GuiMode::all", skip_serializing_if = "GuiMode::is_all")]
+    pub gui_mode: GuiMode,
+
+    #[serde(flatten)]
+    parent: CargoWagonData,
+}
+
+impl Deref for InfinityCargoWagonData {
+    type Target = CargoWagonData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
+}
+
+impl super::Renderable for InfinityCargoWagonData {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+        image_cache: &mut ImageCache,
+    ) -> super::RenderOutput {
+        self.parent
+            .render(options, used_mods, render_layers, image_cache)
+    }
+}
+
 /// [`Prototypes/FluidWagonPrototype`](https://lua-api.factorio.com/latest/prototypes/FluidWagonPrototype.html)
 pub type FluidWagonPrototype = RollingStockPrototype<FluidWagonData>;
 

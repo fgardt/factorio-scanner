@@ -135,7 +135,7 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
 }
 
 /// [`Prototypes/FurnacePrototype`](https://lua-api.factorio.com/latest/prototypes/FurnacePrototype.html)
-pub type FurnacePrototype = CraftingMachinePrototype<FurnaceData>;
+pub type FurnacePrototype = CraftingMachinePrototype<WireEntityData<FurnaceData>>;
 
 /// [`Prototypes/FurnacePrototype`](https://lua-api.factorio.com/latest/prototypes/FurnacePrototype.html)
 #[skip_serializing_none]
@@ -149,6 +149,9 @@ pub struct FurnaceData {
 
     pub cant_insert_at_source_message_key: Option<String>,
     pub custom_input_slot_tooltip_key: Option<String>,
+
+    pub default_recipe_finished_signal: Option<SignalIDConnector>,
+    pub default_working_signal: Option<SignalIDConnector>,
 }
 
 impl super::Renderable for FurnaceData {
