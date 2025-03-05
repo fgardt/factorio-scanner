@@ -42,7 +42,7 @@ pub struct RoboportData {
     pub radar_range: Option<u32>,
     pub radar_visualisation_color: Option<Color>,
 
-    pub recharging_animation: Animation,
+    pub recharging_animation: Option<Animation>,
     pub spawn_and_station_height: f32,
     pub charge_approach_distance: f32,
     pub logistics_radius: f32,
