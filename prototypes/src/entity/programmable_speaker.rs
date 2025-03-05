@@ -61,4 +61,5 @@ pub struct ProgrammableSpeakerNote {
     pub name: String,
     // not implemented
     // pub sound: Sound,
+    // pub cyclic_sound: CyclicSound,
 }

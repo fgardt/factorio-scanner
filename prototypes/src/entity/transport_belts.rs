@@ -174,6 +174,9 @@ pub struct LoaderData {
     #[serde(default = "helper::u8_1", skip_serializing_if = "helper::is_1_u8")]
     pub max_belt_stack_size: u8,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub adjustable_belt_stack_size: bool,
+
     //pub belt_length: f64, // -> moved to specific variants
     pub energy_source: Option<AnyEnergySource>, // any except burner
     pub energy_per_item: Option<Energy>,

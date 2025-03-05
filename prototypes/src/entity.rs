@@ -40,6 +40,7 @@ mod offshore_pump;
 mod pipe;
 mod power_switch;
 mod programmable_speaker;
+mod proxy;
 mod pump;
 mod radar;
 mod rail_signals;
@@ -80,6 +81,7 @@ pub use offshore_pump::*;
 pub use pipe::*;
 pub use power_switch::*;
 pub use programmable_speaker::*;
+pub use proxy::*;
 pub use pump::*;
 pub use radar::*;
 pub use rail_signals::*;
@@ -670,6 +672,9 @@ pub struct EntityWithOwnerData<T: Renderable> {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub allow_run_time_change_of_is_military_target: bool,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub quality_indicator_shift: Vector,
+
     pub quality_indicator_scale: Option<f64>,
 
     #[serde(flatten)]
@@ -853,6 +858,7 @@ namespace_struct! {
     "electric-turret",
     "fluid-turret",
     "car",
+    "proxy-container",
     "curved-rail-a",
     "curved-rail-b",
     "half-diagonal-rail",
@@ -869,6 +875,7 @@ namespace_struct! {
     "cargo-wagon",
     "fluid-wagon",
     "artillery-wagon",
+    "infinity-cargo-wagon",
 
     "legacy-curved-rail",
     "legacy-straight-rail"
