@@ -122,7 +122,7 @@ impl From<&ModList> for ModListFormat {
             mods.push(ModEntry {
                 name: name.clone(),
                 enabled: entry.enabled,
-                version: entry.active_version.map(Into::into),
+                version: entry.active_version,
             });
         }
 
