@@ -78,9 +78,9 @@ impl Version {
     #[must_use]
     pub const fn new(major: u16, minor: u16, patch: u16, dev: u16) -> Self {
         Self(
-            (major as u64) << (6 * 8)
-                | (minor as u64) << (4 * 8)
-                | (patch as u64) << (2 * 8)
+            ((major as u64) << (6 * 8))
+                | ((minor as u64) << (4 * 8))
+                | ((patch as u64) << (2 * 8))
                 | (dev as u64),
         )
     }
@@ -92,12 +92,12 @@ impl Version {
 
     #[must_use]
     pub const fn minor(&self) -> u16 {
-        (self.0 >> (4 * 8) & 0xFF) as u16
+        ((self.0 >> (4 * 8)) & 0xFF) as u16
     }
 
     #[must_use]
     pub const fn patch(&self) -> u16 {
-        (self.0 >> (2 * 8) & 0xFF) as u16
+        ((self.0 >> (2 * 8)) & 0xFF) as u16
     }
 
     #[must_use]
