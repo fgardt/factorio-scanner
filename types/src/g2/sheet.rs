@@ -333,6 +333,15 @@ impl RenderableGraphics for AnimationSheet {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        self.fetch_scale_tint(
+            scale,
+            used_mods,
+            image_cache,
+            MultiSingleSourceFetchArgs {
+                index: self.frame_count * opts.variation.get() + self.anim_idx(opts.progress),
+                line_length: self.line_length.unwrap_or(self.variation_count),
+            },
+            opts.runtime_tint,
+        )
     }
 }
