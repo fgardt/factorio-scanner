@@ -5,7 +5,8 @@ use tracing::warn;
 
 use super::{
     DirectionalRenderOpts, LayeredGraphic, RenderLayer, RenderableGraphics, SourceProvider,
-    SpriteParameters, StripeMultiSingleSource, TintableRenderOpts,
+    SpriteParameters, StripeMultiSingleSource, StripeMultiSingleSourceFetchArgs,
+    TintableRenderOpts,
 };
 use crate::{Direction, FactorioArray};
 
@@ -72,7 +73,7 @@ pub struct AnimationParameters<S: SourceProvider = StripeMultiSingleSource> {
     #[serde(default = "helper::u32_1", skip_serializing_if = "helper::is_1_u32")]
     pub frame_count: u32,
 
-    // default of 0 gets overridden in AnimationSheet to variation_count
+    /// default of 0 gets overridden in [`AnimationSheet`] to variation_count
     pub line_length: Option<u32>,
 
     #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
@@ -94,6 +95,30 @@ pub struct AnimationParameters<S: SourceProvider = StripeMultiSingleSource> {
 
     #[serde(flatten)]
     parent: Box<SpriteParameters<S>>,
+}
+
+impl<S: SourceProvider> AnimationParameters<S> {
+    #[must_use]
+    pub fn anim_idx(&self, progress: f64) -> u32 {
+        use AnimationRunMode::{Backward, ForwardThenBackward};
+
+        let progress = progress % 1.0;
+        let frames = if self.run_mode == ForwardThenBackward {
+            self.frame_count * 2
+        } else {
+            self.frame_count
+        };
+
+        let mut idx = (progress * f64::from(frames)) as u32;
+
+        if self.run_mode == Backward {
+            idx = frames - idx;
+        } else if self.run_mode == ForwardThenBackward && idx >= self.frame_count {
+            idx = frames - (idx - self.frame_count);
+        }
+
+        idx
+    }
 }
 
 impl<S: SourceProvider> std::ops::Deref for AnimationParameters<S> {
@@ -121,7 +146,17 @@ impl RenderableGraphics for AnimationData {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
-        todo!()
+        self.fetch_scale_tint(
+            scale,
+            used_mods,
+            image_cache,
+            StripeMultiSingleSourceFetchArgs {
+                index: self.anim_idx(opts.progress),
+                line_length: self.line_length.unwrap_or(0),
+                direction_count: None,
+            },
+            opts.runtime_tint,
+        )
     }
 }
 
