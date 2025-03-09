@@ -218,6 +218,10 @@ impl<S: SourceProvider> SpriteParameters<S> {
         tint: Option<Color>,
         offset: (i16, i16),
     ) -> Option<super::GraphicsOutput> {
+        if self.draw_as_shadow || self.draw_as_glow || self.draw_as_light {
+            return None;
+        }
+
         let img = self.fetch_offset(used_mods, image_cache, fetch_args, offset)?;
 
         let mut img = if (scale - self.scale).abs() < f64::EPSILON {

@@ -8,7 +8,7 @@ use super::{
     MultiSingleSource, MultiSingleSourceFetchArgs, RenderableGraphics, SpriteParameters,
     SpriteSizeType, TintableRenderOpts,
 };
-use crate::{Direction, FactorioArray, RealOrientation, Vector};
+use crate::{Direction, FactorioArray, RealOrientation, StripeMultiSingleSourceFetchArgs, Vector};
 
 /// [`Types/RotatedAnimation`](https://lua-api.factorio.com/latest/types/RotatedAnimation.html)
 pub type RotatedAnimation = LayeredGraphic<RotatedAnimationData>;
@@ -74,11 +74,23 @@ impl RenderableGraphics for RotatedAnimationData {
             opts.orientation
         };
 
-        let idx = opts.override_rot_index.unwrap_or_else(|| {
+        let rot_idx = opts.override_rot_index.unwrap_or_else(|| {
             orientation_to_index(orientation, self.direction_count as u16, false)
         });
 
-        todo!()
+        let anim_idx = self.anim_idx(opts.progress);
+
+        self.fetch_scale_tint(
+            scale,
+            used_mods,
+            image_cache,
+            StripeMultiSingleSourceFetchArgs {
+                index: self.frame_count * u32::from(rot_idx) + anim_idx,
+                line_length: self.line_length.unwrap_or(0),
+                direction_count: Some(self.direction_count),
+            },
+            opts.runtime_tint,
+        )
     }
 }
 
