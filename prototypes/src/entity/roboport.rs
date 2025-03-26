@@ -53,7 +53,7 @@ pub struct RoboportData {
     pub default_total_logistic_output_signal: Option<SignalIDConnector>,
     pub default_available_construction_output_signal: Option<SignalIDConnector>,
     pub default_total_construction_output_signal: Option<SignalIDConnector>,
-    pub default_roboports_output_signal: Option<SignalIDConnector>,
+    pub default_roboport_count_output_signal: Option<SignalIDConnector>,
 
     pub max_logistic_slots: Option<LogisticFilterIndex>,
 
