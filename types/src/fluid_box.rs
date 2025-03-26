@@ -111,6 +111,9 @@ pub struct FluidBox {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub hide_connection_info: bool,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub volume_reservation_fraction: f32,
+
     pub pipe_covers: Option<Sprite4Way>,
     pub pipe_covers_frozen: Option<Sprite4Way>,
     pub pipe_picture: Option<Sprite4Way>,

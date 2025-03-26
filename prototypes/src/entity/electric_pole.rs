@@ -31,6 +31,9 @@ pub struct ElectricPoleData {
         deserialize_with = "helper::truncating_deserializer"
     )]
     pub auto_connect_up_to_n_wires: u8,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub rewire_neighbours_when_destroying: bool,
 }
 
 impl super::Renderable for ElectricPoleData {
