@@ -1,6 +1,6 @@
 [package]
 name = "types"
-version = "3.0.0-2.0.38"
+version = "3.0.0-2.0.43"
 authors.workspace = true
 edition.workspace = true
 
