@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use types::{AnyEnergySource, Vector};
+use types::AnyEnergySource;
 
 use super::Renderable;
 
@@ -22,59 +22,69 @@ impl<T: Renderable> std::ops::Deref for EnergyEntityData<T> {
 impl<T: Renderable> Renderable for EnergyEntityData<T> {
     fn render(
         &self,
-        options: &crate::entity::RenderOpts,
+        options: &super::RenderOpts,
         used_mods: &mod_util::UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut types::ImageCache,
     ) -> crate::entity::RenderOutput {
+        // TODO: render pipe covers on fluid energy source / heat pipe connections on heat energy source
+
+        match &self.energy_source {
+            AnyEnergySource::Fluid { data } => {
+                data.fluid_box
+                    .render(options, used_mods, render_layers, image_cache);
+            }
+            AnyEnergySource::Heat { data } => {
+                data.render_debug(options, used_mods, render_layers);
+            }
+            _ => {}
+        }
+
         self.child
             .render(options, used_mods, render_layers, image_cache)
     }
 
-    fn fluid_box_connections(
-        &self,
-        options: &crate::entity::RenderOpts,
-    ) -> Vec<types::MapPosition> {
-        let mut child = self.child.fluid_box_connections(options);
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        let mut res = self.child.fluid_box_connections(options);
 
         if let AnyEnergySource::Fluid { data } = &self.energy_source {
-            child.append(
-                &mut data
-                    .fluid_box
-                    .connection_points(options.direction, options.mirrored),
-            );
+            res.append(&mut data.fluid_box.fluid_box_connections(options));
         };
 
-        child
+        res
     }
 
-    fn heat_buffer_connections(
-        &self,
-        options: &crate::entity::RenderOpts,
-    ) -> Vec<types::MapPosition> {
-        let mut child = self.child.heat_buffer_connections(options);
+    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+        let mut res = self.child.heat_buffer_connections(options);
 
         if let AnyEnergySource::Heat { data } = &self.energy_source {
-            // identical code as the HeatBuffer::connection_points method
-            // maybe this can be deduplicated somehow?
-            child.append(
-                &mut data
-                    .connections
-                    .iter()
-                    .map(|c| {
-                        let offset = c.direction.get_offset();
-                        let pos: Vector = c.position.into();
-
-                        options.direction.rotate_vector(pos + offset).into()
-                    })
-                    .collect(),
-            );
+            res.append(&mut data.heat_buffer_connections(options));
         };
 
-        child
+        res
     }
 
     fn recipe_visible(&self) -> bool {
         self.child.recipe_visible()
+    }
+
+    fn render_debug(
+        &self,
+        options: &super::RenderOpts,
+        used_mods: &mod_util::UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+    ) {
+        match &self.energy_source {
+            AnyEnergySource::Fluid { data } => {
+                data.fluid_box
+                    .render_debug(options, used_mods, render_layers);
+            }
+            AnyEnergySource::Heat { data } => {
+                data.render_debug(options, used_mods, render_layers);
+            }
+            _ => {}
+        }
+
+        self.child.render_debug(options, used_mods, render_layers);
     }
 }

@@ -201,6 +201,15 @@ pub trait Renderable {
     fn recipe_visible(&self) -> bool {
         false
     }
+
+    fn render_debug(
+        &self,
+        options: &RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+    ) {
+        // empty default impl
+    }
 }
 
 /// [`Prototypes/EntityPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityPrototype.html)
@@ -237,6 +246,21 @@ impl<T: Renderable> Renderable for EntityPrototype<T> {
 
     fn recipe_visible(&self) -> bool {
         self.child.recipe_visible()
+    }
+
+    fn render_debug(
+        &self,
+        options: &RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+    ) {
+        render_layers.draw_box(&self.collision_box(), &options.position, [255, 0, 0, 255]);
+        render_layers.draw_box(&self.selection_box(), &options.position, [255, 255, 0, 255]);
+
+        render_layers.draw_dot(&options.position, [255, 0, 0, 255]);
+        render_layers.draw_direction(&options.position, options.direction, [255, 0, 0, 255]);
+
+        self.child.render_debug(options, used_mods, render_layers);
     }
 }
 
@@ -550,6 +574,15 @@ impl<T: Renderable> Renderable for EntityData<T> {
     fn recipe_visible(&self) -> bool {
         self.child.recipe_visible()
     }
+
+    fn render_debug(
+        &self,
+        options: &RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+    ) {
+        self.child.render_debug(options, used_mods, render_layers);
+    }
 }
 
 #[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -658,6 +691,15 @@ impl<T: Renderable> Renderable for EntityWithHealthData<T> {
     fn recipe_visible(&self) -> bool {
         self.child.recipe_visible()
     }
+
+    fn render_debug(
+        &self,
+        options: &RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+    ) {
+        self.child.render_debug(options, used_mods, render_layers);
+    }
 }
 
 /// [`Prototypes/EntityWithOwnerPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithOwnerPrototype.html)
@@ -711,6 +753,15 @@ impl<T: Renderable> Renderable for EntityWithOwnerData<T> {
 
     fn recipe_visible(&self) -> bool {
         self.child.recipe_visible()
+    }
+
+    fn render_debug(
+        &self,
+        options: &RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+    ) {
+        self.child.render_debug(options, used_mods, render_layers);
     }
 }
 

@@ -118,4 +118,19 @@ impl super::Renderable for MiningDrillData {
         input_cons.append(&mut output_cons);
         input_cons
     }
+
+    fn render_debug(
+        &self,
+        options: &super::RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+    ) {
+        if let Some(fb_out) = self.output_fluid_box.as_ref() {
+            fb_out.render_debug(options, used_mods, render_layers);
+        }
+
+        if let Some(fb_in) = self.input_fluid_box.as_ref() {
+            fb_in.render_debug(options, used_mods, render_layers);
+        }
+    }
 }
