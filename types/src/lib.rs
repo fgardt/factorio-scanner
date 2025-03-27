@@ -2074,13 +2074,6 @@ impl GuiMode {
     }
 }
 
-/// [`Types/HeatConnection`](https://lua-api.factorio.com/latest/types/HeatConnection.html)
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct HeatConnection {
-    pub position: MapPosition,
-    pub direction: Direction,
-}
-
 /// [`Types/HeatBuffer`](https://lua-api.factorio.com/latest/types/HeatBuffer.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]

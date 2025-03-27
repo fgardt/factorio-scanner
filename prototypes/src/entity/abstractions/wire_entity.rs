@@ -76,4 +76,15 @@ impl<T: Renderable> Renderable for WireEntityData<T> {
     fn recipe_visible(&self) -> bool {
         self.child.recipe_visible()
     }
+
+    fn render_debug(
+        &self,
+        options: &super::RenderOpts,
+        used_mods: &mod_util::UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+    ) {
+        // TODO: wire connection point debug visualization
+
+        self.child.render_debug(options, used_mods, render_layers);
+    }
 }

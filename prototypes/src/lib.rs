@@ -503,6 +503,28 @@ impl TargetSize {
     }
 
     #[must_use]
+    fn pos_to_pixel_f64(&self, position: &MapPosition) -> (f64, f64) {
+        let (x, y) = position.as_tuple();
+        let (tl_x, tl_y) = self.top_left.as_tuple();
+
+        let px = (x - tl_x) * self.tile_res;
+        let py = (y - tl_y) * self.tile_res;
+
+        (px, py)
+    }
+
+    #[must_use]
+    fn pos_to_pixel(&self, position: &MapPosition) -> (i64, i64) {
+        let (px, py) = self.pos_to_pixel_f64(position);
+        (px.round() as i64, py.round() as i64)
+    }
+
+    #[must_use]
+    fn len_to_pixel(&self, len: f64) -> i64 {
+        (len * self.tile_res).round() as i64
+    }
+
+    #[must_use]
     fn get_pixel_pos(
         &self,
         (width, height): (u32, u32),
@@ -577,6 +599,46 @@ impl RenderLayerBuffer {
 
     pub fn add_shadow(&mut self, input: (image::DynamicImage, Vector), position: &MapPosition) {
         self.add(input, position, RenderLayer::Floor);
+    }
+
+    pub fn draw_box(&mut self, bbox: &BoundingBox, position: &MapPosition, color: [u8; 4]) {
+        let tl = bbox.top_left() + position;
+        let (tl_x, tl_y) = self.target_size.pos_to_pixel(&tl);
+        let width = self.target_size.len_to_pixel(bbox.width()) as u32;
+        let height = self.target_size.len_to_pixel(bbox.height()) as u32;
+
+        let rect = imageproc::rect::Rect::at(tl_x as i32, tl_y as i32).of_size(width, height);
+        imageproc::drawing::draw_hollow_rect_mut(
+            self.get_layer(RenderLayer::Cursor),
+            rect,
+            color.into(),
+        );
+    }
+
+    pub fn draw_dot(&mut self, position: &MapPosition, color: [u8; 4]) {
+        let (x, y) = self.target_size.pos_to_pixel(position);
+        let scale = self.scale();
+
+        imageproc::drawing::draw_filled_circle_mut(
+            self.get_layer(RenderLayer::Cursor),
+            (x as i32, y as i32),
+            ((32.0 / scale) * 0.1).ceil() as i32,
+            color.into(),
+        );
+    }
+
+    pub fn draw_direction(&mut self, position: &MapPosition, direction: Direction, color: [u8; 4]) {
+        let (s_x, s_y) = self.target_size.pos_to_pixel_f64(position);
+
+        let end = position + &MapPosition::from(direction.get_offset() * 0.5);
+        let (e_x, e_y) = self.target_size.pos_to_pixel_f64(&end);
+
+        imageproc::drawing::draw_line_segment_mut(
+            self.get_layer(RenderLayer::Cursor),
+            (s_x as f32, s_y as f32),
+            (e_x as f32, e_y as f32),
+            color.into(),
+        );
     }
 
     #[must_use]

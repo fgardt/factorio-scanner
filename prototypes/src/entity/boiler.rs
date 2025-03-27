@@ -62,6 +62,16 @@ impl super::Renderable for BoilerData {
         self.output_fluid_box
             .connection_points(options.direction, options.mirrored)
     }
+
+    fn render_debug(
+        &self,
+        options: &super::RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+    ) {
+        self.output_fluid_box
+            .render_debug(options, used_mods, render_layers);
+    }
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
