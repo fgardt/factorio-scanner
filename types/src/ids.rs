@@ -17,6 +17,12 @@ macro_rules! ids {
                 }
             }
 
+            impl From<$type> for $name {
+                fn from(id: $type) -> Self {
+                    Self(id)
+                }
+            }
+
             impl std::ops::Deref for $name {
                 type Target = $type;
 

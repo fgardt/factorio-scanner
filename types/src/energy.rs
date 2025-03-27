@@ -4,14 +4,14 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use crate::{
-    AirbornePollutantID, BurnerUsageID, FactorioArray, FluidAmount, FuelCategoryID, ItemID,
-    ItemStackIndex,
+    AirbornePollutantID, BurnerUsageID, FactorioArray, FluidAmount, FuelCategoryID, HeatBuffer,
+    ItemID, ItemStackIndex,
 };
 
-use super::{helper, Direction, FluidBox, MapPosition, Sprite4Way};
+use super::{helper, Direction, FluidBox, MapPosition};
 
 /// [`Types/Energy`](https://lua-api.factorio.com/latest/types/Energy.html)
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 pub struct Energy(String);
 
 impl Energy {
@@ -160,30 +160,14 @@ pub type FluidEnergySource = BaseEnergySource<FluidEnergySourceData>;
 /// [`Types/HeatEnergySource`](https://lua-api.factorio.com/latest/types/HeatEnergySource.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
-pub struct HeatEnergySourceData {
-    pub max_temperature: f64,
-    pub specific_heat: Energy,
-    pub max_transfer: Energy,
+pub struct HeatEnergySourceData(HeatBuffer);
 
-    #[serde(default = "helper::f64_15", skip_serializing_if = "helper::is_15_f64")]
-    pub default_temperature: f64,
+impl std::ops::Deref for HeatEnergySourceData {
+    type Target = HeatBuffer;
 
-    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
-    pub min_temperature_gradient: f64,
-
-    #[serde(default = "helper::f64_15", skip_serializing_if = "helper::is_15_f64")]
-    pub min_working_temperature: f64,
-
-    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
-    pub minimum_glow_temperature: f64,
-
-    pub pipe_covers: Option<Sprite4Way>,
-    pub heat_pipe_covers: Option<Sprite4Way>,
-    pub heat_picture: Option<Sprite4Way>,
-    pub heat_glow: Option<Sprite4Way>,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub connections: FactorioArray<HeatConnection>,
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 /// [`Types/HeatEnergySource`](https://lua-api.factorio.com/latest/types/HeatEnergySource.html)
@@ -235,7 +219,7 @@ pub enum ElectricUsagePriority {
 }
 
 /// [`Types/HeatConnection`](https://lua-api.factorio.com/latest/types/HeatConnection.html)
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct HeatConnection {
     pub position: MapPosition,
     pub direction: Direction,

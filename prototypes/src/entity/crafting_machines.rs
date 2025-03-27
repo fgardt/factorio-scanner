@@ -132,6 +132,17 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
     fn recipe_visible(&self) -> bool {
         self.show_recipe_icon
     }
+
+    fn render_debug(
+        &self,
+        options: &super::RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+    ) {
+        for fb in &self.fluid_boxes {
+            fb.render_debug(options, used_mods, render_layers);
+        }
+    }
 }
 
 /// [`Prototypes/FurnacePrototype`](https://lua-api.factorio.com/latest/prototypes/FurnacePrototype.html)
