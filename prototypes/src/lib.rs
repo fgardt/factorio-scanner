@@ -287,6 +287,11 @@ impl DataUtil {
     }
 
     #[must_use]
+    pub const fn entities(&self) -> &HashMap<EntityID, entity::Type> {
+        &self.entities
+    }
+
+    #[must_use]
     pub fn get_entity_type(&self, name: &str) -> Option<&entity::Type> {
         self.entities.get(&EntityID::new(name))
     }
@@ -397,10 +402,7 @@ impl DataUtilAccess<EntityID, entity::AllTypes> for DataUtil {
     where
         entity::AllTypes: IdNamespaceAccess<T>,
     {
-        None
-
-        // TODO: undo this
-        // self.raw.entity.get_proto(id)
+        self.raw.entity.get_proto(id)
     }
 }
 
