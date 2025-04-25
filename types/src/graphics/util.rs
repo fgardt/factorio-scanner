@@ -55,7 +55,7 @@ pub fn merge_renders(renders: &[Option<GraphicsOutput>], scale: f64) -> Option<G
     let px_per_tile = TILE_RES / scale;
     let width = (max_x - min_x) * px_per_tile;
     let height = (max_y - min_y) * px_per_tile;
-    let res_shift = ((min_x + max_x) / 2.0, (min_y + max_y) / 2.0);
+    let res_shift = (min_x.midpoint(max_x), min_y.midpoint(max_y));
     let center = (
         res_shift.0.mul_add(-px_per_tile, width / 2.0),
         res_shift.1.mul_add(-px_per_tile, height / 2.0),

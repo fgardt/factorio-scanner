@@ -49,7 +49,7 @@ impl<T: Renderable> Renderable for EnergyEntityData<T> {
 
         if let AnyEnergySource::Fluid { data } = &self.energy_source {
             res.append(&mut data.fluid_box.fluid_box_connections(options));
-        };
+        }
 
         res
     }
@@ -59,7 +59,7 @@ impl<T: Renderable> Renderable for EnergyEntityData<T> {
 
         if let AnyEnergySource::Heat { data } = &self.energy_source {
             res.append(&mut data.heat_buffer_connections(options));
-        };
+        }
 
         res
     }

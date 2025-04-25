@@ -142,8 +142,8 @@ impl ModList {
     /// This will also enable all mods that are not inside the mod list but are present in the mods folder.
     pub fn load(&mut self) -> Result<&mut Self> {
         println!(
-            "Loading mod list from {:?}",
-            self.mods_path.join("mod-list.json")
+            "Loading mod list from {}",
+            self.mods_path.join("mod-list.json").display()
         );
 
         let list = ModListFormat::load(self.mods_path.join("mod-list.json").canonicalize()?)?;

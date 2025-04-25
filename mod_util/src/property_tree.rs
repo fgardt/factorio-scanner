@@ -213,7 +213,7 @@ impl PropertyTree {
         }
     }
 
-    pub fn as_list_mut(&mut self) -> Option<&mut Vec<Self>> {
+    pub const fn as_list_mut(&mut self) -> Option<&mut Vec<Self>> {
         match self {
             Self::List(val) => Some(val),
             _ => None,
@@ -228,7 +228,7 @@ impl PropertyTree {
         }
     }
 
-    pub fn as_dictionary_mut(&mut self) -> Option<&mut HashMap<String, Self>> {
+    pub const fn as_dictionary_mut(&mut self) -> Option<&mut HashMap<String, Self>> {
         match self {
             Self::Dictionary(val) => Some(val),
             _ => None,

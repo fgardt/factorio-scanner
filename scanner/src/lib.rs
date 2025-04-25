@@ -100,7 +100,8 @@ pub fn get_protodump(
                 fs::File::open(&cached_path)
                     .change_context(ScannerError::SetupError)
                     .attach_printable(format!(
-                        "failed to open cached prototype dump at {cached_path:?}"
+                        "failed to open cached prototype dump at {}",
+                        cached_path.display()
                     ))?,
             );
 
@@ -110,7 +111,8 @@ pub fn get_protodump(
                 .read_to_end(&mut uncompressed)
                 .change_context(ScannerError::SetupError)
                 .attach_printable(format!(
-                    "failed to decompress cached prototype dump at {cached_path:?}"
+                    "failed to decompress cached prototype dump at {}",
+                    cached_path.display()
                 ))?;
 
             return DataRaw::load_from_bytes(&uncompressed)
@@ -153,7 +155,10 @@ pub fn get_protodump(
     let dump_path = factorio_userdir.join("script-output/data-raw-dump.json");
     let dump_bytes = fs::read(&dump_path)
         .change_context(ScannerError::SetupError)
-        .attach_printable(format!("failed to read prototype dump at {dump_path:?}"))?;
+        .attach_printable(format!(
+            "failed to read prototype dump at {}",
+            dump_path.display()
+        ))?;
 
     // store minified + deflated version of dump in script-output folder
     {
@@ -169,7 +174,8 @@ pub fn get_protodump(
             fs::File::create(&cached_path)
                 .change_context(ScannerError::SetupError)
                 .attach_printable(format!(
-                    "failed to create cached prototype dump at {cached_path:?}"
+                    "failed to create cached prototype dump at {}",
+                    cached_path.display()
                 ))?,
             flate2::Compression::best(),
         );
@@ -178,7 +184,8 @@ pub fn get_protodump(
             .write_all(&minified)
             .change_context(ScannerError::SetupError)
             .attach_printable(format!(
-                "failed to compress cached prototype dump at {cached_path:?}"
+                "failed to compress cached prototype dump at {}",
+                cached_path.display()
             ))?;
     }
 
@@ -554,6 +561,7 @@ pub fn render_bp(
 
                     let pos: types::MapPosition = (&e.position).into();
 
+                    #[allow(clippy::needless_continue)]
                     match entity_type {
                         EntityType::Pipe | EntityType::InfinityPipe | EntityType::PipeToGround => {
                             for (p, dirs) in &pipe_connections {

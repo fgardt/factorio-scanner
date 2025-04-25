@@ -1284,7 +1284,7 @@ impl MapPosition {
     }
 
     #[must_use]
-    pub fn as_tuple_mut(&mut self) -> (&mut f64, &mut f64) {
+    pub const fn as_tuple_mut(&mut self) -> (&mut f64, &mut f64) {
         match self {
             Self::Tuple(x, y) | Self::XY { x, y } => (x, y),
         }
@@ -1363,11 +1363,11 @@ impl MapPosition {
     }
 
     #[must_use]
-    pub fn center_to(&self, other: &Self) -> Self {
+    pub const fn center_to(&self, other: &Self) -> Self {
         let (x1, y1) = self.as_tuple();
         let (x2, y2) = other.as_tuple();
 
-        Self::Tuple((x1 + x2) / 2.0, (y1 + y2) / 2.0)
+        Self::Tuple(x1.midpoint(x2), y1.midpoint(y2))
     }
 
     #[must_use]
@@ -1611,11 +1611,11 @@ impl BoundingBox {
     }
 
     #[must_use]
-    pub fn center(&self) -> MapPosition {
+    pub const fn center(&self) -> MapPosition {
         let (x1, y1) = self.0.as_tuple();
         let (x2, y2) = self.1.as_tuple();
 
-        MapPosition::Tuple((x1 + x2) / 2.0, (y1 + y2) / 2.0)
+        MapPosition::Tuple(x1.midpoint(x2), y1.midpoint(y2))
     }
 }
 

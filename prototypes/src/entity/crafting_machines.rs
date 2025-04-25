@@ -107,7 +107,7 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
 
             if let Some(anim_res) = anim {
                 render_layers.add_entity(anim_res, &options.position);
-            };
+            }
         }
 
         self.child
