@@ -112,6 +112,9 @@ pub struct CarData {
     pub consumption: Energy,
     pub rotation_speed: f64,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub rotation_snap_angle: f64,
+
     #[serde(flatten)]
     pub energy_source: BurnerOrVoidEnergySource,
 

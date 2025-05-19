@@ -8,9 +8,10 @@ use crate::{
     FluidBoxLinkedConnectionID, FluidID, MapPosition, RenderLayer, Sprite4Way,
 };
 
+/// [`Types/FluidFlowDirection`](https://lua-api.factorio.com/latest/types/FluidFlowDirection.html)
 #[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
-pub enum PipeConnectionFlowDirection {
+pub enum FluidFlowDirection {
     #[default]
     InputOutput,
     Input,
@@ -31,7 +32,7 @@ pub enum PipeConnectionType {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PipeConnectionDefinition {
     #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub flow_direction: PipeConnectionFlowDirection,
+    pub flow_direction: FluidFlowDirection,
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub connection_type: PipeConnectionType,
 

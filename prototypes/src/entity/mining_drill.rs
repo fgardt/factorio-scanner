@@ -55,8 +55,8 @@ pub struct MiningDrillData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub drops_full_belt_stacks: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub base_productivity: f64,
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub uses_force_mining_productivity_bonus: bool,
 
     pub monitor_visualization_tint: Option<Color>,
 

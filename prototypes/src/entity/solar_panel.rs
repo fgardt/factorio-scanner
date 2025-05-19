@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
 use super::EntityWithOwnerPrototype;
@@ -16,6 +17,24 @@ pub struct SolarPanelData {
     pub picture: Option<SpriteVariations>,
     pub production: Energy,
     pub overlay: Option<SpriteVariations>,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub performance_at_day: f64,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub performance_at_night: f64,
+    #[serde(
+        default = "default_solar_coefficient_property",
+        skip_serializing_if = "is_default_solar_coefficient_property"
+    )]
+    pub solar_coefficient_property: SurfacePropertyID,
+}
+
+fn default_solar_coefficient_property() -> SurfacePropertyID {
+    SurfacePropertyID::new("solar-panel")
+}
+
+fn is_default_solar_coefficient_property(solar_coefficient_property: &SurfacePropertyID) -> bool {
+    *solar_coefficient_property == default_solar_coefficient_property()
 }
 
 impl super::Renderable for SolarPanelData {

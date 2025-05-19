@@ -148,7 +148,7 @@ fn main() -> ExitCode {
     )) {
         error!("{err:#?}");
         return ExitCode::FAILURE;
-    };
+    }
 
     ExitCode::SUCCESS
 }
@@ -172,8 +172,9 @@ fn infer_paths(cli: &Cli) -> std::result::Result<(PathBuf, PathBuf, PathBuf), St
 
     if !factorio_appdir.join("data").is_dir() {
         return Err(format!(
-            "Factorio app directory at {factorio_appdir:?} doesn't exist \
-            or doesn't contain 'data', check --factorio"
+            "Factorio app directory at {} doesn't exist \
+            or doesn't contain 'data', check --factorio",
+            factorio_appdir.display()
         ));
     }
 
@@ -188,8 +189,9 @@ fn infer_paths(cli: &Cli) -> std::result::Result<(PathBuf, PathBuf, PathBuf), St
 
     if !factorio_userdir.join("mods").is_dir() {
         return Err(format!(
-            "Factorio user data directory at {factorio_userdir:?} doesn't exist \
-            or doesn't contain 'mods', check --factorio-userdir"
+            "Factorio user data directory at {} doesn't exist \
+            or doesn't contain 'mods', check --factorio-userdir",
+            factorio_userdir.display()
         ));
     }
 
@@ -203,7 +205,8 @@ fn infer_paths(cli: &Cli) -> std::result::Result<(PathBuf, PathBuf, PathBuf), St
 
     if !factorio_bin.exists() {
         return Err(format!(
-            "Factorio binary not found at {factorio_bin:?}, check --factorio-bin"
+            "Factorio binary not found at {}, check --factorio-bin",
+            factorio_bin.display()
         ));
     }
 

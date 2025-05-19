@@ -1146,16 +1146,13 @@ pub enum EntityPrototypeFlag {
     #[serde(rename = "building-direction-16-way")]
     BuildingDirection16Way,
     FilterDirections,
-    FastReplaceableNoBuildWhileMoving,
+    GetByUnitNumber,
     BreathsAir,
     NotRepairable,
     NotOnMap,
     NotDeconstructable,
     NotBlueprintable,
-    Hidden,
     HideAltInfo,
-    FastReplaceableNoCrossTypeWhileMoving,
-    NoGapFillWhileBuilding,
     NotFlammable,
     NoAutomatedItemRemoval,
     NoAutomatedItemInsertion,
@@ -1163,6 +1160,7 @@ pub enum EntityPrototypeFlag {
     NotSelectableInGame,
     NotUpgradable,
     NotInKillStatistics,
+    SnapToRailSupportSpot,
     NotInMadeIn,
 }
 
@@ -1284,7 +1282,7 @@ impl MapPosition {
     }
 
     #[must_use]
-    pub fn as_tuple_mut(&mut self) -> (&mut f64, &mut f64) {
+    pub const fn as_tuple_mut(&mut self) -> (&mut f64, &mut f64) {
         match self {
             Self::Tuple(x, y) | Self::XY { x, y } => (x, y),
         }
@@ -1363,11 +1361,11 @@ impl MapPosition {
     }
 
     #[must_use]
-    pub fn center_to(&self, other: &Self) -> Self {
+    pub const fn center_to(&self, other: &Self) -> Self {
         let (x1, y1) = self.as_tuple();
         let (x2, y2) = other.as_tuple();
 
-        Self::Tuple((x1 + x2) / 2.0, (y1 + y2) / 2.0)
+        Self::Tuple(x1.midpoint(x2), y1.midpoint(y2))
     }
 
     #[must_use]
@@ -1566,7 +1564,7 @@ impl std::ops::DivAssign<f64> for MapPosition {
 }
 
 /// [`Types/BoundingBox`](https://lua-api.factorio.com/latest/types/BoundingBox.html)
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 pub struct BoundingBox(pub MapPosition, pub MapPosition);
 
 impl BoundingBox {
@@ -1611,11 +1609,88 @@ impl BoundingBox {
     }
 
     #[must_use]
-    pub fn center(&self) -> MapPosition {
+    pub const fn center(&self) -> MapPosition {
         let (x1, y1) = self.0.as_tuple();
         let (x2, y2) = self.1.as_tuple();
 
-        MapPosition::Tuple((x1 + x2) / 2.0, (y1 + y2) / 2.0)
+        MapPosition::Tuple(x1.midpoint(x2), y1.midpoint(y2))
+    }
+}
+
+impl<'de> Deserialize<'de> for BoundingBox {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct BoundingBoxVisitor;
+
+        impl<'de> serde::de::Visitor<'de> for BoundingBoxVisitor {
+            type Value = BoundingBox;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a BoundingBox")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::MapAccess<'de>,
+            {
+                use serde::de::Error;
+
+                #[derive(Deserialize)]
+                #[serde(field_identifier, rename_all = "snake_case")]
+                enum Field {
+                    LeftTop,
+                    RightBottom,
+                    Orientation, // unused
+                }
+
+                let mut left_top = None;
+                let mut right_bottom = None;
+
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::LeftTop => {
+                            if left_top.is_some() {
+                                return Err(serde::de::Error::duplicate_field("left_top"));
+                            }
+                            left_top = Some(map.next_value()?);
+                        }
+                        Field::RightBottom => {
+                            if right_bottom.is_some() {
+                                return Err(serde::de::Error::duplicate_field("right_bottom"));
+                            }
+                            right_bottom = Some(map.next_value()?);
+                        }
+                        Field::Orientation => {}
+                    }
+                }
+
+                let left_top = left_top.ok_or_else(|| Error::missing_field("left_top"))?;
+                let right_bottom =
+                    right_bottom.ok_or_else(|| Error::missing_field("right_bottom"))?;
+
+                Ok(BoundingBox(left_top, right_bottom))
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::SeqAccess<'de>,
+            {
+                use serde::de::Error;
+
+                let left_top = seq
+                    .next_element()?
+                    .ok_or_else(|| Error::invalid_length(0, &self))?;
+                let right_bottom = seq
+                    .next_element()?
+                    .ok_or_else(|| Error::invalid_length(1, &self))?;
+
+                Ok(BoundingBox(left_top, right_bottom))
+            }
+        }
+
+        deserializer.deserialize_any(BoundingBoxVisitor)
     }
 }
 

@@ -160,6 +160,9 @@ pub struct SpriteParameters<S: SourceProvider = SingleSource> {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub draw_as_light: bool,
 
+    // only relevant for tile rendering
+    // #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    // pub occludes_light: bool,
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub mipmap_count: u8,
 
