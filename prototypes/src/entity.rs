@@ -53,6 +53,7 @@ mod storage_tank;
 mod train_stop;
 mod transport_belts;
 mod turrets;
+mod valve;
 mod vehicles;
 mod wall;
 
@@ -94,6 +95,7 @@ pub use storage_tank::*;
 pub use train_stop::*;
 pub use transport_belts::*;
 pub use turrets::*;
+pub use valve::*;
 pub use vehicles::*;
 pub use wall::*;
 
@@ -891,6 +893,7 @@ namespace_struct! {
     "infinity-pipe",
     "pipe-to-ground",
     "pump",
+    "valve",
     "simple-entity",
     "simple-entity-with-owner",
     "simple-entity-with-force",

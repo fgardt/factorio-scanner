@@ -309,6 +309,9 @@ pub struct RocketSiloData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub launch_to_space_platforms: bool,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub can_launch_without_landing_pads: bool,
+
     #[serde(flatten)]
     assembler_data: AssemblingMachineData,
     // not implemented

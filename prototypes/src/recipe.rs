@@ -27,6 +27,9 @@ pub struct RecipePrototypeData {
     )]
     pub category: RecipeCategoryID,
 
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_categories: FactorioArray<RecipeCategoryID>,
+
     pub crafting_machine_tint: Option<RecipeTints>,
 
     #[serde(flatten)]
@@ -93,6 +96,9 @@ pub struct RecipePrototypeData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub result_is_always_fresh: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub reset_freshness_on_craft: bool,
 
     pub allow_consumption_message: Option<LocalisedString>,
     pub allow_speed_message: Option<LocalisedString>,
