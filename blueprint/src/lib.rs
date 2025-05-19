@@ -289,12 +289,12 @@ pub enum Data {
 
 impl Data {
     #[must_use]
-    pub fn label(&self) -> &str {
+    pub const fn label(&self) -> &str {
         match self {
-            Self::Blueprint(data) => &data.label,
-            Self::BlueprintBook(data) => &data.label,
-            Self::UpgradePlanner(data) => &data.label,
-            Self::DeconstructionPlanner(data) => &data.label,
+            Self::Blueprint(data) => data.label.as_str(),
+            Self::BlueprintBook(data) => data.label.as_str(),
+            Self::UpgradePlanner(data) => data.label.as_str(),
+            Self::DeconstructionPlanner(data) => data.label.as_str(),
         }
     }
 
@@ -311,30 +311,30 @@ impl Data {
     #[must_use]
     pub fn description(&self) -> &str {
         match self {
-            Self::Blueprint(data) => &data.description,
-            Self::BlueprintBook(data) => &data.description,
-            Self::UpgradePlanner(data) => &data.description,
-            Self::DeconstructionPlanner(data) => &data.description,
+            Self::Blueprint(data) => data.description.as_str(),
+            Self::BlueprintBook(data) => data.description.as_str(),
+            Self::UpgradePlanner(data) => data.description.as_str(),
+            Self::DeconstructionPlanner(data) => data.description.as_str(),
         }
     }
 
     #[must_use]
-    pub fn item(&self) -> &str {
+    pub const fn item(&self) -> &str {
         match self {
-            Self::Blueprint(data) => &data.item,
-            Self::BlueprintBook(data) => &data.item,
-            Self::UpgradePlanner(data) => &data.item,
-            Self::DeconstructionPlanner(data) => &data.item,
+            Self::Blueprint(data) => data.item.as_str(),
+            Self::BlueprintBook(data) => data.item.as_str(),
+            Self::UpgradePlanner(data) => data.item.as_str(),
+            Self::DeconstructionPlanner(data) => data.item.as_str(),
         }
     }
 
     #[must_use]
     pub fn icons(&self) -> &[Indexed<Icon>] {
         match self {
-            Self::Blueprint(data) => &data.icons,
-            Self::BlueprintBook(data) => &data.icons,
-            Self::UpgradePlanner(data) => &data.icons,
-            Self::DeconstructionPlanner(data) => &data.icons,
+            Self::Blueprint(data) => data.icons.as_slice(),
+            Self::BlueprintBook(data) => data.icons.as_slice(),
+            Self::UpgradePlanner(data) => data.icons.as_slice(),
+            Self::DeconstructionPlanner(data) => data.icons.as_slice(),
         }
     }
 
@@ -356,7 +356,7 @@ impl Data {
         }
     }
 
-    pub fn as_book_mut(&mut self) -> Option<&mut Book> {
+    pub const fn as_book_mut(&mut self) -> Option<&mut Book> {
         match self {
             Self::BlueprintBook(data) => Some(data),
             _ => None,

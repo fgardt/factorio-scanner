@@ -325,7 +325,7 @@ impl super::Renderable for RailPieceLayers {
             empty = false;
 
             render_layers.add(res, &options.position, RenderLayer::RailStonePathLower);
-        };
+        }
 
         if let Some(res) = self.stone_path.as_ref().and_then(|sp| {
             sp.render(

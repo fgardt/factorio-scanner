@@ -38,6 +38,9 @@ pub struct PumpData {
     )]
     pub fluid_wagon_connector_frame_count: u8,
 
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub flow_scaling: bool,
+
     pub fluid_animation: Option<Animation4Way>,
     pub glass_pictures: Option<Sprite4Way>,
     pub frozen_patch: Option<Sprite4Way>,

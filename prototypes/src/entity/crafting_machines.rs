@@ -107,7 +107,7 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
 
             if let Some(anim_res) = anim {
                 render_layers.add_entity(anim_res, &options.position);
-            };
+            }
         }
 
         self.child
@@ -308,6 +308,9 @@ pub struct RocketSiloData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub launch_to_space_platforms: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub can_launch_without_landing_pads: bool,
 
     #[serde(flatten)]
     assembler_data: AssemblingMachineData,
