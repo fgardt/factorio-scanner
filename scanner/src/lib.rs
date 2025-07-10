@@ -326,6 +326,11 @@ pub fn bp_entity2render_opts(
                 .as_ref()
                 .map(blueprint::DeciderData::operation)
         }),
+        selector_operation: value.control_behavior.as_ref().and_then(|bhv| {
+            bhv.selector_conditions
+                .as_ref()
+                .map(blueprint::SelectorData::operation)
+        }),
         runtime_tint: value.color.as_ref().map(std::convert::Into::into),
         entity_id: value.entity_number,
         circuit_connected: value.connections.is_some() || !value.neighbours.is_empty(),
