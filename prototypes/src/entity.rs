@@ -53,6 +53,7 @@ mod roboport;
 mod simple_entities;
 mod solar_panel;
 mod storage_tank;
+mod thruster;
 mod train_stop;
 mod transport_belts;
 mod turrets;
@@ -98,6 +99,7 @@ pub use roboport::*;
 pub use simple_entities::*;
 pub use solar_panel::*;
 pub use storage_tank::*;
+pub use thruster::*;
 pub use train_stop::*;
 pub use transport_belts::*;
 pub use turrets::*;
@@ -922,6 +924,7 @@ namespace_struct! {
     "simple-entity-with-force",
     "solar-panel",
     "storage-tank",
+    "thruster",
     "linked-belt",
     "loader-1x1",
     "loader",
