@@ -49,4 +49,4 @@ int_default!(
 int_default!(i16, 64);
 int_default!(u16, 1);
 int_default!(i32, 1);
-int_default!(u32, 1, 4, 8, 10, 30, 60, 80, 120, 3600);
+int_default!(u32, 1, 4, 8, 10, 30, 60, 80, 120, 400, 3600);

@@ -23,6 +23,7 @@ mod burner_generator;
 mod combinators;
 mod containers;
 mod crafting_machines;
+mod displaypanel;
 mod electric_energy_interface;
 mod electric_pole;
 mod flying_robots;
@@ -65,6 +66,7 @@ pub use burner_generator::*;
 pub use combinators::*;
 pub use containers::*;
 pub use crafting_machines::*;
+pub use displaypanel::*;
 pub use electric_energy_interface::*;
 pub use electric_pole::*;
 pub use flying_robots::*;
@@ -876,6 +878,7 @@ namespace_struct! {
     "selector-combinator",
     "constant-combinator",
     "programmable-speaker",
+    "display-panel",
     "container",
     "logistic-container",
     "infinity-container",
