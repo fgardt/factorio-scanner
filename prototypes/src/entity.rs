@@ -487,7 +487,11 @@ pub struct EntityData<T: Renderable> {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub protected_from_tile_building: bool,
 
-    pub heating_energy: Option<Energy>,
+    #[serde(
+        default = "default_heating_energy",
+        skip_serializing_if = "is_default_heating_energy"
+    )]
+    pub heating_energy: Energy,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub allow_copy_paste: bool,
@@ -543,6 +547,14 @@ pub struct EntityData<T: Renderable> {
     // pub icons_positioning: FactorioArray<IconSequencePositioning>,
     #[serde(flatten)]
     child: T,
+}
+
+fn default_heating_energy() -> Energy {
+    Energy::new("0W")
+}
+
+fn is_default_heating_energy(energy: &Energy) -> bool {
+    energy == &default_heating_energy()
 }
 
 impl<T: Renderable> Deref for EntityData<T> {

@@ -44,6 +44,9 @@ pub struct InserterData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub bulk: bool,
 
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub uses_inserter_stack_size_bonus: bool,
+
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub allow_custom_vectors: bool,
 

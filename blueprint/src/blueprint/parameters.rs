@@ -10,6 +10,8 @@ pub enum ParameterData {
     Id {
         #[serde(rename = "not-parametrised")]
         not_parametrised: Option<bool>,
+        parameter: Option<bool>,
+
         name: Option<String>,
         id: String,
 
@@ -22,6 +24,8 @@ pub enum ParameterData {
     Number {
         #[serde(rename = "not-parametrised")]
         not_parametrised: Option<bool>,
+        parameter: Option<bool>,
+
         number: String,
         name: Option<String>,
         variable: Option<String>,

@@ -657,7 +657,7 @@ impl RenderLayerBuffer {
 
     #[instrument(skip_all)]
     fn generate_wire_draw_data<'a>(
-        &mut self,
+        &self,
         wire_data: &'a EntityWireConnections,
     ) -> [Vec<[(&'a MapPosition, Vector); 2]>; 3] {
         let mut already_drawn = HashSet::<((u64, usize), (u64, usize), usize)>::new();

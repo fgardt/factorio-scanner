@@ -23,6 +23,11 @@ pub struct BeaconData {
     pub distribution_effectivity_bonus_per_quality_level: Option<f64>,
     pub module_slots: ItemStackIndex,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub quality_affects_module_slots: bool,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub quality_affects_supply_area_distance: bool,
+
     pub graphics_set: Option<BeaconGraphicsSet>,
     pub animation: Option<Animation>,
     pub base_picture: Option<Animation>,

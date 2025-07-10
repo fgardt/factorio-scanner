@@ -4,8 +4,8 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 
 use types::{
-    Color, CursorBoxType, EntityID, FactorioArray, FilterMode, ItemStackIndex, MouseCursorID,
-    SelectionModeFlags, TileID,
+    Color, CursorBoxType, EntityID, FactorioArray, FileName, FilterMode, ItemStackIndex,
+    MouseCursorID, SelectionModeFlags, TileID,
 };
 
 /// [`Prototypes/SelectionToolPrototype`](https://lua-api.factorio.com/latest/prototypes/SelectionToolPrototype.html)
@@ -144,14 +144,23 @@ impl std::ops::Deref for DeconstructionItemPrototypeData {
 }
 
 /// [`Prototypes/SpidertronRemotePrototype`](https://lua-api.factorio.com/latest/prototypes/SpidertronRemotePrototype.html)
-#[derive(Debug, Deserialize, Serialize)]
-pub struct SpidertronRemotePrototype(SelectionToolPrototype);
+pub type SpidertronRemotePrototype = crate::BasePrototype<SpidertronRemotePrototypeData>;
 
-impl std::ops::Deref for SpidertronRemotePrototype {
-    type Target = SelectionToolPrototype;
+/// [`Prototypes/SpidertronRemotePrototype`](https://lua-api.factorio.com/latest/prototypes/SpidertronRemotePrototype.html)
+#[skip_serializing_none]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SpidertronRemotePrototypeData {
+    pub icon_color_indicator_mask: Option<FileName>,
+
+    #[serde(flatten)]
+    parent: SelectionToolPrototypeData,
+}
+
+impl std::ops::Deref for SpidertronRemotePrototypeData {
+    type Target = SelectionToolPrototypeData;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.parent
     }
 }
 
