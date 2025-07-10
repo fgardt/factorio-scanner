@@ -340,10 +340,14 @@ pub enum CapsuleAction {
 #[serde(untagged)]
 pub enum Color {
     Struct {
-        r: Option<f64>,
-        g: Option<f64>,
-        b: Option<f64>,
-        a: Option<f64>,
+        #[serde(default, skip_serializing_if = "helper::is_default")]
+        r: f64,
+        #[serde(default, skip_serializing_if = "helper::is_default")]
+        g: f64,
+        #[serde(default, skip_serializing_if = "helper::is_default")]
+        b: f64,
+        #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+        a: f64,
     },
     RGB(f64, f64, f64),
     RGBA(f64, f64, f64, f64),
@@ -353,9 +357,10 @@ impl Color {
     #[must_use]
     pub fn to_rgba(&self) -> [f64; 4] {
         let (r, g, b, a) = match self {
-            Self::Struct { r, g, b, a } => (*r, *g, *b, *a),
+            Self::Struct { r, g, b, a } | Self::RGBA(r, g, b, a) => {
+                (Some(*r), Some(*g), Some(*b), Some(*a))
+            }
             Self::RGB(r, g, b) => (Some(*r), Some(*g), Some(*b), None::<f64>),
-            Self::RGBA(r, g, b, a) => (Some(*r), Some(*g), Some(*b), Some(*a)),
         };
 
         let r = r.unwrap_or(0.0);
