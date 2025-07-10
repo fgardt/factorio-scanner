@@ -35,6 +35,7 @@ mod inserter;
 mod lab;
 mod lamp;
 mod landmine;
+mod lightning_attractor;
 mod market;
 mod mining_drill;
 mod offshore_pump;
@@ -78,6 +79,7 @@ pub use inserter::*;
 pub use lab::*;
 pub use lamp::*;
 pub use landmine::*;
+pub use lightning_attractor::*;
 pub use market::*;
 pub use mining_drill::*;
 pub use offshore_pump::*;
@@ -903,6 +905,7 @@ namespace_struct! {
     "lab",
     "lamp",
     "land-mine",
+    "lightning-attractor",
     "market",
     "mining-drill",
     "offshore-pump",
