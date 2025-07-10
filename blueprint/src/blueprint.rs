@@ -12,8 +12,8 @@ use serde_with::skip_serializing_none;
 
 use types::{
     ArithmeticOperation, AsteroidChunkID, Comparator, Direction, EntityID, FilterMode, FluidID,
-    ItemCountType, ItemID, ItemStackIndex, QualityID, RealOrientation, RecipeID, SpaceLocationID,
-    TileID, Vector, VirtualSignalID,
+    ItemCountType, ItemID, ItemStackIndex, QualityID, RealOrientation, RecipeID, SelectorOperation,
+    SpaceLocationID, TileID, Vector, VirtualSignalID,
 };
 
 use crate::{IndexedVec, NameString};
@@ -1643,6 +1643,23 @@ pub enum SelectorData {
         quality_source_static: Option<QualitySourceStatic>,
         quality_destination_signal: Option<SignalID>,
     },
+}
+
+impl SelectorData {
+    #[must_use]
+    pub const fn operation(&self) -> SelectorOperation {
+        match self {
+            Self::Select { select_max, .. } => SelectorOperation::Select {
+                select_max: *select_max,
+            },
+            Self::Count { .. } => SelectorOperation::Count,
+            Self::Random { .. } => SelectorOperation::Random,
+            Self::StackSize => SelectorOperation::StackSize,
+            Self::RocketCapacity => SelectorOperation::RocketCapacity,
+            Self::QualityFilter { .. } => SelectorOperation::QualityFilter,
+            Self::QualityTransfer { .. } => SelectorOperation::QualityTransfer,
+        }
+    }
 }
 
 impl crate::GetIDs for SelectorData {

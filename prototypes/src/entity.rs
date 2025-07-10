@@ -121,6 +121,7 @@ pub struct RenderOpts {
 
     pub arithmetic_operation: Option<ArithmeticOperation>,
     pub decider_operation: Option<Comparator>,
+    pub selector_operation: Option<SelectorOperation>,
 
     pub runtime_tint: Option<Color>,
 
@@ -872,6 +873,7 @@ namespace_struct! {
     "burner-generator",
     "arithmetic-combinator",
     "decider-combinator",
+    "selector-combinator",
     "constant-combinator",
     "programmable-speaker",
     "container",

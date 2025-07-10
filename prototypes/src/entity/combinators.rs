@@ -3,6 +3,7 @@ use std::ops::Deref;
 use serde::{Deserialize, Serialize};
 
 use serde_helper as helper;
+use serde_with::skip_serializing_none;
 
 use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
@@ -93,6 +94,7 @@ impl<T: super::Renderable> super::Renderable for CombinatorData<T> {
 pub type ArithmeticCombinatorPrototype = CombinatorPrototype<ArithmeticCombinatorData>;
 
 /// [`Prototypes/ArithmeticCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/ArithmeticCombinatorPrototype.html)
+#[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ArithmeticCombinatorData {
     pub plus_symbol_sprites: Option<Sprite4Way>,
@@ -151,6 +153,7 @@ impl super::Renderable for ArithmeticCombinatorData {
 pub type DeciderCombinatorPrototype = CombinatorPrototype<DeciderCombinatorData>;
 
 /// [`Prototypes/DeciderCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/DeciderCombinatorPrototype.html)
+#[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DeciderCombinatorData {
     pub equal_symbol_sprites: Option<Sprite4Way>,
@@ -178,6 +181,59 @@ impl super::Renderable for DeciderCombinatorData {
                 Comparator::GreaterOrEqual => self.greater_or_equal_symbol_sprites.as_ref(),
                 Comparator::LessOrEqual => self.less_or_equal_symbol_sprites.as_ref(),
                 Comparator::Unknown => None,
+            }
+            .and_then(|s| {
+                s.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            })
+        })?;
+
+        render_layers.add_entity(res, &options.position);
+
+        Some(())
+    }
+}
+
+/// [`Prototypes/SelectorCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/SelectorCombinatorPrototype.html)
+pub type SelectorCombinatorPrototype = CombinatorPrototype<SelectorCombinatorData>;
+
+/// [`Prototypes/SelectorCombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/SelectorCombinatorPrototype.html)
+#[skip_serializing_none]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SelectorCombinatorData {
+    pub max_symbol_sprites: Option<Sprite4Way>,
+    pub min_symbol_sprites: Option<Sprite4Way>,
+    pub count_symbol_sprites: Option<Sprite4Way>,
+    pub random_symbol_sprites: Option<Sprite4Way>,
+    pub stack_size_sprites: Option<Sprite4Way>,
+    pub rocket_capacity_sprites: Option<Sprite4Way>,
+    pub quality_symbol_sprites: Option<Sprite4Way>,
+}
+
+impl super::Renderable for SelectorCombinatorData {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+        image_cache: &mut ImageCache,
+    ) -> super::RenderOutput {
+        let res = options.selector_operation.as_ref().and_then(|op| {
+            match op {
+                SelectorOperation::Select { select_max: true } => self.max_symbol_sprites.as_ref(),
+                SelectorOperation::Select { select_max: false } => self.min_symbol_sprites.as_ref(),
+                SelectorOperation::Count => self.count_symbol_sprites.as_ref(),
+                SelectorOperation::Random => self.random_symbol_sprites.as_ref(),
+                SelectorOperation::StackSize => self.stack_size_sprites.as_ref(),
+                SelectorOperation::RocketCapacity => self.rocket_capacity_sprites.as_ref(),
+                SelectorOperation::QualityTransfer | SelectorOperation::QualityFilter => {
+                    self.quality_symbol_sprites.as_ref()
+                }
+                SelectorOperation::Unknown => None,
             }
             .and_then(|s| {
                 s.render(
