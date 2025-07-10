@@ -2479,7 +2479,7 @@ pub enum Comparator {
     Unknown,
 }
 
-// https://lua-api.factorio.com/latest/concepts.html#ArithmeticCombinatorParameters
+// https://lua-api.factorio.com/latest/concepts/ArithmeticCombinatorParameterOperation.html
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
 pub enum ArithmeticOperation {
     #[serde(rename = "*")]
@@ -2514,6 +2514,24 @@ pub enum ArithmeticOperation {
 
     #[serde(rename = "XOR")]
     BitwiseXor,
+
+    #[serde(rename = "?", other)]
+    Unknown,
+}
+
+// https://lua-api.factorio.com/latest/concepts/SelectorCombinatorParameterOperation.html
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum SelectorOperation {
+    Select {
+        select_max: bool,
+    },
+    Count,
+    Random,
+    QualityTransfer,
+    RocketCapacity,
+    StackSize,
+    QualityFilter,
 
     #[serde(rename = "?", other)]
     Unknown,
