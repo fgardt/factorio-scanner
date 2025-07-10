@@ -84,45 +84,45 @@ pub enum ThrusterPerformancePoint {
 }
 
 impl ThrusterPerformancePoint {
+    #[must_use]
     pub const fn fluid_volume(&self) -> f64 {
         match self {
-            ThrusterPerformancePoint::Struct { fluid_volume, .. } => *fluid_volume,
-            ThrusterPerformancePoint::Array(fluid_volume, _, _) => *fluid_volume,
+            Self::Array(fluid_volume, _, _) | Self::Struct { fluid_volume, .. } => *fluid_volume,
         }
     }
 
+    #[must_use]
     pub const fn fluid_volume_mut(&mut self) -> &mut f64 {
         match self {
-            ThrusterPerformancePoint::Struct { fluid_volume, .. } => fluid_volume,
-            ThrusterPerformancePoint::Array(fluid_volume, _, _) => fluid_volume,
+            Self::Struct { fluid_volume, .. } | Self::Array(fluid_volume, _, _) => fluid_volume,
         }
     }
 
+    #[must_use]
     pub const fn fluid_usage(&self) -> FluidAmount {
         match self {
-            ThrusterPerformancePoint::Struct { fluid_usage, .. } => *fluid_usage,
-            ThrusterPerformancePoint::Array(_, fluid_usage, _) => *fluid_usage,
+            Self::Struct { fluid_usage, .. } | Self::Array(_, fluid_usage, _) => *fluid_usage,
         }
     }
 
+    #[must_use]
     pub const fn fluid_usage_mut(&mut self) -> &mut FluidAmount {
         match self {
-            ThrusterPerformancePoint::Struct { fluid_usage, .. } => fluid_usage,
-            ThrusterPerformancePoint::Array(_, fluid_usage, _) => fluid_usage,
+            Self::Struct { fluid_usage, .. } | Self::Array(_, fluid_usage, _) => fluid_usage,
         }
     }
 
+    #[must_use]
     pub const fn effectivity(&self) -> f64 {
         match self {
-            ThrusterPerformancePoint::Struct { effectivity, .. } => *effectivity,
-            ThrusterPerformancePoint::Array(_, _, effectivity) => *effectivity,
+            Self::Struct { effectivity, .. } | Self::Array(_, _, effectivity) => *effectivity,
         }
     }
 
+    #[must_use]
     pub const fn effectivity_mut(&mut self) -> &mut f64 {
         match self {
-            ThrusterPerformancePoint::Struct { effectivity, .. } => effectivity,
-            ThrusterPerformancePoint::Array(_, _, effectivity) => effectivity,
+            Self::Struct { effectivity, .. } | Self::Array(_, _, effectivity) => effectivity,
         }
     }
 }
