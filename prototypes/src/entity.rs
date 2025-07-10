@@ -17,6 +17,7 @@ use abstractions::*;
 
 mod accumulator;
 mod artillery_turret;
+mod asteroid_collector;
 mod beacon;
 mod boiler;
 mod burner_generator;
@@ -61,6 +62,7 @@ mod wall;
 
 pub use accumulator::*;
 pub use artillery_turret::*;
+pub use asteroid_collector::*;
 pub use beacon::*;
 pub use boiler::*;
 pub use burner_generator::*;
@@ -872,6 +874,7 @@ namespace_struct! {
     &dyn RenderableEntity,
     "accumulator",
     "artillery-turret",
+    "asteroid-collector",
     "beacon",
     "boiler",
     "burner-generator",
