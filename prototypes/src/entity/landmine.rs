@@ -27,6 +27,13 @@ pub struct LandMineData {
     )]
     pub timeout: u32,
 
+    #[serde(
+        default = "helper::u32_10",
+        skip_serializing_if = "helper::is_10_u32",
+        deserialize_with = "helper::truncating_deserializer"
+    )]
+    pub trigger_interval: u32,
+
     pub ammo_category: Option<AmmoCategoryID>,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]

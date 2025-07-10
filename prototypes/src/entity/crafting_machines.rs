@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{collections::HashMap, ops::Deref};
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -18,6 +18,9 @@ pub type CraftingMachinePrototype<T> =
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CraftingMachineData<T: super::Renderable> {
     pub energy_usage: Energy,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub quality_affects_energy_usage: bool,
+
     pub crafting_speed: f64,
     pub crafting_categories: FactorioArray<RecipeCategoryID>,
 
@@ -27,6 +30,8 @@ pub struct CraftingMachineData<T: super::Renderable> {
     pub effect_receiver: Option<EffectReceiver>,
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub module_slots: ItemStackIndex,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub quality_affects_module_slots: bool,
     pub allowed_effects: Option<EffectTypeLimitation>,
     pub allowed_module_categories: Option<FactorioArray<ModuleCategoryID>>,
 
@@ -62,6 +67,13 @@ pub struct CraftingMachineData<T: super::Renderable> {
     pub trash_inventory_size: Option<ItemStackIndex>,
     pub vector_to_place_result: Option<Vector>,
     pub forced_symmetry: Option<Mirroring>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub crafting_speed_quality_multiplier: HashMap<QualityID, f64>,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub module_slots_quality_bonus: HashMap<QualityID, ItemStackIndex>,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub energy_usage_quality_multiplier: HashMap<QualityID, f64>,
 
     #[serde(flatten)]
     child: T,
