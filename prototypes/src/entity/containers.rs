@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{collections::HashMap, ops::Deref};
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -28,8 +28,13 @@ pub struct ContainerData {
 
     pub picture: Option<Sprite>, // overridden in `LogisticContainerPrototype`
 
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub inventory_type: InventoryType,
+
+    pub inventory_properties: Option<InventoryWithCustomStackSizeSpecification>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub inventory_weight_limit: Weight,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub default_status: EntityStatus,
@@ -65,6 +70,27 @@ pub enum InventoryType {
     #[default]
     WithBar,
     WithFiltersAndBar,
+    WithCustomStackSize,
+    WithWeightLimit,
+}
+
+/// [`Types/InventoryWithCustomStackSizeSpecification`](https://lua-api.factorio.com/latest/types/InventoryWithCustomStackSizeSpecification.html)
+#[skip_serializing_none]
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
+pub struct InventoryWithCustomStackSizeSpecification {
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub stack_size_multiplier: f64,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub stack_size_min: f64,
+
+    pub stack_size_max: Option<ItemCountType>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub stack_size_override: HashMap<ItemID, ItemCountType>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub with_bar: bool,
 }
 
 /// [`Prototypes/LogisticContainerPrototype`](https://lua-api.factorio.com/latest/prototypes/LogisticContainerPrototype.html)
@@ -208,6 +234,11 @@ pub struct LinkedContainerData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub inventory_type: InventoryType,
+
+    pub inventory_properties: Option<InventoryWithCustomStackSizeSpecification>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub inventory_weight_limit: Weight,
 
     #[serde(default = "GuiMode::all", skip_serializing_if = "GuiMode::is_all")]
     pub gui_mode: GuiMode,

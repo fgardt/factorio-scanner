@@ -25,6 +25,8 @@ pub struct LabData {
 
     pub effect_receiver: Option<EffectReceiver>,
     pub module_slots: Option<ItemStackIndex>,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub quality_affects_module_slots: bool,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub uses_quality_drain_modifier: bool,

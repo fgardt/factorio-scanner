@@ -36,6 +36,8 @@ pub struct MiningDrillData {
 
     pub effect_receiver: Option<EffectReceiver>,
     pub module_slots: Option<ItemStackIndex>,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub quality_affects_module_slots: bool,
     pub allowed_effects: Option<EffectTypeLimitation>,
     pub allowed_module_categories: Option<FactorioArray<ModuleCategoryID>>,
 
@@ -57,6 +59,9 @@ pub struct MiningDrillData {
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub uses_force_mining_productivity_bonus: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub quality_affects_mining_radius: bool,
 
     pub monitor_visualization_tint: Option<Color>,
 

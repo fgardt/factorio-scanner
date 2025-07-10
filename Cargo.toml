@@ -23,7 +23,7 @@ lto = "thin"
 blueprint = { path = "blueprint" }
 clap = { version = "4.5", features = ["derive"] }
 factorio_api = { path = "factorio_api" }
-flate2 = "1.0"
+flate2 = "1.1"
 image = { version = "0.25", features = ["png"], default-features = false }
 imageproc = "0.25"
 konst = "0.3"
@@ -38,7 +38,7 @@ serde_repr = "0.1"
 serde_with = "3.12"
 thiserror = "2"
 tracing = { version = "0.1", features = ["attributes", "log"] }
-tokio = "1.42"
+tokio = "1.45"
 types = { path = "types" }
 regex = "1.11"
 
