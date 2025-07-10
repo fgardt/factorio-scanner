@@ -1,23 +1,34 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use super::{EntityWithOwnerPrototype, WireEntityData};
+use serde_helper as helper;
+
+use super::EntityWithOwnerPrototype;
 use mod_util::UsedMods;
 use types::*;
 
-/// [`Prototypes/AccumulatorPrototype`](https://lua-api.factorio.com/latest/prototypes/AccumulatorPrototype.html)
-pub type AccumulatorPrototype = EntityWithOwnerPrototype<WireEntityData<AccumulatorData>>;
+/// [`Prototypes/LightningAttractorPrototype`](https://lua-api.factorio.com/latest/prototypes/LightningAttractorPrototype.html)
+pub type LightningAttractorPrototype = EntityWithOwnerPrototype<LightningAttractorData>;
 
-/// [`Prototypes/AccumulatorPrototype`](https://lua-api.factorio.com/latest/prototypes/AccumulatorPrototype.html)
+/// [`Prototypes/LightningAttractorPrototype`](https://lua-api.factorio.com/latest/prototypes/LightningAttractorPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
-pub struct AccumulatorData {
-    pub energy_source: ElectricEnergySource,
+pub struct LightningAttractorData {
     pub chargable_graphics: Option<ChargableGraphics>,
-    pub default_output_signal: Option<SignalIDConnector>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub lightning_strike_offset: MapPosition,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub efficiency: f64,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub range_elongation: f64,
+
+    pub energy_source: Option<ElectricEnergySource>,
 }
 
-impl super::Renderable for AccumulatorData {
+impl super::Renderable for LightningAttractorData {
     fn render(
         &self,
         options: &super::RenderOpts,
