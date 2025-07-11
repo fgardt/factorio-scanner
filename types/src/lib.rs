@@ -1954,6 +1954,28 @@ impl TryFrom<u8> for Direction {
     }
 }
 
+/// [`Types/DirectionString`](https://lua-api.factorio.com/latest/types/DirectionString.html)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DirectionString {
+    North,
+    NorthNorthEast,
+    NorthEast,
+    EastNorthEast,
+    East,
+    EastSouthEast,
+    SouthEast,
+    SouthSouthEast,
+    South,
+    SouthSouthWest,
+    SouthWest,
+    WestSouthWest,
+    West,
+    WestNorthWest,
+    NorthWest,
+    NorthNorthWest,
+}
+
 /// Single element of [`Types/Resistances`](https://lua-api.factorio.com/latest/types/Resistances.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Resistance {

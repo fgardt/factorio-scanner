@@ -30,6 +30,7 @@ mod electric_energy_interface;
 mod electric_pole;
 mod flying_robots;
 mod fusion_generator;
+mod fusion_reactor;
 mod gate;
 mod generator;
 mod heat_interface;
@@ -78,6 +79,7 @@ pub use electric_energy_interface::*;
 pub use electric_pole::*;
 pub use flying_robots::*;
 pub use fusion_generator::*;
+pub use fusion_reactor::*;
 pub use gate::*;
 pub use generator::*;
 pub use heat_interface::*;
@@ -912,6 +914,7 @@ namespace_struct! {
     "heat-interface",
     "heat-pipe",
     "fusion-generator",
+    "fusion-reactor",
     "inserter",
     "lab",
     "lamp",
