@@ -11,6 +11,7 @@ use types::*;
 pub type BoilerPrototype =
     EntityWithOwnerPrototype<FluidBoxEntityData<EnergyEntityData<BoilerData>>>;
 
+/// [`Prototypes/BoilerPrototype`](https://lua-api.factorio.com/latest/prototypes/BoilerPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BoilerData {
