@@ -237,7 +237,7 @@ impl super::Renderable for AssemblingMachineData {
 }
 
 /// [`Prototypes/RocketSiloPrototype`](https://lua-api.factorio.com/latest/prototypes/RocketSiloPrototype.html)
-pub type RocketSiloPrototype = CraftingMachinePrototype<RocketSiloData>;
+pub type RocketSiloPrototype = CraftingMachinePrototype<WireEntityData<RocketSiloData>>;
 
 /// [`Prototypes/RocketSiloPrototype`](https://lua-api.factorio.com/latest/prototypes/RocketSiloPrototype.html)
 #[skip_serializing_none]
