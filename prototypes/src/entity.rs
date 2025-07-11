@@ -55,6 +55,7 @@ mod reactor;
 mod roboport;
 mod simple_entities;
 mod solar_panel;
+mod space_platform_hub;
 mod storage_tank;
 mod thruster;
 mod train_stop;
@@ -104,6 +105,7 @@ pub use reactor::*;
 pub use roboport::*;
 pub use simple_entities::*;
 pub use solar_panel::*;
+pub use space_platform_hub::*;
 pub use storage_tank::*;
 pub use thruster::*;
 pub use train_stop::*;
@@ -932,6 +934,7 @@ namespace_struct! {
     "simple-entity-with-owner",
     "simple-entity-with-force",
     "solar-panel",
+    "space-platform-hub",
     "storage-tank",
     "thruster",
     "linked-belt",

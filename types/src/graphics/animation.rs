@@ -182,7 +182,10 @@ impl LayeredGraphic<AnimationData> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[skip_serializing_none]
 pub struct AnimationElement {
-    #[serde(default = "rl_obj", skip_serializing_if = "is_rl_obj")]
+    #[serde(
+        default = "RenderLayer::object",
+        skip_serializing_if = "RenderLayer::is_object"
+    )]
     pub render_layer: RenderLayer,
 
     pub secondary_draw_order: Option<i8>,
@@ -193,15 +196,6 @@ pub struct AnimationElement {
     pub always_draw: bool,
 
     pub animation: Option<Animation>,
-}
-
-const fn rl_obj() -> RenderLayer {
-    RenderLayer::Object
-}
-
-#[expect(clippy::trivially_copy_pass_by_ref)]
-fn is_rl_obj(rl: &RenderLayer) -> bool {
-    *rl == RenderLayer::Object
 }
 
 impl RenderableGraphics for AnimationElement {
