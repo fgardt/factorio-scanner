@@ -377,7 +377,13 @@ impl RenderableGraphics for SingleOrArray<LayeredSpriteData> {
     ) -> Option<super::GraphicsOutput> {
         match self {
             Self::Single(g) => g.render(scale, used_mods, image_cache, opts),
-            Self::Array(layers) => merge_layers(layers, scale, used_mods, image_cache, opts),
+            Self::Array(layers) => {
+                // until renderlayers are properly supported we'll just sort based on it locally here
+                let mut layers = layers.clone();
+                layers.sort_by_key(|d| d.render_layer);
+
+                merge_layers(&layers, scale, used_mods, image_cache, opts)
+            }
         }
     }
 }
