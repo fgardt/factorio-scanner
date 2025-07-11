@@ -189,6 +189,18 @@ pub enum RenderLayer {
     Cursor,
 }
 
+impl RenderLayer {
+    #[must_use]
+    pub const fn object() -> Self {
+        Self::Object
+    }
+
+    #[must_use]
+    pub const fn is_object(&self) -> bool {
+        matches!(self, Self::Object)
+    }
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum SpriteSizeParam {
