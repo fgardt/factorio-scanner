@@ -51,6 +51,7 @@ pub use wire::*;
 /// Generic type for Factorio's commonly used pattern of
 /// allowing either a single direct value or an array of values.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum SingleOrArray<T> {
     Single(T),
     Array(FactorioArray<T>),
@@ -2687,6 +2688,43 @@ pub struct GigaCargoHatchDefinition {
     pub covered_hatches: FactorioArray<u32>,
     // pub opening_sound: Option<InterruptibleSound>,
     // pub closing_sound: Option<InterruptibleSound>,
+}
+
+/// [`Types/CargoBayConnectableGraphicsSet`](https://lua-api.factorio.com/latest/types/CargoBayConnectableGraphicsSet.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CargoBayConnectableGraphicsSet {
+    pub picture: Option<LayeredSprite>,
+    pub animation: Option<Animation>,
+    #[serde(
+        default = "RenderLayer::object",
+        skip_serializing_if = "RenderLayer::is_object"
+    )]
+    pub animation_render_layer: RenderLayer,
+    pub connections: Option<CargoBayConnections>,
+}
+
+/// [`Types/CargoBayConnections`](https://lua-api.factorio.com/latest/types/CargoBayConnections.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CargoBayConnections {
+    pub top_wall: Option<LayeredSpriteVariations>,
+    pub right_wall: Option<LayeredSpriteVariations>,
+    pub bottom_wall: Option<LayeredSpriteVariations>,
+    pub left_wall: Option<LayeredSpriteVariations>,
+    pub top_left_outer_corner: Option<LayeredSpriteVariations>,
+    pub top_right_outer_corner: Option<LayeredSpriteVariations>,
+    pub bottom_left_outer_corner: Option<LayeredSpriteVariations>,
+    pub bottom_right_outer_corner: Option<LayeredSpriteVariations>,
+    pub top_left_inner_corner: Option<LayeredSpriteVariations>,
+    pub top_right_inner_corner: Option<LayeredSpriteVariations>,
+    pub bottom_left_inner_corner: Option<LayeredSpriteVariations>,
+    pub bottom_right_inner_corner: Option<LayeredSpriteVariations>,
+    pub bridge_horizontal_narrow: Option<LayeredSpriteVariations>,
+    pub bridge_horizontal_wide: Option<LayeredSpriteVariations>,
+    pub bridge_vertical_narrow: Option<LayeredSpriteVariations>,
+    pub bridge_vertical_wide: Option<LayeredSpriteVariations>,
+    pub bridge_crossing: Option<LayeredSpriteVariations>,
 }
 
 /// [`Types/WaterReflectionDefinition`](https://lua-api.factorio.com/latest/types/WaterReflectionDefinition.html)
