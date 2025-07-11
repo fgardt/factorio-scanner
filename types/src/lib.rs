@@ -676,6 +676,22 @@ pub enum Vector3D {
     Tuple(f64, f64, f64),
 }
 
+impl PartialEq for Vector3D {
+    fn eq(&self, other: &Self) -> bool {
+        let (x1, y1, z1) = match self {
+            Self::Tuple(x, y, z) | Self::Struct { x, y, z } => (*x, *y, *z),
+        };
+
+        let (x2, y2, z2) = match other {
+            Self::Struct { x, y, z } | Self::Tuple(x, y, z) => (*x, *y, *z),
+        };
+
+        (x1 - x2).abs() < f64::EPSILON
+            && (y1 - y2).abs() < f64::EPSILON
+            && (z1 - z2).abs() < f64::EPSILON
+    }
+}
+
 /// [`Types/FileName`](https://lua-api.factorio.com/latest/types/FileName.html)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileName(String);

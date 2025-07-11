@@ -16,6 +16,7 @@ mod abstractions;
 use abstractions::*;
 
 mod accumulator;
+mod agricultural_tower;
 mod artillery_turret;
 mod asteroid_collector;
 mod beacon;
@@ -62,6 +63,7 @@ mod vehicles;
 mod wall;
 
 pub use accumulator::*;
+pub use agricultural_tower::*;
 pub use artillery_turret::*;
 pub use asteroid_collector::*;
 pub use beacon::*;
@@ -875,6 +877,7 @@ namespace_struct! {
     EntityID,
     &dyn RenderableEntity,
     "accumulator",
+    "agricultural-tower",
     "artillery-turret",
     "asteroid-collector",
     "beacon",
