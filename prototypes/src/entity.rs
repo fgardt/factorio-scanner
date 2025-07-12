@@ -22,6 +22,7 @@ mod asteroid_collector;
 mod beacon;
 mod boiler;
 mod burner_generator;
+mod cargo_landing_pad;
 mod combinators;
 mod containers;
 mod crafting_machines;
@@ -72,6 +73,7 @@ pub use asteroid_collector::*;
 pub use beacon::*;
 pub use boiler::*;
 pub use burner_generator::*;
+pub use cargo_landing_pad::*;
 pub use combinators::*;
 pub use containers::*;
 pub use crafting_machines::*;
@@ -889,6 +891,7 @@ namespace_struct! {
     "beacon",
     "boiler",
     "burner-generator",
+    "cargo-landing-pad",
     "arithmetic-combinator",
     "decider-combinator",
     "selector-combinator",
