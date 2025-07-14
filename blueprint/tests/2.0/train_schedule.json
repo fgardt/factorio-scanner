@@ -1,0 +1,545 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "color": {
+          "a": 1,
+          "b": 1,
+          "g": 0,
+          "r": 1
+        },
+        "control_behavior": {
+          "send_to_train": false,
+          "train_stopped_signal": {
+            "name": "signal-T",
+            "type": "virtual"
+          }
+        },
+        "direction": 12,
+        "entity_number": 1,
+        "manual_trains_limit": 4,
+        "name": "train-stop",
+        "position": {
+          "x": 37,
+          "y": -3
+        },
+        "priority": 40,
+        "station": "Station A"
+      },
+      {
+        "color": {
+          "a": 1,
+          "b": 1,
+          "g": 0,
+          "r": 0
+        },
+        "control_behavior": {
+          "train_stopped_signal": {
+            "name": "signal-T",
+            "type": "virtual"
+          }
+        },
+        "direction": 12,
+        "entity_number": 2,
+        "manual_trains_limit": 0,
+        "name": "train-stop",
+        "position": {
+          "x": 39,
+          "y": -3
+        },
+        "priority": 90,
+        "station": "Station B"
+      },
+      {
+        "direction": 4,
+        "entity_number": 3,
+        "name": "straight-rail",
+        "position": {
+          "x": 37,
+          "y": -1
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 4,
+        "name": "straight-rail",
+        "position": {
+          "x": 39,
+          "y": -1
+        }
+      },
+      {
+        "color": {
+          "a": 1,
+          "b": 1,
+          "g": 0,
+          "r": 1
+        },
+        "enable_logistics_while_moving": false,
+        "entity_number": 5,
+        "items": [
+          {
+            "id": {
+              "name": "nuclear-fuel"
+            },
+            "items": {
+              "in_inventory": [
+                {
+                  "inventory": 1,
+                  "stack": 0
+                }
+              ]
+            }
+          },
+          {
+            "id": {
+              "name": "nuclear-fuel",
+              "quality": "legendary"
+            },
+            "items": {
+              "in_inventory": [
+                {
+                  "inventory": 1,
+                  "stack": 2
+                }
+              ]
+            }
+          }
+        ],
+        "name": "locomotive",
+        "orientation": 0.75,
+        "position": {
+          "x": 40,
+          "y": -1
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 6,
+        "name": "straight-rail",
+        "position": {
+          "x": 41,
+          "y": -1
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 7,
+        "name": "straight-rail",
+        "position": {
+          "x": 43,
+          "y": -1
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 8,
+        "name": "straight-rail",
+        "position": {
+          "x": 45,
+          "y": -1
+        }
+      },
+      {
+        "color": {
+          "a": 1,
+          "b": 0,
+          "g": 1,
+          "r": 0
+        },
+        "copy_color_from_train_stop": false,
+        "enable_logistics_while_moving": false,
+        "entity_number": 9,
+        "items": [
+          {
+            "id": {
+              "name": "nuclear-fuel",
+              "quality": "legendary"
+            },
+            "items": {
+              "in_inventory": [
+                {
+                  "inventory": 1,
+                  "stack": 1
+                }
+              ]
+            }
+          }
+        ],
+        "name": "locomotive",
+        "orientation": 0.25,
+        "position": {
+          "x": 47,
+          "y": -1
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 10,
+        "name": "straight-rail",
+        "position": {
+          "x": 47,
+          "y": -1
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 11,
+        "name": "straight-rail",
+        "position": {
+          "x": 49,
+          "y": -1
+        }
+      },
+      {
+        "color": {
+          "a": 1,
+          "b": 0,
+          "g": 1,
+          "r": 1
+        },
+        "control_behavior": {
+          "circuit_enabled": true,
+          "read_from_train": true,
+          "read_stopped_train": true,
+          "read_trains_count": true,
+          "set_priority": true,
+          "set_trains_limit": true
+        },
+        "direction": 4,
+        "entity_number": 12,
+        "name": "train-stop",
+        "position": {
+          "x": 37,
+          "y": 1
+        },
+        "station": "Reverse A"
+      },
+      {
+        "color": {
+          "a": 1,
+          "b": 1,
+          "g": 1,
+          "r": 0
+        },
+        "control_behavior": {
+          "circuit_condition": {
+            "comparator": "≠",
+            "first_signal": {
+              "name": "signal-anything",
+              "type": "virtual"
+            },
+            "second_signal": {
+              "name": "signal-dot",
+              "type": "virtual"
+            }
+          },
+          "circuit_enabled": true,
+          "priority_signal": {
+            "name": "signal-P",
+            "type": "virtual"
+          },
+          "read_from_train": true,
+          "read_stopped_train": true,
+          "read_trains_count": true,
+          "set_priority": true,
+          "set_trains_limit": true,
+          "train_stopped_signal": {
+            "name": "signal-T",
+            "type": "virtual"
+          },
+          "trains_count_signal": {
+            "name": "signal-C",
+            "type": "virtual"
+          },
+          "trains_limit_signal": {
+            "name": "signal-L",
+            "type": "virtual"
+          }
+        },
+        "direction": 4,
+        "entity_number": 13,
+        "name": "train-stop",
+        "position": {
+          "x": 39,
+          "y": 1
+        },
+        "station": "Reverse B"
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "locomotive"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "train_schedule",
+    "schedules": [
+      {
+        "locomotives": [
+          5,
+          9
+        ],
+        "schedule": {
+          "group": "Super Group",
+          "interrupts": [
+            {
+              "conditions": [
+                {
+                  "compare_type": "and",
+                  "type": "not_empty"
+                }
+              ],
+              "inside_interrupt": false,
+              "name": "[virtual-signal=signal-item-parameter] Generic :)",
+              "targets": [
+                {
+                  "station": "[virtual-signal=signal-item-parameter] Dropoff",
+                  "wait_conditions": [
+                    {
+                      "compare_type": "and",
+                      "type": "empty"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "conditions": [
+                {
+                  "compare_type": "and",
+                  "condition": {
+                    "comparator": "<",
+                    "constant": 1,
+                    "first_signal": {
+                      "name": "signal-fuel-parameter",
+                      "type": "virtual"
+                    }
+                  },
+                  "type": "fuel_item_count_any"
+                }
+              ],
+              "inside_interrupt": true,
+              "name": "[virtual-signal=signal-fuel-parameter] Refuel",
+              "targets": [
+                {
+                  "station": "[virtual-signal=signal-fuel-parameter] Refuel",
+                  "wait_conditions": [
+                    {
+                      "compare_type": "and",
+                      "type": "fuel_full"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "conditions": [
+                {
+                  "compare_type": "and",
+                  "type": "at_station"
+                },
+                {
+                  "compare_type": "and",
+                  "type": "not_at_station"
+                },
+                {
+                  "compare_type": "or",
+                  "station": "hello there",
+                  "type": "at_station"
+                },
+                {
+                  "compare_type": "and",
+                  "station": "general kenobi",
+                  "type": "not_at_station"
+                },
+                {
+                  "compare_type": "or",
+                  "type": "destination_full_or_no_path"
+                }
+              ],
+              "inside_interrupt": false,
+              "name": "Conditions"
+            }
+          ],
+          "records": [
+            {
+              "station": "Station A",
+              "wait_conditions": [
+                {
+                  "compare_type": "and",
+                  "type": "circuit"
+                },
+                {
+                  "compare_type": "and",
+                  "condition": {
+                    "comparator": ">",
+                    "constant": 0,
+                    "first_signal": {
+                      "name": "shape-circle",
+                      "quality": "legendary",
+                      "type": "virtual"
+                    }
+                  },
+                  "type": "circuit"
+                },
+                {
+                  "compare_type": "or",
+                  "type": "fuel_item_count_all"
+                },
+                {
+                  "compare_type": "and",
+                  "condition": {
+                    "comparator": "≠",
+                    "constant": 0,
+                    "first_signal": {
+                      "name": "rocket-fuel",
+                      "quality": "rare"
+                    }
+                  },
+                  "type": "fuel_item_count_all"
+                },
+                {
+                  "compare_type": "or",
+                  "type": "fuel_item_count_any"
+                },
+                {
+                  "compare_type": "and",
+                  "condition": {
+                    "comparator": "≥",
+                    "first_signal": {
+                      "name": "pentapod-egg"
+                    },
+                    "second_signal": {
+                      "name": "carbon"
+                    }
+                  },
+                  "type": "fuel_item_count_any"
+                },
+                {
+                  "compare_type": "or",
+                  "type": "fluid_count"
+                },
+                {
+                  "compare_type": "and",
+                  "condition": {
+                    "comparator": "≥",
+                    "first_signal": {
+                      "name": "thruster-fuel",
+                      "quality": "legendary",
+                      "type": "fluid"
+                    },
+                    "second_signal": {
+                      "name": "thruster-oxidizer",
+                      "quality": "rare",
+                      "type": "fluid"
+                    }
+                  },
+                  "type": "fluid_count"
+                },
+                {
+                  "compare_type": "or",
+                  "type": "item_count"
+                },
+                {
+                  "compare_type": "and",
+                  "condition": {
+                    "comparator": "≠",
+                    "constant": 123,
+                    "first_signal": {
+                      "name": "foundation"
+                    }
+                  },
+                  "type": "item_count"
+                },
+                {
+                  "compare_type": "or",
+                  "type": "empty"
+                },
+                {
+                  "compare_type": "and",
+                  "type": "full"
+                },
+                {
+                  "compare_type": "and",
+                  "type": "fuel_full"
+                },
+                {
+                  "compare_type": "and",
+                  "type": "not_empty"
+                },
+                {
+                  "compare_type": "or",
+                  "ticks": 300,
+                  "type": "inactivity"
+                },
+                {
+                  "compare_type": "and",
+                  "ticks": 1800,
+                  "type": "time"
+                },
+                {
+                  "compare_type": "or",
+                  "type": "passenger_present"
+                },
+                {
+                  "compare_type": "and",
+                  "type": "passenger_not_present"
+                },
+                {
+                  "compare_type": "or",
+                  "type": "specific_destination_full"
+                },
+                {
+                  "compare_type": "and",
+                  "station": "Reverse A",
+                  "type": "specific_destination_full"
+                },
+                {
+                  "compare_type": "or",
+                  "type": "specific_destination_not_full"
+                },
+                {
+                  "compare_type": "and",
+                  "station": "Station B",
+                  "type": "specific_destination_not_full"
+                }
+              ]
+            },
+            {
+              "station": "Station B"
+            }
+          ]
+        }
+      }
+    ],
+    "stock_connections": [
+      {
+        "back": 9,
+        "stock": 5
+      },
+      {
+        "back": 5,
+        "stock": 9
+      }
+    ],
+    "version": 562949957353472,
+    "wires": [
+      [
+        1,
+        1,
+        2,
+        1
+      ],
+      [
+        12,
+        2,
+        13,
+        2
+      ]
+    ]
+  }
+}

@@ -1,0 +1,167 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "control_behavior": {
+          "sections": {
+            "sections": [
+              {
+                "filters": [
+                  {
+                    "comparator": "=",
+                    "count": 123,
+                    "index": 1,
+                    "name": "iron-plate",
+                    "quality": "normal"
+                  },
+                  {
+                    "comparator": "=",
+                    "count": 456,
+                    "index": 2,
+                    "name": "thruster-fuel",
+                    "quality": "normal",
+                    "type": "fluid"
+                  },
+                  {
+                    "comparator": "=",
+                    "count": 789,
+                    "index": 3,
+                    "name": "entity-ghost",
+                    "quality": "normal",
+                    "type": "entity"
+                  }
+                ],
+                "index": 1
+              },
+              {
+                "filters": [
+                  {
+                    "comparator": "=",
+                    "count": 42,
+                    "index": 1,
+                    "name": "basic-oil-processing",
+                    "quality": "rare",
+                    "type": "recipe"
+                  },
+                  {
+                    "comparator": "=",
+                    "count": 187,
+                    "index": 2,
+                    "name": "advanced-metallic-asteroid-crushing",
+                    "quality": "normal",
+                    "type": "recipe"
+                  }
+                ],
+                "group": "the best group",
+                "index": 2
+              },
+              {
+                "filters": [
+                  {
+                    "comparator": "=",
+                    "count": 1,
+                    "index": 1,
+                    "name": "behemoth-biter",
+                    "quality": "legendary",
+                    "type": "entity"
+                  }
+                ],
+                "group": "five times the charm [entity=behemoth-biter,quality=legendary]",
+                "index": 3,
+                "multiplier": 5
+              },
+              {
+                "filters": [
+                  {
+                    "comparator": "=",
+                    "count": -1,
+                    "index": 1,
+                    "name": "signal-any-quality",
+                    "quality": "normal",
+                    "type": "virtual"
+                  },
+                  {
+                    "comparator": "=",
+                    "count": 0,
+                    "index": 2,
+                    "name": "normal",
+                    "quality": "normal",
+                    "type": "quality"
+                  },
+                  {
+                    "comparator": "=",
+                    "count": 1,
+                    "index": 3,
+                    "name": "uncommon",
+                    "quality": "normal",
+                    "type": "quality"
+                  },
+                  {
+                    "comparator": "=",
+                    "count": 2,
+                    "index": 4,
+                    "name": "rare",
+                    "quality": "normal",
+                    "type": "quality"
+                  },
+                  {
+                    "comparator": "=",
+                    "count": 3,
+                    "index": 5,
+                    "name": "epic",
+                    "quality": "normal",
+                    "type": "quality"
+                  },
+                  {
+                    "comparator": "=",
+                    "count": 5,
+                    "index": 6,
+                    "name": "legendary",
+                    "quality": "normal",
+                    "type": "quality"
+                  }
+                ],
+                "group": "QUALITY",
+                "index": 4
+              },
+              {
+                "active": false,
+                "filters": [
+                  {
+                    "comparator": "=",
+                    "count": 666,
+                    "index": 1,
+                    "name": "entity-ghost",
+                    "quality": "normal",
+                    "type": "entity"
+                  }
+                ],
+                "group": "Incognito",
+                "index": 5
+              }
+            ]
+          }
+        },
+        "direction": 8,
+        "entity_number": 1,
+        "name": "constant-combinator",
+        "player_description": "vodoo magic",
+        "position": {
+          "x": 55.5,
+          "y": -6.5
+        }
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "constant-combinator"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "constant_logistic_group",
+    "version": 562949957353472
+  }
+}

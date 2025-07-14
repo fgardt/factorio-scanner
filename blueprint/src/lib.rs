@@ -555,7 +555,11 @@ impl TryFrom<&str> for Data {
 
     #[instrument(name = "str2bp_data", skip(bp_string))]
     fn try_from(bp_string: &str) -> Result<Self, Self::Error> {
-        let json = bp_string_to_json(bp_string)?;
+        let json = if bp_string.starts_with('0') {
+            bp_string_to_json(bp_string)?
+        } else {
+            bp_string.to_owned()
+        };
         let mut data: Self = serde_json::from_str(&json)?;
 
         data.normalize_positions();
@@ -620,7 +624,7 @@ mod tests {
     }
 
     macro_rules! bp_tests {
-        ($prefix:literal, $($name:ident),+) => {
+        ($prefix:literal, $ext:literal, $($name:ident),+) => {
             $(
                 #[test]
                 fn $name() {
@@ -628,7 +632,7 @@ mod tests {
                         "../tests/",
                         $prefix,
                         stringify!($name),
-                        ".txt"
+                        $ext
                     )));
                 }
             )+
@@ -650,13 +654,15 @@ mod tests {
         //     ));
         // }
 
-        bp_tests!("", bilka);
+        bp_tests!("", ".txt", bilka);
 
         mod v2 {
             use super::*;
 
+            bp_tests!("2.0/", ".txt", test_book);
             bp_tests!(
                 "2.0/",
+                ".json",
                 artillery,
                 combinators,
                 constant_logistic_group,
@@ -668,7 +674,6 @@ mod tests {
                 platform_hub,
                 quality_chemplants,
                 rail_test_circle,
-                test_book,
                 train_schedule
             );
         }

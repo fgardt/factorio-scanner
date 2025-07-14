@@ -2,7 +2,7 @@
 
 use serde_json::Value;
 
-use blueprint::{bp_string_to_json, json_to_bp_string, Version};
+use blueprint::{bp_string_to_json, Version};
 
 fn main() {
     let root: Value = serde_json::from_str(
@@ -47,9 +47,8 @@ fn main() {
 
         println!("Extracting test book entry {id}: {name}");
 
-        let json = serde_json::to_string(&entry).unwrap();
-        let extracted = json_to_bp_string(&json).unwrap();
+        let json = serde_json::to_string_pretty(&entry).unwrap();
 
-        std::fs::write(format!("{name}.txt"), extracted).unwrap();
+        std::fs::write(format!("{name}.json"), json).unwrap();
     }
 }

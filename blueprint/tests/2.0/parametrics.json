@@ -1,0 +1,210 @@
+{
+  "blueprint": {
+    "description": "parameters are fun..",
+    "entities": [
+      {
+        "entity_number": 1,
+        "name": "assembling-machine-3",
+        "position": {
+          "x": 44.5,
+          "y": -14.5
+        },
+        "recipe": "parameter-0",
+        "recipe_quality": "normal"
+      },
+      {
+        "entity_number": 2,
+        "name": "assembling-machine-3",
+        "position": {
+          "x": 48.5,
+          "y": -14.5
+        },
+        "recipe": "parameter-0",
+        "recipe_quality": "legendary"
+      },
+      {
+        "control_behavior": {
+          "is_on": false,
+          "sections": {
+            "sections": [
+              {
+                "filters": [
+                  {
+                    "comparator": "=",
+                    "count": 1,
+                    "index": 1,
+                    "name": "parameter-0",
+                    "quality": "normal"
+                  },
+                  {
+                    "comparator": "=",
+                    "count": 91,
+                    "index": 2,
+                    "name": "parameter-1",
+                    "quality": "normal"
+                  },
+                  {
+                    "comparator": "=",
+                    "count": 92,
+                    "index": 3,
+                    "name": "parameter-2",
+                    "quality": "normal"
+                  },
+                  {
+                    "comparator": "=",
+                    "count": 93,
+                    "index": 4,
+                    "name": "parameter-3",
+                    "quality": "normal"
+                  },
+                  {
+                    "comparator": "=",
+                    "count": 99,
+                    "index": 10,
+                    "name": "parameter-9",
+                    "quality": "normal"
+                  }
+                ],
+                "index": 1
+              },
+              {
+                "filters": [
+                  {
+                    "comparator": "=",
+                    "count": 42,
+                    "index": 1,
+                    "name": "item-request-proxy",
+                    "quality": "legendary",
+                    "type": "entity"
+                  },
+                  {
+                    "comparator": "=",
+                    "count": 13,
+                    "index": 2,
+                    "name": "selector-combinator",
+                    "quality": "normal"
+                  },
+                  {
+                    "comparator": "=",
+                    "count": 6,
+                    "index": 3,
+                    "name": "display-panel",
+                    "quality": "normal"
+                  }
+                ],
+                "index": 2
+              }
+            ]
+          }
+        },
+        "entity_number": 3,
+        "name": "constant-combinator",
+        "player_description": "amazing CC description",
+        "position": {
+          "x": 46.5,
+          "y": -11.5
+        }
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "assembling-machine-3"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "parametrics",
+    "parameters": [
+      {
+        "id": "parameter-0",
+        "name": "Recipe Param",
+        "type": "id"
+      },
+      {
+        "id": "parameter-1",
+        "ingredient-of": "parameter-0",
+        "name": "Ingredient 1",
+        "type": "id"
+      },
+      {
+        "id": "parameter-2",
+        "ingredient-of": "parameter-0",
+        "name": "Ingredient 2",
+        "type": "id"
+      },
+      {
+        "id": "parameter-3",
+        "ingredient-of": "parameter-0",
+        "name": "Ingredient 3",
+        "type": "id"
+      },
+      {
+        "name": "One",
+        "number": "1",
+        "type": "number",
+        "variable": "multiplier"
+      },
+      {
+        "dependent": true,
+        "formula": "min(p0_t * 30 / p0_i1, p1_s)",
+        "number": "91",
+        "type": "number"
+      },
+      {
+        "dependent": true,
+        "formula": "min(p0_t * 30 / p0_i2, p2_s)",
+        "number": "92",
+        "type": "number"
+      },
+      {
+        "dependent": true,
+        "formula": "min(p0_t * 30 / p0_i3, p3_s)",
+        "number": "93",
+        "type": "number"
+      },
+      {
+        "id": "item-request-proxy",
+        "name": "The Question",
+        "parameter": false,
+        "type": "id"
+      },
+      {
+        "dependent": true,
+        "formula": "42 * multiplier",
+        "number": "42",
+        "type": "number",
+        "variable": "answer"
+      },
+      {
+        "id": "parameter-9",
+        "name": "epic 9",
+        "quality-condition": {
+          "comparator": "=",
+          "quality": "epic"
+        },
+        "type": "id"
+      },
+      {
+        "name": "ninenine",
+        "not-parametrised": true,
+        "number": "99",
+        "type": "number"
+      },
+      {
+        "id": "selector-combinator",
+        "name": "named id",
+        "parameter": false,
+        "type": "id"
+      },
+      {
+        "name": "no param but formula variable",
+        "not-parametrised": true,
+        "number": "13",
+        "type": "number"
+      }
+    ],
+    "version": 562949957353472
+  }
+}

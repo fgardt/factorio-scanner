@@ -1,0 +1,299 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "direction": 4,
+        "entity_number": 1,
+        "name": "straight-rail",
+        "position": {
+          "x": 41,
+          "y": 9
+        }
+      },
+      {
+        "enable_logistics_while_moving": false,
+        "entity_number": 2,
+        "name": "locomotive",
+        "orientation": 0.75,
+        "position": {
+          "x": 43.46875,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 3,
+        "name": "straight-rail",
+        "position": {
+          "x": 43,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 4,
+        "name": "straight-rail",
+        "position": {
+          "x": 45,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 5,
+        "name": "straight-rail",
+        "position": {
+          "x": 47,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 6,
+        "name": "straight-rail",
+        "position": {
+          "x": 49,
+          "y": 9
+        }
+      },
+      {
+        "enable_logistics_while_moving": false,
+        "entity_number": 7,
+        "inventory": null,
+        "name": "cargo-wagon",
+        "orientation": 0.75,
+        "position": {
+          "x": 50.46875,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 8,
+        "name": "straight-rail",
+        "position": {
+          "x": 51,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 9,
+        "name": "straight-rail",
+        "position": {
+          "x": 53,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 10,
+        "name": "straight-rail",
+        "position": {
+          "x": 55,
+          "y": 9
+        }
+      },
+      {
+        "enable_logistics_while_moving": false,
+        "entity_number": 11,
+        "name": "fluid-wagon",
+        "orientation": 0.25,
+        "position": {
+          "x": 57.46875,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 12,
+        "name": "straight-rail",
+        "position": {
+          "x": 57,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 13,
+        "name": "straight-rail",
+        "position": {
+          "x": 59,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 14,
+        "name": "straight-rail",
+        "position": {
+          "x": 61,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 15,
+        "name": "straight-rail",
+        "position": {
+          "x": 63,
+          "y": 9
+        }
+      },
+      {
+        "enable_logistics_while_moving": false,
+        "entity_number": 16,
+        "name": "fluid-wagon",
+        "orientation": 0.75,
+        "position": {
+          "x": 64.46875,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 17,
+        "name": "straight-rail",
+        "position": {
+          "x": 65,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 18,
+        "name": "straight-rail",
+        "position": {
+          "x": 67,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 19,
+        "name": "straight-rail",
+        "position": {
+          "x": 69,
+          "y": 9
+        }
+      },
+      {
+        "artillery_auto_targeting": false,
+        "enable_logistics_while_moving": false,
+        "entity_number": 20,
+        "name": "artillery-wagon",
+        "orientation": 0.25,
+        "position": {
+          "x": 71.46875,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 21,
+        "name": "straight-rail",
+        "position": {
+          "x": 71,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 22,
+        "name": "straight-rail",
+        "position": {
+          "x": 73,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 23,
+        "name": "straight-rail",
+        "position": {
+          "x": 75,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 24,
+        "name": "straight-rail",
+        "position": {
+          "x": 77,
+          "y": 9
+        }
+      },
+      {
+        "artillery_auto_targeting": true,
+        "enable_logistics_while_moving": false,
+        "entity_number": 25,
+        "name": "artillery-wagon",
+        "orientation": 0.75,
+        "position": {
+          "x": 78.46875,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 26,
+        "name": "straight-rail",
+        "position": {
+          "x": 79,
+          "y": 9
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 27,
+        "name": "straight-rail",
+        "position": {
+          "x": 81,
+          "y": 9
+        }
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "artillery-wagon"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "long_train",
+    "stock_connections": [
+      {
+        "back": 7,
+        "stock": 2
+      },
+      {
+        "back": 11,
+        "front": 2,
+        "stock": 7
+      },
+      {
+        "back": 7,
+        "front": 16,
+        "stock": 11
+      },
+      {
+        "back": 20,
+        "front": 11,
+        "stock": 16
+      },
+      {
+        "back": 16,
+        "front": 25,
+        "stock": 20
+      },
+      {
+        "front": 20,
+        "stock": 25
+      }
+    ],
+    "version": 562949957353472
+  }
+}
