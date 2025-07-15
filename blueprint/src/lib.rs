@@ -676,6 +676,31 @@ mod tests {
                 rail_test_circle,
                 train_schedule
             );
+
+            mod fluidboxes {
+                use super::*;
+
+                bp_tests!(
+                    "2.0/fluidboxes/",
+                    ".json",
+                    pumps,
+                    regular_pipes,
+                    storagetanks,
+                    valves
+                );
+            }
+
+            mod large_connectables {
+                use super::*;
+
+                bp_tests!(
+                    "2.0/large_connectables/",
+                    ".json",
+                    cargo_bays,
+                    cargo_landing_bays,
+                    fusion
+                );
+            }
         }
     }
 
