@@ -1,0 +1,49 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "artillery_auto_targeting": true,
+        "direction": 12,
+        "entity_number": 1,
+        "name": "artillery-turret",
+        "position": {
+          "x": 55.5,
+          "y": 14.5
+        }
+      },
+      {
+        "artillery_auto_targeting": false,
+        "control_behavior": {
+          "circuit_enabled": true,
+          "read_ammo": false
+        },
+        "direction": 8,
+        "entity_number": 2,
+        "name": "artillery-turret",
+        "position": {
+          "x": 58.5,
+          "y": 14.5
+        }
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "artillery-turret"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "artillery",
+    "version": 562949957353472,
+    "wires": [
+      [
+        1,
+        2,
+        2,
+        2
+      ]
+    ]
+  }
+}

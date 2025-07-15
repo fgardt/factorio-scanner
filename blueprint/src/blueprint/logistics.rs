@@ -27,6 +27,9 @@ pub struct RequestFilters {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub request_from_buffers: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub trash_not_requested: bool,
 }
 
 impl crate::GetIDs for RequestFilters {

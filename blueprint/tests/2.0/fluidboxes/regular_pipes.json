@@ -1,0 +1,214 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "entity_number": 1,
+        "name": "pipe",
+        "position": {
+          "x": -4.5,
+          "y": 22.5
+        }
+      },
+      {
+        "entity_number": 2,
+        "name": "pipe",
+        "position": {
+          "x": -4.5,
+          "y": 23.5
+        }
+      },
+      {
+        "entity_number": 3,
+        "name": "pipe",
+        "position": {
+          "x": -2.5,
+          "y": 22.5
+        }
+      },
+      {
+        "entity_number": 4,
+        "name": "pipe",
+        "position": {
+          "x": -3.5,
+          "y": 22.5
+        }
+      },
+      {
+        "direction": 12,
+        "entity_number": 5,
+        "name": "pipe-to-ground",
+        "position": {
+          "x": -3.5,
+          "y": 23.5
+        }
+      },
+      {
+        "entity_number": 6,
+        "name": "pipe",
+        "position": {
+          "x": -1.5,
+          "y": 22.5
+        }
+      },
+      {
+        "entity_number": 7,
+        "name": "pipe-to-ground",
+        "position": {
+          "x": -1.5,
+          "y": 23.5
+        }
+      },
+      {
+        "entity_number": 8,
+        "name": "pipe",
+        "position": {
+          "x": 1.5,
+          "y": 23.5
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 9,
+        "name": "pipe-to-ground",
+        "position": {
+          "x": 0.5,
+          "y": 23.5
+        }
+      },
+      {
+        "entity_number": 10,
+        "name": "pipe",
+        "position": {
+          "x": -4.5,
+          "y": 25.5
+        }
+      },
+      {
+        "entity_number": 11,
+        "name": "pipe",
+        "position": {
+          "x": -3.5,
+          "y": 24.5
+        }
+      },
+      {
+        "entity_number": 12,
+        "name": "pipe",
+        "position": {
+          "x": -2.5,
+          "y": 24.5
+        }
+      },
+      {
+        "direction": 12,
+        "entity_number": 13,
+        "name": "pipe-to-ground",
+        "position": {
+          "x": -3.5,
+          "y": 25.5
+        }
+      },
+      {
+        "direction": 8,
+        "entity_number": 14,
+        "name": "pipe-to-ground",
+        "position": {
+          "x": -1.5,
+          "y": 25.5
+        }
+      },
+      {
+        "entity_number": 15,
+        "name": "pipe",
+        "position": {
+          "x": -1.5,
+          "y": 24.5
+        }
+      },
+      {
+        "entity_number": 16,
+        "name": "pipe",
+        "position": {
+          "x": -0.5,
+          "y": 24.5
+        }
+      },
+      {
+        "entity_number": 17,
+        "name": "pipe",
+        "position": {
+          "x": 1.5,
+          "y": 25.5
+        }
+      },
+      {
+        "entity_number": 18,
+        "name": "pipe",
+        "position": {
+          "x": 1.5,
+          "y": 24.5
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 19,
+        "name": "pipe-to-ground",
+        "position": {
+          "x": 0.5,
+          "y": 25.5
+        }
+      },
+      {
+        "entity_number": 20,
+        "name": "pipe",
+        "position": {
+          "x": 0.5,
+          "y": 24.5
+        }
+      },
+      {
+        "entity_number": 21,
+        "name": "pipe",
+        "position": {
+          "x": -4.5,
+          "y": 26.5
+        }
+      },
+      {
+        "entity_number": 22,
+        "name": "pipe",
+        "position": {
+          "x": -3.5,
+          "y": 26.5
+        }
+      },
+      {
+        "entity_number": 23,
+        "name": "pipe",
+        "position": {
+          "x": -2.5,
+          "y": 26.5
+        }
+      },
+      {
+        "entity_number": 24,
+        "name": "pipe",
+        "position": {
+          "x": -1.5,
+          "y": 26.5
+        }
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "pipe"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "regular_pipes",
+    "version": 562949957353472
+  }
+}

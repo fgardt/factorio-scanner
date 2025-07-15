@@ -1,0 +1,157 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "entity_number": 1,
+        "name": "pipe",
+        "position": {
+          "x": -12.5,
+          "y": 23.5
+        }
+      },
+      {
+        "entity_number": 2,
+        "name": "pipe",
+        "position": {
+          "x": -12.5,
+          "y": 22.5
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 3,
+        "fluid_filter": "water",
+        "name": "pump",
+        "position": {
+          "x": -11,
+          "y": 22.5
+        }
+      },
+      {
+        "entity_number": 4,
+        "name": "pipe",
+        "position": {
+          "x": -10.5,
+          "y": 23.5
+        }
+      },
+      {
+        "entity_number": 5,
+        "name": "pipe",
+        "position": {
+          "x": -11.5,
+          "y": 23.5
+        }
+      },
+      {
+        "entity_number": 6,
+        "name": "pipe",
+        "position": {
+          "x": -9.5,
+          "y": 22.5
+        }
+      },
+      {
+        "control_behavior": {
+          "set_filter": true
+        },
+        "direction": 8,
+        "entity_number": 7,
+        "name": "pump",
+        "position": {
+          "x": -12.5,
+          "y": 25
+        }
+      },
+      {
+        "entity_number": 8,
+        "name": "pipe",
+        "position": {
+          "x": -11.5,
+          "y": 25.5
+        }
+      },
+      {
+        "entity_number": 9,
+        "name": "pipe",
+        "position": {
+          "x": -10.5,
+          "y": 25.5
+        }
+      },
+      {
+        "control_behavior": {
+          "circuit_condition": {
+            "comparator": "≠",
+            "constant": 0,
+            "first_signal": {
+              "name": "water",
+              "type": "fluid"
+            }
+          },
+          "circuit_enabled": true,
+          "set_filter": true
+        },
+        "entity_number": 10,
+        "name": "pump",
+        "position": {
+          "x": -9.5,
+          "y": 24
+        }
+      },
+      {
+        "entity_number": 11,
+        "name": "pipe",
+        "position": {
+          "x": -9.5,
+          "y": 25.5
+        }
+      },
+      {
+        "entity_number": 12,
+        "name": "pipe",
+        "position": {
+          "x": -12.5,
+          "y": 26.5
+        }
+      },
+      {
+        "direction": 12,
+        "entity_number": 13,
+        "fluid_filter": "steam",
+        "name": "pump",
+        "position": {
+          "x": -11,
+          "y": 26.5
+        }
+      },
+      {
+        "entity_number": 14,
+        "name": "pipe",
+        "position": {
+          "x": -9.5,
+          "y": 26.5
+        }
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "pump"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "pumps",
+    "version": 562949957353472,
+    "wires": [
+      [
+        7,
+        2,
+        10,
+        2
+      ]
+    ]
+  }
+}

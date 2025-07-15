@@ -1,0 +1,112 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "direction": 8,
+        "entity_number": 1,
+        "name": "long-handed-inserter",
+        "position": {
+          "x": 55.5,
+          "y": -32.5
+        },
+        "spoil_priority": "fresh-first"
+      },
+      {
+        "entity_number": 2,
+        "name": "fast-inserter",
+        "override_stack_size": 2,
+        "position": {
+          "x": 57.5,
+          "y": -32.5
+        },
+        "spoil_priority": "spoiled-first"
+      },
+      {
+        "direction": 12,
+        "entity_number": 3,
+        "filter_mode": "blacklist",
+        "filters": [
+          {
+            "comparator": "=",
+            "index": 1,
+            "name": "raw-fish",
+            "quality": "normal"
+          },
+          {
+            "comparator": "≤",
+            "index": 3,
+            "name": "processing-unit",
+            "quality": "rare"
+          }
+        ],
+        "name": "bulk-inserter",
+        "position": {
+          "x": 56.5,
+          "y": -33.5
+        },
+        "use_filters": true
+      },
+      {
+        "direction": 4,
+        "entity_number": 4,
+        "filters": [
+          {
+            "comparator": "≠",
+            "index": 3,
+            "name": "iron-gear-wheel",
+            "quality": "normal"
+          }
+        ],
+        "name": "inserter",
+        "position": {
+          "x": 56.5,
+          "y": -31.5
+        },
+        "use_filters": true
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "inserter"
+        }
+      },
+      {
+        "index": 2,
+        "signal": {
+          "name": "long-handed-inserter"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "inserters",
+    "version": 562949957353472,
+    "wires": [
+      [
+        1,
+        1,
+        2,
+        1
+      ],
+      [
+        1,
+        1,
+        4,
+        1
+      ],
+      [
+        2,
+        2,
+        3,
+        2
+      ],
+      [
+        3,
+        2,
+        4,
+        2
+      ]
+    ]
+  }
+}
