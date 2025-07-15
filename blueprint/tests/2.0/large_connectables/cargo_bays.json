@@ -1,0 +1,129 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "entity_number": 1,
+        "name": "cargo-bay",
+        "position": {
+          "x": 18,
+          "y": 26
+        }
+      },
+      {
+        "entity_number": 2,
+        "name": "cargo-bay",
+        "position": {
+          "x": 22,
+          "y": 26
+        }
+      },
+      {
+        "entity_number": 3,
+        "name": "cargo-bay",
+        "position": {
+          "x": 26,
+          "y": 26
+        }
+      },
+      {
+        "entity_number": 4,
+        "name": "cargo-bay",
+        "position": {
+          "x": 30,
+          "y": 26
+        }
+      },
+      {
+        "entity_number": 5,
+        "name": "cargo-bay",
+        "position": {
+          "x": 14,
+          "y": 28
+        }
+      },
+      {
+        "entity_number": 6,
+        "name": "cargo-bay",
+        "position": {
+          "x": 34,
+          "y": 28
+        }
+      },
+      {
+        "entity_number": 7,
+        "name": "cargo-bay",
+        "position": {
+          "x": 20,
+          "y": 30
+        }
+      },
+      {
+        "entity_number": 8,
+        "name": "cargo-bay",
+        "position": {
+          "x": 24,
+          "y": 30
+        }
+      },
+      {
+        "entity_number": 9,
+        "name": "cargo-bay",
+        "position": {
+          "x": 28,
+          "y": 30
+        }
+      },
+      {
+        "entity_number": 10,
+        "name": "cargo-bay",
+        "position": {
+          "x": 14,
+          "y": 32
+        }
+      },
+      {
+        "entity_number": 11,
+        "name": "cargo-bay",
+        "position": {
+          "x": 34,
+          "y": 32
+        }
+      },
+      {
+        "entity_number": 12,
+        "name": "cargo-bay",
+        "position": {
+          "x": 18,
+          "y": 34
+        }
+      },
+      {
+        "entity_number": 13,
+        "name": "cargo-bay",
+        "position": {
+          "x": 24,
+          "y": 34
+        }
+      },
+      {
+        "entity_number": 14,
+        "name": "cargo-bay",
+        "position": {
+          "x": 30,
+          "y": 34
+        }
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "cargo-bay"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "cargo_bays",
+    "version": 562949957353472
+  }
+}

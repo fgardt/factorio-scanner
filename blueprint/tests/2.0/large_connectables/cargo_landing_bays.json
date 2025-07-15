@@ -1,0 +1,194 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "entity_number": 1,
+        "name": "cargo-bay",
+        "position": {
+          "x": 52,
+          "y": 24
+        }
+      },
+      {
+        "entity_number": 2,
+        "name": "cargo-bay",
+        "position": {
+          "x": 56,
+          "y": 24
+        }
+      },
+      {
+        "entity_number": 3,
+        "name": "cargo-bay",
+        "position": {
+          "x": 48,
+          "y": 30
+        }
+      },
+      {
+        "bar": 1,
+        "entity_number": 4,
+        "name": "cargo-landing-pad",
+        "position": {
+          "x": 54,
+          "y": 30
+        },
+        "request_filters": {
+          "request_from_buffers": true,
+          "sections": [
+            {
+              "active": false,
+              "filters": [
+                {
+                  "comparator": "=",
+                  "count": -1,
+                  "index": 1,
+                  "name": "signal-any-quality",
+                  "quality": "normal",
+                  "type": "virtual"
+                },
+                {
+                  "comparator": "=",
+                  "count": 0,
+                  "index": 2,
+                  "name": "normal",
+                  "quality": "normal",
+                  "type": "quality"
+                },
+                {
+                  "comparator": "=",
+                  "count": 1,
+                  "index": 3,
+                  "name": "uncommon",
+                  "quality": "normal",
+                  "type": "quality"
+                },
+                {
+                  "comparator": "=",
+                  "count": 2,
+                  "index": 4,
+                  "name": "rare",
+                  "quality": "normal",
+                  "type": "quality"
+                },
+                {
+                  "comparator": "=",
+                  "count": 3,
+                  "index": 5,
+                  "name": "epic",
+                  "quality": "normal",
+                  "type": "quality"
+                },
+                {
+                  "comparator": "=",
+                  "count": 5,
+                  "index": 6,
+                  "name": "legendary",
+                  "quality": "normal",
+                  "type": "quality"
+                }
+              ],
+              "group": "QUALITY",
+              "index": 1
+            },
+            {
+              "filters": [
+                {
+                  "comparator": "=",
+                  "count": 42,
+                  "index": 1,
+                  "name": "basic-oil-processing",
+                  "quality": "rare",
+                  "type": "recipe"
+                },
+                {
+                  "comparator": "=",
+                  "count": 187,
+                  "index": 2,
+                  "name": "advanced-metallic-asteroid-crushing",
+                  "quality": "normal",
+                  "type": "recipe"
+                }
+              ],
+              "group": "the best group",
+              "index": 2
+            },
+            {
+              "filters": [
+                {
+                  "comparator": "=",
+                  "count": 69,
+                  "index": 5,
+                  "max_count": 1337,
+                  "minimum_delivery_count": 42,
+                  "name": "fusion-power-cell",
+                  "quality": "normal"
+                },
+                {
+                  "comparator": "=",
+                  "count": 100,
+                  "import_from": "nauvis",
+                  "index": 7,
+                  "name": "turbo-transport-belt",
+                  "quality": "normal"
+                },
+                {
+                  "comparator": "=",
+                  "count": 50,
+                  "import_from": "nauvis",
+                  "index": 8,
+                  "name": "turbo-underground-belt",
+                  "quality": "epic"
+                }
+              ],
+              "group": "myHUB",
+              "index": 3
+            }
+          ],
+          "trash_not_requested": true
+        }
+      },
+      {
+        "entity_number": 5,
+        "name": "cargo-bay",
+        "position": {
+          "x": 60,
+          "y": 30
+        }
+      },
+      {
+        "entity_number": 6,
+        "name": "cargo-bay",
+        "position": {
+          "x": 50,
+          "y": 36
+        }
+      },
+      {
+        "entity_number": 7,
+        "name": "cargo-bay",
+        "position": {
+          "x": 58,
+          "y": 36
+        }
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "cargo-landing-pad"
+        }
+      },
+      {
+        "index": 2,
+        "signal": {
+          "name": "cargo-bay"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "cargo_landing_bays",
+    "version": 562949957353472
+  }
+}

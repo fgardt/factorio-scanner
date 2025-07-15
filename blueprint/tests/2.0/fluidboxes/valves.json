@@ -1,0 +1,262 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "entity_number": 1,
+        "name": "one-way-valve",
+        "position": {
+          "x": -12.5,
+          "y": 13.5
+        }
+      },
+      {
+        "entity_number": 2,
+        "name": "pipe",
+        "position": {
+          "x": -12.5,
+          "y": 12.5
+        }
+      },
+      {
+        "entity_number": 3,
+        "name": "pipe",
+        "position": {
+          "x": -10.5,
+          "y": 12.5
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 4,
+        "name": "one-way-valve",
+        "position": {
+          "x": -11.5,
+          "y": 12.5
+        }
+      },
+      {
+        "direction": 8,
+        "entity_number": 5,
+        "name": "one-way-valve",
+        "position": {
+          "x": -10.5,
+          "y": 13.5
+        }
+      },
+      {
+        "entity_number": 6,
+        "name": "pipe",
+        "position": {
+          "x": -12.5,
+          "y": 14.5
+        }
+      },
+      {
+        "entity_number": 7,
+        "name": "pipe",
+        "position": {
+          "x": -10.5,
+          "y": 14.5
+        }
+      },
+      {
+        "direction": 12,
+        "entity_number": 8,
+        "name": "one-way-valve",
+        "position": {
+          "x": -11.5,
+          "y": 14.5
+        }
+      },
+      {
+        "entity_number": 9,
+        "name": "pipe",
+        "position": {
+          "x": -11.5,
+          "y": 15.5
+        }
+      },
+      {
+        "entity_number": 10,
+        "name": "pipe",
+        "position": {
+          "x": -14.5,
+          "y": 16.5
+        }
+      },
+      {
+        "entity_number": 11,
+        "name": "overflow-valve",
+        "position": {
+          "x": -14.5,
+          "y": 17.5
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 12,
+        "name": "overflow-valve",
+        "position": {
+          "x": -13.5,
+          "y": 16.5
+        }
+      },
+      {
+        "entity_number": 13,
+        "name": "pipe",
+        "position": {
+          "x": -12.5,
+          "y": 16.5
+        }
+      },
+      {
+        "direction": 8,
+        "entity_number": 14,
+        "name": "overflow-valve",
+        "position": {
+          "x": -12.5,
+          "y": 17.5
+        }
+      },
+      {
+        "entity_number": 15,
+        "name": "pipe",
+        "position": {
+          "x": -11.5,
+          "y": 16.5
+        }
+      },
+      {
+        "entity_number": 16,
+        "name": "pipe",
+        "position": {
+          "x": -10.5,
+          "y": 16.5
+        }
+      },
+      {
+        "entity_number": 17,
+        "name": "pipe",
+        "position": {
+          "x": -11.5,
+          "y": 17.5
+        }
+      },
+      {
+        "direction": 8,
+        "entity_number": 18,
+        "name": "top-up-valve",
+        "position": {
+          "x": -10.5,
+          "y": 17.5
+        }
+      },
+      {
+        "direction": 12,
+        "entity_number": 19,
+        "name": "top-up-valve",
+        "position": {
+          "x": -9.5,
+          "y": 16.5
+        }
+      },
+      {
+        "entity_number": 20,
+        "name": "pipe",
+        "position": {
+          "x": -8.5,
+          "y": 16.5
+        }
+      },
+      {
+        "entity_number": 21,
+        "name": "top-up-valve",
+        "position": {
+          "x": -8.5,
+          "y": 17.5
+        }
+      },
+      {
+        "entity_number": 22,
+        "name": "pipe",
+        "position": {
+          "x": -14.5,
+          "y": 18.5
+        }
+      },
+      {
+        "entity_number": 23,
+        "name": "pipe",
+        "position": {
+          "x": -12.5,
+          "y": 18.5
+        }
+      },
+      {
+        "direction": 12,
+        "entity_number": 24,
+        "name": "overflow-valve",
+        "position": {
+          "x": -13.5,
+          "y": 18.5
+        }
+      },
+      {
+        "entity_number": 25,
+        "name": "pipe",
+        "position": {
+          "x": -11.5,
+          "y": 18.5
+        }
+      },
+      {
+        "entity_number": 26,
+        "name": "pipe",
+        "position": {
+          "x": -10.5,
+          "y": 18.5
+        }
+      },
+      {
+        "entity_number": 27,
+        "name": "pipe",
+        "position": {
+          "x": -8.5,
+          "y": 18.5
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 28,
+        "name": "top-up-valve",
+        "position": {
+          "x": -9.5,
+          "y": 18.5
+        }
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "top-up-valve"
+        }
+      },
+      {
+        "index": 2,
+        "signal": {
+          "name": "one-way-valve"
+        }
+      },
+      {
+        "index": 3,
+        "signal": {
+          "name": "overflow-valve"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "valves",
+    "version": 562949957353472
+  }
+}

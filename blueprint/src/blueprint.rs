@@ -510,6 +510,9 @@ pub struct Entity {
 
     // inserter
     pub spoil_priority: Option<SpoilPriority>,
+
+    // pump
+    pub fluid_filter: Option<FluidID>,
 }
 
 impl PartialOrd for Entity {
@@ -572,6 +575,10 @@ impl crate::GetIDs for Entity {
 
         if let Some(icon) = &self.icon {
             ids.merge(icon.get_ids());
+        }
+
+        if let Some(fluid_filter) = &self.fluid_filter {
+            ids.fluid.insert(fluid_filter.clone());
         }
 
         ids

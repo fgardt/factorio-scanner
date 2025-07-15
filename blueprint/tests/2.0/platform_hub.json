@@ -1,0 +1,228 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "control_behavior": {
+          "damage_taken_signal": {
+            "name": "signal-D",
+            "type": "virtual"
+          },
+          "read_damage_taken": true,
+          "read_moving_from": true,
+          "read_moving_to": true,
+          "read_speed": true,
+          "speed_signal": {
+            "name": "signal-V",
+            "type": "virtual"
+          }
+        },
+        "entity_number": 1,
+        "name": "space-platform-hub",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "request_filters": {
+          "request_from_buffers": true,
+          "sections": [
+            {
+              "active": false,
+              "filters": [
+                {
+                  "comparator": "=",
+                  "count": 69,
+                  "index": 5,
+                  "max_count": 1337,
+                  "minimum_delivery_count": 42,
+                  "name": "fusion-power-cell",
+                  "quality": "normal"
+                },
+                {
+                  "comparator": "=",
+                  "count": 100,
+                  "import_from": "nauvis",
+                  "index": 7,
+                  "name": "turbo-transport-belt",
+                  "quality": "normal"
+                },
+                {
+                  "comparator": "=",
+                  "count": 50,
+                  "import_from": "nauvis",
+                  "index": 8,
+                  "name": "turbo-underground-belt",
+                  "quality": "epic"
+                }
+              ],
+              "group": "myHUB",
+              "index": 1
+            },
+            {
+              "active": false,
+              "filters": [
+                {
+                  "comparator": "=",
+                  "count": 55,
+                  "index": 1,
+                  "name": "land-mine",
+                  "quality": "normal"
+                }
+              ],
+              "index": 2
+            }
+          ]
+        },
+        "request_missing_construction_materials": false
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "space-platform-hub"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "platform_hub",
+    "schedules": [
+      {
+        "locomotives": [
+          1
+        ],
+        "schedule": {
+          "interrupts": [
+            {
+              "conditions": [
+                {
+                  "compare_type": "and",
+                  "type": "passenger_present"
+                },
+                {
+                  "compare_type": "or",
+                  "type": "any_planet_import_zero"
+                },
+                {
+                  "compare_type": "and",
+                  "planet": {
+                    "name": "gleba"
+                  },
+                  "type": "any_planet_import_zero"
+                }
+              ],
+              "inside_interrupt": true,
+              "name": "Interrupt A",
+              "targets": [
+                {
+                  "station": "solar-system-edge",
+                  "wait_conditions": [
+                    {
+                      "compare_type": "and",
+                      "ticks": 300,
+                      "type": "inactivity"
+                    }
+                  ]
+                },
+                {
+                  "station": "shattered-planet",
+                  "wait_conditions": [
+                    {
+                      "compare_type": "and",
+                      "damage": 25,
+                      "type": "damage_taken"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "records": [
+            {
+              "station": "nauvis",
+              "wait_conditions": [
+                {
+                  "compare_type": "and",
+                  "type": "all_requests_satisfied"
+                },
+                {
+                  "compare_type": "and",
+                  "type": "any_request_not_satisfied"
+                },
+                {
+                  "compare_type": "or",
+                  "type": "any_request_zero"
+                },
+                {
+                  "compare_type": "and",
+                  "condition": {
+                    "comparator": "≥",
+                    "constant": 123,
+                    "first_signal": {
+                      "name": "shape-circle",
+                      "type": "virtual"
+                    }
+                  },
+                  "type": "circuit"
+                },
+                {
+                  "compare_type": "or",
+                  "damage": 999,
+                  "type": "damage_taken"
+                },
+                {
+                  "compare_type": "and",
+                  "ticks": 540,
+                  "type": "inactivity"
+                },
+                {
+                  "compare_type": "or",
+                  "condition": {
+                    "comparator": "<",
+                    "constant": 33,
+                    "first_signal": {
+                      "name": "rocket"
+                    }
+                  },
+                  "type": "item_count"
+                },
+                {
+                  "compare_type": "and",
+                  "type": "passenger_not_present"
+                },
+                {
+                  "compare_type": "or",
+                  "type": "passenger_present"
+                },
+                {
+                  "compare_type": "and",
+                  "condition": {
+                    "name": "turbo-transport-belt"
+                  },
+                  "type": "request_not_satisfied"
+                },
+                {
+                  "compare_type": "or",
+                  "condition": {
+                    "name": "turbo-underground-belt",
+                    "quality": "epic"
+                  },
+                  "type": "request_satisfied"
+                },
+                {
+                  "compare_type": "and",
+                  "ticks": 480,
+                  "type": "time"
+                }
+              ]
+            },
+            {
+              "allows_unloading": false,
+              "station": "vulcanus"
+            }
+          ]
+        }
+      }
+    ],
+    "version": 562949957353472
+  }
+}

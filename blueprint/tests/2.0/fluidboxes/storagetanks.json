@@ -1,0 +1,159 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "control_behavior": {
+          "read_contents": false
+        },
+        "entity_number": 1,
+        "name": "storage-tank",
+        "position": {
+          "x": -3.5,
+          "y": 13.5
+        }
+      },
+      {
+        "entity_number": 2,
+        "name": "pipe",
+        "position": {
+          "x": -1.5,
+          "y": 13.5
+        }
+      },
+      {
+        "control_behavior": {
+          "read_contents": false
+        },
+        "direction": 4,
+        "entity_number": 3,
+        "name": "storage-tank",
+        "position": {
+          "x": 0.5,
+          "y": 13.5
+        }
+      },
+      {
+        "entity_number": 4,
+        "name": "pipe",
+        "position": {
+          "x": -3.5,
+          "y": 15.5
+        }
+      },
+      {
+        "entity_number": 5,
+        "name": "pipe",
+        "position": {
+          "x": -2.5,
+          "y": 15.5
+        }
+      },
+      {
+        "entity_number": 6,
+        "name": "pipe",
+        "position": {
+          "x": -0.5,
+          "y": 15.5
+        }
+      },
+      {
+        "entity_number": 7,
+        "name": "pipe",
+        "position": {
+          "x": -1.5,
+          "y": 14.5
+        }
+      },
+      {
+        "entity_number": 8,
+        "name": "pipe",
+        "position": {
+          "x": 0.5,
+          "y": 15.5
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 9,
+        "name": "storage-tank",
+        "position": {
+          "x": -3.5,
+          "y": 17.5
+        }
+      },
+      {
+        "entity_number": 10,
+        "name": "pipe",
+        "position": {
+          "x": -1.5,
+          "y": 17.5
+        }
+      },
+      {
+        "entity_number": 11,
+        "name": "pipe",
+        "position": {
+          "x": -1.5,
+          "y": 16.5
+        }
+      },
+      {
+        "entity_number": 12,
+        "name": "storage-tank",
+        "position": {
+          "x": 0.5,
+          "y": 17.5
+        }
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "storage-tank"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "storagetanks",
+    "version": 562949957353472,
+    "wires": [
+      [
+        1,
+        1,
+        12,
+        1
+      ],
+      [
+        1,
+        2,
+        3,
+        2
+      ],
+      [
+        1,
+        2,
+        9,
+        2
+      ],
+      [
+        3,
+        1,
+        9,
+        1
+      ],
+      [
+        3,
+        2,
+        12,
+        2
+      ],
+      [
+        9,
+        2,
+        12,
+        2
+      ]
+    ]
+  }
+}

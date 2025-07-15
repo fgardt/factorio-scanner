@@ -1,8 +1,10 @@
-#![allow(clippy::unwrap_used)]
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
+use std::path::Path;
 
 use serde_json::Value;
 
-use blueprint::{bp_string_to_json, json_to_bp_string, Version};
+use blueprint::{bp_string_to_json, Version};
 
 fn main() {
     let root: Value = serde_json::from_str(
@@ -10,6 +12,10 @@ fn main() {
     )
     .unwrap();
 
+    extract_book(&root, None);
+}
+
+fn extract_book(root: &Value, path: Option<&Path>) {
     let Value::Object(root) = root else {
         panic!("Expected a JSON object");
     };
@@ -18,18 +24,22 @@ fn main() {
         panic!("Expected a JSON object under the key 'blueprint_book'");
     };
 
-    let Some(Value::Number(version)) = book.get("version") else {
-        panic!("Expected a JSON number under the key 'version'");
-    };
+    if path.is_none() {
+        let Some(Value::Number(version)) = book.get("version") else {
+            panic!("Expected a JSON number under the key 'version'");
+        };
 
-    let version = Version::from(version.as_u64().unwrap());
-    println!("Test book from game version {version}");
+        let version = Version::from(version.as_u64().unwrap());
+        println!("Test book from game version {version}");
+    }
+
+    let path = path.unwrap_or_else(|| Path::new(""));
 
     let Some(Value::Array(entries)) = book.get("blueprints") else {
         panic!("Expected a JSON array under the key 'blueprints'");
     };
 
-    for (id, entry) in entries.iter().enumerate() {
+    for entry in entries {
         let Value::Object(entry) = entry else {
             panic!("Expected a JSON object in the array");
         };
@@ -42,14 +52,20 @@ fn main() {
         };
 
         let Some(Value::String(name)) = inner.get("label") else {
-            panic!("Test book entry {id} has no label")
+            panic!("Book entry has no label");
         };
 
-        println!("Extracting test book entry {id}: {name}");
+        if entry.contains_key("blueprint_book") {
+            let sub_path = path.join(name);
+            std::fs::create_dir_all(&sub_path).expect("creating book subdirectory should succeed");
 
-        let json = serde_json::to_string(&entry).unwrap();
-        let extracted = json_to_bp_string(&json).unwrap();
+            extract_book(&Value::Object(entry), Some(&sub_path));
+            continue;
+        }
 
-        std::fs::write(format!("{name}.txt"), extracted).unwrap();
+        let target_path = path.join(format!("{name}.json"));
+        println!("Extracting test book entry {}", target_path.display());
+        let json = serde_json::to_string_pretty(&entry).unwrap();
+        std::fs::write(target_path, json).unwrap();
     }
 }

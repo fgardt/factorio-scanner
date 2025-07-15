@@ -1,0 +1,232 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "direction": 4,
+        "entity_number": 1,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 74.5,
+          "y": -16.5
+        },
+        "rail_layer": "elevated"
+      },
+      {
+        "entity_number": 2,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 77.5,
+          "y": -17.5
+        }
+      },
+      {
+        "entity_number": 3,
+        "name": "straight-rail",
+        "position": {
+          "x": 79,
+          "y": -17
+        }
+      },
+      {
+        "direction": 8,
+        "entity_number": 4,
+        "name": "rail-signal",
+        "position": {
+          "x": 80.5,
+          "y": -17.5
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 5,
+        "name": "rail-signal",
+        "position": {
+          "x": 86.5,
+          "y": -16.5
+        },
+        "rail_layer": "elevated"
+      },
+      {
+        "direction": 4,
+        "entity_number": 6,
+        "name": "rail-ramp",
+        "position": {
+          "x": 66,
+          "y": -15
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 7,
+        "name": "elevated-straight-rail",
+        "position": {
+          "x": 75,
+          "y": -15
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 8,
+        "name": "elevated-straight-rail",
+        "position": {
+          "x": 77,
+          "y": -15
+        }
+      },
+      {
+        "entity_number": 9,
+        "name": "straight-rail",
+        "position": {
+          "x": 79,
+          "y": -15
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 10,
+        "name": "elevated-straight-rail",
+        "position": {
+          "x": 79,
+          "y": -15
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 11,
+        "name": "elevated-straight-rail",
+        "position": {
+          "x": 81,
+          "y": -15
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 12,
+        "name": "elevated-straight-rail",
+        "position": {
+          "x": 83,
+          "y": -15
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 13,
+        "name": "elevated-straight-rail",
+        "position": {
+          "x": 85,
+          "y": -15
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 14,
+        "name": "elevated-straight-rail",
+        "position": {
+          "x": 87,
+          "y": -15
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 15,
+        "name": "rail-support",
+        "position": {
+          "x": 86,
+          "y": -15
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 16,
+        "name": "elevated-straight-rail",
+        "position": {
+          "x": 89,
+          "y": -15
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 17,
+        "name": "elevated-curved-rail-a",
+        "position": {
+          "x": 88,
+          "y": -15
+        }
+      },
+      {
+        "direction": 6,
+        "entity_number": 18,
+        "name": "elevated-curved-rail-a",
+        "position": {
+          "x": 88,
+          "y": -15
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 19,
+        "name": "elevated-straight-rail",
+        "position": {
+          "x": 91,
+          "y": -15
+        }
+      },
+      {
+        "direction": 12,
+        "entity_number": 20,
+        "name": "rail-signal",
+        "position": {
+          "x": 74.5,
+          "y": -13.5
+        },
+        "rail_layer": "elevated"
+      },
+      {
+        "entity_number": 21,
+        "name": "rail-signal",
+        "position": {
+          "x": 77.5,
+          "y": -12.5
+        }
+      },
+      {
+        "entity_number": 22,
+        "name": "straight-rail",
+        "position": {
+          "x": 79,
+          "y": -13
+        }
+      },
+      {
+        "direction": 8,
+        "entity_number": 23,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 80.5,
+          "y": -12.5
+        }
+      },
+      {
+        "direction": 12,
+        "entity_number": 24,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 86.5,
+          "y": -13.5
+        },
+        "rail_layer": "elevated"
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "rail-ramp"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "elevated_rails",
+    "version": 562949957353472
+  }
+}

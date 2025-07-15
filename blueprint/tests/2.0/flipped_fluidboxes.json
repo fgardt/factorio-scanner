@@ -1,0 +1,138 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "direction": 12,
+        "entity_number": 1,
+        "items": [
+          {
+            "id": {
+              "name": "productivity-module-3",
+              "quality": "legendary"
+            },
+            "items": {
+              "in_inventory": [
+                {
+                  "inventory": 4,
+                  "stack": 0
+                }
+              ]
+            }
+          }
+        ],
+        "name": "oil-refinery",
+        "position": {
+          "x": 14.5,
+          "y": -29.5
+        },
+        "recipe": "advanced-oil-processing",
+        "recipe_quality": "normal"
+      },
+      {
+        "direction": 4,
+        "entity_number": 2,
+        "items": [
+          {
+            "id": {
+              "name": "productivity-module-3",
+              "quality": "legendary"
+            },
+            "items": {
+              "in_inventory": [
+                {
+                  "inventory": 4,
+                  "stack": 1
+                }
+              ]
+            }
+          }
+        ],
+        "mirror": true,
+        "name": "oil-refinery",
+        "position": {
+          "x": 20.5,
+          "y": -29.5
+        },
+        "recipe": "advanced-oil-processing",
+        "recipe_quality": "normal"
+      },
+      {
+        "entity_number": 3,
+        "items": [
+          {
+            "id": {
+              "name": "speed-module",
+              "quality": "epic"
+            },
+            "items": {
+              "in_inventory": [
+                {
+                  "inventory": 4,
+                  "stack": 0
+                }
+              ]
+            }
+          },
+          {
+            "id": {
+              "name": "efficiency-module-2"
+            },
+            "items": {
+              "in_inventory": [
+                {
+                  "inventory": 4,
+                  "stack": 2
+                }
+              ]
+            }
+          }
+        ],
+        "name": "oil-refinery",
+        "position": {
+          "x": 14.5,
+          "y": -23.5
+        },
+        "recipe": "advanced-oil-processing",
+        "recipe_quality": "normal"
+      },
+      {
+        "entity_number": 4,
+        "items": [
+          {
+            "id": {
+              "name": "productivity-module-3",
+              "quality": "legendary"
+            },
+            "items": {
+              "in_inventory": [
+                {
+                  "inventory": 4,
+                  "stack": 2
+                }
+              ]
+            }
+          }
+        ],
+        "mirror": true,
+        "name": "oil-refinery",
+        "position": {
+          "x": 20.5,
+          "y": -23.5
+        },
+        "recipe": "advanced-oil-processing",
+        "recipe_quality": "normal"
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "oil-refinery"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "flipped_fluidboxes",
+    "version": 562949957353472
+  }
+}

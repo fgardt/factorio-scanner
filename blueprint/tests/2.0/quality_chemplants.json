@@ -1,0 +1,93 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "entity_number": 1,
+        "name": "chemical-plant",
+        "position": {
+          "x": 22.5,
+          "y": -13.5
+        },
+        "recipe": "explosives",
+        "recipe_quality": "normal"
+      },
+      {
+        "entity_number": 2,
+        "name": "chemical-plant",
+        "position": {
+          "x": 26.5,
+          "y": -13.5
+        },
+        "quality": "uncommon",
+        "recipe": "explosives",
+        "recipe_quality": "uncommon"
+      },
+      {
+        "entity_number": 3,
+        "name": "chemical-plant",
+        "position": {
+          "x": 30.5,
+          "y": -13.5
+        },
+        "quality": "rare",
+        "recipe": "explosives",
+        "recipe_quality": "rare"
+      },
+      {
+        "entity_number": 4,
+        "name": "chemical-plant",
+        "position": {
+          "x": 24.5,
+          "y": -9.5
+        },
+        "quality": "epic",
+        "recipe": "explosives",
+        "recipe_quality": "epic"
+      },
+      {
+        "entity_number": 5,
+        "name": "chemical-plant",
+        "position": {
+          "x": 28.5,
+          "y": -9.5
+        },
+        "quality": "legendary",
+        "recipe": "explosives",
+        "recipe_quality": "legendary"
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "chemical-plant"
+        }
+      },
+      {
+        "index": 2,
+        "signal": {
+          "name": "chemical-plant",
+          "quality": "uncommon"
+        }
+      },
+      {
+        "index": 3,
+        "signal": {
+          "name": "explosives",
+          "quality": "legendary"
+        }
+      },
+      {
+        "index": 4,
+        "signal": {
+          "name": "signal-any-quality",
+          "quality": "rare",
+          "type": "virtual"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "quality_chemplants",
+    "version": 562949957353472
+  }
+}
