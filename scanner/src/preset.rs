@@ -20,6 +20,7 @@ pub enum Preset {
     EIK2,
     Nullius,
     SeaBlock,
+    SpaceAge,
     Ultracube,
 }
 
@@ -57,6 +58,7 @@ impl Preset {
             ],
             Self::Nullius => mod_p!["nullius" 1:9:1],
             Self::SeaBlock => mod_p!["SeaBlockMetaPack" 1:1:4],
+            Self::SpaceAge => vec![("space-age".to_owned(), DependencyVersion::Any)],
             Self::Ultracube => mod_p!["Ultracube" 0:5:4],
         }
         .iter()
@@ -81,6 +83,7 @@ impl Preset {
             Self::EIK2 => None,
             Self::Nullius => Some("nullius-"),
             Self::SeaBlock => None,
+            Self::SpaceAge => None,
             Self::Ultracube => Some("cube-"),
         }
     }
@@ -108,6 +111,7 @@ impl std::str::FromStr for Preset {
             "eik2" | "ei+k2" | "k2ei" | "k2+ei" => Ok(Self::EIK2),
             "nullius" => Ok(Self::Nullius),
             "seablock" | "sb" => Ok(Self::SeaBlock),
+            "spaceage" | "space-age" | "sa" => Ok(Self::SpaceAge),
             "ultracube" => Ok(Self::Ultracube),
             _ => Err(format!("unknown preset: {s}")),
         }
@@ -139,6 +143,9 @@ impl clap::ValueEnum for Preset {
             Self::Nullius => Some(PossibleValue::new("Nullius").alias("nullius")),
             Self::SeaBlock => {
                 Some(PossibleValue::new("SeaBlock").aliases(["seablock", "SB", "sb"]))
+            }
+            Self::SpaceAge => {
+                Some(PossibleValue::new("SpaceAge").aliases(["spaceage", "space-age", "SA", "sa"]))
             }
             Self::Ultracube => Some(PossibleValue::new("Ultracube").alias("ultracube")),
         }
