@@ -7,6 +7,10 @@ edition.workspace = true
 [lints]
 workspace = true
 
+[[example]]
+name = "render_test_bps"
+path = "examples/render_test_bps.rs"
+
 [dependencies]
 blueprint.workspace = true
 clap.workspace = true

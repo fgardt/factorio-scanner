@@ -7,7 +7,7 @@ mod upgrade;
 pub use decon::*;
 pub use upgrade::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PlannerData<T>
 where
     T: Default + PartialEq,
