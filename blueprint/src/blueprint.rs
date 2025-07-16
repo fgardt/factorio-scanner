@@ -21,7 +21,7 @@ use crate::{IndexedVec, NameString};
 mod logistics;
 mod parameters;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct BlueprintData {
     #[serde(flatten)]
@@ -118,7 +118,7 @@ impl BlueprintData {
 pub type Blueprint = crate::CommonData<BlueprintData>;
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct SnapData {
     pub snap_to_grid: Option<Position>,
