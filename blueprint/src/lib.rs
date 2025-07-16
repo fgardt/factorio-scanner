@@ -174,6 +174,18 @@ pub struct CommonData<T> {
     pub version: Version,
 }
 
+impl<T: Default> Default for CommonData<T> {
+    fn default() -> Self {
+        Self {
+            data: T::default(),
+            item: String::new(),
+            label: String::new(),
+            label_color: None,
+            version: Version::new(0, 0, 0, 0),
+        }
+    }
+}
+
 impl TryFrom<Blueprint> for String {
     type Error = BlueprintEncodeError;
 
