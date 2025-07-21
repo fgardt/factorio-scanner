@@ -1,0 +1,396 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "entity_number": 1,
+        "name": "medium-electric-pole",
+        "position": {
+          "x": 47.5,
+          "y": -63.5
+        }
+      },
+      {
+        "entity_number": 2,
+        "name": "fast-inserter",
+        "position": {
+          "x": 47.5,
+          "y": -62.5
+        }
+      },
+      {
+        "entity_number": 3,
+        "name": "medium-electric-pole",
+        "position": {
+          "x": 56.5,
+          "y": -63.5
+        }
+      },
+      {
+        "entity_number": 4,
+        "name": "fast-inserter",
+        "position": {
+          "x": 56.5,
+          "y": -62.5
+        }
+      },
+      {
+        "entity_number": 5,
+        "name": "small-electric-pole",
+        "position": {
+          "x": 61.5,
+          "y": -62.5
+        }
+      },
+      {
+        "control_behavior": {
+          "sections": {
+            "sections": [
+              {
+                "index": 1
+              }
+            ]
+          }
+        },
+        "direction": 4,
+        "entity_number": 6,
+        "name": "constant-combinator",
+        "position": {
+          "x": 61.5,
+          "y": -61.5
+        }
+      },
+      {
+        "entity_number": 7,
+        "name": "small-electric-pole",
+        "position": {
+          "x": 62.5,
+          "y": -61.5
+        }
+      },
+      {
+        "control_behavior": {
+          "sections": {
+            "sections": [
+              {
+                "index": 1
+              }
+            ]
+          }
+        },
+        "entity_number": 8,
+        "name": "constant-combinator",
+        "position": {
+          "x": 62.5,
+          "y": -60.5
+        }
+      },
+      {
+        "entity_number": 9,
+        "name": "big-electric-pole",
+        "position": {
+          "x": 43,
+          "y": -59
+        }
+      },
+      {
+        "entity_number": 10,
+        "name": "substation",
+        "position": {
+          "x": 55,
+          "y": -59
+        }
+      },
+      {
+        "entity_number": 11,
+        "name": "small-electric-pole",
+        "position": {
+          "x": 65.5,
+          "y": -58.5
+        }
+      },
+      {
+        "entity_number": 12,
+        "name": "substation",
+        "position": {
+          "x": 44,
+          "y": -57
+        }
+      },
+      {
+        "entity_number": 13,
+        "name": "medium-electric-pole",
+        "position": {
+          "x": 48.5,
+          "y": -55.5
+        }
+      },
+      {
+        "entity_number": 14,
+        "name": "power-switch",
+        "position": {
+          "x": 58,
+          "y": -55
+        },
+        "switch_state": true
+      },
+      {
+        "entity_number": 15,
+        "name": "big-electric-pole",
+        "position": {
+          "x": 64,
+          "y": -55
+        }
+      },
+      {
+        "control_behavior": {
+          "index_constant": 0,
+          "operation": "select",
+          "select_max": true
+        },
+        "entity_number": 16,
+        "name": "selector-combinator",
+        "position": {
+          "x": 66.5,
+          "y": -56
+        }
+      },
+      {
+        "entity_number": 17,
+        "name": "medium-electric-pole",
+        "position": {
+          "x": 42.5,
+          "y": -52.5
+        }
+      },
+      {
+        "entity_number": 18,
+        "name": "medium-electric-pole",
+        "position": {
+          "x": 51.5,
+          "y": -52.5
+        }
+      },
+      {
+        "entity_number": 19,
+        "name": "small-electric-pole",
+        "position": {
+          "x": 65.5,
+          "y": -53.5
+        }
+      },
+      {
+        "entity_number": 20,
+        "name": "small-electric-pole",
+        "position": {
+          "x": 57.5,
+          "y": -51.5
+        }
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "medium-electric-pole"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "wires",
+    "version": 562949957353472,
+    "wires": [
+      [
+        1,
+        1,
+        2,
+        1
+      ],
+      [
+        1,
+        5,
+        3,
+        5
+      ],
+      [
+        2,
+        2,
+        4,
+        2
+      ],
+      [
+        3,
+        2,
+        4,
+        2
+      ],
+      [
+        5,
+        1,
+        7,
+        1
+      ],
+      [
+        5,
+        2,
+        7,
+        2
+      ],
+      [
+        5,
+        5,
+        7,
+        5
+      ],
+      [
+        6,
+        1,
+        8,
+        1
+      ],
+      [
+        6,
+        2,
+        8,
+        2
+      ],
+      [
+        9,
+        5,
+        12,
+        5
+      ],
+      [
+        9,
+        5,
+        17,
+        5
+      ],
+      [
+        9,
+        5,
+        15,
+        5
+      ],
+      [
+        10,
+        2,
+        15,
+        2
+      ],
+      [
+        10,
+        2,
+        12,
+        2
+      ],
+      [
+        10,
+        5,
+        13,
+        5
+      ],
+      [
+        10,
+        5,
+        15,
+        5
+      ],
+      [
+        10,
+        5,
+        14,
+        5
+      ],
+      [
+        11,
+        1,
+        16,
+        3
+      ],
+      [
+        11,
+        2,
+        19,
+        2
+      ],
+      [
+        11,
+        5,
+        15,
+        5
+      ],
+      [
+        11,
+        5,
+        19,
+        5
+      ],
+      [
+        12,
+        5,
+        13,
+        5
+      ],
+      [
+        13,
+        1,
+        18,
+        1
+      ],
+      [
+        13,
+        5,
+        18,
+        5
+      ],
+      [
+        13,
+        5,
+        17,
+        5
+      ],
+      [
+        14,
+        1,
+        20,
+        1
+      ],
+      [
+        14,
+        2,
+        18,
+        2
+      ],
+      [
+        14,
+        6,
+        19,
+        5
+      ],
+      [
+        15,
+        5,
+        19,
+        5
+      ],
+      [
+        16,
+        1,
+        19,
+        1
+      ],
+      [
+        17,
+        5,
+        18,
+        5
+      ],
+      [
+        18,
+        5,
+        20,
+        5
+      ]
+    ]
+  }
+}
