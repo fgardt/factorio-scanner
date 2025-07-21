@@ -686,7 +686,8 @@ mod tests {
                 platform_hub,
                 quality_chemplants,
                 rail_test_circle,
-                train_schedule
+                train_schedule,
+                wires
             );
 
             mod fluidboxes {
