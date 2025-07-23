@@ -780,6 +780,15 @@ impl RealOrientation {
 
         Self((res + 1.0) % 1.0)
     }
+
+    #[must_use]
+    pub fn as_unit_vec(&self) -> Vector {
+        let rad = self.0 * std::f64::consts::TAU;
+        let x = rad.sin();
+        let y = rad.cos();
+
+        Vector::Tuple(x, y)
+    }
 }
 
 impl From<f64> for RealOrientation {
