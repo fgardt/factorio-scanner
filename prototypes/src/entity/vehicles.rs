@@ -273,11 +273,6 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
             .orientation
             .unwrap_or_else(|| opts.direction.to_orientation());
 
-        let opts = &super::RenderOpts {
-            orientation: Some(orientation.projected_orientation()),
-            ..opts.clone()
-        };
-
         if let Some(wheels) = self.wheels.as_ref() {
             let offset =
                 (Direction::North.get_offset() * (self.joint_distance / 2.0)).rotate(orientation);
@@ -300,14 +295,12 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
                 render_layers.add(
                     (img, shift + offset.flip() + rail_offset),
                     &opts.position,
-                    RenderLayer::Object,
+                    RenderLayer::ObjectUnder,
                 );
             }
 
-            let other_wheel_opts = RotatedRenderOpts::new(
-                (orientation.projected_orientation() + 0.5).rem(1.0),
-                opts.into(),
-            );
+            let other_wheel_opts =
+                RotatedRenderOpts::new((orientation + 0.5).rem(1.0), opts.into());
 
             if let Some((img, shift)) = wheels.rotated.render(
                 render_layers.scale(),
@@ -331,7 +324,7 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
         }) {
             empty = false;
 
-            render_layers.add(res, &opts.position, RenderLayer::ObjectUnder);
+            render_layers.add(res, &opts.position, RenderLayer::Object);
         }
 
         let child = self
@@ -435,14 +428,26 @@ pub struct ArtilleryWagonData {
 impl super::Renderable for ArtilleryWagonData {
     fn render(
         &self,
-        options: &super::RenderOpts,
+        opts: &super::RenderOpts,
         used_mods: &UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         let mut empty = true;
 
-        let offset = Vector::default();
+        let (orient_x, orient_y) = opts
+            .orientation
+            .unwrap_or_default()
+            .projected_orientation()
+            .as_unit_vec()
+            .as_tuple();
+        let base_height =
+            self.cannon_base_height * core::f64::consts::FRAC_1_SQRT_2 * (1.0 + orient_y);
+        let offset = Vector::new(
+            orient_x * self.cannon_base_shift_when_horizontal,
+            orient_y.mul_add(-self.cannon_base_shift_when_vertical, -base_height),
+        );
+
         // let offset = self.cannon_base_shiftings.as_ref().map_or_else(
         //     || Vector::new(0.0, 0.0),
         //     |shifts| {
@@ -451,9 +456,9 @@ impl super::Renderable for ArtilleryWagonData {
         //         } else {
         //             let len_f = shifts.len() as f64;
         //             let idx = (len_f
-        //                 * options
+        //                 * opts
         //                     .orientation
-        //                     .unwrap_or_else(|| options.direction.to_orientation()))
+        //                     .unwrap_or_else(|| opts.direction.to_orientation()))
         //             .floor();
         //             let idx = if idx < 0.0 {
         //                 len_f + idx.rem(len_f)
@@ -466,35 +471,27 @@ impl super::Renderable for ArtilleryWagonData {
         // );
 
         if let Some((img, shift)) = self.cannon_barrel_pictures.as_ref().and_then(|b| {
-            b.rotated.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &options.into(),
-            )
+            b.rotated
+                .render(render_layers.scale(), used_mods, image_cache, &opts.into())
         }) {
             empty = false;
 
             render_layers.add(
                 (img, shift + offset),
-                &options.position,
+                &opts.position,
                 RenderLayer::HigherObjectAbove,
             );
         }
 
         if let Some((img, shift)) = self.cannon_base_pictures.as_ref().and_then(|b| {
-            b.rotated.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &options.into(),
-            )
+            b.rotated
+                .render(render_layers.scale(), used_mods, image_cache, &opts.into())
         }) {
             empty = false;
 
             render_layers.add(
                 (img, shift + offset),
-                &options.position,
+                &opts.position,
                 RenderLayer::HigherObjectAbove,
             );
         }

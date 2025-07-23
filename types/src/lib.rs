@@ -780,6 +780,15 @@ impl RealOrientation {
 
         Self((res + 1.0) % 1.0)
     }
+
+    #[must_use]
+    pub fn as_unit_vec(&self) -> Vector {
+        let rad = self.0 * std::f64::consts::TAU;
+        let x = rad.sin();
+        let y = rad.cos();
+
+        Vector::Tuple(x, y)
+    }
 }
 
 impl From<f64> for RealOrientation {
@@ -1904,6 +1913,8 @@ impl Direction {
 
     #[must_use]
     pub const fn get_offset(&self) -> Vector {
+        const HALF_DIR_OFFSET: f64 = 0.5;
+
         match self {
             Self::North => Vector::new(0.0, -1.0),
             Self::NorthEast => Vector::new(1.0, -1.0),
@@ -1913,7 +1924,14 @@ impl Direction {
             Self::SouthWest => Vector::new(-1.0, 1.0),
             Self::West => Vector::new(-1.0, 0.0),
             Self::NorthWest => Vector::new(-1.0, -1.0),
-            _ => todo!(),
+            Self::NorthNorthEast => Vector::new(HALF_DIR_OFFSET, -1.0),
+            Self::EastNorthEast => Vector::new(1.0, -HALF_DIR_OFFSET),
+            Self::EastSouthEast => Vector::new(1.0, HALF_DIR_OFFSET),
+            Self::SouthSouthEast => Vector::new(HALF_DIR_OFFSET, 1.0),
+            Self::SouthSouthWest => Vector::new(-HALF_DIR_OFFSET, 1.0),
+            Self::WestSouthWest => Vector::new(-1.0, -HALF_DIR_OFFSET),
+            Self::WestNorthWest => Vector::new(-1.0, HALF_DIR_OFFSET),
+            Self::NorthNorthWest => Vector::new(-HALF_DIR_OFFSET, -1.0),
         }
     }
 

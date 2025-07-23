@@ -4,9 +4,11 @@ use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
-use super::EntityWithOwnerPrototype;
+use super::{EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
+
+const ELEVATED_SHIFT: Vector = Vector::new(0.0, -3.0);
 
 /// [`Types/RailSignalPictureSet`](https://lua-api.factorio.com/latest/types/RailSignalPictureSet.html)
 #[skip_serializing_none]
@@ -92,7 +94,7 @@ const fn get_frame_override_index(ati: &[u8], opts: &super::RenderOpts) -> Optio
     }
 
     // TODO: odd / even X/Y pos, left / straight & mix / right
-    Some(ati[opts.direction as usize * Direction::COUNT])
+    Some(ati[opts.direction as usize * 4 * 3])
 
     // <https://forums.factorio.com/109688>
     // let prog = if frame_count == 10 {
@@ -147,18 +149,14 @@ pub struct RailSignalLightDefinition {
 }
 
 /// [`Prototypes/RailSignalBasePrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalBasePrototype.html)
+pub type RailSignalBasePrototype = EntityWithOwnerPrototype<WireEntityData<RailSignalBaseData>>;
+
+/// [`Prototypes/RailSignalBasePrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalBasePrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RailSignalBasePrototype {
+pub struct RailSignalBaseData {
     pub ground_picture_set: RailSignalPictureSet,
     pub elevated_picture_set: RailSignalPictureSet,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub circuit_wire_max_distance: f64,
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_copper_wires: bool,
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub draw_circuit_wires: bool,
 
     pub default_red_output_signal: Option<SignalIDConnector>,
     pub default_orange_output_signal: Option<SignalIDConnector>,
@@ -170,7 +168,7 @@ pub struct RailSignalBasePrototype {
     pub elevated_selection_priority: u8,
 }
 
-impl RailSignalBasePrototype {
+impl RailSignalBaseData {
     const fn picture_set(&self, opts: &super::RenderOpts) -> &RailSignalPictureSet {
         if opts.elevated {
             &self.elevated_picture_set
@@ -190,7 +188,7 @@ impl RailSignalBasePrototype {
         let rot = get_frame_override_index(&picture_set.structure_align_to_animation_index, opts)?;
         let idx = picture_set.signal_color_to_structure_frame_index.green;
 
-        picture_set.structure.render(
+        let (img, mut shift) = picture_set.structure.render(
             scale,
             used_mods,
             image_cache,
@@ -198,11 +196,17 @@ impl RailSignalBasePrototype {
                 rot.into(),
                 AnimationRenderOpts::new_override(idx.into(), opts.into()),
             ),
-        )
+        )?;
+
+        if opts.elevated {
+            shift += ELEVATED_SHIFT;
+        }
+
+        Some((img, shift))
     }
 }
 
-impl super::Renderable for RailSignalBasePrototype {
+impl super::Renderable for RailSignalBaseData {
     fn render(
         &self,
         opts: &super::RenderOpts,
@@ -214,20 +218,25 @@ impl super::Renderable for RailSignalBasePrototype {
         let rail_piece = picture_set.rail_piece.as_ref()?;
 
         // TODO: opts for connected rail
-        if rail_piece.hide_if_not_connected_to_rails {
-            return None;
-        }
+        // if rail_piece.hide_if_not_connected_to_rails {
+        //     return None;
+        // }
 
         let idx = get_frame_override_index(&rail_piece.align_to_frame_index, opts)?;
         let rail_piece_opts = AnimationRenderOpts::new_override(idx.into(), opts.into());
 
-        let res = picture_set.rail_piece.as_ref()?.sprites.render(
+        let (img, mut shift) = picture_set.rail_piece.as_ref()?.sprites.render(
             render_layers.scale(),
             used_mods,
             image_cache,
             &rail_piece_opts,
         )?;
-        render_layers.add(res, &opts.position, RenderLayer::RailScrew);
+
+        if opts.elevated {
+            shift += ELEVATED_SHIFT;
+        }
+
+        render_layers.add((img, shift), &opts.position, RenderLayer::RailScrew);
 
         Some(())
     }
@@ -235,10 +244,10 @@ impl super::Renderable for RailSignalBasePrototype {
 
 /// [`Prototypes/RailChainSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailChainSignalPrototype.html)
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RailChainSignalPrototype(EntityWithOwnerPrototype<RailSignalBasePrototype>);
+pub struct RailChainSignalPrototype(RailSignalBasePrototype);
 
 impl Deref for RailChainSignalPrototype {
-    type Target = EntityWithOwnerPrototype<RailSignalBasePrototype>;
+    type Target = RailSignalBasePrototype;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -254,27 +263,27 @@ impl super::Renderable for RailChainSignalPrototype {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         // thanks to bilka: <https://discord.com/channels/139677590393716737/306402592265732098/1173539478669897768>
-        let offset = {
-            let (mut offset_x, mut offset_y) = opts.direction.right90().get_offset().as_tuple();
+        // let offset = {
+        //     let (mut offset_x, mut offset_y) = opts.direction.right90().get_offset().as_tuple();
 
-            match opts.direction {
-                Direction::South => offset_x -= 1.0,
-                Direction::West => offset_y -= 1.0,
-                _ => (),
-            }
+        //     match opts.direction {
+        //         Direction::South => offset_x -= 1.0,
+        //         Direction::West => offset_y -= 1.0,
+        //         _ => (),
+        //     }
 
-            Vector::new(offset_x, offset_y)
-        };
+        //     Vector::new(offset_x, offset_y)
+        // };
 
         if let Some((img, shift)) =
             self.render_structure(render_layers.scale(), used_mods, image_cache, opts)
         {
-            render_layers.add_entity((img, shift + offset), &opts.position);
+            render_layers.add_entity((img, shift /*+ offset*/), &opts.position);
         }
 
         self.0.render(
             &super::RenderOpts {
-                position: opts.position + MapPosition::from(offset),
+                position: opts.position, /*+ MapPosition::from(offset) */
                 ..opts.clone()
             },
             used_mods,
@@ -286,10 +295,10 @@ impl super::Renderable for RailChainSignalPrototype {
 
 /// [`Prototypes/RailSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalPrototype.html)
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RailSignalPrototype(EntityWithOwnerPrototype<RailSignalBasePrototype>);
+pub struct RailSignalPrototype(RailSignalBasePrototype);
 
 impl Deref for RailSignalPrototype {
-    type Target = EntityWithOwnerPrototype<RailSignalBasePrototype>;
+    type Target = RailSignalBasePrototype;
 
     fn deref(&self) -> &Self::Target {
         &self.0

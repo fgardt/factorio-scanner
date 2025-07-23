@@ -22,6 +22,10 @@ struct Cli {
 
     /// Path to the output folder for rendered images
     output_folder: PathBuf,
+
+    /// Select a specific blueprint to render (optional)
+    #[clap(short, long)]
+    select: Option<String>,
 }
 
 fn main() {
@@ -49,7 +53,13 @@ fn main() {
         ))
         .expect("Failed to load data");
 
-    render_folder(&cli.bp_folder, &cli.output_folder, &raw_data, &used_mods);
+    render_folder(
+        &cli.bp_folder,
+        &cli.output_folder,
+        &raw_data,
+        &used_mods,
+        cli.select.as_ref(),
+    );
 }
 
 fn render_folder(
@@ -57,6 +67,7 @@ fn render_folder(
     output_folder: &PathBuf,
     raw_data: &DataUtil,
     used_mods: &UsedMods,
+    filter: Option<&String>,
 ) {
     for entry in std::fs::read_dir(folder).expect("Failed to read directory") {
         let entry = entry.expect("Failed to read entry");
@@ -65,7 +76,7 @@ fn render_folder(
         if path.is_dir() {
             let sub_output_folder =
                 output_folder.join(path.file_name().expect("Failed to get folder name"));
-            render_folder(&path, &sub_output_folder, raw_data, used_mods);
+            render_folder(&path, &sub_output_folder, raw_data, used_mods, filter);
             continue;
         }
 
@@ -75,6 +86,15 @@ fn render_folder(
 
         if path.extension().is_none_or(|ext| ext != "json") {
             continue;
+        }
+
+        if let Some(filter) = filter {
+            if path
+                .file_stem()
+                .is_none_or(|name| name.to_string_lossy() != filter.as_str())
+            {
+                continue;
+            }
         }
 
         println!("Rendering blueprint: {}", path.display());

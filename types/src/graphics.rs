@@ -453,7 +453,26 @@ impl SourceProvider for StripeMultiSingleSource {
                     line_length: fetch_args.line_length,
                 },
             ),
-            Self::Single(s) => s.fetch(used_mods, image_cache, position, size, ()),
+            Self::Single(s) => {
+                let (pos_x, pos_y) = position;
+                let (size_x, size_y) = size;
+
+                let (x, y) = if fetch_args.line_length == 0 {
+                    (fetch_args.index as i16, 0)
+                } else {
+                    let x = fetch_args.index % fetch_args.line_length;
+                    let y = fetch_args.index / fetch_args.line_length;
+                    (x as i16, y as i16)
+                };
+
+                s.fetch(
+                    used_mods,
+                    image_cache,
+                    (pos_x + size_x * x, pos_y + size_y * y),
+                    size,
+                    (),
+                )
+            }
         }
     }
 }
