@@ -676,17 +676,14 @@ mod tests {
                 "2.0/",
                 ".json",
                 artillery,
+                belts,
                 combinators,
                 constant_logistic_group,
-                elevated_rails,
                 flipped_fluidboxes,
                 inserters,
-                long_train,
                 parametrics,
                 platform_hub,
                 quality_chemplants,
-                rail_test_circle,
-                train_schedule,
                 wires
             );
 
@@ -712,6 +709,21 @@ mod tests {
                     cargo_bays,
                     cargo_landing_bays,
                     fusion
+                );
+            }
+
+            mod rail_things {
+                use super::*;
+
+                bp_tests!(
+                    "2.0/rail_things/",
+                    ".json",
+                    artillery_wagon_direction,
+                    elevated_rails,
+                    long_train,
+                    rail_signals,
+                    rail_test_circle,
+                    train_schedule
                 );
             }
         }

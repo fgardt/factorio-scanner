@@ -78,7 +78,9 @@ impl RenderableGraphics for RotatedAnimationData {
             orientation_to_index(orientation, self.direction_count as u16, false)
         });
 
-        let anim_idx = self.anim_idx(opts.progress);
+        let anim_idx = opts
+            .override_anim_index
+            .unwrap_or_else(|| self.anim_idx(opts.progress));
 
         self.fetch_scale_tint(
             scale,

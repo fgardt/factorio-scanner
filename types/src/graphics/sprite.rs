@@ -221,7 +221,14 @@ impl<S: SourceProvider> SpriteParameters<S> {
         tint: Option<Color>,
         offset: (i16, i16),
     ) -> Option<super::GraphicsOutput> {
-        if self.draw_as_shadow || self.draw_as_glow || self.draw_as_light {
+        // draw_as_glow will be rendered since its technically both regular and light
+        if self.draw_as_shadow || self.draw_as_light {
+            return None;
+        }
+
+        // blending modes are not properly supported :/
+        // TODO: figure out how to integrate blending modes nicely
+        if self.blend_mode != BlendMode::Normal {
             return None;
         }
 
