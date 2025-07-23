@@ -151,7 +151,9 @@ impl RenderableGraphics for AnimationData {
             used_mods,
             image_cache,
             StripeMultiSingleSourceFetchArgs {
-                index: self.anim_idx(opts.progress),
+                index: opts
+                    .override_anim_index
+                    .unwrap_or_else(|| self.anim_idx(opts.progress)),
                 line_length: self.line_length.unwrap_or(0),
                 direction_count: None,
             },
