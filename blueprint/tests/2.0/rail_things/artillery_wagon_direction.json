@@ -1,0 +1,880 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "direction": 5,
+        "entity_number": 1,
+        "name": "rail-signal",
+        "position": {
+          "x": 144.5,
+          "y": -40.5
+        }
+      },
+      {
+        "entity_number": 2,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 145.5,
+          "y": -41.5
+        }
+      },
+      {
+        "entity_number": 3,
+        "name": "straight-rail",
+        "position": {
+          "x": 147,
+          "y": -41
+        }
+      },
+      {
+        "direction": 3,
+        "entity_number": 4,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 149.5,
+          "y": -40.5
+        }
+      },
+      {
+        "direction": 8,
+        "entity_number": 5,
+        "name": "rail-signal",
+        "position": {
+          "x": 148.5,
+          "y": -41.5
+        }
+      },
+      {
+        "direction": 7,
+        "entity_number": 6,
+        "name": "rail-signal",
+        "position": {
+          "x": 159.5,
+          "y": -40.5
+        }
+      },
+      {
+        "direction": 1,
+        "entity_number": 7,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 160.5,
+          "y": -40.5
+        }
+      },
+      {
+        "direction": 13,
+        "entity_number": 8,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 143.5,
+          "y": -38.5
+        }
+      },
+      {
+        "direction": 6,
+        "entity_number": 9,
+        "name": "half-diagonal-rail",
+        "position": {
+          "x": 145,
+          "y": -39
+        }
+      },
+      {
+        "entity_number": 10,
+        "name": "straight-rail",
+        "position": {
+          "x": 147,
+          "y": -39
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 11,
+        "name": "half-diagonal-rail",
+        "position": {
+          "x": 149,
+          "y": -39
+        }
+      },
+      {
+        "direction": 11,
+        "entity_number": 12,
+        "name": "rail-signal",
+        "position": {
+          "x": 150.5,
+          "y": -38.5
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 13,
+        "name": "rail-signal",
+        "position": {
+          "x": 156.5,
+          "y": -38.5
+        }
+      },
+      {
+        "direction": 15,
+        "entity_number": 14,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 157.5,
+          "y": -39.5
+        }
+      },
+      {
+        "entity_number": 15,
+        "name": "half-diagonal-rail",
+        "position": {
+          "x": 159,
+          "y": -39
+        }
+      },
+      {
+        "direction": 2,
+        "entity_number": 16,
+        "name": "half-diagonal-rail",
+        "position": {
+          "x": 161,
+          "y": -39
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 17,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 163.5,
+          "y": -38.5
+        }
+      },
+      {
+        "direction": 9,
+        "entity_number": 18,
+        "name": "rail-signal",
+        "position": {
+          "x": 162.5,
+          "y": -39.5
+        }
+      },
+      {
+        "direction": 3,
+        "entity_number": 19,
+        "name": "rail-signal",
+        "position": {
+          "x": 143.5,
+          "y": -37.5
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 20,
+        "name": "half-diagonal-rail",
+        "position": {
+          "x": 145,
+          "y": -37
+        }
+      },
+      {
+        "artillery_auto_targeting": true,
+        "enable_logistics_while_moving": false,
+        "entity_number": 21,
+        "name": "artillery-wagon",
+        "orientation": 0.6761364936828613,
+        "position": {
+          "x": 146.88671875,
+          "y": -37.94140625
+        }
+      },
+      {
+        "entity_number": 22,
+        "name": "straight-rail",
+        "position": {
+          "x": 147,
+          "y": -37
+        }
+      },
+      {
+        "direction": 6,
+        "entity_number": 23,
+        "name": "half-diagonal-rail",
+        "position": {
+          "x": 149,
+          "y": -37
+        }
+      },
+      {
+        "direction": 5,
+        "entity_number": 24,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 150.5,
+          "y": -37.5
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 25,
+        "name": "straight-rail",
+        "position": {
+          "x": 157,
+          "y": -37
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 26,
+        "name": "straight-rail",
+        "position": {
+          "x": 159,
+          "y": -37
+        }
+      },
+      {
+        "artillery_auto_targeting": true,
+        "enable_logistics_while_moving": false,
+        "entity_number": 27,
+        "name": "artillery-wagon",
+        "orientation": 0.5737918019294739,
+        "position": {
+          "x": 160.203125,
+          "y": -37.40625
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 28,
+        "name": "straight-rail",
+        "position": {
+          "x": 161,
+          "y": -37
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 29,
+        "name": "straight-rail",
+        "position": {
+          "x": 163,
+          "y": -37
+        }
+      },
+      {
+        "entity_number": 30,
+        "name": "rail-signal",
+        "position": {
+          "x": 145.5,
+          "y": -34.5
+        }
+      },
+      {
+        "direction": 11,
+        "entity_number": 31,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 144.5,
+          "y": -35.5
+        }
+      },
+      {
+        "entity_number": 32,
+        "name": "straight-rail",
+        "position": {
+          "x": 147,
+          "y": -35
+        }
+      },
+      {
+        "direction": 8,
+        "entity_number": 33,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 148.5,
+          "y": -34.5
+        }
+      },
+      {
+        "direction": 13,
+        "entity_number": 34,
+        "name": "rail-signal",
+        "position": {
+          "x": 149.5,
+          "y": -35.5
+        }
+      },
+      {
+        "direction": 12,
+        "entity_number": 35,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 156.5,
+          "y": -35.5
+        }
+      },
+      {
+        "direction": 1,
+        "entity_number": 36,
+        "name": "rail-signal",
+        "position": {
+          "x": 157.5,
+          "y": -34.5
+        }
+      },
+      {
+        "direction": 2,
+        "entity_number": 37,
+        "name": "half-diagonal-rail",
+        "position": {
+          "x": 159,
+          "y": -35
+        }
+      },
+      {
+        "entity_number": 38,
+        "name": "half-diagonal-rail",
+        "position": {
+          "x": 161,
+          "y": -35
+        }
+      },
+      {
+        "direction": 7,
+        "entity_number": 39,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 162.5,
+          "y": -34.5
+        }
+      },
+      {
+        "direction": 12,
+        "entity_number": 40,
+        "name": "rail-signal",
+        "position": {
+          "x": 163.5,
+          "y": -35.5
+        }
+      },
+      {
+        "direction": 9,
+        "entity_number": 41,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 159.5,
+          "y": -33.5
+        }
+      },
+      {
+        "direction": 15,
+        "entity_number": 42,
+        "name": "rail-signal",
+        "position": {
+          "x": 160.5,
+          "y": -33.5
+        }
+      },
+      {
+        "direction": 6,
+        "entity_number": 43,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 148.5,
+          "y": -29.5
+        }
+      },
+      {
+        "entity_number": 44,
+        "name": "rail-signal",
+        "position": {
+          "x": 151.5,
+          "y": -29.5
+        }
+      },
+      {
+        "entity_number": 45,
+        "name": "straight-rail",
+        "position": {
+          "x": 153,
+          "y": -29
+        }
+      },
+      {
+        "direction": 8,
+        "entity_number": 46,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 154.5,
+          "y": -29.5
+        }
+      },
+      {
+        "direction": 2,
+        "entity_number": 47,
+        "name": "rail-signal",
+        "position": {
+          "x": 157.5,
+          "y": -29.5
+        }
+      },
+      {
+        "direction": 14,
+        "entity_number": 48,
+        "name": "rail-signal",
+        "position": {
+          "x": 146.5,
+          "y": -27.5
+        }
+      },
+      {
+        "artillery_auto_targeting": true,
+        "enable_logistics_while_moving": false,
+        "entity_number": 49,
+        "name": "artillery-wagon",
+        "orientation": 0.875,
+        "position": {
+          "x": 148.46484375,
+          "y": -27.53515625
+        }
+      },
+      {
+        "direction": 6,
+        "entity_number": 50,
+        "name": "straight-rail",
+        "position": {
+          "x": 148,
+          "y": -28
+        }
+      },
+      {
+        "artillery_auto_targeting": true,
+        "enable_logistics_while_moving": false,
+        "entity_number": 51,
+        "name": "artillery-wagon",
+        "orientation": 0,
+        "position": {
+          "x": 153,
+          "y": -28
+        }
+      },
+      {
+        "entity_number": 52,
+        "name": "straight-rail",
+        "position": {
+          "x": 153,
+          "y": -27
+        }
+      },
+      {
+        "artillery_auto_targeting": true,
+        "enable_logistics_while_moving": false,
+        "entity_number": 53,
+        "name": "artillery-wagon",
+        "orientation": 0.125,
+        "position": {
+          "x": 157.359375,
+          "y": -27.359375
+        }
+      },
+      {
+        "direction": 10,
+        "entity_number": 54,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 159.5,
+          "y": -27.5
+        }
+      },
+      {
+        "direction": 2,
+        "entity_number": 55,
+        "name": "straight-rail",
+        "position": {
+          "x": 158,
+          "y": -28
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 56,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 146.5,
+          "y": -24.5
+        }
+      },
+      {
+        "direction": 6,
+        "entity_number": 57,
+        "name": "straight-rail",
+        "position": {
+          "x": 150,
+          "y": -26
+        }
+      },
+      {
+        "entity_number": 58,
+        "name": "straight-rail",
+        "position": {
+          "x": 153,
+          "y": -25
+        }
+      },
+      {
+        "direction": 2,
+        "entity_number": 59,
+        "name": "straight-rail",
+        "position": {
+          "x": 156,
+          "y": -26
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 60,
+        "name": "rail-signal",
+        "position": {
+          "x": 159.5,
+          "y": -24.5
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 61,
+        "name": "straight-rail",
+        "position": {
+          "x": 147,
+          "y": -23
+        }
+      },
+      {
+        "artillery_auto_targeting": true,
+        "enable_logistics_while_moving": false,
+        "entity_number": 62,
+        "name": "artillery-wagon",
+        "orientation": 0.75,
+        "position": {
+          "x": 148,
+          "y": -23
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 63,
+        "name": "straight-rail",
+        "position": {
+          "x": 149,
+          "y": -23
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 64,
+        "name": "straight-rail",
+        "position": {
+          "x": 151,
+          "y": -23
+        }
+      },
+      {
+        "direction": 6,
+        "entity_number": 65,
+        "name": "straight-rail",
+        "position": {
+          "x": 152,
+          "y": -24
+        }
+      },
+      {
+        "entity_number": 66,
+        "name": "straight-rail",
+        "position": {
+          "x": 153,
+          "y": -23
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 67,
+        "name": "straight-rail",
+        "position": {
+          "x": 153,
+          "y": -23
+        }
+      },
+      {
+        "direction": 2,
+        "entity_number": 68,
+        "name": "straight-rail",
+        "position": {
+          "x": 154,
+          "y": -24
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 69,
+        "name": "straight-rail",
+        "position": {
+          "x": 155,
+          "y": -23
+        }
+      },
+      {
+        "artillery_auto_targeting": true,
+        "enable_logistics_while_moving": false,
+        "entity_number": 70,
+        "name": "artillery-wagon",
+        "orientation": 0.25,
+        "position": {
+          "x": 157.96875,
+          "y": -23
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 71,
+        "name": "straight-rail",
+        "position": {
+          "x": 157,
+          "y": -23
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 72,
+        "name": "straight-rail",
+        "position": {
+          "x": 159,
+          "y": -23
+        }
+      },
+      {
+        "direction": 12,
+        "entity_number": 73,
+        "name": "rail-signal",
+        "position": {
+          "x": 146.5,
+          "y": -21.5
+        }
+      },
+      {
+        "direction": 2,
+        "entity_number": 74,
+        "name": "straight-rail",
+        "position": {
+          "x": 152,
+          "y": -22
+        }
+      },
+      {
+        "entity_number": 75,
+        "name": "straight-rail",
+        "position": {
+          "x": 153,
+          "y": -21
+        }
+      },
+      {
+        "direction": 6,
+        "entity_number": 76,
+        "name": "straight-rail",
+        "position": {
+          "x": 154,
+          "y": -22
+        }
+      },
+      {
+        "direction": 12,
+        "entity_number": 77,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 159.5,
+          "y": -21.5
+        }
+      },
+      {
+        "direction": 2,
+        "entity_number": 78,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 146.5,
+          "y": -18.5
+        }
+      },
+      {
+        "artillery_auto_targeting": true,
+        "enable_logistics_while_moving": false,
+        "entity_number": 79,
+        "name": "artillery-wagon",
+        "orientation": 0.625,
+        "position": {
+          "x": 148.4921875,
+          "y": -18.4921875
+        }
+      },
+      {
+        "direction": 2,
+        "entity_number": 80,
+        "name": "straight-rail",
+        "position": {
+          "x": 150,
+          "y": -20
+        }
+      },
+      {
+        "artillery_auto_targeting": true,
+        "enable_logistics_while_moving": false,
+        "entity_number": 81,
+        "name": "artillery-wagon",
+        "orientation": 0.5,
+        "position": {
+          "x": 153,
+          "y": -18.15625
+        }
+      },
+      {
+        "entity_number": 82,
+        "name": "straight-rail",
+        "position": {
+          "x": 153,
+          "y": -19
+        }
+      },
+      {
+        "artillery_auto_targeting": true,
+        "enable_logistics_while_moving": false,
+        "entity_number": 83,
+        "name": "artillery-wagon",
+        "orientation": 0.375,
+        "position": {
+          "x": 157.46484375,
+          "y": -18.53515625
+        }
+      },
+      {
+        "direction": 6,
+        "entity_number": 84,
+        "name": "straight-rail",
+        "position": {
+          "x": 156,
+          "y": -20
+        }
+      },
+      {
+        "direction": 6,
+        "entity_number": 85,
+        "name": "rail-signal",
+        "position": {
+          "x": 159.5,
+          "y": -18.5
+        }
+      },
+      {
+        "direction": 10,
+        "entity_number": 86,
+        "name": "rail-signal",
+        "position": {
+          "x": 148.5,
+          "y": -16.5
+        }
+      },
+      {
+        "direction": 2,
+        "entity_number": 87,
+        "name": "straight-rail",
+        "position": {
+          "x": 148,
+          "y": -18
+        }
+      },
+      {
+        "entity_number": 88,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 151.5,
+          "y": -16.5
+        }
+      },
+      {
+        "entity_number": 89,
+        "name": "straight-rail",
+        "position": {
+          "x": 153,
+          "y": -17
+        }
+      },
+      {
+        "direction": 8,
+        "entity_number": 90,
+        "name": "rail-signal",
+        "position": {
+          "x": 154.5,
+          "y": -16.5
+        }
+      },
+      {
+        "direction": 14,
+        "entity_number": 91,
+        "name": "rail-chain-signal",
+        "position": {
+          "x": 157.5,
+          "y": -16.5
+        }
+      },
+      {
+        "direction": 6,
+        "entity_number": 92,
+        "name": "straight-rail",
+        "position": {
+          "x": 158,
+          "y": -18
+        }
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "artillery-wagon"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "artillery_wagon_direction",
+    "stock_connections": [
+      {
+        "stock": 21
+      },
+      {
+        "stock": 27
+      },
+      {
+        "stock": 49
+      },
+      {
+        "stock": 51
+      },
+      {
+        "stock": 53
+      },
+      {
+        "stock": 62
+      },
+      {
+        "stock": 70
+      },
+      {
+        "stock": 79
+      },
+      {
+        "stock": 81
+      },
+      {
+        "stock": 83
+      }
+    ],
+    "version": 562949957353472
+  }
+}
