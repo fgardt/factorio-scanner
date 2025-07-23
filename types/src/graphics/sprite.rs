@@ -226,6 +226,12 @@ impl<S: SourceProvider> SpriteParameters<S> {
             return None;
         }
 
+        // blending modes are not properly supported :/
+        // TODO: figure out how to integrate blending modes nicely
+        if self.blend_mode != BlendMode::Normal {
+            return None;
+        }
+
         let img = self.fetch_offset(used_mods, image_cache, fetch_args, offset)?;
 
         let mut img = if (scale - self.scale).abs() < f64::EPSILON {
