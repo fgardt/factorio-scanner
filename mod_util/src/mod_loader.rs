@@ -158,6 +158,11 @@ impl Mod {
         self.internal.get_file(path)
     }
 
+    // Returns a list of all files/subdirectories that live in `dir`.
+    pub fn dir_entries(&self, dir: &str) -> Result<Vec<String>> {
+        self.internal.dir_entries(dir)
+    }
+
     #[must_use]
     pub const fn wube_mods() -> [&'static str; 5] {
         ["core", "base", "elevated-rails", "quality", "space-age"]
@@ -255,6 +260,44 @@ impl ModType {
 
                 file.read_to_end(&mut bytes)?;
                 Ok(bytes)
+            }
+        }
+    }
+
+    fn dir_entries(&self, dir: &str) -> Result<Vec<String>> {
+        match self {
+            Self::Folder { path } => {
+                let path = path.join(dir);
+                if !path.exists() {
+                    return Err(ModError::PathDoesNotExist(path));
+                }
+                let result = std::fs::read_dir(&path)?
+                    .filter_map(|x| x.ok())
+                    .filter_map(|x| x.path().to_str().map(|s| s.to_string()))
+                    .map(|x| String::from(x))
+                    .collect();
+
+                Ok(result)
+            }
+            Self::Zip {
+                internal_prefix,
+                zip,
+                ..
+            } => {
+                let path = internal_prefix.clone() + dir;
+                let mut zip = zip.try_borrow_mut()?;
+
+                if let Err(_) = zip.by_name(&path) {
+                    return Err(ModError::PathDoesNotExist(path.into()));
+                }
+
+                let result = zip
+                    .file_names()
+                    .filter(|&x| x.starts_with(&path))
+                    .map(|x| String::from(x))
+                    .collect();
+
+                Ok(result)
             }
         }
     }
