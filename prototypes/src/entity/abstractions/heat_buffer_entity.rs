@@ -1,11 +1,16 @@
 use serde::{Deserialize, Serialize};
 use types::HeatBuffer;
 
+use serde_helper as helper;
+
 use super::Renderable;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HeatBufferEntityData<T: Renderable> {
     pub heat_buffer: HeatBuffer,
+
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub heating_radius: f32,
 
     #[serde(flatten)]
     child: T,
