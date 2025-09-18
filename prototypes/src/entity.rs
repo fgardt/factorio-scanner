@@ -559,6 +559,7 @@ pub struct EntityData<T: Renderable> {
     // pub open_sound: Option<Sound>,
     // pub close_sound: Option<Sound>,
     // pub stateless_visualisation: Option<StatelessVisualisations>,
+    // pub draw_stateless_visualisations_in_ghost: bool,
     // pub remains_when_mined: Option<RemainsWhenMined>,
     // pub diagonal_tile_grid_size: Option<TilePosition>,
     // pub autoplace: Option<AutoplaceSpecification>,

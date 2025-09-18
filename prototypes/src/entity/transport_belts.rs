@@ -180,6 +180,9 @@ pub struct LoaderData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub wait_for_full_stack: bool,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub respect_insert_limits: bool,
+
     //pub belt_length: f64, // -> moved to specific variants
     pub energy_source: Option<AnyEnergySource>, // any except burner
     pub energy_per_item: Option<Energy>,
