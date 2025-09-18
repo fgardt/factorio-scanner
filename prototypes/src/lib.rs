@@ -998,6 +998,6 @@ mod test {
             };
         }
 
-        deserialize_tests!(base, space_age, py);
+        deserialize_tests!(base, space_age, py, pm);
     }
 }
