@@ -179,8 +179,11 @@ enum ModType {
 impl ModType {
     fn load(path: impl AsRef<Path>, name: &str, version: Version) -> Result<Self> {
         let zip_path = path.as_ref().join(format!("{name}_{version}.zip"));
+        let versioned_folder_path = path.as_ref().join(format!("{name}_{version}"));
         let (path, is_zip) = if zip_path.exists() && zip_path.is_file() {
             (zip_path, true)
+        } else if versioned_folder_path.exists() {
+            (versioned_folder_path, false)
         } else {
             let folder_path = path.as_ref().join(name);
 
