@@ -70,6 +70,9 @@ pub struct RecipePrototypeData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub hide_from_player_crafting: bool,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub hide_from_bonus_gui: bool,
+
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub allow_decomposition: bool,
 

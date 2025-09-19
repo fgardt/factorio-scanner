@@ -23,9 +23,6 @@ pub struct RotatedAnimationData {
     pub still_frame: u32,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub axially_symmetrical: bool,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub counterclockwise: bool,
 
     #[serde(default = "ro_05", skip_serializing_if = "is_ro_05")]
@@ -180,9 +177,6 @@ pub type RotatedSprite = LayeredGraphic<RotatedSpriteData>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RotatedSpriteData {
     pub direction_count: u16,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub axially_symmetrical: bool,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub back_equals_front: bool,
