@@ -14,7 +14,7 @@ jobs:
         platform:
           - os_name: Windows-x86_64
             os: windows-latest
-            target: x86_64-pc-windows-gnu
+            target: x86_64-pc-windows-msvc
             archiver: zip
             archive_type: zip
             bin: scanner.exe
