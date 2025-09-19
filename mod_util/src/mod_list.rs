@@ -251,7 +251,7 @@ impl ModList {
                 };
                 version
             } else {
-                let Ok(version) = Mod::load_from_path(path).map(|m| m.info.version) else {
+                let Ok(version) = Mod::load_from_path(&path).map(|m| m.info.version) else {
                     continue;
                 };
                 version
@@ -259,9 +259,13 @@ impl ModList {
 
             let entry = list.entry(name).or_default();
             entry.versions.insert(version, Some(filename.into()));
-            // entry
-            //     .known_dependencies
-            //     .insert(m.info.version, m.info.dependencies);
+
+            // get dependencies for this version
+            if let Ok(m) = Mod::load_from_path(path) {
+                entry
+                    .known_dependencies
+                    .insert(m.info.version, m.info.dependencies);
+            }
         }
 
         Ok(Self {
