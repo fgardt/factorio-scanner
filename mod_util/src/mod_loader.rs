@@ -5,8 +5,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use zip::ZipArchive;
 use zip::read::ZipFile;
+use zip::ZipArchive;
 
 use crate::mod_info::{ModInfo, Version};
 
@@ -179,7 +179,7 @@ pub struct ModEntry {
 }
 
 impl ModEntry {
-    pub fn path(&self) -> &PathBuf { 
+    pub fn path(&self) -> &PathBuf {
         &self.path
     }
     pub fn is_file(&self) -> bool {
@@ -320,7 +320,7 @@ impl ModType {
                 return std::fs::read_dir(&path)?
                     .filter_map(|x| x.ok())
                     .map(|x| ModEntry::try_from(x))
-                    .collect()
+                    .collect();
             }
             Self::Zip {
                 internal_prefix,
@@ -334,14 +334,16 @@ impl ModType {
                     return Err(ModError::PathDoesNotExist(path.into()));
                 }
 
-                // We need to copy all of the `&str`s to `String`s so we don't 
+                // We need to copy all of the `&str`s to `String`s so we don't
                 // keep the immutable ref to `zip` alive and trigger a double borrow
-                let entries: Vec<String> = zip.file_names()
+                let entries: Vec<String> = zip
+                    .file_names()
                     .filter(|&x| x.starts_with(&path) && x != path)
                     .map(|x| x.into())
                     .collect();
 
-                return entries.iter()
+                return entries
+                    .iter()
                     .map(|x| ModEntry::try_from(&zip.by_name(x)?))
                     .collect();
             }
