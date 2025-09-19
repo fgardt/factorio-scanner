@@ -21,14 +21,14 @@ image.workspace = true
 imageproc.workspace = true
 locale.workspace = true
 mod_util = { workspace = true, features = ["bp_meta_info"] }
-pretty_env_logger = "0.5"
+pretty_env_logger.workspace = true
 prototypes.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 serde_with.workspace = true
 thiserror.workspace = true
 types.workspace = true
-dotenv = "0.15"
+dotenv.workspace = true
 rustc-hash = "2.1"
 strum = { version = "0.27", features = ["derive"] }
 tracing.workspace = true
