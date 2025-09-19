@@ -44,6 +44,8 @@ pub struct SpaceLocationPrototypeData {
 
     #[serde(flatten)]
     pub starmap_icon: Option<StarMapIcon>,
+
+    pub starmap_icon_orientation: Option<RealOrientation>,
     // not implemented
     // procession_graphic_catalogue
     // procession_audio_catalogue
