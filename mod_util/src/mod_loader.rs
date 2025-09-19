@@ -1,7 +1,7 @@
 use std::{
     cell::RefCell,
     fs::File,
-    io::Read,
+    io::{Read, Seek},
     path::{Path, PathBuf},
 };
 
@@ -260,7 +260,10 @@ impl ModType {
     }
 }
 
-fn get_zip_internal_folder(path: impl AsRef<Path>, zip: &ZipArchive<File>) -> Result<String> {
+pub fn get_zip_internal_folder<R: Read + Seek>(
+    path: impl AsRef<Path>,
+    zip: &ZipArchive<R>,
+) -> Result<String> {
     let res = zip
         .file_names()
         .next()
