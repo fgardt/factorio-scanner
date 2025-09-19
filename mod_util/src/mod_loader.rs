@@ -1,7 +1,7 @@
 use std::{
     cell::RefCell,
     fs::File,
-    io::Read,
+    io::{Read, Seek},
     path::{Path, PathBuf},
 };
 
@@ -179,8 +179,11 @@ enum ModType {
 impl ModType {
     fn load(path: impl AsRef<Path>, name: &str, version: Version) -> Result<Self> {
         let zip_path = path.as_ref().join(format!("{name}_{version}.zip"));
+        let versioned_folder_path = path.as_ref().join(format!("{name}_{version}"));
         let (path, is_zip) = if zip_path.exists() && zip_path.is_file() {
             (zip_path, true)
+        } else if versioned_folder_path.exists() {
+            (versioned_folder_path, false)
         } else {
             let folder_path = path.as_ref().join(name);
 
@@ -203,7 +206,7 @@ impl ModType {
         } else if path.is_dir() {
             Ok(Self::Folder { path })
         } else {
-            return Err(ModError::PathNotZipOrDir(path));
+            Err(ModError::PathNotZipOrDir(path))
         }
     }
 
@@ -226,7 +229,7 @@ impl ModType {
                 zip: RefCell::new(zip),
             })
         } else {
-            return Err(ModError::PathNotZipOrDir(path.into()));
+            Err(ModError::PathNotZipOrDir(path.into()))
         }
     }
 
@@ -260,7 +263,10 @@ impl ModType {
     }
 }
 
-fn get_zip_internal_folder(path: impl AsRef<Path>, zip: &ZipArchive<File>) -> Result<String> {
+pub fn get_zip_internal_folder<R: Read + Seek>(
+    path: impl AsRef<Path>,
+    zip: &ZipArchive<R>,
+) -> Result<String> {
     let res = zip
         .file_names()
         .next()

@@ -7,9 +7,7 @@
 
 use std::{collections::HashMap, fmt, hash::Hash};
 
-use konst::{
-    iter::collect_const, primitive::parse_u16, result::unwrap_ctx, string::split as konst_split,
-};
+use konst::{iter::collect_const, result::unwrap, string::split as konst_split};
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -22,9 +20,9 @@ use mod_util::{mod_info::Version, UsedMods};
 pub const fn targeted_engine_version() -> Version {
     const V: [&str; 3] = collect_const!(&str => konst_split(env!("CARGO_PKG_VERSION_PRE"), '.'));
     Version::new(
-        unwrap_ctx!(parse_u16(V[0])),
-        unwrap_ctx!(parse_u16(V[1])),
-        unwrap_ctx!(parse_u16(V[2])),
+        unwrap!(u16::from_str_radix(V[0], 10)),
+        unwrap!(u16::from_str_radix(V[1], 10)),
+        unwrap!(u16::from_str_radix(V[2], 10)),
     )
 }
 
