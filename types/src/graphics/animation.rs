@@ -73,7 +73,7 @@ pub struct AnimationParameters<S: SourceProvider = StripeMultiSingleSource> {
     #[serde(default = "helper::u32_1", skip_serializing_if = "helper::is_1_u32")]
     pub frame_count: u32,
 
-    /// default of 0 gets overridden in [`AnimationSheet`] to variation_count
+    /// default of 0 gets overridden in [`AnimationSheet`] to `variation_count`
     pub line_length: Option<u32>,
 
     #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]

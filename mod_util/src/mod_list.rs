@@ -625,8 +625,8 @@ fn dep_chain_len(active: &UsedMods) -> Vec<(String, usize)> {
     let mut cache = HashMap::new();
     let mut visit_list = HashSet::new();
     active
-        .iter()
-        .map(|(name, _)| {
+        .keys()
+        .map(|name| {
             (
                 name.clone(),
                 dep_chain_recur(name, active, &mut cache, &mut visit_list),

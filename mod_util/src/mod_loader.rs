@@ -203,7 +203,7 @@ impl ModType {
         } else if path.is_dir() {
             Ok(Self::Folder { path })
         } else {
-            return Err(ModError::PathNotZipOrDir(path));
+            Err(ModError::PathNotZipOrDir(path))
         }
     }
 
@@ -226,7 +226,7 @@ impl ModType {
                 zip: RefCell::new(zip),
             })
         } else {
-            return Err(ModError::PathNotZipOrDir(path.into()));
+            Err(ModError::PathNotZipOrDir(path.into()))
         }
     }
 

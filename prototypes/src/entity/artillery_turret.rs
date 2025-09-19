@@ -82,7 +82,7 @@ impl super::Renderable for ArtilleryTurretData {
             orientation: Some(
                 options
                     .orientation
-                    .map_or(options.direction.to_orientation(), |o| o),
+                    .map_or_else(|| options.direction.to_orientation(), |o| o),
             ),
             ..options.clone()
         };
