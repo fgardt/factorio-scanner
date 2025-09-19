@@ -6,6 +6,7 @@ use std::{
 };
 
 use zip::ZipArchive;
+use zip::read::ZipFile;
 
 use crate::mod_info::{ModInfo, Version};
 
@@ -159,13 +160,57 @@ impl Mod {
     }
 
     // Returns a list of all files/subdirectories that live in `dir`.
-    pub fn dir_entries(&self, dir: &str) -> Result<Vec<String>> {
-        self.internal.dir_entries(dir)
+    pub fn read_dir(&self, dir: &str) -> Result<Vec<ModEntry>> {
+        self.internal.read_dir(dir)
     }
 
     #[must_use]
     pub const fn wube_mods() -> [&'static str; 5] {
         ["core", "base", "elevated-rails", "quality", "space-age"]
+    }
+}
+
+/// An object which represents a file or folder inside of a Mod, like `fs::DirEntry`.
+#[derive(Debug)]
+pub struct ModEntry {
+    path: PathBuf,
+    is_file: bool,
+    // Can add all sorts of fancy info as we like
+}
+
+impl ModEntry {
+    pub fn path(&self) -> &PathBuf { 
+        &self.path
+    }
+    pub fn is_file(&self) -> bool {
+        self.is_file
+    }
+    pub fn is_dir(&self) -> bool {
+        !self.is_file
+    }
+    // I don't think we have to worry about symlinks...
+}
+
+impl TryFrom<std::fs::DirEntry> for ModEntry {
+    type Error = ModError;
+
+    fn try_from(item: std::fs::DirEntry) -> Result<ModEntry> {
+        let metadata = item.metadata()?;
+        Ok(ModEntry {
+            path: item.path(),
+            is_file: metadata.is_file(),
+        })
+    }
+}
+
+impl TryFrom<&ZipFile<'_, File>> for ModEntry {
+    type Error = ModError;
+
+    fn try_from(item: &ZipFile<'_, File>) -> Result<ModEntry> {
+        Ok(ModEntry {
+            path: item.name().into(),
+            is_file: item.is_file(),
+        })
     }
 }
 
@@ -264,20 +309,18 @@ impl ModType {
         }
     }
 
-    fn dir_entries(&self, dir: &str) -> Result<Vec<String>> {
+    fn read_dir(&self, dir: &str) -> Result<Vec<ModEntry>> {
         match self {
             Self::Folder { path } => {
                 let path = path.join(dir);
                 if !path.exists() {
                     return Err(ModError::PathDoesNotExist(path));
                 }
-                let result = std::fs::read_dir(&path)?
-                    .filter_map(|x| x.ok())
-                    .filter_map(|x| x.path().to_str().map(|s| s.to_string()))
-                    .map(|x| String::from(x))
-                    .collect();
 
-                Ok(result)
+                return std::fs::read_dir(&path)?
+                    .filter_map(|x| x.ok())
+                    .map(|x| ModEntry::try_from(x))
+                    .collect()
             }
             Self::Zip {
                 internal_prefix,
@@ -287,17 +330,20 @@ impl ModType {
                 let path = internal_prefix.clone() + dir;
                 let mut zip = zip.try_borrow_mut()?;
 
-                if let Err(_) = zip.by_name(&path) {
+                if let Err(_) = &zip.by_name(&path) {
                     return Err(ModError::PathDoesNotExist(path.into()));
                 }
 
-                let result = zip
-                    .file_names()
-                    .filter(|&x| x.starts_with(&path))
-                    .map(|x| String::from(x))
+                // We need to copy all of the `&str`s to `String`s so we don't 
+                // keep the immutable ref to `zip` alive and trigger a double borrow
+                let entries: Vec<String> = zip.file_names()
+                    .filter(|&x| x.starts_with(&path) && x != path)
+                    .map(|x| x.into())
                     .collect();
 
-                Ok(result)
+                return entries.iter()
+                    .map(|x| ModEntry::try_from(&zip.by_name(x)?))
+                    .collect();
             }
         }
     }
