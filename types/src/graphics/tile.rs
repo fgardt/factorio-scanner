@@ -32,7 +32,7 @@ impl<M> LocationalRenderOpts<M> {
         Self { position, more }
     }
 
-    pub fn get_offset(&self) -> (i32, i32) {
+    pub const fn get_offset(&self) -> (i32, i32) {
         let (x, y) = self.position.as_tuple();
         (x.ceil() as i32, y.ceil() as i32)
     }
