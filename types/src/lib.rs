@@ -33,6 +33,7 @@ mod graphics;
 mod icon;
 mod ids;
 mod item;
+mod math_expression;
 mod module;
 mod wire;
 
@@ -43,6 +44,7 @@ pub use graphics::*;
 pub use icon::*;
 pub use ids::*;
 pub use item::*;
+pub use math_expression::*;
 pub use module::*;
 pub use wire::*;
 

@@ -8,6 +8,7 @@ edition.workspace = true
 workspace = true
 
 [dependencies]
+thiserror.workspace = true
 image.workspace = true
 konst.workspace = true
 mod_util.workspace = true

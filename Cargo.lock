@@ -3455,6 +3455,7 @@ dependencies = [
  "serde_helper",
  "serde_repr",
  "serde_with",
+ "thiserror 2.0.16",
  "tracing",
 ]
 
