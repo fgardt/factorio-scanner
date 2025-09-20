@@ -1,6 +1,6 @@
 [package]
 name = "factorio_datastage"
-version = "0.5.0-2.0.66"
+version = "0.6.0-2.0.66"
 authors.workspace = true
 edition.workspace = true
 
@@ -25,6 +25,7 @@ mlua = { git = "https://github.com/fgardt/mlua.git", features = [
     "serde",
 ] }
 mod_util.workspace = true
+types.workspace = true
 serde = { workspace = true, features = ["rc"] }
 serde_json.workspace = true
 thiserror.workspace = true
