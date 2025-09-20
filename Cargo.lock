@@ -763,7 +763,7 @@ dependencies = [
 
 [[package]]
 name = "factorio_datastage"
-version = "0.5.0-2.0.66"
+version = "0.6.0-2.0.66"
 dependencies = [
  "base64",
  "clap",
@@ -779,6 +779,7 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.16",
  "tokio",
+ "types",
 ]
 
 [[package]]
