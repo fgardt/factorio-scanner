@@ -11,6 +11,7 @@ use mlua::prelude::*;
 use serde::Serialize;
 
 use mod_util::mod_info::Version;
+use types::MathExpression;
 
 pub fn register_lua_helpers(vm: &Lua) -> LuaResult<()> {
     let helpers = vm.create_table()?;
@@ -113,12 +114,13 @@ fn direction_to_string(_vm: &Lua, direction: u8) -> LuaResult<String> {
 
 fn evaluate_expression(
     _vm: &Lua,
-    (_expression, _variables): (String, Option<HashMap<String, f64>>),
+    (expression, variables): (String, Option<HashMap<String, f64>>),
 ) -> LuaResult<f64> {
-    // TODO: implement
-    Err(LuaError::RuntimeError(
-        "evaluate_expression is not implemented yet".to_owned(),
-    ))
+    let vars = variables.unwrap_or_default();
+
+    MathExpression(expression)
+        .eval(&vars)
+        .map_err(|e| LuaError::RuntimeError(e.to_string()))
 }
 
 #[allow(clippy::needless_pass_by_value)]
