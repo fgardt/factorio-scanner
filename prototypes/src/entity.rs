@@ -967,6 +967,7 @@ namespace_struct! {
     "elevated-curved-rail-b",
     "elevated-half-diagonal-rail",
     "elevated-straight-rail",
+    "rail-support",
     "rail-signal",
     "rail-chain-signal",
     "train-stop",
