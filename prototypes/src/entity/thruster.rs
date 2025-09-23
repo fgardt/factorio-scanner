@@ -151,4 +151,6 @@ pub struct ThrusterGraphicsSetData {
         skip_serializing_if = "helper::is_1_5625_f32"
     )]
     pub flame_effect_offset: f32,
+
+    pub water_reflection: Option<WaterReflectionDefinition>,
 }

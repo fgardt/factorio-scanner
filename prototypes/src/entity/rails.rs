@@ -188,6 +188,8 @@ pub struct RailSupportGraphicsSet {
 
     #[serde(default = "helper::i8_1", skip_serializing_if = "helper::is_1_i8")]
     pub underwater_layer_offset: i8,
+
+    pub water_reflection: Option<WaterReflectionDefinition>,
 }
 
 /// [`Types/RailPictureSet`](https://lua-api.factorio.com/latest/types/RailPictureSet.html)

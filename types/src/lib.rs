@@ -2169,6 +2169,8 @@ pub struct CraftingMachineGraphicsSetData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub reset_animation_when_frozen: bool,
+
+    pub water_reflection: Option<WaterReflectionDefinition>,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -2461,6 +2463,8 @@ pub struct MiningDrillGraphicsSetData {
 
     #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
     pub animation_progress: f32,
+
+    pub water_reflection: Option<WaterReflectionDefinition>,
 }
 
 #[skip_serializing_none]
@@ -2720,6 +2724,7 @@ pub struct CargoBayConnectableGraphicsSet {
     )]
     pub animation_render_layer: RenderLayer,
     pub connections: Option<CargoBayConnections>,
+    pub water_reflection: Option<WaterReflectionDefinition>,
 }
 
 /// [`Types/CargoBayConnections`](https://lua-api.factorio.com/latest/types/CargoBayConnections.html)

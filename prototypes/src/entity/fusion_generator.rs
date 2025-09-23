@@ -109,6 +109,8 @@ pub struct FusionGeneratorGraphicsSet {
 
     #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
     pub glow_color: Color,
+
+    pub water_reflection: Option<WaterReflectionDefinition>,
 }
 
 /// [`Types/FusionGeneratorDirectionGraphicsSet`](https://lua-api.factorio.com/latest/types/FusionGeneratorDirectionGraphicsSet.html)

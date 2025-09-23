@@ -140,4 +140,5 @@ pub struct AsteroidCollectorGraphicsSet {
     pub arm_head_animation: Option<RotatedAnimation>,
     pub arm_head_top_animation: Option<RotatedAnimation>,
     pub arm_link: Option<RotatedSprite>,
+    pub water_reflection: Option<WaterReflectionDefinition>,
 }
