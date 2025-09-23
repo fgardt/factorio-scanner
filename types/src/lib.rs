@@ -2520,7 +2520,7 @@ pub enum CircuitConnectorSecondaryDrawOrder {
     },
 }
 
-// Comparator variants
+/// [`Types/ComparatorString`](https://lua-api.factorio.com/latest/types/ComparatorString.html)
 #[derive(Debug, Default, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
 pub enum Comparator {
     #[default]
