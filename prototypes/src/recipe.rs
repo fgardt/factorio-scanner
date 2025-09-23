@@ -245,14 +245,6 @@ pub enum ProductPrototype {
 
     #[serde(rename = "fluid")]
     FluidProductPrototype(FluidProductPrototype),
-
-    #[serde(rename = "research-progress")]
-    ResearchProgressProductPrototype {
-        #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
-        amount: f64,
-
-        research_item: ItemID,
-    },
 }
 
 /// [`Types/ItemProductPrototype`](https://lua-api.factorio.com/latest/types/ItemProductPrototype.html)

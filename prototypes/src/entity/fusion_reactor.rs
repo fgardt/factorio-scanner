@@ -112,6 +112,7 @@ pub struct FusionReactorGraphicsSet {
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub direction_to_connection_graphics: HashMap<DirectionString, FactorioArray<u8>>,
     pub plasma_category: NeighbourConnectableConnectionCategory,
+    pub water_reflection: Option<WaterReflectionDefinition>,
 }
 
 /// [`Types/FusionReactorConnectionGraphics`](https://lua-api.factorio.com/latest/types/FusionReactorConnectionGraphics.html)
