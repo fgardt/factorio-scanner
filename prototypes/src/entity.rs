@@ -545,6 +545,11 @@ pub struct EntityData<T: Renderable> {
 
     pub water_reflection: Option<WaterReflectionDefinition>,
 
+    pub icon_draw_specification: Option<IconDrawSpecification>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub icons_positioning: FactorioArray<IconSequencePositioning>,
+
     // not implemented
     // pub trigger_target_mask: Option<TriggerTargetMask>,
     // pub tile_buildability_rules: FactorioArray<TileBuildabilityRule>,
@@ -565,8 +570,6 @@ pub struct EntityData<T: Renderable> {
     // pub autoplace: Option<AutoplaceSpecification>,
     // pub ambient_sounds_group: Option<EntityID>,
     // pub ambient_sounds: Option<WorldAmbientSoundDefinitions>,
-    // pub icon_draw_specification: Option<IconDrawSpecification>,
-    // pub icons_positioning: FactorioArray<IconSequencePositioning>,
     #[serde(flatten)]
     child: T,
 }
