@@ -323,7 +323,8 @@ impl<T: Renderable> RenderableEntity for EntityPrototype<T> {
             return Vec::new();
         }
 
-        let BoundingBox(tl, br) = self.collision_box();
+        let collision_box = self.collision_box();
+        let (tl, br) = collision_box.corners();
         let tl_vec: Vector = tl.into();
         let br_vec: Vector = br.into();
         let (tl_x, tl_y) = options.direction.rotate_vector(tl_vec).as_tuple();
@@ -367,7 +368,8 @@ impl<T: Renderable> RenderableEntity for EntityPrototype<T> {
             return Vec::new();
         }
 
-        let BoundingBox(tl, br) = self.collision_box();
+        let collision_box = self.collision_box();
+        let (tl, br) = collision_box.corners();
         let tl_vec: Vector = tl.into();
         let br_vec: Vector = br.into();
         let (tl_x, tl_y) = options.direction.rotate_vector(tl_vec).as_tuple();

@@ -541,6 +541,14 @@ impl From<MapPosition> for Vector {
     }
 }
 
+impl From<&MapPosition> for Vector {
+    fn from(value: &MapPosition) -> Self {
+        let (x, y) = value.as_tuple();
+
+        Self::Tuple(x, y)
+    }
+}
+
 impl fmt::Display for Vector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (x, y) = self.as_tuple();
@@ -1594,7 +1602,11 @@ impl std::ops::DivAssign<f64> for MapPosition {
 
 /// [`Types/BoundingBox`](https://lua-api.factorio.com/latest/types/BoundingBox.html)
 #[derive(Debug, Clone, Default, Serialize)]
-pub struct BoundingBox(pub MapPosition, pub MapPosition);
+pub struct BoundingBox(
+    pub MapPosition,
+    pub MapPosition,
+    #[serde(skip_serializing_if = "helper::is_default")] pub RealOrientation,
+);
 
 impl BoundingBox {
     #[must_use]
@@ -1605,6 +1617,11 @@ impl BoundingBox {
     #[must_use]
     pub const fn bottom_right(&self) -> &MapPosition {
         &self.1
+    }
+
+    #[must_use]
+    pub const fn corners(&self) -> (&MapPosition, &MapPosition) {
+        (&self.0, &self.1)
     }
 
     #[must_use]
@@ -1671,11 +1688,12 @@ impl<'de> Deserialize<'de> for BoundingBox {
                 enum Field {
                     LeftTop,
                     RightBottom,
-                    Orientation, // unused
+                    Orientation,
                 }
 
                 let mut left_top = None;
                 let mut right_bottom = None;
+                let mut orientation = None;
 
                 while let Some(key) = map.next_key()? {
                     match key {
@@ -1691,7 +1709,12 @@ impl<'de> Deserialize<'de> for BoundingBox {
                             }
                             right_bottom = Some(map.next_value()?);
                         }
-                        Field::Orientation => {}
+                        Field::Orientation => {
+                            if orientation.is_some() {
+                                return Err(serde::de::Error::duplicate_field("orientation"));
+                            }
+                            orientation = Some(map.next_value()?);
+                        }
                     }
                 }
 
@@ -1699,7 +1722,11 @@ impl<'de> Deserialize<'de> for BoundingBox {
                 let right_bottom =
                     right_bottom.ok_or_else(|| Error::missing_field("right_bottom"))?;
 
-                Ok(BoundingBox(left_top, right_bottom))
+                Ok(BoundingBox(
+                    left_top,
+                    right_bottom,
+                    orientation.unwrap_or_default(),
+                ))
             }
 
             fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -1714,8 +1741,9 @@ impl<'de> Deserialize<'de> for BoundingBox {
                 let right_bottom = seq
                     .next_element()?
                     .ok_or_else(|| Error::invalid_length(1, &self))?;
+                let orientation = seq.next_element()?.unwrap_or_default();
 
-                Ok(BoundingBox(left_top, right_bottom))
+                Ok(BoundingBox(left_top, right_bottom, orientation))
             }
         }
 
