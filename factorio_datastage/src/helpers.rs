@@ -36,6 +36,10 @@ pub fn register_lua_helpers(vm: &Lua) -> LuaResult<()> {
     // is_valid_sprite_path, not available in setting/data stage
     // create_profiler, not available in setting/data stage
     helpers.raw_set("compare_versions", vm.create_function(compare_versions)?)?;
+    helpers.raw_set(
+        "multilingual_to_lower",
+        vm.create_function(multilingual_to_lower)?,
+    )?;
 
     helpers.raw_set("game_version", env!("CARGO_PKG_VERSION_PRE"))?;
 
@@ -169,4 +173,9 @@ fn compare_versions(_vm: &Lua, (first, second): (String, String)) -> LuaResult<i
     };
 
     Ok(a.cmp(&b) as i32)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+fn multilingual_to_lower(_vm: &Lua, input: String) -> LuaResult<String> {
+    Ok(input.to_lowercase())
 }
