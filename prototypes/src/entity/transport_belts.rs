@@ -384,7 +384,7 @@ impl super::Renderable for Loader1x2Data {
 }
 
 /// [`Prototypes/SplitterPrototype`](https://lua-api.factorio.com/latest/prototypes/SplitterPrototype.html)
-pub type SplitterPrototype = EntityWithOwnerPrototype<SplitterData>;
+pub type SplitterPrototype = EntityWithOwnerPrototype<WireEntityData<SplitterData>>;
 
 /// [`Prototypes/SplitterPrototype`](https://lua-api.factorio.com/latest/prototypes/SplitterPrototype.html)
 #[skip_serializing_none]
@@ -401,6 +401,11 @@ pub struct SplitterData {
     pub structure_animation_movement_cooldown: u32,
 
     pub related_transport_belt: Option<EntityID>,
+
+    pub default_input_left_condition: Option<CircuitConditionConnector>,
+    pub default_input_right_condition: Option<CircuitConditionConnector>,
+    pub default_output_left_condition: Option<CircuitConditionConnector>,
+    pub default_output_right_condition: Option<CircuitConditionConnector>,
 
     #[serde(flatten)]
     parent: TransportBeltConnectableData<TransportBeltAnimationSet>,
@@ -478,6 +483,37 @@ impl super::Renderable for SplitterData {
     fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
         self.parent.heat_buffer_connections(options)
     }
+}
+
+/// [`Types/CircuitConditionConnector`](https://lua-api.factorio.com/latest/types/CircuitConditionConnector.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CircuitConditionConnector {
+    pub first: Option<SignalIDConnector>,
+
+    #[serde(
+        default = "comparator_less",
+        skip_serializing_if = "is_comparator_less"
+    )]
+    pub comparator: Comparator,
+
+    pub second: Option<SignalIDConnectorOrNumber>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SignalIDConnectorOrNumber {
+    Signal(SignalIDConnector),
+    Number(i32),
+}
+
+const fn comparator_less() -> Comparator {
+    Comparator::Less
+}
+
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn is_comparator_less(c: &Comparator) -> bool {
+    *c == Comparator::Less
 }
 
 /// [`Prototypes/LaneSplitterPrototype`](https://lua-api.factorio.com/latest/prototypes/LaneSplitterPrototype.html)

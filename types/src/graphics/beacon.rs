@@ -7,7 +7,10 @@ use super::{
     merge_layers, merge_renders, AnimationElement, AnimationRenderOpts, GraphicsOutput,
     RenderLayer, RenderableGraphics, SpriteVariations, VariationRenderOpts,
 };
-use crate::{Color, FactorioArray, ImageCache, LightDefinition, ModuleTint, ModuleTintMode};
+use crate::{
+    Color, FactorioArray, ImageCache, LightDefinition, ModuleTint, ModuleTintMode,
+    WaterReflectionDefinition,
+};
 
 /// [`Types/BeaconModuleVisualization`](https://lua-api.factorio.com/latest/types/BeaconModuleVisualization.html)
 #[skip_serializing_none]
@@ -143,6 +146,8 @@ pub struct BeaconGraphicsSet {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub module_tint_mode: ModuleTintMode,
+
+    pub water_reflection: Option<WaterReflectionDefinition>,
 }
 
 impl RenderableGraphics for BeaconGraphicsSet {
