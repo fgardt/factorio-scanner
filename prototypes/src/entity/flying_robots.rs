@@ -118,6 +118,7 @@ pub type RobotWithLogisticInterfacePrototype<T> =
 pub struct RobotWithLogisticInterfaceData<T: super::Renderable> {
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub max_payload_size: ItemCountType,
+    pub max_payload_size_after_bonus: Option<ItemCountType>,
 
     pub idle: Option<RotatedAnimation>,
     pub in_motion: Option<RotatedAnimation>,

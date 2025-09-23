@@ -55,6 +55,9 @@ pub struct RoboportData {
     pub default_total_construction_output_signal: Option<SignalIDConnector>,
     pub default_roboport_count_output_signal: Option<SignalIDConnector>,
 
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub render_recharge_icon: bool,
+
     pub max_logistic_slots: Option<LogisticFilterIndex>,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
