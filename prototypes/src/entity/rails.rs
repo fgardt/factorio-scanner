@@ -130,6 +130,68 @@ impl super::Renderable for RailRampPrototype {
     }
 }
 
+/// [`Prototypes/RailSupportPrototype`](https://lua-api.factorio.com/latest/prototypes/RailSupportPrototype.html)
+pub type RailSupportPrototype = EntityWithOwnerPrototype<RailSupportData>;
+
+/// [`Prototypes/RailSupportPrototype`](https://lua-api.factorio.com/latest/prototypes/RailSupportPrototype.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RailSupportData {
+    pub graphics_set: RailSupportGraphicsSet,
+
+    #[serde(default = "helper::f32_15", skip_serializing_if = "helper::is_15_f32")]
+    pub support_range: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub not_buildable_if_no_rails: bool,
+
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub snap_to_spots_distance: f32,
+
+    pub collision_mask_allow_on_deep_oil_ocean: Option<CollisionMaskConnector>,
+    pub elevated_selection_boxes: Option<FactorioArray<BoundingBox>>,
+}
+
+impl super::Renderable for RailSupportData {
+    fn render(
+        &self,
+        options: &super::RenderOpts,
+        used_mods: &UsedMods,
+        render_layers: &mut crate::RenderLayerBuffer,
+        image_cache: &mut ImageCache,
+    ) -> super::RenderOutput {
+        let res = self.graphics_set.structure.render(
+            render_layers.scale(),
+            used_mods,
+            image_cache,
+            &options.into(),
+        )?;
+
+        render_layers.add(res, &options.position, self.graphics_set.render_layer);
+
+        Some(())
+    }
+}
+
+/// [`Prototypes/RailSupportPrototype/GraphicsSet`](https://lua-api.factorio.com/latest/prototypes/RailSupportPrototype.html#graphics_set)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RailSupportGraphicsSet {
+    pub underwater_structure: Option<RotatedSprite>,
+    pub structure: RotatedSprite,
+
+    #[serde(
+        default = "RenderLayer::object",
+        skip_serializing_if = "RenderLayer::is_object"
+    )]
+    pub render_layer: RenderLayer,
+
+    #[serde(default = "helper::i8_1", skip_serializing_if = "helper::is_1_i8")]
+    pub underwater_layer_offset: i8,
+
+    pub water_reflection: Option<WaterReflectionDefinition>,
+}
+
 /// [`Types/RailPictureSet`](https://lua-api.factorio.com/latest/types/RailPictureSet.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]

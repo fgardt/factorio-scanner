@@ -1,6 +1,6 @@
 [package]
 name = "types"
-version = "3.0.1-2.0.66"
+version = "3.0.1-2.0.68"
 authors.workspace = true
 edition.workspace = true
 
@@ -8,6 +8,7 @@ edition.workspace = true
 workspace = true
 
 [dependencies]
+thiserror.workspace = true
 image.workspace = true
 konst.workspace = true
 mod_util.workspace = true

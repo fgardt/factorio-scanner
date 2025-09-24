@@ -1,7 +1,7 @@
 use std::{
     cell::RefCell,
     fs::File,
-    io::Read,
+    io::{Read, Seek},
     path::{Path, PathBuf},
 };
 
@@ -33,8 +33,15 @@ pub enum ModError {
     #[error("mod name does not match name in info.json: {expected} != {actual}")]
     NameMismatch { expected: String, actual: String },
 
-    #[error("mod version does not match version in info.json: {expected} != {actual}")]
-    VersionMismatch { expected: Version, actual: Version },
+    #[error("mod version does not match version in info.json: {name} {expected} != {actual}")]
+    VersionMismatch {
+        name: String,
+        expected: Version,
+        actual: Version,
+    },
+
+    #[error("mod not found: {0} v{1}")]
+    ModNotFound(String, Version),
 
     #[error("mod io error: {0}")]
     IoError(#[from] std::io::Error),
@@ -76,34 +83,7 @@ impl Mod {
         }
 
         let internal = ModType::load(&mods_path, name, version)?;
-
-        let info_file = internal.get_file("info.json")?;
-        let info = serde_json::from_slice::<ModInfo>(&info_file)
-            .map_err(|err| ModError::InvalidInfoJson(name.into(), err))?;
-
-        if info.version != version {
-            return Err(ModError::VersionMismatch {
-                expected: version,
-                actual: info.version,
-            });
-        }
-
-        #[allow(clippy::unwrap_used)] // known good regex
-        let name_extractor = regex::Regex::new(r"^(.+?)(?:_\d+\.\d+\.\d+(?:\.zip)?)?$").unwrap();
-
-        let name = name_extractor
-            .captures(name)
-            .ok_or_else(|| ModError::InvalidFilename(name.into()))?
-            .get(1)
-            .map(|n| n.as_str().to_owned())
-            .ok_or_else(|| ModError::InvalidFilename(name.into()))?;
-
-        if name != info.name {
-            return Err(ModError::NameMismatch {
-                expected: name,
-                actual: info.name,
-            });
-        }
+        let info = internal.get_info(name)?;
 
         Ok(Self { info, internal })
     }
@@ -228,33 +208,50 @@ enum ModType {
 
 impl ModType {
     fn load(path: impl AsRef<Path>, name: &str, version: Version) -> Result<Self> {
-        let zip_path = path.as_ref().join(format!("{name}_{version}.zip"));
-        let (path, is_zip) = if zip_path.exists() && zip_path.is_file() {
-            (zip_path, true)
-        } else {
-            let folder_path = path.as_ref().join(name);
+        // unversioned folder
+        let target_path = path.as_ref().join(name);
+        if target_path.exists() && target_path.is_dir() {
+            let tmp = Self::Folder { path: target_path };
 
-            if !folder_path.exists() {
-                return Err(ModError::PathDoesNotExist(folder_path));
+            if let Ok(info) = tmp.get_info(name) {
+                verify_info(&info, name, version)?;
             }
 
-            (folder_path, false)
-        };
+            return Ok(tmp);
+        }
 
-        if is_zip {
-            let zip = ZipArchive::new(File::open(&path)?)?;
-            let internal_prefix = get_zip_internal_folder(&path, &zip)?;
+        // versioned folder
+        let target_path = path.as_ref().join(format!("{name}_{version}"));
+        if target_path.exists() && target_path.is_dir() {
+            let tmp = Self::Folder { path: target_path };
 
-            Ok(Self::Zip {
-                path,
+            if let Ok(info) = tmp.get_info(name) {
+                verify_info(&info, name, version)?;
+            }
+
+            return Ok(tmp);
+        }
+
+        // zip
+        let target_path = path.as_ref().join(format!("{name}_{version}.zip"));
+        if target_path.exists() && target_path.is_file() {
+            let zip = ZipArchive::new(File::open(&target_path)?)?;
+            let internal_prefix = get_zip_internal_folder(&target_path, &zip)?;
+
+            let tmp = Self::Zip {
+                path: target_path,
                 internal_prefix,
                 zip: RefCell::new(zip),
-            })
-        } else if path.is_dir() {
-            Ok(Self::Folder { path })
-        } else {
-            return Err(ModError::PathNotZipOrDir(path));
+            };
+
+            if let Ok(info) = tmp.get_info(name) {
+                verify_info(&info, name, version)?;
+            }
+
+            return Ok(tmp);
         }
+
+        Err(ModError::ModNotFound(name.to_owned(), version))
     }
 
     fn load_from_path(path: impl AsRef<Path>) -> Result<Self> {
@@ -276,7 +273,7 @@ impl ModType {
                 zip: RefCell::new(zip),
             })
         } else {
-            return Err(ModError::PathNotZipOrDir(path.into()));
+            Err(ModError::PathNotZipOrDir(path.into()))
         }
     }
 
@@ -349,9 +346,20 @@ impl ModType {
             }
         }
     }
+      
+    fn get_info(&self, name: &str) -> Result<ModInfo> {
+        let info_file = self.get_file("info.json")?;
+        let info = serde_json::from_slice(&info_file)
+            .map_err(|err| ModError::InvalidInfoJson(name.into(), err))?;
+
+        Ok(info)
+    }
 }
 
-fn get_zip_internal_folder(path: impl AsRef<Path>, zip: &ZipArchive<File>) -> Result<String> {
+pub fn get_zip_internal_folder<R: Read + Seek>(
+    path: impl AsRef<Path>,
+    zip: &ZipArchive<R>,
+) -> Result<String> {
     let res = zip
         .file_names()
         .next()
@@ -363,4 +371,23 @@ fn get_zip_internal_folder(path: impl AsRef<Path>, zip: &ZipArchive<File>) -> Re
         + "/";
 
     Ok(res)
+}
+
+fn verify_info(info: &ModInfo, expected_name: &str, expected_version: Version) -> Result<()> {
+    if info.name != expected_name {
+        return Err(ModError::NameMismatch {
+            expected: expected_name.to_owned(),
+            actual: info.name.clone(),
+        });
+    }
+
+    if info.version != expected_version {
+        return Err(ModError::VersionMismatch {
+            name: info.name.clone(),
+            expected: expected_version,
+            actual: info.version,
+        });
+    }
+
+    Ok(())
 }

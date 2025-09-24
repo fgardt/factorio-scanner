@@ -7,9 +7,7 @@
 
 use std::{collections::HashMap, fmt, hash::Hash};
 
-use konst::{
-    iter::collect_const, primitive::parse_u16, result::unwrap_ctx, string::split as konst_split,
-};
+use konst::{iter::collect_const, result::unwrap, string::split as konst_split};
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -22,9 +20,9 @@ use mod_util::{mod_info::Version, UsedMods};
 pub const fn targeted_engine_version() -> Version {
     const V: [&str; 3] = collect_const!(&str => konst_split(env!("CARGO_PKG_VERSION_PRE"), '.'));
     Version::new(
-        unwrap_ctx!(parse_u16(V[0])),
-        unwrap_ctx!(parse_u16(V[1])),
-        unwrap_ctx!(parse_u16(V[2])),
+        unwrap!(u16::from_str_radix(V[0], 10)),
+        unwrap!(u16::from_str_radix(V[1], 10)),
+        unwrap!(u16::from_str_radix(V[2], 10)),
     )
 }
 
@@ -35,6 +33,7 @@ mod graphics;
 mod icon;
 mod ids;
 mod item;
+mod math_expression;
 mod module;
 mod wire;
 
@@ -45,6 +44,7 @@ pub use graphics::*;
 pub use icon::*;
 pub use ids::*;
 pub use item::*;
+pub use math_expression::*;
 pub use module::*;
 pub use wire::*;
 
@@ -541,6 +541,14 @@ impl From<MapPosition> for Vector {
     }
 }
 
+impl From<&MapPosition> for Vector {
+    fn from(value: &MapPosition) -> Self {
+        let (x, y) = value.as_tuple();
+
+        Self::Tuple(x, y)
+    }
+}
+
 impl fmt::Display for Vector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (x, y) = self.as_tuple();
@@ -748,9 +756,7 @@ impl FileName {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum LocalisedString {
-    Bool(bool),
     String(String),
-    Number(f64),
     Array(FactorioArray<LocalisedString>),
 }
 
@@ -1596,7 +1602,11 @@ impl std::ops::DivAssign<f64> for MapPosition {
 
 /// [`Types/BoundingBox`](https://lua-api.factorio.com/latest/types/BoundingBox.html)
 #[derive(Debug, Clone, Default, Serialize)]
-pub struct BoundingBox(pub MapPosition, pub MapPosition);
+pub struct BoundingBox(
+    pub MapPosition,
+    pub MapPosition,
+    #[serde(skip_serializing_if = "helper::is_default")] pub RealOrientation,
+);
 
 impl BoundingBox {
     #[must_use]
@@ -1607,6 +1617,11 @@ impl BoundingBox {
     #[must_use]
     pub const fn bottom_right(&self) -> &MapPosition {
         &self.1
+    }
+
+    #[must_use]
+    pub const fn corners(&self) -> (&MapPosition, &MapPosition) {
+        (&self.0, &self.1)
     }
 
     #[must_use]
@@ -1673,11 +1688,12 @@ impl<'de> Deserialize<'de> for BoundingBox {
                 enum Field {
                     LeftTop,
                     RightBottom,
-                    Orientation, // unused
+                    Orientation,
                 }
 
                 let mut left_top = None;
                 let mut right_bottom = None;
+                let mut orientation = None;
 
                 while let Some(key) = map.next_key()? {
                     match key {
@@ -1693,7 +1709,12 @@ impl<'de> Deserialize<'de> for BoundingBox {
                             }
                             right_bottom = Some(map.next_value()?);
                         }
-                        Field::Orientation => {}
+                        Field::Orientation => {
+                            if orientation.is_some() {
+                                return Err(serde::de::Error::duplicate_field("orientation"));
+                            }
+                            orientation = Some(map.next_value()?);
+                        }
                     }
                 }
 
@@ -1701,7 +1722,11 @@ impl<'de> Deserialize<'de> for BoundingBox {
                 let right_bottom =
                     right_bottom.ok_or_else(|| Error::missing_field("right_bottom"))?;
 
-                Ok(BoundingBox(left_top, right_bottom))
+                Ok(BoundingBox(
+                    left_top,
+                    right_bottom,
+                    orientation.unwrap_or_default(),
+                ))
             }
 
             fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -1716,8 +1741,9 @@ impl<'de> Deserialize<'de> for BoundingBox {
                 let right_bottom = seq
                     .next_element()?
                     .ok_or_else(|| Error::invalid_length(1, &self))?;
+                let orientation = seq.next_element()?.unwrap_or_default();
 
-                Ok(BoundingBox(left_top, right_bottom))
+                Ok(BoundingBox(left_top, right_bottom, orientation))
             }
         }
 
@@ -2169,6 +2195,8 @@ pub struct CraftingMachineGraphicsSetData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub reset_animation_when_frozen: bool,
+
+    pub water_reflection: Option<WaterReflectionDefinition>,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -2461,6 +2489,8 @@ pub struct MiningDrillGraphicsSetData {
 
     #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
     pub animation_progress: f32,
+
+    pub water_reflection: Option<WaterReflectionDefinition>,
 }
 
 #[skip_serializing_none]
@@ -2520,7 +2550,7 @@ pub enum CircuitConnectorSecondaryDrawOrder {
     },
 }
 
-// Comparator variants
+/// [`Types/ComparatorString`](https://lua-api.factorio.com/latest/types/ComparatorString.html)
 #[derive(Debug, Default, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
 pub enum Comparator {
     #[default]
@@ -2720,6 +2750,7 @@ pub struct CargoBayConnectableGraphicsSet {
     )]
     pub animation_render_layer: RenderLayer,
     pub connections: Option<CargoBayConnections>,
+    pub water_reflection: Option<WaterReflectionDefinition>,
 }
 
 /// [`Types/CargoBayConnections`](https://lua-api.factorio.com/latest/types/CargoBayConnections.html)

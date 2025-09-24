@@ -1,9 +1,11 @@
 use image::Rgba;
 use serde::{Deserialize, Serialize};
+use serde_helper as helper;
+use serde_with::skip_serializing_none;
 
 use crate::{merge_renders, FactorioArray, GraphicsOutput, ImageCache, RenderableGraphics};
 
-use super::{helper, Color, FileName, SpriteSizeType, Vector};
+use super::{Color, FileName, RenderLayer, SpriteSizeType, Vector};
 
 /// [`Types/IconMipMapType`](https://lua-api.factorio.com/latest/types/IconMipMapType.html)
 pub type IconMipMapType = u8;
@@ -166,4 +168,77 @@ pub fn merge_icon_layers<O, T: RenderableGraphics<RenderOpts = O>>(
         .collect::<Vec<_>>();
 
     merge_renders(layers.as_slice(), scale)
+}
+
+/// [`Types/IconDrawSpecification`](https://lua-api.factorio.com/latest/types/IconDrawSpecification.html)
+#[derive(Debug, Deserialize, Serialize)]
+pub struct IconDrawSpecification {
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub shift: Vector,
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub scale: f32,
+    #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+    pub scale_for_many: f32,
+    #[serde(default = "rl_eii", skip_serializing_if = "is_rl_eii")]
+    pub render_layer: RenderLayer,
+}
+
+const fn rl_eii() -> RenderLayer {
+    RenderLayer::EntityInfoIcon
+}
+
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn is_rl_eii(layer: &RenderLayer) -> bool {
+    *layer == rl_eii()
+}
+
+/// [`Types/IconSequencePositioning`](https://lua-api.factorio.com/latest/types/IconSequencePositioning.html)
+#[skip_serializing_none]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct IconSequencePositioning {
+    pub inventory_index: u8,
+    pub max_icons_per_row: Option<u8>,
+    pub max_icon_rows: Option<u8>,
+    #[serde(default = "isp_shift", skip_serializing_if = "is_isp_shift")]
+    pub shift: Vector,
+    #[serde(default = "helper::f32_05", skip_serializing_if = "helper::is_05_f32")]
+    pub scale: f32,
+    #[serde(
+        default = "helper::f32_1_1",
+        skip_serializing_if = "helper::is_1_1_f32"
+    )]
+    pub separation_multiplier: f32,
+    #[serde(
+        default = "helper::f32_n01",
+        skip_serializing_if = "helper::is_n01_f32"
+    )]
+    pub multi_row_initial_height_modifier: f32,
+}
+
+const fn isp_shift() -> Vector {
+    Vector::Tuple(0.0, 0.7)
+}
+
+fn is_isp_shift(shift: &Vector) -> bool {
+    *shift == isp_shift()
+}
+
+impl IconSequencePositioning {
+    #[expect(dead_code)]
+    const fn get_max_icons_per_row(&self, selection_box_width: f64) -> u8 {
+        if let Some(max_icons_per_row) = self.max_icons_per_row {
+            max_icons_per_row
+        } else {
+            (selection_box_width / 0.75) as u8
+        }
+    }
+
+    #[expect(dead_code)]
+    const fn get_max_icon_rows(&self, selection_box_width: f64) -> u8 {
+        if let Some(max_icon_rows) = self.max_icon_rows {
+            max_icon_rows
+        } else {
+            (selection_box_width / 1.5) as u8
+        }
+    }
 }

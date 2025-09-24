@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
 use super::EntityWithOwnerPrototype;
@@ -21,6 +22,12 @@ pub struct FusionGeneratorData {
     pub max_fluid_usage: FluidAmount,
 
     pub perceived_performance: Option<PerceivedPerformance>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub burns_fluid: bool,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub effectivity: f64,
 }
 
 impl super::Renderable for FusionGeneratorData {
@@ -102,6 +109,8 @@ pub struct FusionGeneratorGraphicsSet {
 
     #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
     pub glow_color: Color,
+
+    pub water_reflection: Option<WaterReflectionDefinition>,
 }
 
 /// [`Types/FusionGeneratorDirectionGraphicsSet`](https://lua-api.factorio.com/latest/types/FusionGeneratorDirectionGraphicsSet.html)

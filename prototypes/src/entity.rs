@@ -323,7 +323,8 @@ impl<T: Renderable> RenderableEntity for EntityPrototype<T> {
             return Vec::new();
         }
 
-        let BoundingBox(tl, br) = self.collision_box();
+        let collision_box = self.collision_box();
+        let (tl, br) = collision_box.corners();
         let tl_vec: Vector = tl.into();
         let br_vec: Vector = br.into();
         let (tl_x, tl_y) = options.direction.rotate_vector(tl_vec).as_tuple();
@@ -367,7 +368,8 @@ impl<T: Renderable> RenderableEntity for EntityPrototype<T> {
             return Vec::new();
         }
 
-        let BoundingBox(tl, br) = self.collision_box();
+        let collision_box = self.collision_box();
+        let (tl, br) = collision_box.corners();
         let tl_vec: Vector = tl.into();
         let br_vec: Vector = br.into();
         let (tl_x, tl_y) = options.direction.rotate_vector(tl_vec).as_tuple();
@@ -545,6 +547,11 @@ pub struct EntityData<T: Renderable> {
 
     pub water_reflection: Option<WaterReflectionDefinition>,
 
+    pub icon_draw_specification: Option<IconDrawSpecification>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub icons_positioning: FactorioArray<IconSequencePositioning>,
+
     // not implemented
     // pub trigger_target_mask: Option<TriggerTargetMask>,
     // pub tile_buildability_rules: FactorioArray<TileBuildabilityRule>,
@@ -565,8 +572,6 @@ pub struct EntityData<T: Renderable> {
     // pub autoplace: Option<AutoplaceSpecification>,
     // pub ambient_sounds_group: Option<EntityID>,
     // pub ambient_sounds: Option<WorldAmbientSoundDefinitions>,
-    // pub icon_draw_specification: Option<IconDrawSpecification>,
-    // pub icons_positioning: FactorioArray<IconSequencePositioning>,
     #[serde(flatten)]
     child: T,
 }
@@ -967,6 +972,7 @@ namespace_struct! {
     "elevated-curved-rail-b",
     "elevated-half-diagonal-rail",
     "elevated-straight-rail",
+    "rail-support",
     "rail-signal",
     "rail-chain-signal",
     "train-stop",

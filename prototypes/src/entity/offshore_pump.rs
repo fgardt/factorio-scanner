@@ -67,6 +67,7 @@ pub struct OffshorePumpGraphicsSet {
     pub glass_pictures: Option<Sprite4Way>,
     pub base_pictures: Option<Sprite4Way>,
     pub underwater_pictures: Option<Sprite4Way>,
+    pub water_reflection: Option<WaterReflectionDefinition>,
 }
 
 impl super::Renderable for OffshorePumpGraphicsSet {

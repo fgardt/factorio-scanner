@@ -1,0 +1,39 @@
+[package]
+name = "factorio_datastage"
+version = "0.6.0-2.0.68"
+authors.workspace = true
+edition.workspace = true
+
+[lints]
+workspace = true
+
+[[example]]
+name = "mod-tester"
+path = "examples/mod-tester.rs"
+
+[[example]]
+name = "vm-test"
+path = "examples/vm-test.rs"
+
+[dependencies]
+flate2.workspace = true
+base64.workspace = true
+log = "0.4"
+mlua = { git = "https://github.com/fgardt/mlua.git", features = [
+    "flua",
+    "vendored",
+    "serde",
+] }
+mod_util.workspace = true
+types.workspace = true
+serde = { workspace = true, features = ["rc"] }
+serde_json.workspace = true
+thiserror.workspace = true
+konst = "0.4"
+
+[dev-dependencies]
+clap.workspace = true
+dotenv.workspace = true
+pretty_env_logger.workspace = true
+scanner.workspace = true
+tokio = { workspace = true, features = ["rt", "rt-multi-thread"] }

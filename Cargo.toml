@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "blueprint",
     "factorio_api",
+    "factorio_datastage",
     "locale",
     "mod_util",
     "prototypes",
@@ -20,13 +21,17 @@ strip = true
 lto = "thin"
 
 [workspace.dependencies]
+base64 = "0.22"
+dotenv = "0.15"
+pretty_env_logger = "0.5"
+scanner = { path = "scanner" }
 blueprint = { path = "blueprint" }
 clap = { version = "4.5", features = ["derive"] }
 factorio_api = { path = "factorio_api" }
 flate2 = "1.1"
 image = { version = "0.25", features = ["png"], default-features = false }
 imageproc = "0.25"
-konst = "0.3"
+konst = "0.4"
 locale = { path = "locale" }
 mod_util = { path = "mod_util" }
 paste = "1.0"

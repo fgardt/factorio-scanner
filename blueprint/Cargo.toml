@@ -12,7 +12,7 @@ name = "extract-tests"
 path = "examples/extract-tests.rs"
 
 [dependencies]
-base64 = "0.22"
+base64.workspace = true
 flate2.workspace = true
 mod_util.workspace = true
 serde.workspace = true

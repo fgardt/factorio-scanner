@@ -318,6 +318,7 @@ pub struct DirectionShift {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TurretGraphicsSet {
     pub base_visualisation: Option<TurretBaseVisualisation>,
+    pub water_reflection: Option<WaterReflectionDefinition>,
 }
 
 /// [`Types/TurretBaseVisualisation`](https://lua-api.factorio.com/latest/types/TurretBaseVisualisation.html)
