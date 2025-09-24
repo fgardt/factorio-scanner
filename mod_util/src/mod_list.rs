@@ -180,6 +180,7 @@ impl ModList {
     ///
     /// **Note:** all mods (except `core`) are disabled by default. If you want to mimic the games behaviour you should use [`ModList::load`] after this.
     #[instrument(name = "generate", skip_all)]
+    #[allow(clippy::cognitive_complexity)]
     pub fn generate_custom(
         read_path: impl AsRef<Path>,
         write_path: impl AsRef<Path>,
