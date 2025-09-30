@@ -763,7 +763,7 @@ dependencies = [
 
 [[package]]
 name = "factorio_datastage"
-version = "0.6.0-2.0.68"
+version = "0.6.0-2.0.69"
 dependencies = [
  "base64",
  "clap",
