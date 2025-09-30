@@ -3,7 +3,7 @@ name: release
 on:
   push:
     tags:
-       - '[0-9]+.[0-9]+.[0-9]+'
+      - "[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   release_build:
@@ -38,9 +38,11 @@ jobs:
             bin: scanner
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: Stable rust toolchain
-        run: rustup toolchain install stable --target ${{ matrix.platform.target }} --profile minimal
+        uses: actions/checkout@v5
+      - name: Setup toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform.target }}
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -56,7 +58,7 @@ jobs:
           directory: ./target/${{ matrix.platform.target }}/release
           path: ${{ matrix.platform.bin }}
       - name: Upload release artifact for release job
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: ./target/${{ matrix.platform.target }}/release/scanner_${{ matrix.platform.target }}.${{ matrix.platform.archive_type }}
   create_release:
@@ -65,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download release artifacts from build job
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v5
         with:
           path: ~/build_artifacts
       - name: Create release
