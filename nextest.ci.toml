@@ -1,8 +1,0 @@
-[profile.ci]
-fail-fast = false
-
-[profile.ci.junit]
-path = "report.xml"
-report-name = "nextest"
-store-success-output = false
-store-failure-output = true
