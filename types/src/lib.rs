@@ -50,7 +50,7 @@ pub use wire::*;
 
 /// Generic type for Factorio's commonly used pattern of
 /// allowing either a single direct value or an array of values.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum SingleOrArray<T> {
     Single(T),
