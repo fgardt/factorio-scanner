@@ -5,7 +5,7 @@ use serde_helper as helper;
 
 use crate::{
     CollisionMaskConnector, Color, Direction, FactorioArray, FluidAmount,
-    FluidBoxLinkedConnectionID, FluidID, MapPosition, RenderLayer, Sprite4Way,
+    FluidBoxLinkedConnectionID, FluidID, MapPosition, RenderLayer, SingleOrArray, Sprite4Way,
 };
 
 /// [`Types/FluidFlowDirection`](https://lua-api.factorio.com/latest/types/FluidFlowDirection.html)
@@ -42,7 +42,10 @@ pub struct PipeConnectionDefinition {
     pub direction: Option<Direction>,
     pub position: Option<MapPosition>,
     pub positions: Option<[MapPosition; 4]>,
-    // pub connection_category
+
+    #[serde(default = "default_cc", skip_serializing_if = "is_default_cc")]
+    pub connection_category: SingleOrArray<String>,
+
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub max_underground_distance: u8,
     pub max_distance_tint: Option<Color>,
@@ -50,6 +53,14 @@ pub struct PipeConnectionDefinition {
     pub underground_collision_mask: Option<CollisionMaskConnector>,
 
     pub linked_connection_id: Option<FluidBoxLinkedConnectionID>,
+}
+
+fn default_cc() -> SingleOrArray<String> {
+    SingleOrArray::Single("default".to_string())
+}
+
+fn is_default_cc(cc: &SingleOrArray<String>) -> bool {
+    *cc == default_cc()
 }
 
 /// [`Types/FluidBox/ProductionType`](https://lua-api.factorio.com/latest/types/FluidBox.html#production_type)

@@ -17,6 +17,8 @@ pub type MiningDrillPrototype =
 pub struct MiningDrillData {
     pub vector_to_place_result: Vector,
     pub resource_searching_radius: f64,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub resource_searching_offset: Vector,
     pub energy_usage: Energy,
     pub mining_speed: f64,
 

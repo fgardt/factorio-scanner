@@ -582,6 +582,17 @@ pub struct FluidWagonData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub tank_count: FluidWagonTankCount,
+
+    #[serde(default = "default_cc", skip_serializing_if = "is_default_cc")]
+    pub connection_category: SingleOrArray<String>,
+}
+
+fn default_cc() -> SingleOrArray<String> {
+    SingleOrArray::Single("default".to_string())
+}
+
+fn is_default_cc(cc: &SingleOrArray<String>) -> bool {
+    *cc == default_cc()
 }
 
 impl super::Renderable for FluidWagonData {

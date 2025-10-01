@@ -7,7 +7,7 @@ use serde::{
 };
 
 /// <https://forums.factorio.com/viewtopic.php?t=109077>
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FactorioArray<T>(Vec<T>);
 
 impl<T> FactorioArray<T> {
