@@ -4,8 +4,8 @@ use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
 use super::{
-    merge_renders, Animation, Animation4Way, AnimationRenderOpts, DirectionalRenderOpts,
-    GraphicsOutput, RenderLayer, RenderableGraphics,
+    Animation, Animation4Way, AnimationRenderOpts, DirectionalRenderOpts, GraphicsOutput,
+    RenderLayer, RenderableGraphics, merge_renders,
 };
 use crate::{Color, Direction, FactorioArray, ImageCache, LightDefinition, Vector};
 

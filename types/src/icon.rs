@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
-use crate::{merge_renders, FactorioArray, GraphicsOutput, ImageCache, RenderableGraphics};
+use crate::{FactorioArray, GraphicsOutput, ImageCache, RenderableGraphics, merge_renders};
 
 use super::{Color, FileName, RenderLayer, SpriteSizeType, Vector};
 

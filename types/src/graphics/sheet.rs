@@ -4,9 +4,9 @@ use serde_with::skip_serializing_none;
 use tracing::warn;
 
 use super::{
-    merge_layers, AnimationParameters, AnimationRenderOpts, LayeredGraphic, MultiSingleSource,
+    AnimationParameters, AnimationRenderOpts, LayeredGraphic, MultiSingleSource,
     MultiSingleSourceFetchArgs, RenderableGraphics, Sprite, SpriteParameters, TintableRenderOpts,
-    VariationRenderOpts,
+    VariationRenderOpts, merge_layers,
 };
 use crate::{Direction, FactorioArray};
 

@@ -296,7 +296,7 @@ fn settings_property_tree(value: &crate::AnyBasic) -> Result<PropertyTree> {
         AnyBasic::Array(_) => {
             return Err(SettingsError::InvalidSettingsInBlueprint(
                 "unexpected array".into(),
-            ))
+            ));
         }
     };
 

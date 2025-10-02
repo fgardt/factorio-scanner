@@ -2,7 +2,7 @@
 
 use std::{collections::HashSet, io::prelude::*};
 
-use base64::{engine::general_purpose, Engine};
+use base64::{Engine, engine::general_purpose};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;

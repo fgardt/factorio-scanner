@@ -14,7 +14,7 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
 use tracing::warn;
 
-use mod_util::{mod_info::Version, UsedMods};
+use mod_util::{UsedMods, mod_info::Version};
 
 #[must_use]
 pub const fn targeted_engine_version() -> Version {

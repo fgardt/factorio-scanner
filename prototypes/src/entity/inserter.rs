@@ -199,11 +199,7 @@ impl super::Renderable for InserterData {
             render_layers.add_entity(platform, &options.position);
         }
 
-        if empty {
-            None
-        } else {
-            Some(())
-        }
+        if empty { None } else { Some(()) }
     }
 }
 

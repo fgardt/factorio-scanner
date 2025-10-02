@@ -11,7 +11,7 @@ use std::io::Read;
 use std::path::Path;
 use std::{collections::HashMap, ops::Rem};
 
-use image::{imageops, DynamicImage, GenericImageView, GrayAlphaImage};
+use image::{DynamicImage, GenericImageView, GrayAlphaImage, imageops};
 use imageproc::geometric_transformations;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -706,7 +706,9 @@ impl RenderLayerBuffer {
                                     .iter()
                                     .enumerate()
                                     .zip(t_con.iter())
-                                    .filter(|((w, &s), &t)| s && t || *s_is_switch && s && *w == 0)
+                                    .filter(|((w, s), t)| {
+                                        **s && **t || *s_is_switch && **s && *w == 0
+                                    })
                                     .for_each(|((wire_id, _), _)| {
                                         let (s_offset, t_offset) = match wire_id {
                                             0 => (s_wcp.wire.copper, t_wcp.wire.copper),

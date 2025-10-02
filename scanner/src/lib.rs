@@ -7,9 +7,9 @@ use std::{
     process::Command,
 };
 
-use error_stack::{ensure, report, Context, Result, ResultExt};
+use error_stack::{Context, Result, ResultExt, ensure, report};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder};
-use image::{codecs::png, imageops, ImageEncoder};
+use image::{ImageEncoder, codecs::png, imageops};
 use imageproc::geometric_transformations::{self, rotate_about_center};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -17,17 +17,17 @@ use tracing::{debug, error, field, info, info_span, instrument, warn};
 
 use blueprint::{ConnectionDataExt, SignalID};
 use mod_util::{
+    AnyBasic, DependencyList, UsedMods, UsedVersions,
     mod_info::{DependencyVersion, Version},
     mod_list::ModList,
     mod_loader::Mod,
     mod_settings::SettingsDat,
-    AnyBasic, DependencyList, UsedMods, UsedVersions,
 };
 use prototypes::{
-    entity::{InserterPrototype, Type as EntityType, WallPrototype},
-    tile::TilePrototype,
     ConnectedEntities, DataRaw, DataUtil, DataUtilAccess, EntityWireConnections, RenderLayerBuffer,
     TargetSize,
+    entity::{InserterPrototype, Type as EntityType, WallPrototype},
+    tile::TilePrototype,
 };
 use types::{
     ConnectedDirections, Direction, ImageCache, MapPosition, RenderLayer, RenderableGraphics,

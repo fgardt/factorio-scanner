@@ -4,7 +4,7 @@ use std::path::Path;
 
 use serde_json::Value;
 
-use blueprint::{bp_string_to_json, Version};
+use blueprint::{Version, bp_string_to_json};
 
 fn main() {
     let root: Value = serde_json::from_str(

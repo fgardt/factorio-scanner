@@ -4,9 +4,9 @@ use std::{
 };
 
 use logistics::{LogisticSections, RequestFilters};
-use mod_util::{mod_info::DependencyVersion, AnyBasic, DependencyList};
+use mod_util::{AnyBasic, DependencyList, mod_info::DependencyVersion};
 use parameters::ParameterData;
-use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::Visitor, ser::SerializeSeq};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
@@ -567,10 +567,10 @@ impl crate::GetIDs for Entity {
             ids.merge(request_filters.get_ids());
         }
 
-        if let Some(alert_parameters) = &self.alert_parameters {
-            if let Some(signal) = &alert_parameters.icon_signal_id {
-                ids.merge(signal.get_ids());
-            }
+        if let Some(alert_parameters) = &self.alert_parameters
+            && let Some(signal) = &alert_parameters.icon_signal_id
+        {
+            ids.merge(signal.get_ids());
         }
 
         if let Some(icon) = &self.icon {

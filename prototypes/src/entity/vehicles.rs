@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
 
-use super::{helper, ArtilleryTurretCannonBarrelShiftings, EntityWithOwnerPrototype};
+use super::{ArtilleryTurretCannonBarrelShiftings, EntityWithOwnerPrototype, helper};
 use mod_util::UsedMods;
 use types::*;
 
@@ -496,11 +496,7 @@ impl super::Renderable for ArtilleryWagonData {
             );
         }
 
-        if empty {
-            None
-        } else {
-            Some(())
-        }
+        if empty { None } else { Some(()) }
     }
 }
 

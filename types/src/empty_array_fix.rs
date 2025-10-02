@@ -1,9 +1,9 @@
 use std::ops::{Deref, DerefMut};
 
 use serde::{
+    Deserialize, Serialize,
     de::Visitor,
     ser::{SerializeMap, SerializeSeq},
-    Deserialize, Serialize,
 };
 
 /// <https://forums.factorio.com/viewtopic.php?t=109077>

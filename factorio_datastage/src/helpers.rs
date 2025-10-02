@@ -5,7 +5,7 @@ use std::{
     io::{Read as _, Write as _},
 };
 
-use base64::{engine::general_purpose, Engine};
+use base64::{Engine, engine::general_purpose};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder};
 use mlua::prelude::*;
 use serde::Serialize;
@@ -109,7 +109,7 @@ fn direction_to_string(_vm: &Lua, direction: u8) -> LuaResult<String> {
         _ => {
             return Err(LuaError::RuntimeError(format!(
                 "Invalid direction: {direction}"
-            )))
+            )));
         }
     };
 

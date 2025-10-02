@@ -2,8 +2,8 @@ use clap::builder::PossibleValue;
 use strum::{EnumIter, VariantArray};
 
 use mod_util::{
-    mod_info::{DependencyVersion, Version},
     DependencyList,
+    mod_info::{DependencyVersion, Version},
 };
 
 #[allow(clippy::module_name_repetitions)]
