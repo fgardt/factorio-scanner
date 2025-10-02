@@ -706,16 +706,16 @@ impl<T: Renderable> Renderable for EntityWithHealthData<T> {
             .child
             .render(options, used_mods, render_layers, image_cache);
 
-        if let Some(patch) = self.integration_patch.as_ref() {
-            if let Some(res) = patch.render(
+        if let Some(patch) = self.integration_patch.as_ref()
+            && let Some(res) = patch.render(
                 render_layers.scale(),
                 used_mods,
                 image_cache,
                 &options.into(),
-            ) {
-                render_layers.add(res, &options.position, crate::RenderLayer::GroundPatch);
-                return Some(());
-            }
+            )
+        {
+            render_layers.add(res, &options.position, crate::RenderLayer::GroundPatch);
+            return Some(());
         }
 
         ret

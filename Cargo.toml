@@ -14,7 +14,7 @@ members = [
 
 [workspace.package]
 authors = ["fgardt <me@fgardt.dev>"]
-edition = "2021"
+edition = "2024"
 
 [profile.release]
 strip = true

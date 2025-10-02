@@ -88,13 +88,12 @@ fn render_folder(
             continue;
         }
 
-        if let Some(filter) = filter {
-            if path
+        if let Some(filter) = filter
+            && path
                 .file_stem()
                 .is_none_or(|name| name.to_string_lossy() != filter.as_str())
-            {
-                continue;
-            }
+        {
+            continue;
         }
 
         println!("Rendering blueprint: {}", path.display());
