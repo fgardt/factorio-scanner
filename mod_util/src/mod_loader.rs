@@ -6,6 +6,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use normalize_path::NormalizePath as _;
 use zip::ZipArchive;
 
 use crate::mod_info::{ModInfo, Version};
@@ -144,6 +145,7 @@ impl Mod {
     pub fn get_file(&self, path: impl AsRef<Path>) -> Result<Vec<u8>> {
         self.internal.get_file(
             path.as_ref()
+                .normalize()
                 .to_str()
                 .ok_or_else(|| ModError::PathInvalidUtf8(path.as_ref().into()))?,
         )
@@ -152,6 +154,7 @@ impl Mod {
     pub fn read_dir(&self, dir: impl AsRef<Path>) -> Result<ReadModDir> {
         self.internal.read_dir(
             dir.as_ref()
+                .normalize()
                 .to_str()
                 .ok_or_else(|| ModError::PathInvalidUtf8(dir.as_ref().into()))?,
         )
@@ -287,12 +290,15 @@ impl ModType {
                 zip,
                 ..
             } => {
-                let filter = dir.trim_matches('/').to_string() + "/";
+                let filter = dir.trim_matches('/').to_string();
+                let filter = if filter.is_empty() {
+                    String::new()
+                } else {
+                    filter + "/"
+                };
 
                 let zip = zip.try_borrow_mut()?;
                 let mut processed = HashMap::new();
-
-                eprintln!("names: {:#?}", zip.file_names().collect::<Vec<_>>());
 
                 let paths = zip
                     .file_names()
@@ -300,8 +306,11 @@ impl ModType {
                         use std::collections::hash_map::Entry;
 
                         let name = name.strip_prefix(internal_prefix)?;
-
                         let inner = name.strip_prefix(&filter)?;
+                        if inner.is_empty() {
+                            return None;
+                        }
+
                         let mut parts = inner.split('/');
                         let entry_name = parts.next()?;
                         let full_path = PathBuf::from(filter.clone() + entry_name);
@@ -458,5 +467,147 @@ impl ModDirEntryInner {
             Self::Folder(dir_entry) => dir_entry.path().is_dir(),
             Self::Zip(ZipEntry { is_dir, .. }) => *is_dir,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::unwrap_used)]
+
+    use super::*;
+
+    const TESTMODS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/test_mods");
+    const DUMMY1: (&str, Version) = ("dummy1", Version::new(1, 2, 3));
+    const DUMMY2: (&str, Version) = ("dummy2", Version::new(4, 5, 6));
+    const DATA_LUA: &[u8] = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/test_mods/dummy1/data.lua"
+    ));
+
+    fn dummy1_path() -> PathBuf {
+        PathBuf::new().join(TESTMODS_DIR).join(DUMMY1.0)
+    }
+
+    fn dummy2_path() -> PathBuf {
+        PathBuf::new()
+            .join(TESTMODS_DIR)
+            .join(format!("{}_{}.zip", DUMMY2.0, DUMMY2.1))
+    }
+
+    #[test]
+    fn zip_internal_folder_name() {
+        let path = dummy2_path();
+        let zip = ZipArchive::new(File::open(&path).unwrap()).unwrap();
+
+        let internal = get_zip_internal_folder(path, &zip).unwrap();
+        assert_eq!(internal, "internal-root-folder-can-be-named-anything/");
+    }
+
+    #[test]
+    fn load_mod_folder() {
+        let name = DUMMY1.0;
+        let version = DUMMY1.1;
+        let incorrect_version = Version::new(0, 0, 0);
+
+        // read_path is only relevant for wube mods -> can be safely set to empty str
+        let m = Mod::load_custom("", TESTMODS_DIR, name, incorrect_version);
+        assert!(m.is_err());
+        let err = m.err().unwrap();
+        let expected_err = ModError::VersionMismatch {
+            name: name.to_string(),
+            expected: incorrect_version,
+            actual: version,
+        };
+        assert_eq!(err.to_string(), expected_err.to_string());
+
+        let m = Mod::load_custom("", TESTMODS_DIR, name, version).unwrap();
+        assert_eq!(m.info.name, name);
+        assert_eq!(m.info.version, version);
+    }
+
+    #[test]
+    fn load_mod_zip() {
+        let name = DUMMY2.0;
+        let version = DUMMY2.1;
+        let incorrect_version = Version::new(0, 0, 0);
+
+        // read_path is only relevant for wube mods -> can be safely set to empty str
+        let m = Mod::load_custom("", TESTMODS_DIR, name, incorrect_version);
+        assert!(m.is_err());
+        let err = m.err().unwrap();
+        let expected_err = ModError::ModNotFound(name.to_string(), incorrect_version);
+        assert_eq!(err.to_string(), expected_err.to_string());
+
+        let m = Mod::load_custom("", TESTMODS_DIR, name, version).unwrap();
+        assert_eq!(m.info.name, name);
+        assert_eq!(m.info.version, version);
+    }
+
+    #[test]
+    fn load_mod_folder_by_path() {
+        let m = Mod::load_from_path(dummy1_path()).unwrap();
+
+        assert_eq!(m.info.name, DUMMY1.0);
+        assert_eq!(m.info.version, DUMMY1.1);
+    }
+
+    #[test]
+    fn load_mod_zip_by_path() {
+        let m = Mod::load_from_path(dummy2_path()).unwrap();
+
+        assert_eq!(m.info.name, DUMMY2.0);
+        assert_eq!(m.info.version, DUMMY2.1);
+    }
+
+    fn get_file(m: &Mod) {
+        let data = m.get_file("data.lua").unwrap();
+        assert_eq!(data, DATA_LUA);
+    }
+
+    #[test]
+    fn get_file_from_folder() {
+        get_file(&Mod::load_from_path(dummy1_path()).unwrap());
+    }
+
+    #[test]
+    fn get_file_from_zip() {
+        get_file(&Mod::load_from_path(dummy2_path()).unwrap());
+    }
+
+    fn read_dir(m: &Mod) {
+        let rd = m.read_dir(".").unwrap();
+        let root = rd.collect::<Result<Box<[_]>>>().unwrap();
+
+        assert_eq!(root.len(), 4);
+        for entry in &root {
+            let path = entry.path();
+            let name = path.file_name().unwrap().to_str().unwrap();
+
+            if entry.is_dir() {
+                assert_eq!(name, "locale");
+            } else {
+                assert!(matches!(
+                    name,
+                    "info.json" | "data.lua" | "data-final-fixes.lua"
+                ));
+            }
+        }
+
+        let rd = m.read_dir("locale").unwrap();
+        let locale = rd.collect::<Result<Box<[_]>>>().unwrap();
+
+        assert_eq!(locale.len(), 2);
+        assert!(locale[0].is_dir());
+        assert!(locale[1].is_dir());
+    }
+
+    #[test]
+    fn read_dir_from_folder() {
+        read_dir(&Mod::load_from_path(dummy1_path()).unwrap());
+    }
+
+    #[test]
+    fn read_dir_from_zip() {
+        read_dir(&Mod::load_from_path(dummy2_path()).unwrap());
     }
 }

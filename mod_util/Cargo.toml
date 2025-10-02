@@ -14,6 +14,7 @@ bp_meta_info = []
 byteorder = "1.5"
 natord = "1.0"
 petgraph = "0.8"
+normalize-path = "0.2"
 regex.workspace = true
 serde.workspace = true
 serde_helper.workspace = true
