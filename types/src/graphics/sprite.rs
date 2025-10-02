@@ -5,8 +5,8 @@ use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
 use super::{
-    merge_layers, BlendMode, LayeredGraphic, RenderLayer, RenderableGraphics, SingleSource,
-    SourceProvider, SpriteFlags, SpritePriority, SpriteSizeParam, SpriteSizeType,
+    BlendMode, LayeredGraphic, RenderLayer, RenderableGraphics, SingleSource, SourceProvider,
+    SpriteFlags, SpritePriority, SpriteSizeParam, SpriteSizeType, merge_layers,
 };
 use crate::{Color, ImageCache, SingleOrArray, Vector};
 

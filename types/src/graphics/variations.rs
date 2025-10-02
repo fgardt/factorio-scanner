@@ -3,9 +3,8 @@ use std::num::NonZeroU32;
 use serde::{Deserialize, Serialize};
 
 use super::{
-    merge_layers, Animation, AnimationRenderOpts, AnimationSheet, LayeredSprite,
-    RenderableGraphics, RotatedAnimation, RotatedRenderOpts, Sprite, SpriteSheet,
-    TintableRenderOpts,
+    Animation, AnimationRenderOpts, AnimationSheet, LayeredSprite, RenderableGraphics,
+    RotatedAnimation, RotatedRenderOpts, Sprite, SpriteSheet, TintableRenderOpts, merge_layers,
 };
 use crate::FactorioArray;
 

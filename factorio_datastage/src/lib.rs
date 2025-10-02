@@ -1,10 +1,10 @@
 use std::{collections::HashMap, fs, io::Write as _, path::Path};
 
 use flate2::write::ZlibEncoder;
-use mlua::{prelude::*, Error as LuaError};
+use mlua::{Error as LuaError, prelude::*};
 use mod_util::{
-    mod_info::{FeatureFlags, Version},
     UsedMods,
+    mod_info::{FeatureFlags, Version},
 };
 use serde::Deserialize;
 
@@ -76,7 +76,7 @@ impl FromLua for LocalisedString {
                     from: value.type_name(),
                     to: "LocalisedString".into(),
                     message: None,
-                })
+                });
             }
         };
         Ok(res)

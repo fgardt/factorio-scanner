@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-use super::{helper, EntityWithHealthPrototype, EntityWithOwnerPrototype};
+use super::{EntityWithHealthPrototype, EntityWithOwnerPrototype, helper};
 use mod_util::UsedMods;
 use types::*;
 

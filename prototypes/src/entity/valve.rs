@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
-use super::{abstractions::FluidBoxEntityData, EntityWithOwnerPrototype};
+use super::{EntityWithOwnerPrototype, abstractions::FluidBoxEntityData};
 use types::*;
 
 /// [`Prototypes/Valve`](https://lua-api.factorio.com/latest/prototypes/ValvePrototype.html)

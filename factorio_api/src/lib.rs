@@ -1,7 +1,7 @@
 #![allow(clippy::module_name_repetitions)]
 
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, Extension};
-use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
+use reqwest_retry::{RetryTransientMiddleware, policies::ExponentialBackoff};
 use reqwest_tracing::{OtelName, TracingMiddleware};
 use serde::{Deserialize, Serialize};
 
@@ -80,7 +80,7 @@ mod portal {
     use mod_util::mod_info::Version;
     use serde::{Deserialize, Serialize};
 
-    use crate::{client, endpoint, PortalResponse};
+    use crate::{PortalResponse, client, endpoint};
 
     #[derive(Debug, Copy, Clone, Deserialize)]
     #[serde(untagged)]

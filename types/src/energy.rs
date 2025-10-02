@@ -8,7 +8,7 @@ use crate::{
     ItemID, ItemStackIndex,
 };
 
-use super::{helper, Direction, FluidBox, MapPosition};
+use super::{Direction, FluidBox, MapPosition, helper};
 
 /// [`Types/Energy`](https://lua-api.factorio.com/latest/types/Energy.html)
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]

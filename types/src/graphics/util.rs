@@ -1,4 +1,4 @@
-use image::{imageops, DynamicImage, GenericImageView};
+use image::{DynamicImage, GenericImageView, imageops};
 use mod_util::UsedMods;
 
 use super::{GraphicsOutput, RenderableGraphics};

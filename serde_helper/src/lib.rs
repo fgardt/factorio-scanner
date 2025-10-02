@@ -110,7 +110,7 @@ where
     D: Deserializer<'de>,
     T: Bounded + Integer + ToPrimitive + FromPrimitive,
 {
-    use serde::{de::Error as deError, Deserialize};
+    use serde::{Deserialize, de::Error as deError};
 
     let Some(tmp) = Option::<f64>::deserialize(deserializer)? else {
         return Ok(None);

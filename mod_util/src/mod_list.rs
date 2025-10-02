@@ -12,9 +12,9 @@ use serde_with::skip_serializing_none;
 use tracing::{debug, instrument, warn};
 
 use crate::{
+    DependencyList, UsedMods, UsedVersions,
     mod_info::{Dependency, DependencyExt, DependencyUtil, DependencyVersion, Version},
     mod_loader::{self, Mod},
-    DependencyList, UsedMods, UsedVersions,
 };
 
 #[derive(Debug, thiserror::Error)]

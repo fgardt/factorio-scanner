@@ -293,11 +293,7 @@ impl super::Renderable for RailPictureSet {
             render_layers.add(stone_path_lower, &opts.position, rl.stone_path_lower);
         }
 
-        if empty {
-            None
-        } else {
-            Some(())
-        }
+        if empty { None } else { Some(()) }
     }
 }
 
@@ -441,11 +437,7 @@ impl super::Renderable for RailPieceLayers {
             render_layers.add(res, &options.position, RenderLayer::RailMetal);
         }
 
-        if empty {
-            None
-        } else {
-            Some(())
-        }
+        if empty { None } else { Some(()) }
     }
 }
 
