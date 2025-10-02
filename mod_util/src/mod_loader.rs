@@ -1,5 +1,6 @@
 use std::{
     cell::RefCell,
+    collections::HashMap,
     fs::File,
     io::{Read, Seek},
     path::{Path, PathBuf},
@@ -13,6 +14,9 @@ use crate::mod_info::{ModInfo, Version};
 pub enum ModError {
     #[error("mod path does not exist: {0:?}")]
     PathDoesNotExist(PathBuf),
+
+    #[error("path is not valid utf8: {0:?}")]
+    PathInvalidUtf8(PathBuf),
 
     #[error("mod path is not a zip file or directory: {0:?}")]
     PathNotZipOrDir(PathBuf),
@@ -48,8 +52,11 @@ pub enum ModError {
     #[error("mod zip error: {0}")]
     ZipError(#[from] zip::result::ZipError),
 
+    #[error("mod borrow error: {0}")]
+    BorrowError(#[from] std::cell::BorrowError),
+
     #[error("mod mutable borrow error: {0}")]
-    BorrowError(#[from] std::cell::BorrowMutError),
+    BorrowMutError(#[from] std::cell::BorrowMutError),
 }
 
 type Result<T> = std::result::Result<T, ModError>;
@@ -134,8 +141,20 @@ impl Mod {
         }
     }
 
-    pub fn get_file(&self, path: &str) -> Result<Vec<u8>> {
-        self.internal.get_file(path)
+    pub fn get_file(&self, path: impl AsRef<Path>) -> Result<Vec<u8>> {
+        self.internal.get_file(
+            path.as_ref()
+                .to_str()
+                .ok_or_else(|| ModError::PathInvalidUtf8(path.as_ref().into()))?,
+        )
+    }
+
+    pub fn read_dir(&self, dir: impl AsRef<Path>) -> Result<ReadModDir> {
+        self.internal.read_dir(
+            dir.as_ref()
+                .to_str()
+                .ok_or_else(|| ModError::PathInvalidUtf8(dir.as_ref().into()))?,
+        )
     }
 
     #[must_use]
@@ -256,6 +275,68 @@ impl ModType {
         }
     }
 
+    fn read_dir(&self, dir: &str) -> Result<ReadModDir> {
+        match self {
+            Self::Folder { path } => path
+                .join(dir)
+                .read_dir()
+                .map(|rd| ReadModDir(ReadModDirInner::Folder(rd)))
+                .map_err(ModError::IoError),
+            Self::Zip {
+                internal_prefix,
+                zip,
+                ..
+            } => {
+                let filter = dir.trim_matches('/').to_string() + "/";
+
+                let zip = zip.try_borrow_mut()?;
+                let mut processed = HashMap::new();
+
+                eprintln!("names: {:#?}", zip.file_names().collect::<Vec<_>>());
+
+                let paths = zip
+                    .file_names()
+                    .filter_map(|name| {
+                        use std::collections::hash_map::Entry;
+
+                        let name = name.strip_prefix(internal_prefix)?;
+
+                        let inner = name.strip_prefix(&filter)?;
+                        let mut parts = inner.split('/');
+                        let entry_name = parts.next()?;
+                        let full_path = PathBuf::from(filter.clone() + entry_name);
+
+                        let is_dir = parts.next().is_some();
+                        match processed.entry(full_path.clone()) {
+                            Entry::Vacant(vacant_entry) => {
+                                vacant_entry.insert(is_dir);
+                            }
+                            Entry::Occupied(mut occupied_entry) => {
+                                if is_dir {
+                                    occupied_entry.insert(true);
+                                }
+
+                                return None;
+                            }
+                        }
+
+                        Some(full_path)
+                    })
+                    .collect::<Box<[_]>>();
+
+                let entries = paths
+                    .into_iter()
+                    .map(|full_path| ZipEntry {
+                        is_dir: processed[&full_path],
+                        full_path,
+                    })
+                    .collect();
+
+                Ok(ReadModDir(ReadModDirInner::Zip { entries, idx: 0 }))
+            }
+        }
+    }
+
     fn get_info(&self, name: &str) -> Result<ModInfo> {
         let info_file = self.get_file("info.json")?;
         let info = serde_json::from_slice(&info_file)
@@ -299,4 +380,83 @@ fn verify_info(info: &ModInfo, expected_name: &str, expected_version: Version) -
     }
 
     Ok(())
+}
+
+pub struct ReadModDir(ReadModDirInner);
+
+impl Iterator for ReadModDir {
+    type Item = Result<ModDirEntry>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next().map(|entry| entry.map(ModDirEntry))
+    }
+}
+
+enum ReadModDirInner {
+    Folder(std::fs::ReadDir),
+    Zip {
+        entries: Box<[ZipEntry]>,
+        idx: usize,
+    },
+}
+
+#[derive(Clone)]
+struct ZipEntry {
+    full_path: PathBuf,
+    is_dir: bool,
+}
+
+impl Iterator for ReadModDirInner {
+    type Item = Result<ModDirEntryInner>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::Folder(rd) => rd.next().map(|entry| {
+                entry
+                    .map(ModDirEntryInner::Folder)
+                    .map_err(ModError::IoError)
+            }),
+            Self::Zip { entries, idx } => {
+                let entry = entries.get(*idx)?;
+                *idx += 1;
+
+                Some(Ok(ModDirEntryInner::Zip(entry.clone())))
+            }
+        }
+    }
+}
+
+pub struct ModDirEntry(ModDirEntryInner);
+
+impl ModDirEntry {
+    #[must_use]
+    pub fn path(&self) -> PathBuf {
+        self.0.path()
+    }
+
+    #[must_use]
+    pub fn is_dir(&self) -> bool {
+        self.0.is_dir()
+    }
+}
+
+enum ModDirEntryInner {
+    Folder(std::fs::DirEntry),
+    Zip(ZipEntry),
+}
+
+impl ModDirEntryInner {
+    fn path(&self) -> PathBuf {
+        match self {
+            Self::Folder(dir_entry) => dir_entry.path(),
+            Self::Zip(ZipEntry { full_path, .. }) => full_path.clone(),
+        }
+    }
+
+    fn is_dir(&self) -> bool {
+        match self {
+            Self::Folder(dir_entry) => dir_entry.path().is_dir(),
+            Self::Zip(ZipEntry { is_dir, .. }) => *is_dir,
+        }
+    }
 }
