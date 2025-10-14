@@ -1,25 +1,30 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    num::NonZeroU32,
-};
+use std::collections::HashMap;
 
-use logistics::{LogisticSections, RequestFilters};
-use mod_util::{AnyBasic, DependencyList, mod_info::DependencyVersion};
-use parameters::ParameterData;
-use serde::{Deserialize, Serialize, de::Visitor, ser::SerializeSeq};
+use serde::{
+    Deserialize, Serialize,
+    de::{IntoDeserializer, Visitor},
+    ser::SerializeSeq,
+};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
+use mod_util::{AnyBasic, DependencyList, mod_info::DependencyVersion};
 use types::{
-    ArithmeticOperation, AsteroidChunkID, Comparator, Direction, EntityID, FilterMode, FluidID,
-    ItemCountType, ItemID, ItemStackIndex, QualityID, RealOrientation, RecipeID, SelectorOperation,
-    SpaceLocationID, TileID, Vector, VirtualSignalID,
+    AsteroidChunkID, Comparator, EntityID, FluidID, ItemID, QualityID, RecipeID, SpaceLocationID,
+    TileID, VirtualSignalID,
 };
 
-use crate::{IndexedVec, NameString};
+use crate::IndexedVec;
 
+mod entity;
 mod logistics;
 mod parameters;
+mod trains;
+
+pub use entity::*;
+pub use logistics::*;
+pub use parameters::*;
+pub use trains::*;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -141,9 +146,10 @@ impl crate::GetIDs for Icon {
     }
 }
 
+/// [`SignalID`](https://lua-api.factorio.com/latest/concepts/SignalID.html)
 #[skip_serializing_none]
 #[derive(Debug, Clone, /*Deserialize,*/ Serialize, PartialEq, Eq)]
-#[serde(tag = "type", rename_all = "lowercase")]
+#[serde(tag = "type", rename_all = "kebab-case")]
 pub enum SignalID {
     Item {
         name: Option<ItemID>,
@@ -264,7 +270,7 @@ impl<'de> Deserialize<'de> for SignalID {
                 while let Ok(Some((key, value))) = map.next_entry::<String, String>() {
                     match key.as_str() {
                         "type" => {
-                            kind = Some(value);
+                            kind = Some(SignalIDType::deserialize(value.into_deserializer())?);
                         }
                         "name" => {
                             name = Some(value);
@@ -276,42 +282,39 @@ impl<'de> Deserialize<'de> for SignalID {
                     }
                 }
 
-                match kind.unwrap_or_else(|| "item".to_owned()).as_str() {
-                    "item" => {
+                match kind.unwrap_or_default() {
+                    SignalIDType::Item => {
                         let name = name.map(ItemID::new);
                         Ok(SignalID::Item { name, quality })
                     }
-                    "fluid" => {
+                    SignalIDType::Fluid => {
                         let name = name.map(FluidID::new);
                         Ok(SignalID::Fluid { name, quality })
                     }
-                    "virtual" => {
+                    SignalIDType::Virtual => {
                         let name = name.map(VirtualSignalID::new);
                         Ok(SignalID::Virtual { name, quality })
                     }
-                    "entity" => {
+                    SignalIDType::Entity => {
                         let name = name.map(EntityID::new);
                         Ok(SignalID::Entity { name, quality })
                     }
-                    "recipe" => {
+                    SignalIDType::Recipe => {
                         let name = name.map(RecipeID::new);
                         Ok(SignalID::Recipe { name, quality })
                     }
-                    "space-location" => {
+                    SignalIDType::SpaceLocation => {
                         let name = name.map(SpaceLocationID::new);
                         Ok(SignalID::SpaceLocation { name, quality })
                     }
-                    "asteroid-chunk" => {
+                    SignalIDType::AsteroidChunk => {
                         let name = name.map(AsteroidChunkID::new);
                         Ok(SignalID::AsteroidChunk { name, quality })
                     }
-                    "quality" => {
+                    SignalIDType::Quality => {
                         let name = name.map(QualityID::new);
                         Ok(SignalID::Quality { name })
                     }
-                    any => Err(serde::de::Error::custom(format!(
-                        "unknown SignalID type: {any}"
-                    ))),
                 }
             }
         }
@@ -320,24 +323,29 @@ impl<'de> Deserialize<'de> for SignalID {
     }
 }
 
-pub type EntityNumber = u64;
-pub type GraphicsVariation = NonZeroU32;
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct StockConnection {
-    pub stock: EntityNumber,
-    pub front: Option<EntityNumber>,
-    pub back: Option<EntityNumber>,
+/// [`SignalIDType`](https://lua-api.factorio.com/latest/concepts/SignalIDType.html)
+#[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum SignalIDType {
+    #[default]
+    Item,
+    Fluid,
+    Virtual,
+    Entity,
+    Recipe,
+    SpaceLocation,
+    AsteroidChunk,
+    Quality,
 }
 
+/// [`BlueprintWire`](https://lua-api.factorio.com/latest/concepts/BlueprintWire.html)
 // todo: use defines.wire_connector_id
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WireData {
-    pub entity_a: EntityNumber,
-    pub circuit_a: u8,
-    pub entity_b: EntityNumber,
-    pub circuit_b: u8,
+    pub source_entity: EntityNumber,
+    pub source_connector: u8,
+    pub target_entity: EntityNumber,
+    pub target_connector: u8,
 }
 
 impl Serialize for WireData {
@@ -346,10 +354,10 @@ impl Serialize for WireData {
         S: serde::Serializer,
     {
         let mut seq = serializer.serialize_seq(Some(4))?;
-        seq.serialize_element(&self.entity_a)?;
-        seq.serialize_element(&self.circuit_a)?;
-        seq.serialize_element(&self.entity_b)?;
-        seq.serialize_element(&self.circuit_b)?;
+        seq.serialize_element(&self.source_entity)?;
+        seq.serialize_element(&self.source_connector)?;
+        seq.serialize_element(&self.target_entity)?;
+        seq.serialize_element(&self.target_connector)?;
         seq.end()
     }
 }
@@ -372,14 +380,25 @@ impl<'de> Deserialize<'de> for WireData {
             where
                 A: serde::de::SeqAccess<'de>,
             {
-                let entity_a = seq.next_element()?;
-                let circuit_a = seq.next_element()?;
-                let entity_b = seq.next_element()?;
-                let circuit_b = seq.next_element()?;
+                let source_entity = seq.next_element()?;
+                let source_connector = seq.next_element()?;
+                let target_entity = seq.next_element()?;
+                let target_connector = seq.next_element()?;
                 let end = seq.next_element::<Option<()>>()?;
 
-                let (Some(entity_a), Some(circuit_a), Some(entity_b), Some(circuit_b), None) =
-                    (entity_a, circuit_a, entity_b, circuit_b, end)
+                let (
+                    Some(source_entity),
+                    Some(source_connector),
+                    Some(target_entity),
+                    Some(target_connector),
+                    None,
+                ) = (
+                    source_entity,
+                    source_connector,
+                    target_entity,
+                    target_connector,
+                    end,
+                )
                 else {
                     return Err(serde::de::Error::custom(
                         "wire connection data needs 4 elements",
@@ -387,10 +406,10 @@ impl<'de> Deserialize<'de> for WireData {
                 };
 
                 Ok(WireData {
-                    entity_a,
-                    circuit_a,
-                    entity_b,
-                    circuit_b,
+                    source_entity,
+                    source_connector,
+                    target_entity,
+                    target_connector,
                 })
             }
         }
@@ -399,466 +418,25 @@ impl<'de> Deserialize<'de> for WireData {
     }
 }
 
-// todo: reduce optionals count by skipping serialization of defaults?
-#[allow(clippy::struct_excessive_bools)]
-#[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
-#[serde(deny_unknown_fields)]
-pub struct Entity {
-    pub entity_number: EntityNumber,
-    pub name: EntityID,
-    pub quality: Option<QualityID>,
-    pub position: Position,
-
-    #[serde(default, skip_serializing_if = "Direction::is_default")]
-    pub direction: Direction,
-    pub orientation: Option<RealOrientation>,
-    pub mirror: Option<bool>,
-
-    // todo: make a defines.rail_layer type for this
-    pub rail_layer: Option<String>,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub neighbours: Vec<EntityNumber>,
-
-    pub control_behavior: Option<ControlBehavior>,
-    pub connections: Option<Connection>,
-
-    pub artillery_auto_targeting: Option<bool>,
-
-    pub player_description: Option<String>,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub items: Vec<ItemRequest>,
-
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub recipe: RecipeID,
-    pub recipe_quality: Option<QualityID>,
-
-    pub bar: Option<ItemStackIndex>,
-    pub inventory: Option<Inventory>,
-    pub infinity_settings: Option<InfinitySettings>,
-
-    #[serde(rename = "type")]
-    pub type_: Option<UndergroundType>,
-    pub belt_link: Option<u32>,
-    pub link_id: Option<u32>,
-
-    pub input_priority: Option<SplitterPriority>,
-    pub output_priority: Option<SplitterPriority>,
-
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub filter: ItemID,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub filters: IndexedVec<ItemFilter>,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub use_filters: bool,
-
-    pub filter_mode: Option<FilterMode>,
-    pub override_stack_size: Option<u8>,
-    pub drop_position: Option<Position>,
-    pub pickup_position: Option<Position>,
-
-    pub request_filters: Option<RequestFilters>,
-
-    pub request_missing_construction_materials: Option<bool>,
-
-    pub parameters: Option<SpeakerParameter>,
-    pub alert_parameters: Option<SpeakerAlertParameter>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub auto_launch: bool,
-
-    pub variation: Option<GraphicsVariation>,
-
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub station: String,
-
-    pub color: Option<Color>,
-
-    pub manual_trains_limit: Option<u32>,
-    pub priority: Option<u8>,
-
-    pub enable_logistics_while_moving: Option<bool>,
-
-    #[serde(
-        default = "serde_helper::bool_true",
-        skip_serializing_if = "Clone::clone"
-    )]
-    pub copy_color_from_train_stop: bool,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub switch_state: bool,
-
-    // electric energy interface
-    pub buffer_size: Option<f64>,
-    pub power_production: Option<f64>,
-    pub power_usage: Option<f64>,
-
-    // heat interface
-    pub temperature: Option<f64>,
-    pub mode: Option<String>,
-
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub tags: mod_util::TagTable,
-
-    // display panel
-    pub text: Option<String>,
-    pub icon: Option<SignalID>,
-    pub always_show: Option<bool>,
-
-    // inserter
-    pub spoil_priority: Option<SpoilPriority>,
-
-    // pump
-    pub fluid_filter: Option<FluidID>,
-}
-
-impl PartialOrd for Entity {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.position.partial_cmp(&other.position)
-    }
-}
-
-impl crate::GetIDs for Entity {
-    fn get_ids(&self) -> crate::UsedIDs {
-        let mut ids = crate::UsedIDs::default();
-
-        ids.entity.insert(self.name.clone());
-
-        if let Some(quality) = &self.quality {
-            ids.quality.insert(quality.clone());
-        }
-
-        if let Some(control_behavior) = &self.control_behavior {
-            ids.merge(control_behavior.get_ids());
-        }
-
-        for item in &self.items {
-            ids.merge(item.id.get_ids());
-        }
-
-        if !self.recipe.is_empty() {
-            ids.recipe.insert(self.recipe.clone());
-        }
-
-        if let Some(recipe_quality) = &self.recipe_quality {
-            ids.quality.insert(recipe_quality.clone());
-        }
-
-        if let Some(inventory) = &self.inventory {
-            ids.merge(inventory.get_ids());
-        }
-
-        if let Some(infinity_settings) = &self.infinity_settings {
-            ids.merge(infinity_settings.get_ids());
-        }
-
-        if !self.filter.is_empty() {
-            ids.item.insert(self.filter.clone());
-        }
-
-        for entry in &self.filters {
-            ids.item.insert(entry.name.clone());
-        }
-
-        if let Some(request_filters) = &self.request_filters {
-            ids.merge(request_filters.get_ids());
-        }
-
-        if let Some(alert_parameters) = &self.alert_parameters
-            && let Some(signal) = &alert_parameters.icon_signal_id
-        {
-            ids.merge(signal.get_ids());
-        }
-
-        if let Some(icon) = &self.icon {
-            ids.merge(icon.get_ids());
-        }
-
-        if let Some(fluid_filter) = &self.fluid_filter {
-            ids.fluid.insert(fluid_filter.clone());
-        }
-
-        ids
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "kebab-case")]
-pub enum SpoilPriority {
-    SpoiledFirst,
-    FreshFirst,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-pub struct ItemFilter {
-    pub comparator: Comparator,
-    pub name: ItemID,
-    pub quality: QualityID,
-}
-
-impl crate::GetIDs for ItemFilter {
-    fn get_ids(&self) -> crate::UsedIDs {
-        let mut ids = crate::UsedIDs::default();
-
-        ids.item.insert(self.name.clone());
-        ids.quality.insert(self.quality.clone());
-
-        ids
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
-pub enum UndergroundType {
-    Input,
-    Output,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
-pub enum SplitterPriority {
-    Left,
-    Right,
-}
-
-impl SplitterPriority {
-    #[must_use]
-    pub const fn as_vector(&self) -> Vector {
-        match self {
-            Self::Left => Vector::Tuple(-0.5, 0.0),
-            Self::Right => Vector::Tuple(0.5, 0.0),
-        }
-    }
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct Inventory {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub filters: IndexedVec<NameString<ItemID>>,
-    pub bar: Option<ItemStackIndex>,
-}
-
-impl crate::GetIDs for Inventory {
-    fn get_ids(&self) -> crate::UsedIDs {
-        let mut ids = crate::UsedIDs::default();
-
-        for entry in &self.filters {
-            ids.item.insert(entry.name.clone());
-        }
-
-        ids
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct Schedule {
-    pub locomotives: Vec<EntityNumber>,
-    pub schedule: ScheduleData,
-}
-
-impl crate::GetIDs for Schedule {
-    fn get_ids(&self) -> crate::UsedIDs {
-        self.schedule.get_ids()
-    }
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct ScheduleData {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub records: Vec<ScheduleRecord>,
-
-    pub group: Option<String>,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub interrupts: Vec<ScheduleInterrupt>,
-}
-
-impl crate::GetIDs for ScheduleData {
-    fn get_ids(&self) -> crate::UsedIDs {
-        let mut ids = self.records.get_ids();
-        ids.merge(self.interrupts.get_ids());
-
-        ids
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct ScheduleRecord {
-    pub station: String,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub wait_conditions: Vec<WaitCondition>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub temporary: bool,
-
-    #[serde(
-        default = "serde_helper::bool_true",
-        skip_serializing_if = "Clone::clone"
-    )]
-    pub allows_unloading: bool,
-}
-
-impl crate::GetIDs for ScheduleRecord {
-    fn get_ids(&self) -> crate::UsedIDs {
-        self.wait_conditions.get_ids()
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct ScheduleInterrupt {
-    pub name: String,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub conditions: Vec<WaitCondition>,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub targets: Vec<ScheduleRecord>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub inside_interrupt: bool,
-}
-
-impl crate::GetIDs for ScheduleInterrupt {
-    fn get_ids(&self) -> crate::UsedIDs {
-        let mut ids = self.conditions.get_ids();
-        ids.merge(self.targets.get_ids());
-
-        ids
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-//#[serde(deny_unknown_fields)] // causes deserialization issues (https://github.com/serde-rs/serde/issues/1358)
-pub struct WaitCondition {
-    pub compare_type: CompareType,
-
-    #[serde(flatten)]
-    pub condition: WaitConditionType,
-}
-
-impl crate::GetIDs for WaitCondition {
-    fn get_ids(&self) -> crate::UsedIDs {
-        let mut ids = crate::UsedIDs::default();
-
-        match &self.condition {
-            WaitConditionType::Circuit { condition }
-            | WaitConditionType::ItemCount { condition }
-            | WaitConditionType::FluidCount { condition } => {
-                if let Some(condition) = condition {
-                    ids.merge(condition.get_ids());
-                }
-            }
-            WaitConditionType::RequestSatisfied { condition }
-            | WaitConditionType::RequestNotSatisfied { condition } => {
-                if let Some(condition) = condition {
-                    ids.item.insert(condition.name.clone());
-                }
-            }
-            _ => {}
-        }
-
-        ids
-    }
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(tag = "type", rename_all = "snake_case")]
-pub enum WaitConditionType {
-    Full,
-    Empty,
-    #[serde(alias = "not-empty")]
-    NotEmpty,
-    FuelFull,
-    AtStation {
-        station: Option<String>,
-    },
-    NotAtStation {
-        station: Option<String>,
-    },
-    RobotsInactive,
-    PassengerPresent,
-    PassengerNotPresent,
-    AllRequestsSatisfied,
-    AnyRequestZero,
-    AnyRequestNotSatisfied,
-    AnyPlanetImportZero {
-        planet: Option<PlanetImportTarget>,
-    },
-    DestinationFullOrNoPath,
-    Time {
-        ticks: u32,
-    },
-    Inactivity {
-        ticks: u32,
-    },
-    DamageTaken {
-        damage: u32,
-    },
-    Circuit {
-        condition: Option<Condition>,
-    },
-    ItemCount {
-        condition: Option<Condition>,
-    },
-    FluidCount {
-        condition: Option<Condition>,
-    },
-    FuelItemCountAll {
-        condition: Option<Condition>,
-    },
-    FuelItemCountAny {
-        condition: Option<Condition>,
-    },
-    RequestSatisfied {
-        condition: Option<RequestCondition>,
-    },
-    RequestNotSatisfied {
-        condition: Option<RequestCondition>,
-    },
-    SpecificDestinationFull {
-        station: Option<String>,
-    },
-    SpecificDestinationNotFull {
-        station: Option<String>,
-    },
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct PlanetImportTarget {
-    pub name: SpaceLocationID,
-}
-
+/// [`CircuitCondition`](https://lua-api.factorio.com/latest/concepts/CircuitCondition.html)
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged, deny_unknown_fields)]
-pub enum Condition {
+pub enum CircuitCondition {
     Signals {
-        first_signal: Option<SignalID>,
-        second_signal: Option<SignalID>,
         comparator: Comparator,
+        first_signal: Option<SignalID>,
+        second_signal: SignalID,
     },
     Constant {
+        comparator: Comparator,
         first_signal: Option<SignalID>,
         #[serde(default)]
         constant: i32,
-        comparator: Comparator,
     },
 }
 
-impl crate::GetIDs for Condition {
+impl crate::GetIDs for CircuitCondition {
     fn get_ids(&self) -> crate::UsedIDs {
         let mut ids = crate::UsedIDs::default();
 
@@ -868,18 +446,11 @@ impl crate::GetIDs for Condition {
                 second_signal,
                 ..
             } => {
-                if let Some(signal) = first_signal {
-                    ids.merge(signal.get_ids());
-                }
-
-                if let Some(signal) = second_signal {
-                    ids.merge(signal.get_ids());
-                }
+                ids.merge(first_signal.get_ids());
+                ids.merge(second_signal.get_ids());
             }
             Self::Constant { first_signal, .. } => {
-                if let Some(signal) = first_signal {
-                    ids.merge(signal.get_ids());
-                }
+                ids.merge(first_signal.get_ids());
             }
         }
 
@@ -893,10 +464,20 @@ pub struct RequestCondition {
     pub quality: Option<QualityID>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+impl crate::GetIDs for RequestCondition {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = self.name.get_ids();
+        ids.merge(self.quality.get_ids());
+
+        ids
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum CompareType {
     And,
+    #[default]
     Or,
 }
 
@@ -921,6 +502,20 @@ pub struct Position {
 
     #[serde(serialize_with = "shorter_floats")]
     pub y: f32,
+}
+
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn shorter_floats<S>(x: &f32, s: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    // serialize as integer if possible
+    if x.rem_euclid(1.0) == 0.0 {
+        #[allow(clippy::cast_possible_truncation)]
+        s.serialize_i32(*x as i32)
+    } else {
+        s.serialize_f32(*x)
+    }
 }
 
 impl PartialOrd for Position {
@@ -965,223 +560,6 @@ impl From<&Position> for types::Vector {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(untagged, deny_unknown_fields)]
-pub enum Connection {
-    Double {
-        #[serde(rename = "1")]
-        one: ConnectionPoint,
-
-        #[serde(rename = "2")]
-        two: ConnectionPoint,
-    },
-    SingleOne {
-        #[serde(rename = "1")]
-        one: ConnectionPoint,
-    },
-    SingleTwo {
-        #[serde(rename = "2")]
-        two: ConnectionPoint,
-    },
-    Switch {
-        #[serde(rename = "1")]
-        one: ConnectionPoint,
-
-        #[serde(rename = "Cu0", default, skip_serializing_if = "Vec::is_empty")]
-        cu0: Vec<ConnectionData>,
-        #[serde(rename = "Cu1", default, skip_serializing_if = "Vec::is_empty")]
-        cu1: Vec<ConnectionData>,
-    },
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct ConnectionPoint {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub red: Vec<ConnectionData>,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub green: Vec<ConnectionData>,
-}
-
-impl ConnectionPoint {
-    pub fn transform(&self, map: &mut HashMap<EntityNumber, [bool; 3]>) {
-        for r in &self.red {
-            map.entry(r.entity_id())
-                .and_modify(|[_, x, _]| *x = true)
-                .or_insert([false, true, false]);
-        }
-
-        for g in &self.green {
-            map.entry(g.entity_id())
-                .and_modify(|[_, _, x]| *x = true)
-                .or_insert([false, false, true]);
-        }
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(untagged, deny_unknown_fields)]
-pub enum ConnectionData {
-    Connector {
-        entity_id: EntityNumber,
-        circuit_id: u8,
-    },
-    Switch {
-        entity_id: EntityNumber,
-        wire_id: u8,
-    },
-    NoConnector {
-        entity_id: EntityNumber,
-    },
-}
-
-impl ConnectionData {
-    #[must_use]
-    pub const fn entity_id(&self) -> EntityNumber {
-        match self {
-            Self::Connector { entity_id, .. }
-            | Self::Switch { entity_id, .. }
-            | Self::NoConnector { entity_id } => *entity_id,
-        }
-    }
-}
-
-pub trait ConnectionDataExt {
-    fn transform(&self, map: &mut HashMap<EntityNumber, [bool; 3]>);
-}
-
-impl ConnectionDataExt for Vec<ConnectionData> {
-    fn transform(&self, map: &mut HashMap<EntityNumber, [bool; 3]>) {
-        for data in self {
-            if let ConnectionData::Switch { entity_id, .. } = data {
-                map.entry(*entity_id)
-                    .and_modify(|[x, _, _]| *x = true)
-                    .or_insert([true, false, false]);
-            }
-        }
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-pub struct ItemRequest {
-    pub id: ItemRequestID,
-    pub items: ItemRequestItems,
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-pub struct ItemRequestID {
-    pub name: ItemID,
-    pub quality: Option<QualityID>,
-}
-
-impl crate::GetIDs for ItemRequestID {
-    fn get_ids(&self) -> crate::UsedIDs {
-        let mut ids = crate::UsedIDs::default();
-
-        ids.item.insert(self.name.clone());
-
-        if let Some(quality) = &self.quality {
-            ids.quality.insert(quality.clone());
-        }
-
-        ids
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-pub struct ItemRequestItems {
-    pub in_inventory: Vec<ItemRequestInventoryRecord>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-pub struct ItemRequestInventoryRecord {
-    pub inventory: ItemStackIndex,
-    pub stack: ItemStackIndex,
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
-#[serde(deny_unknown_fields, untagged)]
-pub enum InfinitySettings {
-    Pipe {
-        name: Option<FluidID>,            // infinity pipes?
-        percentage: Option<f64>,          // infinity pipes?
-        temperature: Option<f64>,         // infinity pipes?
-        mode: Option<InfinityFilterMode>, // infinity pipes?
-    },
-    Chest {
-        remove_unfiltered_items: bool,
-        filters: Option<IndexedVec<InfinityFilter>>,
-    },
-}
-
-impl crate::GetIDs for InfinitySettings {
-    fn get_ids(&self) -> crate::UsedIDs {
-        let mut ids = crate::UsedIDs::default();
-
-        match self {
-            Self::Pipe { name, .. } => {
-                if let Some(name) = name {
-                    ids.fluid.insert(name.clone());
-                }
-            }
-            Self::Chest { filters, .. } => {
-                if let Some(filters) = filters {
-                    for entry in filters {
-                        ids.item.insert(entry.name.clone());
-                    }
-                }
-            }
-        }
-
-        ids
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct InfinityFilter {
-    pub name: ItemID,
-    pub count: ItemCountType,
-    pub mode: InfinityFilterMode,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "kebab-case")]
-pub enum InfinityFilterMode {
-    AtLeast,
-    AtMost,
-    Exactly,
-    Remove,
-    Add,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct LogisticFilter {
-    pub name: ItemID,
-    pub count: ItemCountType,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
-#[serde(deny_unknown_fields)]
-pub struct SpeakerParameter {
-    pub playback_volume: f32,
-    pub playback_globally: bool,
-    pub allow_polyphony: bool,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct SpeakerAlertParameter {
-    pub show_alert: bool,
-    pub show_on_map: bool,
-    pub icon_signal_id: Option<SignalID>, // can be missing if not set
-    pub alert_message: String,
-}
-
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Color {
@@ -1197,561 +575,10 @@ impl From<&Color> for types::Color {
     }
 }
 
-#[allow(clippy::struct_excessive_bools)]
-#[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-pub struct ControlBehavior {
-    pub logistic_condition: Option<Condition>,
-    pub connect_to_logistic_network: Option<bool>,
-
-    // space platform hub
-    pub read_moving_from: Option<bool>,
-    pub read_moving_to: Option<bool>,
-    pub read_speed: Option<bool>,
-    pub speed_signal: Option<SignalID>,
-    pub read_damage_taken: Option<bool>,
-    pub damage_taken_signal: Option<SignalID>,
-
-    // logistics
-    pub sections: Option<LogisticSections>,
-
-    // rail/chain signals
-    pub circuit_close_signal: Option<bool>,
-    pub circuit_read_signal: Option<bool>,
-    pub red_output_signal: Option<SignalID>,
-    pub orange_output_signal: Option<SignalID>,
-    pub green_output_signal: Option<SignalID>,
-    pub blue_output_signal: Option<SignalID>,
-
-    pub circuit_enabled: Option<bool>,
-    pub circuit_condition: Option<Condition>,
-    // pub circuit_enable_disable: Option<bool>,
-
-    // train stops
-    pub send_to_train: Option<bool>,
-    pub read_from_train: Option<bool>,
-
-    pub read_stopped_train: Option<bool>,
-    pub train_stopped_signal: Option<SignalID>,
-
-    pub set_trains_limit: Option<bool>,
-    pub trains_limit_signal: Option<SignalID>,
-
-    pub read_trains_count: Option<bool>,
-    pub trains_count_signal: Option<SignalID>,
-
-    pub set_priority: Option<bool>,
-    pub priority_signal: Option<SignalID>,
-
-    // roboports
-    pub read_logistics: Option<bool>,
-    pub read_robot_stats: Option<bool>,
-    pub available_logistic_output_signal: Option<SignalID>,
-    pub total_logistic_output_signal: Option<SignalID>,
-    pub available_construction_output_signal: Option<SignalID>,
-    pub total_construction_output_signal: Option<SignalID>,
-
-    // walls
-    pub circuit_open_gate: Option<bool>,
-    pub circuit_read_sensor: Option<bool>,
-    pub output_signal: Option<SignalID>,
-
-    // belts
-    pub circuit_read_hand_contents: Option<bool>,
-    pub circuit_contents_read_mode: Option<u8>,
-
-    // inserters
-    pub circuit_set_stack_size: Option<bool>,
-    pub stack_control_input_signal: Option<SignalID>,
-    pub circuit_mode_of_operation: Option<u8>,
-    pub circuit_hand_read_mode: Option<u8>,
-
-    // miners
-    pub circuit_read_resources: Option<bool>,
-    pub circuit_resource_read_mode: Option<u8>,
-
-    // combinators
-    pub is_on: Option<bool>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub filters: IndexedVec<ConstantCombinatorFilter>,
-    pub arithmetic_conditions: Option<ArithmeticData>,
-    pub decider_conditions: Option<DeciderData>,
-    #[serde(flatten)]
-    pub selector_conditions: Option<SelectorData>,
-
-    // speakers
-    pub circuit_parameters: Option<SpeakerCircuitParameters>,
-
-    // lamps
-    pub use_colors: Option<bool>,
-
-    // turrets
-    pub read_ammo: Option<bool>,
-}
-
-impl crate::GetIDs for ControlBehavior {
-    fn get_ids(&self) -> crate::UsedIDs {
-        let mut ids = crate::UsedIDs::default();
-
-        if let Some(sections) = &self.sections {
-            ids.merge(sections.get_ids());
-        }
-
-        if let Some(logistic_condition) = &self.logistic_condition {
-            ids.merge(logistic_condition.get_ids());
-        }
-
-        if let Some(red_output_signal) = &self.red_output_signal {
-            ids.merge(red_output_signal.get_ids());
-        }
-
-        if let Some(orange_output_signal) = &self.orange_output_signal {
-            ids.merge(orange_output_signal.get_ids());
-        }
-
-        if let Some(green_output_signal) = &self.green_output_signal {
-            ids.merge(green_output_signal.get_ids());
-        }
-
-        if let Some(blue_output_signal) = &self.blue_output_signal {
-            ids.merge(blue_output_signal.get_ids());
-        }
-
-        if let Some(circuit_condition) = &self.circuit_condition {
-            ids.merge(circuit_condition.get_ids());
-        }
-
-        if let Some(train_stopped_signal) = &self.train_stopped_signal {
-            ids.merge(train_stopped_signal.get_ids());
-        }
-
-        if let Some(trains_limit_signal) = &self.trains_limit_signal {
-            ids.merge(trains_limit_signal.get_ids());
-        }
-
-        if let Some(trains_count_signal) = &self.trains_count_signal {
-            ids.merge(trains_count_signal.get_ids());
-        }
-
-        if let Some(available_logistic_output_signal) = &self.available_logistic_output_signal {
-            ids.merge(available_logistic_output_signal.get_ids());
-        }
-
-        if let Some(total_logistic_output_signal) = &self.total_logistic_output_signal {
-            ids.merge(total_logistic_output_signal.get_ids());
-        }
-
-        if let Some(available_construction_output_signal) =
-            &self.available_construction_output_signal
-        {
-            ids.merge(available_construction_output_signal.get_ids());
-        }
-
-        if let Some(total_construction_output_signal) = &self.total_construction_output_signal {
-            ids.merge(total_construction_output_signal.get_ids());
-        }
-
-        if let Some(output_signal) = &self.output_signal {
-            ids.merge(output_signal.get_ids());
-        }
-
-        if let Some(stack_control_input_signal) = &self.stack_control_input_signal {
-            ids.merge(stack_control_input_signal.get_ids());
-        }
-
-        ids.merge(self.filters.get_ids());
-
-        if let Some(arithmetic_conditions) = &self.arithmetic_conditions {
-            ids.merge(arithmetic_conditions.get_ids());
-        }
-
-        if let Some(decider_conditions) = &self.decider_conditions {
-            ids.merge(decider_conditions.get_ids());
-        }
-
-        if let Some(selector_conditions) = &self.selector_conditions {
-            ids.merge(selector_conditions.get_ids());
-        }
-
-        ids
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct ConstantCombinatorFilter {
-    pub signal: SignalID,
-    pub count: i32,
-}
-
-impl crate::GetIDs for ConstantCombinatorFilter {
-    fn get_ids(&self) -> crate::UsedIDs {
-        self.signal.get_ids()
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct SignalNetworks {
-    pub red: bool,
-    pub green: bool,
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(untagged, deny_unknown_fields)]
-pub enum ArithmeticData {
-    SignalSignal {
-        first_signal: Option<SignalID>,
-        second_signal: Option<SignalID>,
-        operation: ArithmeticOperation,
-        output_signal: Option<SignalID>,
-        first_signal_networks: Option<SignalNetworks>,
-        second_signal_networks: Option<SignalNetworks>,
-    },
-    SignalConstant {
-        first_signal: Option<SignalID>,
-        #[serde(default)]
-        second_constant: i32,
-        operation: ArithmeticOperation,
-        output_signal: Option<SignalID>,
-        first_signal_networks: Option<SignalNetworks>,
-    },
-    ConstantSignal {
-        #[serde(default)]
-        first_constant: i32,
-        second_signal: Option<SignalID>,
-        operation: ArithmeticOperation,
-        output_signal: Option<SignalID>,
-        second_signal_networks: Option<SignalNetworks>,
-    },
-    ConstantConstant {
-        #[serde(default)]
-        first_constant: i32,
-        #[serde(default)]
-        second_constant: i32,
-        operation: ArithmeticOperation,
-        output_signal: Option<SignalID>,
-    },
-}
-
-impl ArithmeticData {
-    #[must_use]
-    pub const fn operation(&self) -> ArithmeticOperation {
-        match self {
-            Self::SignalSignal { operation, .. }
-            | Self::SignalConstant { operation, .. }
-            | Self::ConstantSignal { operation, .. }
-            | Self::ConstantConstant { operation, .. } => *operation,
-        }
-    }
-}
-
-impl crate::GetIDs for ArithmeticData {
-    fn get_ids(&self) -> crate::UsedIDs {
-        let mut ids = crate::UsedIDs::default();
-
-        match self {
-            Self::SignalSignal {
-                first_signal,
-                second_signal,
-                output_signal,
-                ..
-            } => {
-                if let Some(signal) = first_signal {
-                    ids.merge(signal.get_ids());
-                }
-
-                if let Some(signal) = second_signal {
-                    ids.merge(signal.get_ids());
-                }
-
-                if let Some(signal) = output_signal {
-                    ids.merge(signal.get_ids());
-                }
-            }
-            Self::SignalConstant {
-                first_signal,
-                output_signal,
-                ..
-            } => {
-                if let Some(signal) = first_signal {
-                    ids.merge(signal.get_ids());
-                }
-
-                if let Some(signal) = output_signal {
-                    ids.merge(signal.get_ids());
-                }
-            }
-            Self::ConstantSignal {
-                second_signal,
-                output_signal,
-                ..
-            } => {
-                if let Some(signal) = second_signal {
-                    ids.merge(signal.get_ids());
-                }
-
-                if let Some(signal) = output_signal {
-                    ids.merge(signal.get_ids());
-                }
-            }
-            Self::ConstantConstant { output_signal, .. } => {
-                if let Some(signal) = output_signal {
-                    ids.merge(signal.get_ids());
-                }
-            }
-        }
-
-        ids
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct DeciderData {
-    pub conditions: Vec<DeciderCondition>,
-    pub outputs: Vec<DeciderOutput>,
-}
-
-impl DeciderData {
-    #[must_use]
-    pub fn operation(&self) -> Comparator {
-        self.conditions
-            .first()
-            .map_or(Comparator::Unknown, DeciderCondition::comparator)
-    }
-}
-
-impl crate::GetIDs for DeciderData {
-    fn get_ids(&self) -> crate::UsedIDs {
-        let mut ids = self.conditions.get_ids();
-        ids.merge(self.outputs.get_ids());
-
-        ids
-    }
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(untagged, deny_unknown_fields)]
-pub enum DeciderCondition {
-    Signal {
-        first_signal: Option<SignalID>,
-        second_signal: Option<SignalID>,
-
-        #[serde(default, skip_serializing_if = "serde_helper::is_default")]
-        comparator: Comparator,
-
-        first_signal_networks: Option<SignalNetworks>,
-        second_signal_networks: Option<SignalNetworks>,
-    },
-    Constant {
-        first_signal: Option<SignalID>,
-
-        #[serde(default)]
-        constant: i32,
-
-        #[serde(default, skip_serializing_if = "serde_helper::is_default")]
-        comparator: Comparator,
-
-        first_signal_networks: Option<SignalNetworks>,
-    },
-}
-
-impl DeciderCondition {
-    #[must_use]
-    pub const fn comparator(&self) -> Comparator {
-        match self {
-            Self::Signal { comparator, .. } | Self::Constant { comparator, .. } => *comparator,
-        }
-    }
-}
-
-impl crate::GetIDs for DeciderCondition {
-    fn get_ids(&self) -> crate::UsedIDs {
-        let mut ids = crate::UsedIDs::default();
-
-        match self {
-            Self::Signal {
-                first_signal,
-                second_signal,
-                ..
-            } => {
-                if let Some(signal) = first_signal {
-                    ids.merge(signal.get_ids());
-                }
-
-                if let Some(signal) = second_signal {
-                    ids.merge(signal.get_ids());
-                }
-            }
-            Self::Constant { first_signal, .. } => {
-                if let Some(signal) = first_signal {
-                    ids.merge(signal.get_ids());
-                }
-            }
-        }
-
-        ids
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct DeciderOutput {
-    pub signal: Option<SignalID>,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub copy_count_from_input: bool,
-
-    #[serde(
-        default = "serde_helper::i32_1",
-        skip_serializing_if = "serde_helper::is_1_i32"
-    )]
-    pub constant: i32,
-
-    pub networks: Option<SignalNetworks>,
-}
-
-impl crate::GetIDs for DeciderOutput {
-    fn get_ids(&self) -> crate::UsedIDs {
-        self.signal
-            .as_ref()
-            .map_or_else(Default::default, crate::GetIDs::get_ids)
-    }
-}
-
-#[skip_serializing_none]
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(tag = "operation", rename_all = "kebab-case")]
-pub enum SelectorData {
-    Select {
-        select_max: bool,
-        index_signal: Option<SignalID>,
-        index_constant: Option<u16>,
-    },
-    Count {
-        count_signal: Option<SignalID>,
-    },
-    Random {
-        #[serde(default, skip_serializing_if = "serde_helper::is_default")]
-        random_update_interval: u32,
-    },
-    StackSize,
-    RocketCapacity,
-    QualityFilter {
-        quality_filter: Option<QualityCondition>,
-    },
-    QualityTransfer {
-        #[serde(default, skip_serializing_if = "serde_helper::is_default")]
-        select_quality_from_signal: bool,
-        quality_source_signal: Option<SignalID>,
-        quality_source_static: Option<QualitySourceStatic>,
-        quality_destination_signal: Option<SignalID>,
-    },
-}
-
-impl SelectorData {
-    #[must_use]
-    pub const fn operation(&self) -> SelectorOperation {
-        match self {
-            Self::Select { select_max, .. } => SelectorOperation::Select {
-                select_max: *select_max,
-            },
-            Self::Count { .. } => SelectorOperation::Count,
-            Self::Random { .. } => SelectorOperation::Random,
-            Self::StackSize => SelectorOperation::StackSize,
-            Self::RocketCapacity => SelectorOperation::RocketCapacity,
-            Self::QualityFilter { .. } => SelectorOperation::QualityFilter,
-            Self::QualityTransfer { .. } => SelectorOperation::QualityTransfer,
-        }
-    }
-}
-
-impl crate::GetIDs for SelectorData {
-    fn get_ids(&self) -> crate::UsedIDs {
-        let mut ids = crate::UsedIDs::default();
-
-        match self {
-            Self::Select { index_signal, .. } => {
-                if let Some(signal) = index_signal {
-                    ids.merge(signal.get_ids());
-                }
-            }
-            Self::Count { count_signal, .. } => {
-                if let Some(signal) = count_signal {
-                    ids.merge(signal.get_ids());
-                }
-            }
-            Self::Random { .. } | Self::StackSize | Self::RocketCapacity => {}
-            Self::QualityFilter { quality_filter, .. } => {
-                if let Some(quality_filter) = quality_filter {
-                    ids.quality.insert(quality_filter.quality.clone());
-                }
-            }
-            Self::QualityTransfer {
-                quality_source_signal,
-                quality_source_static,
-                quality_destination_signal,
-                ..
-            } => {
-                if let Some(signal) = quality_source_signal {
-                    ids.merge(signal.get_ids());
-                }
-
-                if let Some(signal) = quality_destination_signal {
-                    ids.merge(signal.get_ids());
-                }
-
-                if let Some(static_source) = quality_source_static {
-                    ids.quality.insert(static_source.name.clone());
-                }
-            }
-        }
-
-        ids
-    }
-}
-
+/// [`QualityCondition`](https://lua-api.factorio.com/latest/concepts/QualityCondition.html)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct QualityCondition {
-    pub quality: QualityID,
-    pub comparator: Comparator,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct QualitySourceStatic {
-    pub name: QualityID,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct SpeakerCircuitParameters {
-    //#[serde(default, skip_serializing_if = "helper::is_default")]
-    pub signal_value_is_pitch: bool,
-    pub instrument_id: u8,
-    pub note_id: u8,
-}
-
-#[allow(clippy::trivially_copy_pass_by_ref)]
-fn shorter_floats<S>(x: &f32, s: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    // if x.rem_euclid(1.0) == 0.0 {
-    //     s.serialize_i32(x.into())
-    // } else {
-    //     s.serialize_f32(*x)
-    // }
-
-    // serialize as integer if possible
-    if x.rem_euclid(1.0) == 0.0 {
-        #[allow(clippy::cast_possible_truncation)]
-        s.serialize_i32(*x as i32)
-    } else {
-        s.serialize_f32(*x)
-    }
+    pub quality: Option<QualityID>,
+    pub comparator: Option<Comparator>,
 }

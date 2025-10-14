@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::{collections::HashSet, io::prelude::*};
 
 use base64::{Engine, engine::general_purpose};
@@ -8,6 +6,11 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use tracing::{debug, instrument};
 
+use types::{
+    AsteroidChunkID, EntityID, EquipmentID, FluidID, ItemID, QualityID, RecipeID, SpaceLocationID,
+    TileID, VirtualSignalID,
+};
+
 mod blueprint;
 mod book;
 mod planner;
@@ -15,12 +18,8 @@ mod planner;
 pub use blueprint::*;
 pub use book::*;
 pub use planner::*;
-use types::{
-    AsteroidChunkID, EntityID, FluidID, ItemID, QualityID, RecipeID, SpaceLocationID, TileID,
-    VirtualSignalID,
-};
 
-#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct UsedIDs {
     pub recipe: HashSet<RecipeID>,
@@ -28,10 +27,12 @@ pub struct UsedIDs {
     pub tile: HashSet<TileID>,
     pub fluid: HashSet<FluidID>,
     pub item: HashSet<ItemID>,
+    pub equipment: HashSet<EquipmentID>,
     pub virtual_signal: HashSet<VirtualSignalID>,
     pub quality: HashSet<QualityID>,
     pub space_location: HashSet<SpaceLocationID>,
     pub asteroid_chunk: HashSet<AsteroidChunkID>,
+    pub other: HashSet<String>,
 }
 
 impl UsedIDs {
@@ -41,10 +42,30 @@ impl UsedIDs {
         self.tile.extend(other.tile);
         self.fluid.extend(other.fluid);
         self.item.extend(other.item);
+        self.equipment.extend(other.equipment);
         self.virtual_signal.extend(other.virtual_signal);
         self.quality.extend(other.quality);
         self.space_location.extend(other.space_location);
         self.asteroid_chunk.extend(other.asteroid_chunk);
+        self.other.extend(other.other);
+    }
+}
+
+impl Default for UsedIDs {
+    fn default() -> Self {
+        Self {
+            recipe: HashSet::with_capacity(0),
+            entity: HashSet::with_capacity(0),
+            tile: HashSet::with_capacity(0),
+            fluid: HashSet::with_capacity(0),
+            item: HashSet::with_capacity(0),
+            equipment: HashSet::with_capacity(0),
+            virtual_signal: HashSet::with_capacity(0),
+            quality: HashSet::with_capacity(0),
+            space_location: HashSet::with_capacity(0),
+            asteroid_chunk: HashSet::with_capacity(0),
+            other: HashSet::with_capacity(0),
+        }
     }
 }
 
@@ -68,6 +89,40 @@ impl<T: GetIDs> GetIDs for Box<T> {
     fn get_ids(&self) -> crate::UsedIDs {
         self.as_ref().get_ids()
     }
+}
+
+impl<T: GetIDs> GetIDs for Option<T> {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.as_ref().map_or_else(UsedIDs::default, GetIDs::get_ids)
+    }
+}
+
+macro_rules! impl_get_ids_for_id_types {
+    ($($name:ident: $id:ty),+) => {
+        $(
+            impl GetIDs for $id {
+                fn get_ids(&self) -> UsedIDs {
+                    let mut ids = UsedIDs::default();
+                    ids.$name.insert(self.clone());
+                    ids
+                }
+            }
+        )+
+    };
+}
+
+impl_get_ids_for_id_types! {
+    recipe: RecipeID,
+    entity: EntityID,
+    tile: TileID,
+    fluid: FluidID,
+    item: ItemID,
+    equipment: EquipmentID,
+    virtual_signal: VirtualSignalID,
+    quality: QualityID,
+    space_location: SpaceLocationID,
+    asteroid_chunk: AsteroidChunkID,
+    other: String
 }
 
 /// see <https://wiki.factorio.com/Version_string_format>
@@ -236,7 +291,7 @@ impl<T> std::ops::DerefMut for CommonData<T> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct Indexed<T> {
     pub index: u16,
@@ -286,6 +341,12 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.name.fmt(f)
+    }
+}
+
+impl<T: GetIDs> GetIDs for NameString<T> {
+    fn get_ids(&self) -> UsedIDs {
+        self.name.get_ids()
     }
 }
 
@@ -762,25 +823,26 @@ mod tests {
             assert_eq!(sc.direction, types::Direction::East);
             assert_eq!(sc.position, Position { x: 44.0, y: -26.5 });
 
-            let Some(cb) = sc.control_behavior else {
-                panic!("control_behavior is None");
+            let EntityExtraData::Combinator(cd) = sc.extra_data else {
+                panic!("extra_data is not Combinator");
             };
 
-            let Some(scd) = cb.selector_conditions else {
-                panic!("selector_conditions is None");
+            let Some(CombinatorControlBehavior::Selector(scp)) = cd.control_behavior.map(|i| *i)
+            else {
+                panic!("control_behavior is not Selector");
             };
 
-            let SelectorData::Select {
+            let SelectorCombinatorParameters::Select {
                 select_max,
                 index_signal,
                 index_constant,
-            } = scd
+            } = scp
             else {
                 panic!("selector_conditions is not Select");
             };
 
             assert!(!select_max);
-            assert_eq!(index_constant, None);
+            assert_eq!(index_constant, 0);
 
             let Some(index_signal) = index_signal else {
                 panic!("index_signal is None");
