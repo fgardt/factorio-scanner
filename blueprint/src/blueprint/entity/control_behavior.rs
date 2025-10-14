@@ -42,6 +42,12 @@ pub struct AccumulatorControlBehavior {
     pub read_charge: bool,
 }
 
+impl crate::GetIDs for AccumulatorControlBehavior {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.output_signal.get_ids()
+    }
+}
+
 /// [`AgriculturalTowerBlueprintControlBehavior`](https://lua-api.factorio.com/latest/concepts/AgriculturalTowerBlueprintControlBehavior.html)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]

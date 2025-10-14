@@ -65,8 +65,7 @@ impl crate::GetIDs for Entity {
         ids.quality.insert(self.quality.clone());
         ids.merge(self.items.get_ids());
         ids.merge(self.burner_fuel_inventory.get_ids());
-
-        // TODO: get_ids() for extra_data
+        ids.merge(self.extra_data.get_ids());
 
         ids
     }
@@ -262,7 +261,7 @@ pub enum EntityExtraData {
     // Loader & Loader-1x1
     Loader {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        filters: Vec<ItemFilter>,
+        filters: IndexedVec<ItemFilter>,
         #[serde(default, skip_serializing_if = "helper::is_default")]
         filter_mode: FilterMode,
         #[serde(rename = "type")]
@@ -314,7 +313,9 @@ pub enum EntityExtraData {
     },
     // ChainSignal & Signal
     RailSignal {
-        control_behavior: Box<RailSignalControlBehavior>,
+        rail_layer: Option<String>,
+
+        control_behavior: Option<Box<RailSignalControlBehavior>>,
     },
     Reactor {
         control_behavior: Box<ReactorControlBehavior>,
@@ -410,6 +411,367 @@ pub enum EntityExtraData {
     },
 }
 
+impl EntityExtraData {
+    #[must_use]
+    pub const fn recipe(&self) -> Option<&RecipeID> {
+        match self {
+            Self::AssemblingMachine { recipe, .. } | Self::RocketSilo { recipe, .. } => {
+                recipe.as_ref()
+            }
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn recipe_quality(&self) -> Option<&QualityID> {
+        match self {
+            Self::AssemblingMachine { recipe_quality, .. }
+            | Self::RocketSilo { recipe_quality, .. } => Some(recipe_quality),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn pickup_position(&self) -> Option<&Vector> {
+        match self {
+            Self::Inserter {
+                pickup_position, ..
+            } => pickup_position.as_ref(),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn drop_position(&self) -> Option<&Vector> {
+        match self {
+            Self::Inserter { drop_position, .. } => drop_position.as_ref(),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn input_priority(&self) -> Option<SplitterPriority> {
+        match self {
+            Self::LaneSplitter { input_priority, .. } | Self::Splitter { input_priority, .. } => {
+                Some(*input_priority)
+            }
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn output_priority(&self) -> Option<SplitterPriority> {
+        match self {
+            Self::LaneSplitter {
+                output_priority, ..
+            }
+            | Self::Splitter {
+                output_priority, ..
+            } => Some(*output_priority),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn splitter_filter(&self) -> Option<&ItemFilter> {
+        match self {
+            Self::LaneSplitter { filter, .. } | Self::Splitter { filter, .. } => filter.as_ref(),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn orientation(&self) -> Option<RealOrientation> {
+        match self {
+            Self::ArtilleryWagon { orientation, .. }
+            | Self::CargoWagon { orientation, .. }
+            | Self::InfinityCargoWagon { orientation, .. }
+            | Self::Locomotive { orientation, .. } => Some(*orientation),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn color(&self) -> Option<&Color> {
+        match self {
+            Self::ArtilleryWagon { color, .. }
+            | Self::CargoWagon { color, .. }
+            | Self::FluidWagon { color, .. }
+            | Self::Locomotive { color, .. }
+            | Self::SpiderVehicle { color, .. }
+            | Self::Lamp { color, .. } => color.as_ref(),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn combinator_data(&self) -> Option<&CombinatorData> {
+        match self {
+            Self::Combinator(data) => Some(data),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn belt_connection_type(&self) -> Option<BeltConnectionType> {
+        match self {
+            Self::LinkedBelt { kind, .. }
+            | Self::Loader { kind, .. }
+            | Self::UndergroundBelt { kind, .. } => Some(*kind),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn rail_layer(&self) -> Option<&String> {
+        match self {
+            Self::RailSignal { rail_layer, .. } => rail_layer.as_ref(),
+            _ => None,
+        }
+    }
+}
+
+impl crate::GetIDs for EntityExtraData {
+    #[allow(clippy::too_many_lines)]
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = crate::UsedIDs::default();
+
+        match self {
+            Self::None
+            | Self::ElectricEnergyInterface { .. }
+            | Self::HeatInterface { .. }
+            | Self::LinkedBelt { .. }
+            | Self::LinkedContainer { .. }
+            | Self::ProxyContainer { .. }
+            | Self::StorageTank { .. }
+            | Self::UndergroundBelt { .. }
+            | Self::Valve { .. } => {}
+            Self::Accumulator { control_behavior } => ids.merge(control_behavior.get_ids()),
+            Self::AgriculturalTower { control_behavior } => ids.merge(control_behavior.get_ids()),
+            Self::ArtillertyTurret {
+                control_behavior, ..
+            } => {
+                if let Some(cb) = control_behavior {
+                    ids.merge(cb.get_ids());
+                }
+            }
+            Self::ArtilleryWagon { grid_data, .. }
+            | Self::FluidWagon { grid_data, .. }
+            | Self::Locomotive { grid_data, .. } => ids.merge(grid_data.get_ids()),
+            Self::AssemblingMachine {
+                recipe,
+                recipe_quality,
+                control_behavior,
+            } => {
+                ids.merge(recipe.get_ids());
+                ids.quality.insert(recipe_quality.clone());
+                if let Some(cb) = control_behavior {
+                    ids.merge(cb.get_ids());
+                }
+            }
+            Self::AsteroidCollector {
+                control_behavior, ..
+            } => {
+                if let Some(cb) = control_behavior {
+                    ids.merge(cb.get_ids());
+                }
+            }
+            Self::Car {
+                request_filters,
+                grid_data,
+                trunk_inventory,
+                ammo_inventory,
+                ..
+            }
+            | Self::SpiderVehicle {
+                request_filters,
+                grid_data,
+                trunk_inventory,
+                ammo_inventory,
+                ..
+            } => {
+                ids.merge(request_filters.get_ids());
+                ids.merge(grid_data.get_ids());
+                ids.merge(trunk_inventory.get_ids());
+                ids.merge(ammo_inventory.get_ids());
+            }
+            Self::CargoLandingPad {
+                request_filters, ..
+            } => ids.merge(request_filters.get_ids()),
+            Self::CargoWagon {
+                grid_data,
+                inventory,
+                ..
+            } => {
+                ids.merge(grid_data.get_ids());
+                ids.merge(inventory.get_ids());
+            }
+            Self::Combinator(combinator_data) => ids.merge(combinator_data.get_ids()),
+            Self::Container { filters, .. } | Self::Loader { filters, .. } => {
+                ids.merge(filters.get_ids());
+            }
+            Self::DisplayPanel {
+                icon,
+                control_behavior,
+                ..
+            } => {
+                ids.merge(icon.get_ids());
+                ids.merge(control_behavior.get_ids());
+            }
+            Self::Furnace { control_behavior } => ids.merge(control_behavior.get_ids()),
+            Self::InfinityCargoWagon {
+                grid_data,
+                inventory,
+                infinity_settings,
+                ..
+            } => {
+                ids.merge(grid_data.get_ids());
+                ids.merge(inventory.get_ids());
+                ids.merge(infinity_settings.get_ids());
+            }
+            Self::InfinityContainer {
+                filters,
+                request_filters,
+                infinity_settings,
+                ..
+            } => {
+                ids.merge(filters.get_ids());
+                ids.merge(request_filters.get_ids());
+                ids.merge(infinity_settings.get_ids());
+            }
+            Self::InfinityPipe { infinity_settings } => ids.merge(infinity_settings.get_ids()),
+            Self::Inserter {
+                filters,
+                control_behavior,
+                ..
+            } => {
+                ids.merge(filters.get_ids());
+                if let Some(cb) = control_behavior {
+                    ids.merge(cb.get_ids());
+                }
+            }
+            Self::Lamp {
+                control_behavior, ..
+            } => {
+                if let Some(cb) = control_behavior {
+                    ids.merge(cb.get_ids());
+                }
+            }
+            Self::LaneSplitter { filter, .. } => ids.merge(filter.get_ids()),
+            Self::LogisticContainer {
+                filters,
+                request_filters,
+                control_behavior,
+                ..
+            } => {
+                ids.merge(filters.get_ids());
+                ids.merge(request_filters.get_ids());
+                if let Some(cb) = control_behavior {
+                    ids.merge(cb.get_ids());
+                }
+            }
+            Self::MiningDrill {
+                filter,
+                control_behavior,
+            } => {
+                ids.merge(filter.get_ids());
+                if let Some(cb) = control_behavior {
+                    ids.merge(cb.get_ids());
+                }
+            }
+            Self::PowerSwitch {
+                control_behavior, ..
+            } => {
+                if let Some(cb) = control_behavior {
+                    ids.merge(cb.get_ids());
+                }
+            }
+            Self::ProgrammableSpeaker {
+                parameters,
+                alert_parameters,
+                control_behavior,
+            } => {
+                ids.merge(parameters.get_ids());
+                ids.merge(alert_parameters.get_ids());
+                if let Some(cb) = control_behavior {
+                    ids.merge(cb.get_ids());
+                }
+            }
+            Self::Pump {
+                fluid_filter,
+                control_behavior,
+            } => {
+                ids.merge(fluid_filter.get_ids());
+                if let Some(cb) = control_behavior {
+                    ids.merge(cb.get_ids());
+                }
+            }
+            Self::RailSignal {
+                control_behavior, ..
+            } => ids.merge(control_behavior.get_ids()),
+            Self::Reactor { control_behavior } => ids.merge(control_behavior.get_ids()),
+            Self::Roboport {
+                request_filters,
+                control_behavior,
+            } => {
+                ids.merge(request_filters.get_ids());
+                if let Some(cb) = control_behavior {
+                    ids.merge(cb.get_ids());
+                }
+            }
+            Self::RocketSilo {
+                recipe,
+                recipe_quality,
+                ..
+            } => {
+                ids.merge(recipe.get_ids());
+                ids.quality.insert(recipe_quality.clone());
+            }
+            Self::SpacePlatformHub {
+                request_filters,
+                control_behavior,
+                ..
+            } => {
+                ids.merge(request_filters.get_ids());
+                if let Some(cb) = control_behavior {
+                    ids.merge(cb.get_ids());
+                }
+            }
+            Self::Splitter {
+                filter,
+                control_behavior,
+                ..
+            } => {
+                ids.merge(filter.get_ids());
+                if let Some(cb) = control_behavior {
+                    ids.merge(cb.get_ids());
+                }
+            }
+            Self::TrainStop {
+                control_behavior, ..
+            } => {
+                if let Some(cb) = control_behavior {
+                    ids.merge(cb.get_ids());
+                }
+            }
+            Self::TransportBelt { control_behavior } => ids.merge(control_behavior.get_ids()),
+            Self::Turret {
+                priority_list,
+                control_behavior,
+                ..
+            } => {
+                ids.merge(priority_list.get_ids());
+                if let Some(cb) = control_behavior {
+                    ids.merge(cb.get_ids());
+                }
+            }
+            Self::Wall { control_behavior } => ids.merge(control_behavior.get_ids()),
+        }
+
+        ids
+    }
+}
+
 /// Inner data for `arithmetic-combinator`, `constant-combinator`, `decider-combinator`, and `selector-combinator`
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -421,6 +783,50 @@ pub struct CombinatorData {
     pub control_behavior: Option<Box<CombinatorControlBehavior>>,
 }
 
+impl CombinatorData {
+    #[must_use]
+    pub const fn control_behavior(&self) -> Option<&CombinatorControlBehavior> {
+        match &self.control_behavior {
+            Some(cb) => Some(cb),
+            None => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn arithmetic_parameters(&self) -> Option<&ArithmeticCombinatorParameters> {
+        match self.control_behavior() {
+            Some(CombinatorControlBehavior::Arithmetic {
+                arithmetic_conditions,
+            }) => Some(arithmetic_conditions),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn decider_parameters(&self) -> Option<&DeciderCombinatorParameters> {
+        match self.control_behavior() {
+            Some(CombinatorControlBehavior::Decider { decider_conditions }) => {
+                Some(decider_conditions)
+            }
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn selector_parameters(&self) -> Option<&SelectorCombinatorParameters> {
+        match self.control_behavior() {
+            Some(CombinatorControlBehavior::Selector(selector_params)) => Some(selector_params),
+            _ => None,
+        }
+    }
+}
+
+impl crate::GetIDs for CombinatorData {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.control_behavior.get_ids()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct GridData {
@@ -429,6 +835,12 @@ pub struct GridData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub grid: Vec<BlueprintEquipment>,
+}
+
+impl crate::GetIDs for GridData {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.grid.get_ids()
+    }
 }
 
 /// [HeatSettingMode](https://lua-api.factorio.com/latest/concepts/HeatSettingMode.html)
@@ -453,6 +865,14 @@ pub struct InfinityPipeFilter {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub mode: InfinityPipeFilterMode,
+}
+
+impl crate::GetIDs for InfinityPipeFilter {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = crate::UsedIDs::default();
+        ids.fluid.insert(self.name.clone());
+        ids
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -516,6 +936,12 @@ pub struct MiningDrillFilter {
     pub mode: FilterMode,
 }
 
+impl crate::GetIDs for MiningDrillFilter {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.filters.get_ids()
+    }
+}
+
 /// [`ProgrammableSpeakerParameters`](https://lua-api.factorio.com/latest/concepts/ProgrammableSpeakerParameters.html)
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -526,6 +952,12 @@ pub struct SpeakerParameters {
     pub allow_polyphony: bool,
     pub volume_controlled_by_signal: bool,
     pub volume_signal_id: Option<SignalID>,
+}
+
+impl crate::GetIDs for SpeakerParameters {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.volume_signal_id.get_ids()
+    }
 }
 
 /// [`ProgrammableSpeakerPlaybackMode`](https://lua-api.factorio.com/latest/concepts/ProgrammableSpeakerPlaybackMode.html)
@@ -546,6 +978,12 @@ pub struct SpeakerAlertParameters {
     pub show_on_map: bool,
     pub icon_signal_id: Option<SignalID>,
     pub alert_message: String,
+}
+
+impl crate::GetIDs for SpeakerAlertParameters {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.icon_signal_id.get_ids()
+    }
 }
 
 /// [`VehicleAutomaticTargetingParameters`](https://lua-api.factorio.com/latest/concepts/VehicleAutomaticTargetingParameters.html)

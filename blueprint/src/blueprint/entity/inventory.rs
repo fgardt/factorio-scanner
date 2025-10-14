@@ -109,6 +109,12 @@ pub struct InfinityInventorySettings {
     pub remove_unfiltered_items: bool,
 }
 
+impl crate::GetIDs for InfinityInventorySettings {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.filters.get_ids()
+    }
+}
+
 /// [`InfinityInventoryFilter`](https://lua-api.factorio.com/latest/concepts/InfinityInventoryFilter.html)
 #[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -125,6 +131,16 @@ pub struct InfinityInventoryFilter {
     pub mode: Option<InfinityInventoryFilterMode>,
 }
 
+impl crate::GetIDs for InfinityInventoryFilter {
+    fn get_ids(&self) -> crate::UsedIDs {
+        let mut ids = crate::UsedIDs::default();
+        ids.item.insert(self.name.clone());
+        ids.quality.insert(self.quality.clone());
+
+        ids
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum InfinityInventoryFilterMode {
@@ -138,6 +154,12 @@ pub enum InfinityInventoryFilterMode {
 pub struct BlueprintEquipment {
     pub equipment: TAndQualityIDPair<EquipmentID>,
     pub position: EquipmentPosition,
+}
+
+impl crate::GetIDs for BlueprintEquipment {
+    fn get_ids(&self) -> crate::UsedIDs {
+        self.equipment.get_ids()
+    }
 }
 
 /// [`EquipmentPosition`](https://lua-api.factorio.com/latest/concepts/EquipmentPosition.html)
