@@ -343,9 +343,9 @@ impl AllTypes {
     }
 
     #[must_use]
-    pub fn uses_fluid(&self, name: &str) -> (bool, bool) {
+    pub fn uses_fluid(&self, name: &RecipeID) -> (bool, bool) {
         self.recipe
-            .get(&RecipeID::new(name))
+            .get(name)
             .map_or((false, false), |recipe| recipe.uses_fluid())
     }
 }

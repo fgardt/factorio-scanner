@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use tracing::{debug, error, field, info, info_span, instrument, warn};
 
-use blueprint::{ConnectionDataExt, SignalID};
+use blueprint::{SignalID, SplitterPriority};
 use mod_util::{
     AnyBasic, DependencyList, UsedMods, UsedVersions,
     mod_info::{DependencyVersion, Version},
@@ -24,8 +24,7 @@ use mod_util::{
     mod_settings::SettingsDat,
 };
 use prototypes::{
-    ConnectedEntities, DataRaw, DataUtil, DataUtilAccess, EntityWireConnections, RenderLayerBuffer,
-    TargetSize,
+    DataRaw, DataUtil, DataUtilAccess, RenderLayerBuffer, TargetSize,
     entity::{InserterPrototype, Type as EntityType, WallPrototype},
     tile::TilePrototype,
 };
@@ -301,44 +300,43 @@ pub fn bp_entity2render_opts(
     prototypes::entity::RenderOpts {
         position: (&value.position).into(),
         direction: value.direction,
-        orientation: value.orientation,
-        mirrored: value.mirror.unwrap_or_default(),
-        elevated: value.rail_layer == Some("elevated".to_owned()),
-        variation: value.variation,
-        pickup_position: value
-            .pickup_position
-            .as_ref()
-            .map(|v| (f64::from(v.x), f64::from(v.y)).into()),
+        orientation: value.extra_data.orientation(),
+        mirrored: value.mirror,
+        elevated: value.extra_data.rail_layer() == Some(&"elevated".to_owned()),
+        variation: None, // value.extra_data.variation, // variation is not documented, unsure where it might show up
+        pickup_position: value.extra_data.pickup_position().copied(),
         connections: None,
         underground_in: value
-            .type_
+            .extra_data
+            .belt_connection_type()
             .as_ref()
-            .map(|t| matches!(t, blueprint::UndergroundType::Input)),
+            .map(|&t| t == blueprint::BeltConnectionType::Input),
         connected_gates: Vec::new(),
         draw_gate_patch: false,
-        arithmetic_operation: value.control_behavior.as_ref().and_then(|bhv| {
-            bhv.arithmetic_conditions
-                .as_ref()
-                .map(blueprint::ArithmeticData::operation)
-        }),
-        decider_operation: value.control_behavior.as_ref().and_then(|bhv| {
-            bhv.decider_conditions
-                .as_ref()
-                .map(blueprint::DeciderData::operation)
-        }),
-        selector_operation: value.control_behavior.as_ref().and_then(|bhv| {
-            bhv.selector_conditions
-                .as_ref()
-                .map(blueprint::SelectorData::operation)
-        }),
-        runtime_tint: value.color.as_ref().map(std::convert::Into::into),
-        entity_id: value.entity_number,
-        circuit_connected: value.connections.is_some() || !value.neighbours.is_empty(),
-        logistic_connected: value
-            .control_behavior
-            .as_ref()
-            .is_some_and(|c| c.connect_to_logistic_network.unwrap_or_default()),
-        fluid_recipe: data.recipe_has_fluid(&value.recipe),
+        arithmetic_operation: value
+            .extra_data
+            .combinator_data()
+            .and_then(blueprint::CombinatorData::arithmetic_parameters)
+            .map(blueprint::ArithmeticCombinatorParameters::operation),
+        decider_operation: value
+            .extra_data
+            .combinator_data()
+            .and_then(blueprint::CombinatorData::decider_parameters)
+            .map(blueprint::DeciderCombinatorParameters::operation),
+        selector_operation: value
+            .extra_data
+            .combinator_data()
+            .and_then(blueprint::CombinatorData::selector_parameters)
+            .map(blueprint::SelectorCombinatorParameters::operation),
+        runtime_tint: value.extra_data.color().map(std::convert::Into::into),
+        entity_id: value.entity_number.into(),
+        circuit_connected: false, // TODO: more complex to figure out with wire info being outside of the entity
+        logistic_connected: false, // TODO: bit more involved to wire all CBs up
+        fluid_recipe: value
+            .extra_data
+            .recipe()
+            .map(|r| data.recipe_has_fluid(r))
+            .unwrap_or_default(),
     }
 }
 
@@ -493,7 +491,7 @@ pub fn render_bp(
     image_cache: &mut ImageCache,
 ) -> Option<(image::DynamicImage, HashSet<String>)> {
     let mut unknown = HashSet::new();
-    let mut wire_connections = EntityWireConnections::new();
+    // let mut wire_connections = EntityWireConnections::new();
     let mut pipe_connections = HashMap::<MapPosition, HashSet<Direction>>::new();
     let mut heat_connections = HashMap::<MapPosition, HashSet<Direction>>::new();
 
@@ -677,14 +675,11 @@ pub fn render_bp(
                                                 let dir = pos.is_cardinal_neighbor(&other_pos);
 
                                                 if let Some(dir) = dir {
-                                                    let Some(u_output) =
-                                                        other.type_.as_ref().map(|t| {
-                                                            matches!(
-                                                                t,
-                                                                blueprint::UndergroundType::Output
-                                                            )
-                                                        })
-                                                    else {
+                                                    let u_output = other.extra_data.belt_connection_type()
+                                                        .as_ref()
+                                                        .map(|&t| t == blueprint::BeltConnectionType::Output);
+
+                                                    let Some(u_output) = u_output else {
                                                         continue;
                                                     };
 
@@ -742,14 +737,17 @@ pub fn render_bp(
             render_opts.draw_gate_patch = draw_gate_patch;
 
             'recipe_icon: {
-                if !e.recipe.is_empty() && e_data.recipe_visible() {
-                    if !data.contains_recipe(&e.recipe) {
-                        unknown.insert((*e.recipe).clone());
+                let recipe = e.extra_data.recipe();
+                if let Some(recipe) = recipe
+                    && e_data.recipe_visible()
+                {
+                    if !data.contains_recipe(recipe) {
+                        unknown.insert(recipe.to_string());
                         break 'recipe_icon;
                     }
 
                     if let Some(icon) = data.get_recipe_icon(
-                        &e.recipe,
+                        recipe,
                         render_layers.scale() * 0.75,
                         used_mods,
                         image_cache,
@@ -762,7 +760,7 @@ pub fn render_bp(
                     } else {
                         warn!(
                             "failed to render recipe icon for {} at {:?} [{}]",
-                            e.recipe, e.position, e.name
+                            recipe, e.position, e.name
                         );
                     }
                 }
@@ -770,9 +768,13 @@ pub fn render_bp(
 
             // filter icons / priority arrows
             'filters_priority: {
-                if let Some(prio_in) = &e.input_priority {
+                if let Some(prio_in) = &e.extra_data.input_priority()
+                    && prio_in != &SplitterPriority::None
+                {
                     let offset = e.direction.rotate_vector(
-                        prio_in.as_vector() + Vector::Tuple(0.0, 0.25) + indicator_arrow.1,
+                        prio_in.as_vector().unwrap_or_default()
+                            + Vector::Tuple(0.0, 0.25)
+                            + indicator_arrow.1,
                     );
 
                     let arrow = match e.direction {
@@ -790,10 +792,39 @@ pub fn render_bp(
                     );
                 }
 
-                if let Some(prio_out) = &e.output_priority {
-                    if e.filter.is_empty() {
+                if let Some(prio_out) = &e.extra_data.output_priority()
+                    && prio_out != &SplitterPriority::None
+                {
+                    if let Some(item_filter) = e.extra_data.splitter_filter()
+                        && let Some(filter) = item_filter.name.as_ref()
+                    {
+                        let Some(filter) = data.get_item_icon(
+                            filter,
+                            render_layers.scale() * 2.2,
+                            used_mods,
+                            image_cache,
+                        ) else {
+                            warn!(
+                                "failed to render filter icon for {} at {:?} [{}]",
+                                filter, e.position, e.name
+                            );
+                            break 'filters_priority;
+                        };
+
+                        let offset = e
+                            .direction
+                            .rotate_vector(prio_out.as_vector().unwrap_or_default() + filter.1);
+
+                        render_layers.add(
+                            (filter.0, offset),
+                            &render_opts.position,
+                            RenderLayer::EntityInfoIconAbove,
+                        );
+                    } else {
                         let offset = e.direction.rotate_vector(
-                            prio_out.as_vector() + Vector::Tuple(0.0, -0.25) + indicator_arrow.1,
+                            prio_out.as_vector().unwrap_or_default()
+                                + Vector::Tuple(0.0, -0.25)
+                                + indicator_arrow.1,
                         );
 
                         let arrow = match e.direction {
@@ -809,32 +840,34 @@ pub fn render_bp(
                             &render_opts.position,
                             RenderLayer::EntityInfoIcon,
                         );
-                    } else {
-                        let Some(filter) = data.get_item_icon(
-                            &e.filter,
-                            render_layers.scale() * 2.2,
-                            used_mods,
-                            image_cache,
-                        ) else {
-                            warn!(
-                                "failed to render filter icon for {} at {:?} [{}]",
-                                e.filter, e.position, e.name
-                            );
-                            break 'filters_priority;
-                        };
-
-                        let offset = e.direction.rotate_vector(prio_out.as_vector() + filter.1);
-
-                        render_layers.add(
-                            (filter.0, offset),
-                            &render_opts.position,
-                            RenderLayer::EntityInfoIconAbove,
-                        );
                     }
                 }
 
-                if !e.filters.is_empty() {
-                    let filter_count = e.filters.len();
+                let mut active_filters = None;
+                let mut _active_mode = None; // TODO: add blacklist overlay when applicable
+                if let blueprint::EntityExtraData::Inserter {
+                    filters,
+                    filter_mode,
+                    use_filters: true,
+                    ..
+                } = &e.extra_data
+                {
+                    active_filters = Some(filters);
+                    _active_mode = Some(filter_mode);
+                } else if let blueprint::EntityExtraData::Loader {
+                    filters,
+                    filter_mode,
+                    ..
+                } = &e.extra_data
+                {
+                    active_filters = Some(filters);
+                    _active_mode = Some(filter_mode);
+                }
+
+                if let Some(filters) = active_filters
+                    && !filters.is_empty()
+                {
+                    let filter_count = filters.len();
                     let mut offset = if filter_count == 1 {
                         Vector::Tuple(0.0, 0.0)
                     } else if filter_count == 2 {
@@ -843,20 +876,25 @@ pub fn render_bp(
                         Vector::Tuple(-0.25, -0.25)
                     };
 
+                    #[allow(clippy::needless_range_loop)]
                     for idx in 0..filter_count.min(4) {
                         if idx == 2 {
                             offset += Vector::Tuple(-1.0, 0.5);
                         }
 
+                        let Some(item_name) = filters[idx].name.as_ref() else {
+                            continue;
+                        };
+
                         let Some(filter) = data.get_item_icon(
-                            &e.filters[idx].name,
+                            item_name,
                             render_layers.scale() * 2.2,
                             used_mods,
                             image_cache,
                         ) else {
                             warn!(
                                 "failed to render filter icon for {:?} at {:?} [{}]",
-                                e.filters[idx], e.position, e.name
+                                filters[idx], e.position, e.name
                             );
                             continue;
                         };
@@ -976,19 +1014,13 @@ pub fn render_bp(
                 }
 
                 indicator_helper(
-                    proto.get_pickup_position(
-                        e.direction,
-                        e.pickup_position.as_ref().map(std::convert::Into::into),
-                    ),
+                    proto.get_pickup_position(e.direction, e.extra_data.pickup_position().copied()),
                     &render_opts,
                     &indicator_line,
                     &mut render_layers,
                 );
                 indicator_helper(
-                    proto.get_insert_position(
-                        e.direction,
-                        e.drop_position.as_ref().map(std::convert::Into::into),
-                    ),
+                    proto.get_insert_position(e.direction, e.extra_data.drop_position().copied()),
                     &render_opts,
                     &indicator_arrow,
                     &mut render_layers,
@@ -996,41 +1028,41 @@ pub fn render_bp(
             }
 
             // store wire connections for wire rendering
-            let mut wires0 = e
-                .neighbours
-                .iter()
-                .map(|n| (*n, [true, false, false]))
-                .collect::<ConnectedEntities>();
-            let mut wires1 = ConnectedEntities::new();
-            let mut wires2 = ConnectedEntities::new();
-            let mut is_switch = false;
+            // let mut wires0 = e
+            //     .neighbours
+            //     .iter()
+            //     .map(|n| (*n, [true, false, false]))
+            //     .collect::<ConnectedEntities>();
+            // let mut wires1 = ConnectedEntities::new();
+            // let mut wires2 = ConnectedEntities::new();
+            // let mut is_switch = false;
 
-            if let Some(circuit_cons) = &e.connections {
-                match circuit_cons {
-                    blueprint::Connection::SingleOne { one } => one.transform(&mut wires0),
-                    blueprint::Connection::SingleTwo { two } => two.transform(&mut wires1),
-                    blueprint::Connection::Double { one, two } => {
-                        one.transform(&mut wires0);
-                        two.transform(&mut wires1);
-                    }
-                    blueprint::Connection::Switch { one, cu0, cu1 } => {
-                        one.transform(&mut wires0);
-                        cu0.transform(&mut wires1);
-                        cu1.transform(&mut wires2);
-                        is_switch = true;
-                    }
-                }
-            }
+            // if let Some(circuit_cons) = &e.connections {
+            //     match circuit_cons {
+            //         blueprint::Connection::SingleOne { one } => one.transform(&mut wires0),
+            //         blueprint::Connection::SingleTwo { two } => two.transform(&mut wires1),
+            //         blueprint::Connection::Double { one, two } => {
+            //             one.transform(&mut wires0);
+            //             two.transform(&mut wires1);
+            //         }
+            //         blueprint::Connection::Switch { one, cu0, cu1 } => {
+            //             one.transform(&mut wires0);
+            //             cu0.transform(&mut wires1);
+            //             cu1.transform(&mut wires2);
+            //             is_switch = true;
+            //         }
+            //     }
+            // }
 
-            if !wires0.is_empty() || !wires1.is_empty() | !wires2.is_empty() {
-                wire_connections.insert(
-                    e.entity_number,
-                    (
-                        e.position.clone().into(),
-                        ([wires0, wires1, wires2], is_switch),
-                    ),
-                );
-            }
+            // if !wires0.is_empty() || !wires1.is_empty() | !wires2.is_empty() {
+            //     wire_connections.insert(
+            //         e.entity_number.into(),
+            //         (
+            //             e.position.clone().into(),
+            //             ([wires0, wires1, wires2], is_switch),
+            //         ),
+            //     );
+            // }
 
             data.render_entity(
                 &e.name,
@@ -1066,7 +1098,7 @@ pub fn render_bp(
 
     info!("tiles: {}, layers: {rendered_count}", bp.tiles.len());
 
-    render_layers.draw_wires(&wire_connections, util_sprites, used_mods, image_cache);
+    // render_layers.draw_wires(&wire_connections, util_sprites, used_mods, image_cache);
     render_layers.generate_background();
 
     Some((render_layers.combine(), unknown))

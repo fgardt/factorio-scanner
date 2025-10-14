@@ -82,3 +82,15 @@ ids!(
 );
 
 ids!(u32, FluidBoxLinkedConnectionID);
+
+impl QualityID {
+    #[must_use]
+    pub fn normal() -> Self {
+        Self("normal".to_string())
+    }
+
+    #[must_use]
+    pub fn is_normal(&self) -> bool {
+        self.0 == "normal"
+    }
+}

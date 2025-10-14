@@ -1,5 +1,6 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 
+use blueprint::GetIDs;
 use mod_util::{AnyBasic, DependencyList};
 use strum::IntoEnumIterator;
 
@@ -12,28 +13,23 @@ pub fn get_used_versions(bp: &blueprint::Blueprint) -> DependencyList {
     }
 
     let mut auto_detected = DependencyList::new();
-    for entity in &bp.entities {
-        // trying to auto detect mods
-        check_prefix(&entity.name, &mut auto_detected);
 
-        if !entity.recipe.is_empty() {
-            check_prefix(&entity.recipe, &mut auto_detected);
-        }
+    let ids = bp.get_ids();
+    let mut all_ids = HashSet::new();
+    all_ids.extend(ids.recipe.iter().map(|i| i.as_str()));
+    all_ids.extend(ids.entity.iter().map(|i| i.as_str()));
+    all_ids.extend(ids.tile.iter().map(|i| i.as_str()));
+    all_ids.extend(ids.fluid.iter().map(|i| i.as_str()));
+    all_ids.extend(ids.item.iter().map(|i| i.as_str()));
+    all_ids.extend(ids.equipment.iter().map(|i| i.as_str()));
+    all_ids.extend(ids.virtual_signal.iter().map(|i| i.as_str()));
+    all_ids.extend(ids.quality.iter().map(|i| i.as_str()));
+    all_ids.extend(ids.space_location.iter().map(|i| i.as_str()));
+    all_ids.extend(ids.asteroid_chunk.iter().map(|i| i.as_str()));
+    all_ids.extend(ids.other.iter().map(std::string::String::as_str));
 
-        if !entity.filter.is_empty() {
-            check_prefix(&entity.filter, &mut auto_detected);
-        }
-
-        for filter in &entity.filters {
-            check_prefix(&filter.name, &mut auto_detected);
-            check_prefix(&filter.quality, &mut auto_detected);
-        }
-
-        // for item in entity.items.keys() {
-        //     check_prefix(item, &mut auto_detected);
-        // }
-
-        // TODO: update prefix detection
+    for id in all_ids {
+        check_prefix(id, &mut auto_detected);
     }
 
     auto_detected

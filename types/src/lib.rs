@@ -2572,8 +2572,9 @@ pub enum Comparator {
 }
 
 // https://lua-api.factorio.com/latest/concepts/ArithmeticCombinatorParameterOperation.html
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, Deserialize, Serialize, PartialEq, Eq)]
 pub enum ArithmeticOperation {
+    #[default]
     #[serde(rename = "*")]
     Multiply,
 
