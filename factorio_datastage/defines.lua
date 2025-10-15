@@ -1,4 +1,4 @@
--- version: 2.0.69
+-- version: 2.0.70
 -- get defines by running "/c log(serpent.block(defines))"
 
 return {
