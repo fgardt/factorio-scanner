@@ -24,8 +24,7 @@ struct Cli {
     output_folder: PathBuf,
 
     /// Select a specific blueprint to render (optional)
-    #[clap(short, long)]
-    select: Option<String>,
+    filter: Option<String>,
 }
 
 fn main() {
@@ -58,7 +57,7 @@ fn main() {
         &cli.output_folder,
         &raw_data,
         &used_mods,
-        cli.select.as_ref(),
+        cli.filter.as_ref(),
     );
 }
 
@@ -91,7 +90,7 @@ fn render_folder(
         if let Some(filter) = filter
             && path
                 .file_stem()
-                .is_none_or(|name| name.to_string_lossy() != filter.as_str())
+                .is_none_or(|name| !name.to_string_lossy().contains(filter))
         {
             continue;
         }
