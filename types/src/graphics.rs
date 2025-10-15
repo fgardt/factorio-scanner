@@ -264,12 +264,17 @@ impl SourceProvider for SingleSource {
         (width, height): (SpriteSizeType, SpriteSizeType),
         (): Self::FetchArgs,
     ) -> Option<DynamicImage> {
-        let img = self.filename.load(used_mods, image_cache)?.crop_imm(
-            x as u32,
-            y as u32,
-            width as u32,
-            height as u32,
-        );
+        assert_fetch_params(x, y, width, height);
+
+        let x = x as u32;
+        let y = y as u32;
+        let width = width as u32;
+        let height = height as u32;
+
+        let src = self.filename.load(used_mods, image_cache)?;
+        assert_img_bounds(src, x, y, width, height);
+
+        let img = src.crop_imm(x, y, width, height);
         Some(img)
     }
 }
@@ -312,11 +317,12 @@ impl MultiSingleSource {
         let x = x as u32 + col_idx * width;
         let y = y as u32 + row_idx * height;
 
-        let img = filenames
+        let src = filenames
             .get(file_idx as usize)?
-            .load(used_mods, image_cache)?
-            .crop_imm(x, y, width, height);
+            .load(used_mods, image_cache)?;
+        assert_img_bounds(src, x, y, width, height);
 
+        let img = src.crop_imm(x, y, width, height);
         Some(img)
     }
 }
@@ -332,6 +338,8 @@ impl SourceProvider for MultiSingleSource {
         size: (SpriteSizeType, SpriteSizeType),
         fetch_args: Self::FetchArgs,
     ) -> Option<DynamicImage> {
+        assert_fetch_params(position.0, position.1, size.0, size.1);
+
         match self {
             Self::Multi {
                 filenames,
@@ -401,6 +409,8 @@ impl SourceProvider for StripeMultiSingleSource {
         size: (SpriteSizeType, SpriteSizeType),
         fetch_args: Self::FetchArgs,
     ) -> Option<DynamicImage> {
+        assert_fetch_params(position.0, position.1, size.0, size.1);
+
         match self {
             Self::Stripe { stripes } => {
                 let mut target_idx = fetch_args.index;
@@ -427,11 +437,10 @@ impl SourceProvider for StripeMultiSingleSource {
                     let x = position.0 as u32 + stripe.x + stripe_col * width;
                     let y = position.1 as u32 + stripe.y + stripe_row * height;
 
-                    let img = stripe
-                        .filename
-                        .load(used_mods, image_cache)?
-                        .crop_imm(x, y, width, height);
+                    let src = stripe.filename.load(used_mods, image_cache)?;
+                    assert_img_bounds(src, x, y, width, height);
 
+                    let img = src.crop_imm(x, y, width, height);
                     return Some(img);
                 }
 
@@ -501,5 +510,36 @@ where
             Self::Layered { layers } => merge_layers(layers, scale, used_mods, image_cache, opts),
             Self::Data(g) => g.render(scale, used_mods, image_cache, opts),
         }
+    }
+}
+
+#[inline]
+fn assert_fetch_params(
+    x: SpriteSizeType,
+    y: SpriteSizeType,
+    width: SpriteSizeType,
+    height: SpriteSizeType,
+) {
+    #[cfg(debug_assertions)]
+    {
+        assert!(x >= 0, "x must not be negative");
+        assert!(y >= 0, "y must not be negative");
+        assert!(width >= 0, "width must not be negative");
+        assert!(height >= 0, "height must not be negative");
+    }
+}
+
+#[inline]
+fn assert_img_bounds(src: &DynamicImage, x: u32, y: u32, width: u32, height: u32) {
+    #[cfg(debug_assertions)]
+    {
+        use image::GenericImageView;
+        let (src_width, src_height) = src.dimensions();
+        let x_end = x + width;
+        let y_end = y + height;
+        assert!(
+            x_end <= src_width && y_end <= src_height,
+            "({x}, {y}), ({x_end}, {y_end}) is out of bounds for image (0,0), ({src_width}, {src_height})"
+        );
     }
 }
