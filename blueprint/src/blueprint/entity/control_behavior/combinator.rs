@@ -148,9 +148,9 @@ pub enum DeciderCombinatorCondition {
         second_signal: SignalID,
         second_signal_networks: Option<CircuitNetworkSelection>,
 
-        #[serde(default, skip_serializing_if = "serde_helper::is_default")]
+        #[serde(default, skip_serializing_if = "helper::is_default")]
         comparator: Comparator,
-        #[serde(default, skip_serializing_if = "serde_helper::is_default")]
+        #[serde(default, skip_serializing_if = "helper::is_default")]
         compare_type: CompareType,
     },
     Constant {
@@ -160,9 +160,9 @@ pub enum DeciderCombinatorCondition {
         #[serde(default)]
         constant: i32,
 
-        #[serde(default, skip_serializing_if = "serde_helper::is_default")]
+        #[serde(default, skip_serializing_if = "helper::is_default")]
         comparator: Comparator,
-        #[serde(default, skip_serializing_if = "serde_helper::is_default")]
+        #[serde(default, skip_serializing_if = "helper::is_default")]
         compare_type: CompareType,
     },
 }
@@ -199,10 +199,11 @@ impl crate::GetIDs for DeciderCombinatorCondition {
 }
 
 /// [`DeciderCombinatorOutput`](https://lua-api.factorio.com/latest/concepts/DeciderCombinatorOutput.html)
+#[skip_serializing_none]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct DeciderCombinatorOutput {
-    pub signal: SignalID,
+    pub signal: Option<SignalID>,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub copy_count_from_input: bool,
