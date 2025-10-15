@@ -72,11 +72,10 @@ impl crate::GetIDs for Entity {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
-#[serde(untagged)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(untagged, deny_unknown_fields)]
 pub enum EntityExtraData {
-    #[default]
-    None,
+    None {},
     Accumulator {
         control_behavior: AccumulatorControlBehavior,
     },
@@ -531,13 +530,19 @@ impl EntityExtraData {
     }
 }
 
+impl Default for EntityExtraData {
+    fn default() -> Self {
+        Self::None {}
+    }
+}
+
 impl crate::GetIDs for EntityExtraData {
     #[allow(clippy::too_many_lines)]
     fn get_ids(&self) -> crate::UsedIDs {
         let mut ids = crate::UsedIDs::default();
 
         match self {
-            Self::None
+            Self::None {}
             | Self::ElectricEnergyInterface { .. }
             | Self::HeatInterface { .. }
             | Self::LinkedBelt { .. }
