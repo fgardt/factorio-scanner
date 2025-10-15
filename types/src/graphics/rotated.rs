@@ -85,7 +85,7 @@ impl RenderableGraphics for RotatedAnimationData {
             image_cache,
             StripeMultiSingleSourceFetchArgs {
                 index: self.frame_count * u32::from(rot_idx) + anim_idx,
-                line_length: self.line_length.unwrap_or(0),
+                line_length: self.line_length.unwrap_or(self.frame_count),
                 direction_count: Some(self.direction_count),
             },
             opts.runtime_tint,
