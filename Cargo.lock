@@ -778,7 +778,7 @@ dependencies = [
 
 [[package]]
 name = "factorio_datastage"
-version = "0.6.0-2.0.69"
+version = "0.6.0-2.0.70"
 dependencies = [
  "base64",
  "clap",
@@ -2225,7 +2225,7 @@ dependencies = [
 
 [[package]]
 name = "prototypes"
-version = "3.0.1-2.0.69"
+version = "3.0.1-2.0.70"
 dependencies = [
  "image 0.25.8",
  "imageproc",
@@ -3468,7 +3468,7 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "types"
-version = "3.0.1-2.0.69"
+version = "3.0.1-2.0.70"
 dependencies = [
  "image 0.25.8",
  "konst",
