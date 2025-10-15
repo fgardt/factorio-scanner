@@ -598,6 +598,10 @@ pub struct RocketSiloControlBehavior {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct SpacePlatformHubControlBehavior {
+    pub damage_taken_signal: Option<SignalID>,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub read_damage_taken: bool,
+
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub read_contents: bool,
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -614,7 +618,10 @@ pub struct SpacePlatformHubControlBehavior {
 
 impl crate::GetIDs for SpacePlatformHubControlBehavior {
     fn get_ids(&self) -> crate::UsedIDs {
-        self.speed_signal.get_ids()
+        let mut ids = self.damage_taken_signal.get_ids();
+        ids.merge(self.speed_signal.get_ids());
+
+        ids
     }
 }
 
