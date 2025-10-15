@@ -28,7 +28,9 @@ struct Cli {
 }
 
 fn main() {
+    dotenv::dotenv().ok();
     let cli = Cli::parse();
+    pretty_env_logger::init();
 
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
