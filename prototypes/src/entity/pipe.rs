@@ -144,11 +144,14 @@ impl super::Renderable for InfinityPipeData {
             .render(options, used_mods, render_layers, image_cache)
     }
 
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<(MapPosition, Direction)> {
         self.parent.fluid_box_connections(options)
     }
 
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+    fn heat_buffer_connections(
+        &self,
+        options: &super::RenderOpts,
+    ) -> Vec<(MapPosition, Direction)> {
         self.parent.heat_buffer_connections(options)
     }
 }

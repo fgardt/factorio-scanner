@@ -1,10 +1,11 @@
 use std::ops::{Deref, Rem};
 
 use serde::{Deserialize, Serialize};
+use serde_helper as helper;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
 
-use super::{ArtilleryTurretCannonBarrelShiftings, EntityWithOwnerPrototype, helper};
+use super::{ArtilleryTurretCannonBarrelShiftings, EntityWithOwnerPrototype};
 use mod_util::UsedMods;
 use types::*;
 
@@ -77,11 +78,14 @@ impl<T: super::Renderable> super::Renderable for VehicleData<T> {
             .render(options, used_mods, render_layers, image_cache)
     }
 
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<(MapPosition, Direction)> {
         self.child.fluid_box_connections(options)
     }
 
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+    fn heat_buffer_connections(
+        &self,
+        options: &super::RenderOpts,
+    ) -> Vec<(MapPosition, Direction)> {
         self.child.heat_buffer_connections(options)
     }
 }
@@ -338,11 +342,14 @@ impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
         }
     }
 
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<(MapPosition, Direction)> {
         self.child.fluid_box_connections(options)
     }
 
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+    fn heat_buffer_connections(
+        &self,
+        options: &super::RenderOpts,
+    ) -> Vec<(MapPosition, Direction)> {
         self.child.heat_buffer_connections(options)
     }
 }

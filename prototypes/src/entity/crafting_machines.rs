@@ -126,7 +126,7 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
             .render(options, used_mods, render_layers, image_cache)
     }
 
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<(MapPosition, Direction)> {
         let mut res = self.child.fluid_box_connections(options);
         res.extend(
             self.fluid_boxes
@@ -137,7 +137,10 @@ impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
         res
     }
 
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+    fn heat_buffer_connections(
+        &self,
+        options: &super::RenderOpts,
+    ) -> Vec<(MapPosition, Direction)> {
         self.child.heat_buffer_connections(options)
     }
 

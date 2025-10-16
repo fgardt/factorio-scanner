@@ -64,7 +64,7 @@ impl super::Renderable for FusionReactorData {
         Some(())
     }
 
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<(MapPosition, Direction)> {
         let mut res = self
             .input_fluid_box
             .connection_points(options.direction, options.mirrored);

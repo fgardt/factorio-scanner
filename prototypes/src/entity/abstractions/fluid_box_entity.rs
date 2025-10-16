@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use types::FluidBox;
+use types::{Direction, FluidBox, MapPosition};
 
 use super::Renderable;
 
@@ -34,13 +34,16 @@ impl<T: Renderable> Renderable for FluidBoxEntityData<T> {
             .render(options, used_mods, render_layers, image_cache)
     }
 
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<(MapPosition, Direction)> {
         let mut res = self.fluid_box.fluid_box_connections(options);
         res.append(&mut self.child.fluid_box_connections(options));
         res
     }
 
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+    fn heat_buffer_connections(
+        &self,
+        options: &super::RenderOpts,
+    ) -> Vec<(MapPosition, Direction)> {
         self.child.heat_buffer_connections(options)
     }
 
@@ -72,10 +75,7 @@ impl Renderable for FluidBox {
         Some(())
     }
 
-    fn fluid_box_connections(
-        &self,
-        options: &crate::entity::RenderOpts,
-    ) -> Vec<types::MapPosition> {
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<(MapPosition, Direction)> {
         self.connection_points(options.direction, options.mirrored)
     }
 
