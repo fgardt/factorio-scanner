@@ -59,7 +59,7 @@ impl super::Renderable for BoilerData {
         Some(())
     }
 
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<(MapPosition, Direction)> {
         self.output_fluid_box
             .connection_points(options.direction, options.mirrored)
     }

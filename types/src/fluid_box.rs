@@ -153,13 +153,24 @@ pub struct FluidBox {
 
 impl FluidBox {
     #[must_use]
-    pub fn connection_points(&self, direction: Direction, mirrored: bool) -> Vec<MapPosition> {
+    pub fn connection_points(
+        &self,
+        direction: Direction,
+        mirrored: bool,
+    ) -> Vec<(MapPosition, Direction)> {
         self.pipe_connections
             .iter()
             .filter_map(|c| {
+                // TODO: when actual fluid networks are implemented linked and underground connections need to be available somehow
                 if c.connection_type == PipeConnectionType::Linked {
                     return None;
                 }
+
+                if c.connection_type == PipeConnectionType::Underground {
+                    return None;
+                }
+
+                let c_dir = c.direction?.rotate_by_direction(direction);
 
                 let pos = if let Some(position) = c.position {
                     direction.rotate_vector(position.into())
@@ -170,13 +181,14 @@ impl FluidBox {
                     return None;
                 };
 
+                let pos = pos + c_dir.get_offset();
                 let pos = if mirrored {
                     direction.mirror_vector(pos)
                 } else {
                     pos
                 };
 
-                Some(pos.into())
+                Some((pos.into(), c_dir.flip()))
             })
             .collect()
     }

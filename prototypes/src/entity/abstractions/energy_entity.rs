@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use types::AnyEnergySource;
+use types::{AnyEnergySource, Direction, MapPosition};
 
 use super::Renderable;
 
@@ -44,7 +44,7 @@ impl<T: Renderable> Renderable for EnergyEntityData<T> {
             .render(options, used_mods, render_layers, image_cache)
     }
 
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<(MapPosition, Direction)> {
         let mut res = self.child.fluid_box_connections(options);
 
         if let AnyEnergySource::Fluid { data } = &self.energy_source {
@@ -54,7 +54,10 @@ impl<T: Renderable> Renderable for EnergyEntityData<T> {
         res
     }
 
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+    fn heat_buffer_connections(
+        &self,
+        options: &super::RenderOpts,
+    ) -> Vec<(MapPosition, Direction)> {
         let mut res = self.child.heat_buffer_connections(options);
 
         if let AnyEnergySource::Heat { data } = &self.energy_source {

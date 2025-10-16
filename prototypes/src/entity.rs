@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
-use tracing::warn;
 
 use crate::helper_macro::namespace_struct;
 
@@ -213,11 +212,11 @@ pub trait Renderable {
         image_cache: &mut ImageCache,
     ) -> RenderOutput;
 
-    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
         Vec::with_capacity(0)
     }
 
-    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
         Vec::with_capacity(0)
     }
 
@@ -259,11 +258,11 @@ impl<T: Renderable> Renderable for EntityPrototype<T> {
             .render(options, used_mods, render_layers, image_cache)
     }
 
-    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
         self.child.fluid_box_connections(options)
     }
 
-    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
         self.child.heat_buffer_connections(options)
     }
 
@@ -319,90 +318,18 @@ impl<T: Renderable> RenderableEntity for EntityPrototype<T> {
     fn pipe_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
         let raw_connections = self.fluid_box_connections(options);
 
-        if raw_connections.is_empty() {
-            return Vec::new();
-        }
-
-        let collision_box = self.collision_box();
-        let (tl, br) = collision_box.corners();
-        let tl_vec: Vector = tl.into();
-        let br_vec: Vector = br.into();
-        let (tl_x, tl_y) = options.direction.rotate_vector(tl_vec).as_tuple();
-        let (br_x, br_y) = options.direction.rotate_vector(br_vec).as_tuple();
-
-        let top_y = tl_y.min(br_y);
-        let bottom_y = tl_y.max(br_y);
-        let left_x = tl_x.min(br_x);
-        let right_x = tl_x.max(br_x);
-
         raw_connections
             .iter()
-            .filter_map(|conn| {
-                let (x, y) = conn.as_tuple();
-
-                let dir = if y <= top_y {
-                    Direction::South
-                } else if y >= bottom_y {
-                    Direction::North
-                } else if x <= left_x {
-                    Direction::East
-                } else if x >= right_x {
-                    Direction::West
-                } else {
-                    warn!(
-                        "Invalid pipe connection [{}] @ {:?}: {conn:?}",
-                        self.name, options.direction
-                    );
-                    return None;
-                };
-
-                Some((conn + &options.position, dir))
-            })
+            .map(|(conn_pos, dir)| (conn_pos + &options.position, *dir))
             .collect()
     }
 
     fn heat_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
         let raw_connections = self.heat_buffer_connections(options);
 
-        if raw_connections.is_empty() {
-            return Vec::new();
-        }
-
-        let collision_box = self.collision_box();
-        let (tl, br) = collision_box.corners();
-        let tl_vec: Vector = tl.into();
-        let br_vec: Vector = br.into();
-        let (tl_x, tl_y) = options.direction.rotate_vector(tl_vec).as_tuple();
-        let (br_x, br_y) = options.direction.rotate_vector(br_vec).as_tuple();
-
-        let top_y = tl_y.min(br_y);
-        let bottom_y = tl_y.max(br_y);
-        let left_x = tl_x.min(br_x);
-        let right_x = tl_x.max(br_x);
-
         raw_connections
             .iter()
-            .filter_map(|conn| {
-                let (x, y) = conn.as_tuple();
-
-                let dir = if y <= top_y {
-                    Direction::South
-                } else if y >= bottom_y {
-                    Direction::North
-                } else if x <= left_x {
-                    Direction::East
-                } else if x >= right_x {
-                    Direction::West
-                } else {
-                    warn!(
-                        "Invalid heat connection [{}] @ {:?}: {conn:?}",
-                        self.name, options.direction
-                    );
-                    return None;
-                };
-
-                Some((conn + &options.position, dir))
-            })
+            .map(|(conn_pos, dir)| (conn_pos + &options.position, *dir))
             .collect()
     }
 
@@ -604,11 +531,11 @@ impl<T: Renderable> Renderable for EntityData<T> {
             .render(options, used_mods, render_layers, image_cache)
     }
 
-    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
         self.child.fluid_box_connections(options)
     }
 
-    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
         self.child.heat_buffer_connections(options)
     }
 
@@ -721,11 +648,11 @@ impl<T: Renderable> Renderable for EntityWithHealthData<T> {
         ret
     }
 
-    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
         self.child.fluid_box_connections(options)
     }
 
-    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
         self.child.heat_buffer_connections(options)
     }
 
@@ -784,11 +711,11 @@ impl<T: Renderable> Renderable for EntityWithOwnerData<T> {
             .render(options, used_mods, render_layers, image_cache)
     }
 
-    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
         self.child.fluid_box_connections(options)
     }
 
-    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<MapPosition> {
+    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
         self.child.heat_buffer_connections(options)
     }
 

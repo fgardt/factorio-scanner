@@ -46,7 +46,7 @@ impl super::Renderable for ThrusterData {
         Some(())
     }
 
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<MapPosition> {
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<(MapPosition, Direction)> {
         let mut res = self
             .fuel_fluid_box
             .connection_points(options.direction, options.mirrored);

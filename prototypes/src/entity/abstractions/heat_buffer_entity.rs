@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
-use types::HeatBuffer;
-
 use serde_helper as helper;
+
+use types::{Direction, HeatBuffer, MapPosition};
 
 use super::Renderable;
 
@@ -36,11 +36,14 @@ impl<T: Renderable> Renderable for HeatBufferEntityData<T> {
             .render(options, used_mods, render_layers, image_cache)
     }
 
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<(MapPosition, Direction)> {
         self.child.fluid_box_connections(options)
     }
 
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+    fn heat_buffer_connections(
+        &self,
+        options: &super::RenderOpts,
+    ) -> Vec<(MapPosition, Direction)> {
         let mut res = self.heat_buffer.heat_buffer_connections(options);
         res.append(&mut self.child.heat_buffer_connections(options));
         res
@@ -77,11 +80,9 @@ impl Renderable for HeatBuffer {
 
     fn heat_buffer_connections(
         &self,
-        options: &crate::entity::RenderOpts,
-    ) -> Vec<types::MapPosition> {
-        // TODO: mirroring
-
-        self.connection_points()
+        options: &super::RenderOpts,
+    ) -> Vec<(MapPosition, Direction)> {
+        self.connection_points(options.direction, options.mirrored)
     }
 
     fn render_debug(

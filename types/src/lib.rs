@@ -1887,6 +1887,31 @@ impl Direction {
     }
 
     #[must_use]
+    pub const fn rotate_by_direction(self, direction: Self) -> Self {
+        let res = (self as u8 + direction as u8) % Self::COUNT as u8;
+
+        match res {
+            0 => Self::North,
+            1 => Self::NorthNorthEast,
+            2 => Self::NorthEast,
+            3 => Self::EastNorthEast,
+            4 => Self::East,
+            5 => Self::EastSouthEast,
+            6 => Self::SouthEast,
+            7 => Self::SouthSouthEast,
+            8 => Self::South,
+            9 => Self::SouthSouthWest,
+            10 => Self::SouthWest,
+            11 => Self::WestSouthWest,
+            12 => Self::West,
+            13 => Self::WestNorthWest,
+            14 => Self::NorthWest,
+            15 => Self::NorthNorthWest,
+            _ => unreachable!(),
+        }
+    }
+
+    #[must_use]
     pub const fn to_orientation(&self) -> RealOrientation {
         let val = match self {
             Self::North => 0.0,
@@ -2270,12 +2295,23 @@ pub struct HeatBuffer {
 
 impl HeatBuffer {
     #[must_use]
-    pub fn connection_points(&self) -> Vec<MapPosition> {
+    pub fn connection_points(
+        &self,
+        direction: Direction,
+        mirrored: bool,
+    ) -> Vec<(MapPosition, Direction)> {
         self.connections
             .iter()
             .map(|c| {
-                let offset: MapPosition = (c.direction.get_offset()).into();
-                c.position + offset
+                let pos = direction.rotate_vector(c.position.into());
+                let pos = if mirrored {
+                    direction.mirror_vector(pos)
+                } else {
+                    pos
+                };
+                let pos = pos + c.direction.get_offset();
+
+                (pos.into(), direction)
             })
             .collect()
     }

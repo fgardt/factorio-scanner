@@ -81,11 +81,14 @@ impl<T: super::Renderable> super::Renderable for CombinatorData<T> {
         }
     }
 
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<(MapPosition, Direction)> {
         self.child.fluid_box_connections(options)
     }
 
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+    fn heat_buffer_connections(
+        &self,
+        options: &super::RenderOpts,
+    ) -> Vec<(MapPosition, Direction)> {
         self.child.heat_buffer_connections(options)
     }
 }

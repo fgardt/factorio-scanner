@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use types::WireConnectionData;
+use types::{Direction, MapPosition, WireConnectionData};
 
 use super::Renderable;
 
@@ -65,11 +65,14 @@ impl<T: Renderable> Renderable for WireEntityData<T> {
         res
     }
 
-    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+    fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<(MapPosition, Direction)> {
         self.child.fluid_box_connections(options)
     }
 
-    fn heat_buffer_connections(&self, options: &super::RenderOpts) -> Vec<types::MapPosition> {
+    fn heat_buffer_connections(
+        &self,
+        options: &super::RenderOpts,
+    ) -> Vec<(MapPosition, Direction)> {
         self.child.heat_buffer_connections(options)
     }
 
