@@ -90,9 +90,7 @@ fn render_folder(
         }
 
         if let Some(filter) = filter
-            && path
-                .file_stem()
-                .is_none_or(|name| !name.to_string_lossy().contains(filter))
+            && !path.to_string_lossy().contains(filter)
         {
             continue;
         }
