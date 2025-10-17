@@ -741,7 +741,7 @@ impl Type {
         match self {
             Self::HeatPipe | Self::HeatInterface => true,
             Self::Pipe | Self::InfinityPipe => true,
-            // Self::TransportBelt => true,
+            Self::TransportBelt => true,
             Self::Wall | Self::Gate => true,
             _ => false,
         }
@@ -757,14 +757,15 @@ impl Type {
                 Self::Gate => true, // when direction fits
                 _ => false,
             },
-            // Self::TransportBelt => match other {
-            //     Self::Loader | Self::Loader1x1 => true,
-            //     Self::UndergroundBelt => true,
-            //     Self::TransportBelt => true,
-            //     Self::LinkedBelt => true,
-            //     Self::Splitter => true,
-            //     _ => false,
-            // },
+            Self::TransportBelt => match other {
+                Self::Loader | Self::Loader1x1 => true,
+                Self::UndergroundBelt => true,
+                Self::TransportBelt => true,
+                Self::LinkedBelt => true,
+                Self::LaneSplitter => true,
+                Self::Splitter => true,
+                _ => false,
+            },
             Self::Pipe | Self::InfinityPipe => match other {
                 Self::Pipe | Self::InfinityPipe | Self::PipeToGround => true,
                 Self::Pump | Self::OffshorePump | Self::StorageTank => true,
