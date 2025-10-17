@@ -145,7 +145,38 @@ impl RecipePrototypeData {
             return icon.render(scale, used_mods, image_cache, &());
         }
 
-        // TODO: icon from self.results
+        if self.results.len() == 1 {
+            match &self.results[0] {
+                ProductPrototype::ItemProductPrototype(item_product) => {
+                    return items.get_icon(&item_product.name, scale, used_mods, image_cache);
+                }
+                ProductPrototype::FluidProductPrototype(fluid_product) => {
+                    return fluids.get_icon(&fluid_product.name, scale, used_mods, image_cache);
+                }
+            }
+        }
+
+        if self.results.len() > 1
+            && let Some(main_product) = self.main_product.as_ref()
+            && !main_product.is_empty()
+        {
+            for product in &self.results {
+                match product {
+                    ProductPrototype::ItemProductPrototype(product)
+                        if &*product.name == main_product =>
+                    {
+                        return items.get_icon(&product.name, scale, used_mods, image_cache);
+                    }
+                    ProductPrototype::FluidProductPrototype(product)
+                        if &*product.name == main_product =>
+                    {
+                        return fluids.get_icon(&product.name, scale, used_mods, image_cache);
+                    }
+                    _ => {}
+                }
+            }
+        }
+
         None
     }
 
