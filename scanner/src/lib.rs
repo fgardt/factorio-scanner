@@ -492,8 +492,6 @@ pub fn render_bp(
 ) -> Option<(image::DynamicImage, HashSet<String>)> {
     let mut unknown = HashSet::new();
     // let mut wire_connections = EntityWireConnections::new();
-    let mut pipe_connections = HashMap::<MapPosition, HashSet<Direction>>::new();
-    let mut heat_connections = HashMap::<MapPosition, HashSet<Direction>>::new();
 
     let Some(util_sprites) = data.util_sprites() else {
         warn!("failed to load util sprites, required for wire rendering & alt mode");
@@ -521,6 +519,8 @@ pub fn render_bp(
     };
 
     // pipe / heat connections
+    let mut pipe_connections = ConnectionMap::new();
+    let mut heat_connections = ConnectionMap::new();
     bp.entities.iter().for_each(|e| {
         let Some(e_data) = data.get_entity(&e.name) else {
             return;
@@ -542,6 +542,8 @@ pub fn render_bp(
                 heat_connections.entry(pos).or_default().insert(dir);
             });
     });
+    let pipe_connections = pipe_connections;
+    let heat_connections = heat_connections;
 
     // render entities
     let rendered_count = bp
@@ -553,188 +555,15 @@ pub fn render_bp(
                 return None;
             };
 
-            let mut connected_gates: Vec<Direction> = Vec::new();
-            let mut draw_gate_patch = false;
-            let connections = data.get_entity_type(&e.name).and_then(|entity_type| {
-                if entity_type.connectable() {
-                    let mut up = false;
-                    let mut down = false;
-                    let mut left = false;
-                    let mut right = false;
-
-                    let pos: types::MapPosition = (&e.position).into();
-
-                    #[allow(clippy::needless_continue)]
-                    match entity_type {
-                        EntityType::Pipe | EntityType::InfinityPipe | EntityType::PipeToGround => {
-                            for (p, dirs) in &pipe_connections {
-                                if p.is_close(&pos, 0.5) {
-                                    for dir in dirs {
-                                        match dir {
-                                            Direction::North => up = true,
-                                            Direction::South => down = true,
-                                            Direction::East => right = true,
-                                            Direction::West => left = true,
-                                            _ => {}
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        EntityType::HeatPipe | EntityType::HeatInterface => {
-                            for (p, dirs) in &heat_connections {
-                                if p.is_close(&pos, 0.5) {
-                                    for dir in dirs {
-                                        match dir {
-                                            Direction::North => up = true,
-                                            Direction::South => down = true,
-                                            Direction::East => right = true,
-                                            Direction::West => left = true,
-                                            _ => {}
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        _ => {
-                            for other in &bp.entities {
-                                if other == e {
-                                    continue;
-                                }
-
-                                let Some(other_type) = data.get_entity_type(&other.name) else {
-                                    continue;
-                                };
-
-                                if !entity_type.can_connect_to(other_type) {
-                                    continue;
-                                }
-
-                                if matches!(entity_type, EntityType::Wall)
-                                    && matches!(other_type, EntityType::Wall)
-                                {
-                                    let Some(src) = data
-                                        .get_proto::<WallPrototype>(&e.name)
-                                        .map(|p| p.visual_merge_group)
-                                    else {
-                                        continue;
-                                    };
-
-                                    let Some(dst) = data
-                                        .get_proto::<WallPrototype>(&other.name)
-                                        .map(|p| p.visual_merge_group)
-                                    else {
-                                        continue;
-                                    };
-
-                                    if src != dst {
-                                        continue;
-                                    }
-                                }
-
-                                let other_pos: types::MapPosition = (&other.position).into();
-
-                                match entity_type {
-                                    EntityType::Gate => {
-                                        match pos.is_cardinal_neighbor(&other_pos) {
-                                            Some(dir) => {
-                                                if dir == Direction::South {
-                                                    draw_gate_patch = true;
-                                                }
-                                            }
-                                            None => continue,
-                                        }
-                                    }
-                                    EntityType::Wall => {
-                                        match pos.is_cardinal_neighbor(&other_pos) {
-                                            Some(dir) => {
-                                                if matches!(other_type, EntityType::Gate) {
-                                                    if dir.is_straight(&other.direction) {
-                                                        connected_gates.push(dir);
-                                                    }
-                                                } else {
-                                                    match dir {
-                                                        Direction::North => up = true,
-                                                        Direction::South => down = true,
-                                                        Direction::East => right = true,
-                                                        Direction::West => left = true,
-                                                        _ => continue,
-                                                    }
-                                                }
-                                            }
-                                            None => continue,
-                                        }
-                                    }
-                                    EntityType::TransportBelt => {
-                                        let neighbor = match other_type {
-                                            EntityType::TransportBelt => {
-                                                pos.is_cardinal_neighbor(&other_pos)
-                                            }
-                                            EntityType::UndergroundBelt
-                                            | EntityType::LinkedBelt => {
-                                                let dir = pos.is_cardinal_neighbor(&other_pos);
-
-                                                if let Some(dir) = dir {
-                                                    let u_output = other.extra_data.belt_connection_type()
-                                                        .as_ref()
-                                                        .map(|&t| t == blueprint::BeltConnectionType::Output);
-
-                                                    let Some(u_output) = u_output else {
-                                                        continue;
-                                                    };
-
-                                                    let other_dir = if u_output {
-                                                        other.direction.flip()
-                                                    } else {
-                                                        other.direction
-                                                    };
-
-                                                    if dir != other_dir {
-                                                        continue;
-                                                    }
-                                                }
-
-                                                dir
-                                            }
-                                            EntityType::Splitter => {
-                                                pos.is_2wide_cardinal_neighbor(&other_pos)
-                                            }
-                                            EntityType::Loader => {
-                                                pos.is_2long_cardinal_neighbor(&other_pos)
-                                            }
-                                            _ => continue,
-                                        };
-
-                                        if let Some(dir) = neighbor {
-                                            if dir != other.direction.flip() {
-                                                continue;
-                                            }
-
-                                            match dir {
-                                                Direction::North => up = true,
-                                                Direction::South => down = true,
-                                                Direction::East => right = true,
-                                                Direction::West => left = true,
-                                                _ => {}
-                                            }
-                                        }
-                                    }
-                                    _ => continue,
-                                }
-                            }
-                        }
-                    }
-
-                    Some(ConnectedDirections::from_directions(up, down, left, right))
-                } else {
-                    None
-                }
-            });
-
             let mut render_opts = bp_entity2render_opts(e, data);
-            render_opts.connections = connections;
-            render_opts.connected_gates = connected_gates;
-            render_opts.draw_gate_patch = draw_gate_patch;
+
+            if let Some(connection_data) =
+                get_connection_data(data, &pipe_connections, &heat_connections, bp, e)
+            {
+                render_opts.connections = Some(connection_data.directions);
+                render_opts.connected_gates = connection_data.connected_gates;
+                render_opts.draw_gate_patch = connection_data.draw_gate_patch;
+            }
 
             'recipe_icon: {
                 let recipe = e.extra_data.recipe();
@@ -1102,6 +931,198 @@ pub fn render_bp(
     render_layers.generate_background();
 
     Some((render_layers.combine(), unknown))
+}
+
+type ConnectionMap = HashMap<MapPosition, HashSet<Direction>>;
+
+struct ConnectionData {
+    directions: ConnectedDirections,
+    connected_gates: Vec<Direction>,
+    draw_gate_patch: bool,
+}
+
+#[allow(clippy::too_many_lines)]
+fn get_connection_data(
+    data: &prototypes::DataUtil,
+    pipe_connections: &ConnectionMap,
+    heat_connections: &ConnectionMap,
+    bp: &blueprint::Blueprint,
+    e: &blueprint::Entity,
+) -> Option<ConnectionData> {
+    let entity_type = data.get_entity_type(&e.name)?;
+    if !entity_type.connectable() {
+        return None;
+    }
+
+    let mut connected_gates = Vec::new();
+    let mut draw_gate_patch = false;
+
+    let mut up = false;
+    let mut down = false;
+    let mut left = false;
+    let mut right = false;
+
+    let pos: types::MapPosition = (&e.position).into();
+
+    #[allow(clippy::needless_continue)]
+    match entity_type {
+        EntityType::Pipe | EntityType::InfinityPipe | EntityType::PipeToGround => {
+            for (p, dirs) in pipe_connections {
+                if !p.is_close(&pos, 0.5) {
+                    continue;
+                }
+
+                for dir in dirs {
+                    match dir {
+                        Direction::North => up = true,
+                        Direction::South => down = true,
+                        Direction::East => right = true,
+                        Direction::West => left = true,
+                        _ => {}
+                    }
+                }
+            }
+        }
+        EntityType::HeatPipe | EntityType::HeatInterface => {
+            for (p, dirs) in heat_connections {
+                if !p.is_close(&pos, 0.5) {
+                    continue;
+                }
+
+                for dir in dirs {
+                    match dir {
+                        Direction::North => up = true,
+                        Direction::South => down = true,
+                        Direction::East => right = true,
+                        Direction::West => left = true,
+                        _ => {}
+                    }
+                }
+            }
+        }
+        _ => {
+            for other in &bp.entities {
+                if other == e {
+                    continue;
+                }
+
+                let Some(other_type) = data.get_entity_type(&other.name) else {
+                    continue;
+                };
+
+                if !entity_type.can_connect_to(other_type) {
+                    continue;
+                }
+
+                if *entity_type == EntityType::Wall && *other_type == EntityType::Wall {
+                    let Some(src) = data
+                        .get_proto::<WallPrototype>(&e.name)
+                        .map(|p| p.visual_merge_group)
+                    else {
+                        continue;
+                    };
+
+                    let Some(dst) = data
+                        .get_proto::<WallPrototype>(&other.name)
+                        .map(|p| p.visual_merge_group)
+                    else {
+                        continue;
+                    };
+
+                    if src != dst {
+                        continue;
+                    }
+                }
+
+                let other_pos: types::MapPosition = (&other.position).into();
+
+                match entity_type {
+                    EntityType::Gate => match pos.is_cardinal_neighbor(&other_pos) {
+                        Some(dir) => {
+                            if dir == Direction::South {
+                                draw_gate_patch = true;
+                            }
+                        }
+                        None => continue,
+                    },
+                    EntityType::Wall => match pos.is_cardinal_neighbor(&other_pos) {
+                        Some(dir) => {
+                            if *other_type == EntityType::Gate {
+                                if dir.is_straight(&other.direction) {
+                                    connected_gates.push(dir);
+                                }
+                            } else {
+                                match dir {
+                                    Direction::North => up = true,
+                                    Direction::South => down = true,
+                                    Direction::East => right = true,
+                                    Direction::West => left = true,
+                                    _ => continue,
+                                }
+                            }
+                        }
+                        None => continue,
+                    },
+                    EntityType::TransportBelt => {
+                        let neighbor = match other_type {
+                            EntityType::TransportBelt => pos.is_cardinal_neighbor(&other_pos),
+                            EntityType::UndergroundBelt | EntityType::LinkedBelt => {
+                                let dir = pos.is_cardinal_neighbor(&other_pos);
+
+                                if let Some(dir) = dir {
+                                    let u_output = other
+                                        .extra_data
+                                        .belt_connection_type()
+                                        .as_ref()
+                                        .map(|&t| t == blueprint::BeltConnectionType::Output);
+
+                                    let Some(u_output) = u_output else {
+                                        continue;
+                                    };
+
+                                    let other_dir = if u_output {
+                                        other.direction.flip()
+                                    } else {
+                                        other.direction
+                                    };
+
+                                    if dir != other_dir {
+                                        continue;
+                                    }
+                                }
+
+                                dir
+                            }
+                            EntityType::Splitter => pos.is_2wide_cardinal_neighbor(&other_pos),
+                            EntityType::Loader => pos.is_2long_cardinal_neighbor(&other_pos),
+                            _ => continue,
+                        };
+
+                        if let Some(dir) = neighbor {
+                            if dir != other.direction.flip() {
+                                continue;
+                            }
+
+                            match dir {
+                                Direction::North => up = true,
+                                Direction::South => down = true,
+                                Direction::East => right = true,
+                                Direction::West => left = true,
+                                _ => {}
+                            }
+                        }
+                    }
+                    _ => continue,
+                }
+            }
+        }
+    }
+
+    Some(ConnectionData {
+        directions: ConnectedDirections::from_directions(up, down, left, right),
+        connected_gates,
+        draw_gate_patch,
+    })
 }
 
 #[instrument(skip_all)]
