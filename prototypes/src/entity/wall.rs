@@ -122,8 +122,8 @@ impl super::Renderable for WallData {
 
         let res = merge_renders(
             &[
-                core,
                 gate_connection_north,
+                core,
                 gate_connection_west,
                 gate_connection_east,
                 gate_connection_south,
