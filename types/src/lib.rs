@@ -1375,8 +1375,8 @@ impl MapPosition {
 
     #[must_use]
     pub fn is_2long_cardinal_neighbor(&self, other: &Self) -> Option<Direction> {
-        const CARDINAL_MAX: f64 = 2.125;
-        const CARDINAL_MIN: f64 = 1.875;
+        const CARDINAL_MAX: f64 = 1.125 + 0.5;
+        const CARDINAL_MIN: f64 = 0.875 + 0.5;
         const SHEAR_MAX: f64 = 0.125;
 
         self.is_cardinal_neighbor_internal(other, CARDINAL_MAX, CARDINAL_MIN, SHEAR_MAX)
