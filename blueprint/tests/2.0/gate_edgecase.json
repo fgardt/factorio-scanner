@@ -1,0 +1,66 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "entity_number": 1,
+        "name": "stone-wall",
+        "position": {
+          "x": 146.5,
+          "y": 51.5
+        }
+      },
+      {
+        "entity_number": 2,
+        "name": "gate",
+        "position": {
+          "x": 147.5,
+          "y": 51.5
+        }
+      },
+      {
+        "entity_number": 3,
+        "name": "stone-wall",
+        "position": {
+          "x": 148.5,
+          "y": 51.5
+        }
+      },
+      {
+        "entity_number": 4,
+        "name": "stone-wall",
+        "position": {
+          "x": 147.5,
+          "y": 52.5
+        }
+      },
+      {
+        "entity_number": 5,
+        "name": "stone-wall",
+        "position": {
+          "x": 148.5,
+          "y": 53.5
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 6,
+        "name": "gate",
+        "position": {
+          "x": 148.5,
+          "y": 52.5
+        }
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "gate"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "gate_edgecase",
+    "version": 562949958008833
+  }
+}
