@@ -105,6 +105,7 @@ mod helper_macro {
                     )+
                 }
 
+                #[derive(Debug, Clone, Copy, PartialEq, Eq)]
                 pub enum Type {
                     $(
                         [< $member:camel >],
