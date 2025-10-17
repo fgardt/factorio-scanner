@@ -741,10 +741,12 @@ mod tests {
                 combinators,
                 constant_logistic_group,
                 flipped_fluidboxes,
+                heat,
                 inserters,
                 parametrics,
                 platform_hub,
                 quality_chemplants,
+                walls,
                 wires
             );
 
