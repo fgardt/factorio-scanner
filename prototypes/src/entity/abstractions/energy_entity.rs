@@ -35,7 +35,7 @@ impl<T: Renderable> Renderable for EnergyEntityData<T> {
                     .render(options, used_mods, render_layers, image_cache);
             }
             AnyEnergySource::Heat { data } => {
-                data.render_debug(options, used_mods, render_layers);
+                data.render(options, used_mods, render_layers, image_cache);
             }
             _ => {}
         }
