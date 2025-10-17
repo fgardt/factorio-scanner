@@ -741,6 +741,7 @@ mod tests {
                 combinators,
                 constant_logistic_group,
                 flipped_fluidboxes,
+                gate_edgecase,
                 heat,
                 inserters,
                 parametrics,
