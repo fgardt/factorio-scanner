@@ -2309,9 +2309,10 @@ impl HeatBuffer {
                 } else {
                     pos
                 };
-                let pos = pos + c.direction.get_offset();
+                let c_dir = c.direction.rotate_by_direction(direction);
+                let pos = pos + c_dir.get_offset();
 
-                (pos.into(), direction)
+                (pos.into(), c_dir.flip())
             })
             .collect()
     }
