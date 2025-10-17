@@ -93,50 +93,7 @@ pub trait IdNamespaceAccess<T>: IdNamespace {
 }
 
 mod helper_macro {
-
     macro_rules! namespace_struct {
-        ( $name:ident, $id:ty, $member:literal ) => {
-            paste::paste! {
-                #[derive(Debug, Default, Deserialize, Serialize)]
-                #[serde(rename_all = "kebab-case")]
-                pub struct $name {
-                    pub [< $member:snake >]: std::collections::HashMap<$id, [< $member:camel Prototype >]>,
-                }
-
-                pub enum Type {
-                    [< $member:camel >]
-                }
-
-                impl crate::IdNamespace for $name {
-                    type Id = $id;
-                    type Type = Type;
-
-                    fn all_ids(&self) -> std::collections::HashSet<&Self::Id> {
-                        self.[< $member:snake >].keys().collect()
-                    }
-
-                    fn contains(&self, id: &Self::Id) -> bool {
-                        self.[< $member:snake >].contains_key(id)
-                    }
-
-                    fn build_mapping(&self) -> std::collections::HashMap<Self::Id, Self::Type> {
-                        let mut res = std::collections::HashMap::new();
-
-                        self.[< $member:snake >].keys().for_each(|id| {
-                            res.insert(id.clone(), Type::[< $member:camel >]);
-                        });
-
-                        res
-                    }
-                }
-
-                impl crate::IdNamespaceAccess<[< $member:camel Prototype >]> for $name {
-                    fn get_proto(&self, id: &Self::Id) -> Option<&[< $member:camel Prototype >]> {
-                        self.[< $member:snake >].get(id)
-                    }
-                }
-            }
-        };
         ( $name:ident, $id:ty, $( $member:literal ),+ ) => {
             paste::paste! {
                 #[derive(Debug, Default, Deserialize, Serialize)]
