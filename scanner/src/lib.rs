@@ -1048,7 +1048,7 @@ fn get_connection_data(
                     EntityType::Wall => match pos.is_cardinal_neighbor(&other_pos) {
                         Some(dir) => {
                             if *other_type == EntityType::Gate {
-                                if dir.is_straight(&other.direction) {
+                                if dir.is_straight(other.direction) {
                                     connected_gates.push(dir);
                                 }
                             } else {
