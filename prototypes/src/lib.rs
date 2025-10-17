@@ -11,7 +11,7 @@ use std::io::Read;
 use std::path::Path;
 use std::{collections::HashMap, ops::Rem};
 
-use image::{DynamicImage, GenericImageView, GrayAlphaImage, imageops};
+use image::{ConvertColorOptions, DynamicImage, GenericImageView, GrayAlphaImage, imageops};
 use imageproc::geometric_transformations;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -856,44 +856,49 @@ impl RenderLayerBuffer {
     #[instrument(skip_all)]
     pub fn combine(&mut self) -> image::DynamicImage {
         'sdf_outline: {
-            if let Some(icons) = self.layers.get(&RenderLayer::EntityInfoIconAbove) {
-                let (width, height) = icons.dimensions();
-                let mask = image::ImageBuffer::from_fn(width, height, |x, y| {
-                    let alpha = icons.get_pixel(x, y).0[3];
-                    image::Luma([alpha])
-                });
+            let Some(icons) = self.layers.get(&RenderLayer::EntityInfoIconAbove) else {
+                break 'sdf_outline;
+            };
 
-                let Some(normalized_sdf) =
-                    compute_f32_distance_field(&binary_image::of_byte_slice_with_threshold(
-                        &mask,
-                        width as u16,
-                        height as u16,
-                        1,
-                    ))
-                    .normalize_clamped_distances(0.0, (6.0 / self.scale()) as f32)
-                else {
-                    break 'sdf_outline;
-                };
+            let (width, height) = icons.dimensions();
+            let mask = image::ImageBuffer::from_fn(width, height, |x, y| {
+                let alpha = icons.get_pixel(x, y).0[3];
+                image::Luma([alpha])
+            });
 
-                let normalized = normalized_sdf
-                    .to_u8()
-                    .iter()
-                    .flat_map(|&x| {
-                        if x == 255 {
-                            [0, 0]
-                        } else {
-                            [0, 255 - (f64::from(x).powi(2) / 255f64).round() as u8]
-                        }
-                    })
-                    .collect::<Vec<_>>();
+            let Some(normalized_sdf) = compute_f32_distance_field(
+                &binary_image::of_byte_slice_with_threshold(&mask, width as u16, height as u16, 1),
+            )
+            .normalize_clamped_distances(0.0, (6.0 / self.scale()) as f32) else {
+                break 'sdf_outline;
+            };
 
-                let Some(outline_img) = GrayAlphaImage::from_vec(width, height, normalized) else {
-                    break 'sdf_outline;
-                };
+            let normalized = normalized_sdf
+                .to_u8()
+                .iter()
+                .flat_map(|&x| {
+                    if x == 255 {
+                        [0, 0]
+                    } else {
+                        [0, 255 - (f64::from(x).powi(2) / 255f64).round() as u8]
+                    }
+                })
+                .collect::<Vec<_>>();
 
-                let outline = self.get_layer(RenderLayer::EntityInfoIcon);
-                outline.clone_from(&outline_img.into());
-            }
+            let Some(outline_img) = GrayAlphaImage::from_vec(width, height, normalized) else {
+                break 'sdf_outline;
+            };
+
+            let Ok(mut icons_with_sdf) =
+                outline_img.to_color_space(icons.color_space(), ConvertColorOptions::default())
+            else {
+                break 'sdf_outline;
+            };
+
+            imageops::overlay(&mut icons_with_sdf, icons, 0, 0);
+
+            let icons = self.get_layer(RenderLayer::EntityInfoIconAbove);
+            icons.clone_from(&icons_with_sdf.into());
         }
 
         let mut combined =
