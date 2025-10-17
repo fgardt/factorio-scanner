@@ -1,0 +1,567 @@
+{
+  "blueprint": {
+    "entities": [
+      {
+        "entity_number": 1,
+        "name": "heat-pipe",
+        "position": {
+          "x": 119.5,
+          "y": 63.5
+        }
+      },
+      {
+        "entity_number": 2,
+        "name": "heat-pipe",
+        "position": {
+          "x": 120.5,
+          "y": 62.5
+        }
+      },
+      {
+        "entity_number": 3,
+        "name": "heat-pipe",
+        "position": {
+          "x": 121.5,
+          "y": 63.5
+        }
+      },
+      {
+        "entity_number": 4,
+        "name": "heat-pipe",
+        "position": {
+          "x": 122.5,
+          "y": 62.5
+        }
+      },
+      {
+        "entity_number": 5,
+        "name": "heat-pipe",
+        "position": {
+          "x": 123.5,
+          "y": 62.5
+        }
+      },
+      {
+        "entity_number": 6,
+        "name": "heat-pipe",
+        "position": {
+          "x": 125.5,
+          "y": 63.5
+        }
+      },
+      {
+        "entity_number": 7,
+        "name": "heat-pipe",
+        "position": {
+          "x": 127.5,
+          "y": 62.5
+        }
+      },
+      {
+        "entity_number": 8,
+        "name": "heat-pipe",
+        "position": {
+          "x": 127.5,
+          "y": 63.5
+        }
+      },
+      {
+        "entity_number": 9,
+        "name": "heat-pipe",
+        "position": {
+          "x": 126.5,
+          "y": 63.5
+        }
+      },
+      {
+        "entity_number": 10,
+        "name": "heat-pipe",
+        "position": {
+          "x": 126.5,
+          "y": 62.5
+        }
+      },
+      {
+        "entity_number": 11,
+        "name": "heat-exchanger",
+        "position": {
+          "x": 117.5,
+          "y": 65
+        }
+      },
+      {
+        "entity_number": 12,
+        "name": "heat-pipe",
+        "position": {
+          "x": 120.5,
+          "y": 64.5
+        }
+      },
+      {
+        "entity_number": 13,
+        "name": "heat-pipe",
+        "position": {
+          "x": 122.5,
+          "y": 65.5
+        }
+      },
+      {
+        "entity_number": 14,
+        "name": "heat-pipe",
+        "position": {
+          "x": 122.5,
+          "y": 64.5
+        }
+      },
+      {
+        "entity_number": 15,
+        "name": "heat-pipe",
+        "position": {
+          "x": 123.5,
+          "y": 64.5
+        }
+      },
+      {
+        "entity_number": 16,
+        "name": "heat-pipe",
+        "position": {
+          "x": 124.5,
+          "y": 64.5
+        }
+      },
+      {
+        "entity_number": 17,
+        "name": "heat-pipe",
+        "position": {
+          "x": 124.5,
+          "y": 65.5
+        }
+      },
+      {
+        "entity_number": 18,
+        "name": "heat-pipe",
+        "position": {
+          "x": 127.5,
+          "y": 65.5
+        }
+      },
+      {
+        "entity_number": 19,
+        "name": "heat-pipe",
+        "position": {
+          "x": 126.5,
+          "y": 65.5
+        }
+      },
+      {
+        "entity_number": 20,
+        "name": "heat-pipe",
+        "position": {
+          "x": 126.5,
+          "y": 64.5
+        }
+      },
+      {
+        "entity_number": 21,
+        "name": "heat-pipe",
+        "position": {
+          "x": 129.5,
+          "y": 65.5
+        }
+      },
+      {
+        "entity_number": 22,
+        "name": "heat-pipe",
+        "position": {
+          "x": 128.5,
+          "y": 64.5
+        }
+      },
+      {
+        "entity_number": 23,
+        "name": "heat-pipe",
+        "position": {
+          "x": 128.5,
+          "y": 65.5
+        }
+      },
+      {
+        "entity_number": 24,
+        "name": "heat-pipe",
+        "position": {
+          "x": 130.5,
+          "y": 65.5
+        }
+      },
+      {
+        "direction": 12,
+        "entity_number": 25,
+        "name": "heat-exchanger",
+        "position": {
+          "x": 115,
+          "y": 66.5
+        }
+      },
+      {
+        "entity_number": 26,
+        "name": "heat-pipe",
+        "position": {
+          "x": 116.5,
+          "y": 66.5
+        }
+      },
+      {
+        "entity_number": 27,
+        "name": "heat-pipe",
+        "position": {
+          "x": 117.5,
+          "y": 66.5
+        }
+      },
+      {
+        "entity_number": 28,
+        "name": "heat-pipe",
+        "position": {
+          "x": 123.5,
+          "y": 66.5
+        }
+      },
+      {
+        "entity_number": 29,
+        "name": "heat-pipe",
+        "position": {
+          "x": 124.5,
+          "y": 66.5
+        }
+      },
+      {
+        "entity_number": 30,
+        "name": "heat-pipe",
+        "position": {
+          "x": 127.5,
+          "y": 66.5
+        }
+      },
+      {
+        "entity_number": 31,
+        "name": "heat-pipe",
+        "position": {
+          "x": 129.5,
+          "y": 67.5
+        }
+      },
+      {
+        "entity_number": 32,
+        "name": "heat-pipe",
+        "position": {
+          "x": 129.5,
+          "y": 66.5
+        }
+      },
+      {
+        "entity_number": 33,
+        "name": "heat-pipe",
+        "position": {
+          "x": 128.5,
+          "y": 66.5
+        }
+      },
+      {
+        "entity_number": 34,
+        "name": "heat-pipe",
+        "position": {
+          "x": 130.5,
+          "y": 67.5
+        }
+      },
+      {
+        "entity_number": 35,
+        "name": "heat-pipe",
+        "position": {
+          "x": 130.5,
+          "y": 66.5
+        }
+      },
+      {
+        "direction": 12,
+        "entity_number": 36,
+        "name": "heat-exchanger",
+        "position": {
+          "x": 115,
+          "y": 69.5
+        }
+      },
+      {
+        "entity_number": 37,
+        "name": "heat-pipe",
+        "position": {
+          "x": 117.5,
+          "y": 69.5
+        }
+      },
+      {
+        "entity_number": 38,
+        "name": "heat-pipe",
+        "position": {
+          "x": 117.5,
+          "y": 68.5
+        }
+      },
+      {
+        "entity_number": 39,
+        "name": "heat-pipe",
+        "position": {
+          "x": 116.5,
+          "y": 69.5
+        }
+      },
+      {
+        "entity_number": 40,
+        "name": "nuclear-reactor",
+        "position": {
+          "x": 120.5,
+          "y": 68.5
+        }
+      },
+      {
+        "entity_number": 41,
+        "name": "heat-pipe",
+        "position": {
+          "x": 123.5,
+          "y": 69.5
+        }
+      },
+      {
+        "entity_number": 42,
+        "name": "heat-pipe",
+        "position": {
+          "x": 123.5,
+          "y": 68.5
+        }
+      },
+      {
+        "entity_number": 43,
+        "name": "nuclear-reactor",
+        "position": {
+          "x": 126.5,
+          "y": 69.5
+        }
+      },
+      {
+        "entity_number": 44,
+        "name": "heat-pipe",
+        "position": {
+          "x": 129.5,
+          "y": 68.5
+        }
+      },
+      {
+        "entity_number": 45,
+        "name": "heat-pipe",
+        "position": {
+          "x": 117.5,
+          "y": 71.5
+        }
+      },
+      {
+        "entity_number": 46,
+        "name": "heat-pipe",
+        "position": {
+          "x": 116.5,
+          "y": 70.5
+        }
+      },
+      {
+        "entity_number": 47,
+        "name": "heat-pipe",
+        "position": {
+          "x": 117.5,
+          "y": 70.5
+        }
+      },
+      {
+        "entity_number": 48,
+        "name": "heat-pipe",
+        "position": {
+          "x": 121.5,
+          "y": 71.5
+        }
+      },
+      {
+        "entity_number": 49,
+        "name": "heat-pipe",
+        "position": {
+          "x": 120.5,
+          "y": 71.5
+        }
+      },
+      {
+        "entity_number": 50,
+        "name": "heat-pipe",
+        "position": {
+          "x": 122.5,
+          "y": 71.5
+        }
+      },
+      {
+        "entity_number": 51,
+        "name": "heat-pipe",
+        "position": {
+          "x": 123.5,
+          "y": 70.5
+        }
+      },
+      {
+        "entity_number": 52,
+        "name": "heat-pipe",
+        "position": {
+          "x": 117.5,
+          "y": 72.5
+        }
+      },
+      {
+        "entity_number": 53,
+        "name": "heat-pipe",
+        "position": {
+          "x": 116.5,
+          "y": 72.5
+        }
+      },
+      {
+        "direction": 4,
+        "entity_number": 54,
+        "name": "heat-exchanger",
+        "position": {
+          "x": 119,
+          "y": 72.5
+        }
+      },
+      {
+        "entity_number": 55,
+        "name": "heat-pipe",
+        "position": {
+          "x": 120.5,
+          "y": 72.5
+        }
+      },
+      {
+        "entity_number": 56,
+        "name": "heat-pipe",
+        "position": {
+          "x": 121.5,
+          "y": 72.5
+        }
+      },
+      {
+        "entity_number": 57,
+        "name": "heat-pipe",
+        "position": {
+          "x": 123.5,
+          "y": 72.5
+        }
+      },
+      {
+        "entity_number": 58,
+        "name": "heat-pipe",
+        "position": {
+          "x": 122.5,
+          "y": 72.5
+        }
+      },
+      {
+        "entity_number": 59,
+        "name": "heat-pipe",
+        "position": {
+          "x": 125.5,
+          "y": 72.5
+        }
+      },
+      {
+        "entity_number": 60,
+        "name": "heat-pipe",
+        "position": {
+          "x": 124.5,
+          "y": 72.5
+        }
+      },
+      {
+        "entity_number": 61,
+        "name": "heat-pipe",
+        "position": {
+          "x": 126.5,
+          "y": 72.5
+        }
+      },
+      {
+        "direction": 8,
+        "entity_number": 62,
+        "name": "heat-exchanger",
+        "position": {
+          "x": 116.5,
+          "y": 74
+        }
+      },
+      {
+        "entity_number": 63,
+        "name": "heat-pipe",
+        "position": {
+          "x": 123.5,
+          "y": 75.5
+        }
+      },
+      {
+        "entity_number": 64,
+        "name": "heat-pipe",
+        "position": {
+          "x": 122.5,
+          "y": 74.5
+        }
+      },
+      {
+        "entity_number": 65,
+        "mode": "at-least",
+        "name": "heat-interface",
+        "position": {
+          "x": 123.5,
+          "y": 74.5
+        },
+        "temperature": 0
+      },
+      {
+        "entity_number": 66,
+        "name": "heat-pipe",
+        "position": {
+          "x": 125.5,
+          "y": 74.5
+        }
+      },
+      {
+        "entity_number": 67,
+        "name": "heat-pipe",
+        "position": {
+          "x": 124.5,
+          "y": 74.5
+        }
+      },
+      {
+        "entity_number": 68,
+        "name": "heat-pipe",
+        "position": {
+          "x": 124.5,
+          "y": 75.5
+        }
+      }
+    ],
+    "icons": [
+      {
+        "index": 1,
+        "signal": {
+          "name": "heat-pipe"
+        }
+      }
+    ],
+    "item": "blueprint",
+    "label": "heat",
+    "version": 562949958008833
+  }
+}
