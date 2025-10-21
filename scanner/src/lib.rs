@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use tracing::{debug, error, field, info, info_span, instrument, warn};
 
-use blueprint::{SignalID, SplitterPriority};
+use blueprint::{EntityExtraData, SignalID, SplitterPriority};
 use mod_util::{
     AnyBasic, DependencyList, UsedMods, UsedVersions,
     mod_info::{DependencyVersion, Version},
@@ -300,9 +300,15 @@ pub fn bp_entity2render_opts(
     prototypes::entity::RenderOpts {
         position: (&value.position).into(),
         direction: value.direction,
-        orientation: value.extra_data.as_ref().and_then(|ed| ed.orientation()),
+        orientation: value
+            .extra_data
+            .as_ref()
+            .and_then(EntityExtraData::orientation),
         mirrored: value.mirror,
-        elevated: value.extra_data.as_ref().and_then(|ed| ed.rail_layer())
+        elevated: value
+            .extra_data
+            .as_ref()
+            .and_then(EntityExtraData::rail_layer)
             == Some(&"elevated".to_owned()),
         variation: None, // value.extra_data.variation, // variation is not documented, unsure where it might show up
         pickup_position: value
@@ -313,32 +319,32 @@ pub fn bp_entity2render_opts(
         underground_in: value
             .extra_data
             .as_ref()
-            .and_then(|ed| ed.belt_connection_type())
+            .and_then(EntityExtraData::belt_connection_type)
             .map(|t| t == blueprint::BeltConnectionType::Input),
         connected_gates: Vec::new(),
         draw_gate_patch: false,
         arithmetic_operation: value
             .extra_data
             .as_ref()
-            .and_then(|ed| ed.combinator_data())
+            .and_then(EntityExtraData::combinator_data)
             .and_then(blueprint::CombinatorData::arithmetic_parameters)
             .map(blueprint::ArithmeticCombinatorParameters::operation),
         decider_operation: value
             .extra_data
             .as_ref()
-            .and_then(|ed| ed.combinator_data())
+            .and_then(EntityExtraData::combinator_data)
             .and_then(blueprint::CombinatorData::decider_parameters)
             .map(blueprint::DeciderCombinatorParameters::operation),
         selector_operation: value
             .extra_data
             .as_ref()
-            .and_then(|ed| ed.combinator_data())
+            .and_then(EntityExtraData::combinator_data)
             .and_then(blueprint::CombinatorData::selector_parameters)
             .map(blueprint::SelectorCombinatorParameters::operation),
         runtime_tint: value
             .extra_data
             .as_ref()
-            .and_then(|ed| ed.color())
+            .and_then(EntityExtraData::color)
             .map(std::convert::Into::into),
         entity_id: value.entity_number.into(),
         circuit_connected: false, // TODO: more complex to figure out with wire info being outside of the entity
@@ -436,6 +442,9 @@ pub async fn load_data(
     Ok((DataUtil::new(data), active_mods))
 }
 
+pub type ImageData = Vec<u8>;
+pub type RenderResult = Result<(ImageData, HashSet<String>, Option<ImageData>), ScannerError>;
+
 #[instrument(skip_all)]
 pub fn render(
     raw_bp: &blueprint::Data,
@@ -443,7 +452,7 @@ pub fn render(
     used_mods: &UsedMods,
     target_res: f64,
     min_scale: f64,
-) -> Result<(Vec<u8>, HashSet<String>, Option<Vec<u8>>), ScannerError> {
+) -> RenderResult {
     let bp = raw_bp
         .as_blueprint()
         .ok_or_else(|| report!(ScannerError::NoBlueprint))?;
@@ -497,7 +506,7 @@ pub fn render(
 #[allow(clippy::too_many_lines)]
 pub fn render_bp(
     bp: &blueprint::Blueprint,
-    data: &prototypes::DataUtil,
+    data: &DataUtil,
     used_mods: &UsedMods,
     mut render_layers: RenderLayerBuffer,
     image_cache: &mut ImageCache,
@@ -609,7 +618,10 @@ pub fn render_bp(
 
             // filter icons / priority arrows
             'filters_priority: {
-                if let Some(prio_in) = &e.extra_data.as_ref().and_then(|ed| ed.input_priority())
+                if let Some(prio_in) = &e
+                    .extra_data
+                    .as_ref()
+                    .and_then(EntityExtraData::input_priority)
                     && prio_in != &SplitterPriority::None
                 {
                     let offset = e.direction.rotate_vector(
@@ -633,11 +645,16 @@ pub fn render_bp(
                     );
                 }
 
-                if let Some(prio_out) = &e.extra_data.as_ref().and_then(|ed| ed.output_priority())
+                if let Some(prio_out) = &e
+                    .extra_data
+                    .as_ref()
+                    .and_then(EntityExtraData::output_priority)
                     && prio_out != &SplitterPriority::None
                 {
-                    if let Some(item_filter) =
-                        e.extra_data.as_ref().and_then(|ed| ed.splitter_filter())
+                    if let Some(item_filter) = e
+                        .extra_data
+                        .as_ref()
+                        .and_then(EntityExtraData::splitter_filter)
                         && let Some(filter) = item_filter.name.as_ref()
                     {
                         let Some(filter) = data.get_item_icon(
@@ -687,7 +704,7 @@ pub fn render_bp(
 
                 let mut active_filters = None;
                 let mut _active_mode = None; // TODO: add blacklist overlay when applicable
-                if let Some(blueprint::EntityExtraData::Inserter {
+                if let Some(EntityExtraData::Inserter {
                     filters,
                     filter_mode,
                     use_filters: true,
@@ -696,7 +713,7 @@ pub fn render_bp(
                 {
                     active_filters = Some(filters);
                     _active_mode = Some(filter_mode);
-                } else if let Some(blueprint::EntityExtraData::Loader {
+                } else if let Some(EntityExtraData::Loader {
                     filters,
                     filter_mode,
                     ..
@@ -964,9 +981,34 @@ struct ConnectionData {
     draw_gate_patch: bool,
 }
 
+fn handle_connection_map(
+    connections: &ConnectionMap,
+    pos: &MapPosition,
+    up: &mut bool,
+    down: &mut bool,
+    left: &mut bool,
+    right: &mut bool,
+) {
+    for (p, dirs) in connections {
+        if !p.is_close(pos, 0.5) {
+            continue;
+        }
+
+        for dir in dirs {
+            match dir {
+                Direction::North => *up = true,
+                Direction::South => *down = true,
+                Direction::East => *right = true,
+                Direction::West => *left = true,
+                _ => {}
+            }
+        }
+    }
+}
+
 #[allow(clippy::too_many_lines)]
 fn get_connection_data(
-    data: &prototypes::DataUtil,
+    data: &DataUtil,
     pipe_connections: &ConnectionMap,
     heat_connections: &ConnectionMap,
     bp: &blueprint::Blueprint,
@@ -985,43 +1027,29 @@ fn get_connection_data(
     let mut left = false;
     let mut right = false;
 
-    let pos: types::MapPosition = (&e.position).into();
+    let pos: MapPosition = (&e.position).into();
 
     #[allow(clippy::needless_continue)]
     match entity_type {
         EntityType::Pipe | EntityType::InfinityPipe | EntityType::PipeToGround => {
-            for (p, dirs) in pipe_connections {
-                if !p.is_close(&pos, 0.5) {
-                    continue;
-                }
-
-                for dir in dirs {
-                    match dir {
-                        Direction::North => up = true,
-                        Direction::South => down = true,
-                        Direction::East => right = true,
-                        Direction::West => left = true,
-                        _ => {}
-                    }
-                }
-            }
+            handle_connection_map(
+                pipe_connections,
+                &pos,
+                &mut up,
+                &mut down,
+                &mut left,
+                &mut right,
+            );
         }
         EntityType::HeatPipe | EntityType::HeatInterface => {
-            for (p, dirs) in heat_connections {
-                if !p.is_close(&pos, 0.5) {
-                    continue;
-                }
-
-                for dir in dirs {
-                    match dir {
-                        Direction::North => up = true,
-                        Direction::South => down = true,
-                        Direction::East => right = true,
-                        Direction::West => left = true,
-                        _ => {}
-                    }
-                }
-            }
+            handle_connection_map(
+                heat_connections,
+                &pos,
+                &mut up,
+                &mut down,
+                &mut left,
+                &mut right,
+            );
         }
         _ => {
             for other in &bp.entities {
@@ -1057,7 +1085,7 @@ fn get_connection_data(
                     }
                 }
 
-                let other_pos: types::MapPosition = (&other.position).into();
+                let other_pos: MapPosition = (&other.position).into();
 
                 match entity_type {
                     EntityType::Gate => match pos.is_cardinal_neighbor(&other_pos) {
@@ -1096,7 +1124,7 @@ fn get_connection_data(
                                     let u_output = other
                                         .extra_data
                                         .as_ref()
-                                        .and_then(|ed| ed.belt_connection_type())
+                                        .and_then(EntityExtraData::belt_connection_type)
                                         .map(|t| t == blueprint::BeltConnectionType::Output);
 
                                     let Some(u_output) = u_output else {
@@ -1151,7 +1179,7 @@ fn get_connection_data(
 #[instrument(skip_all)]
 pub fn render_thumbnail(
     bp: &blueprint::Data,
-    data: &prototypes::DataUtil,
+    data: &DataUtil,
     used_mods: &UsedMods,
     image_cache: &mut ImageCache,
 ) -> Option<image::DynamicImage> {
