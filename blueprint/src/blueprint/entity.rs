@@ -47,8 +47,8 @@ pub struct Entity {
     // pub wires -> handled outside of entity
     pub burner_fuel_inventory: Option<InventoryWithFilters>,
 
-    #[serde(flatten, default, skip_serializing_if = "helper::is_default")]
-    pub extra_data: EntityExtraData,
+    #[serde(flatten, default, skip_serializing_if = "Option::is_none")]
+    pub extra_data: Option<EntityExtraData>,
 }
 
 impl PartialOrd for Entity {
@@ -73,9 +73,9 @@ impl crate::GetIDs for Entity {
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(untagged, deny_unknown_fields)]
+#[serde(untagged)]
 pub enum EntityExtraData {
-    None {},
+    //None {},
     Accumulator {
         control_behavior: AccumulatorControlBehavior,
     },
@@ -530,20 +530,14 @@ impl EntityExtraData {
     }
 }
 
-impl Default for EntityExtraData {
-    fn default() -> Self {
-        Self::None {}
-    }
-}
-
 impl crate::GetIDs for EntityExtraData {
     #[allow(clippy::too_many_lines)]
     fn get_ids(&self) -> crate::UsedIDs {
         let mut ids = crate::UsedIDs::default();
 
         match self {
-            Self::None {}
-            | Self::ElectricEnergyInterface { .. }
+            //Self::None {} |
+            Self::ElectricEnergyInterface { .. }
             | Self::HeatInterface { .. }
             | Self::LinkedBelt { .. }
             | Self::LinkedContainer { .. }
@@ -997,4 +991,35 @@ impl crate::GetIDs for SpeakerAlertParameters {
 pub struct VehicleAutomaticTargetingParameters {
     pub auto_target_without_gunner: bool,
     pub auto_target_with_gunner: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::unwrap_used)]
+
+    use super::*;
+    use crate::bp_string_to_json;
+
+    #[test]
+    fn omni_crafter_entities() {
+        let raw_omni = bp_string_to_json(include_str!("../../tests/omni_crafter_GWP.txt")).unwrap();
+        let json_data = serde_json::from_str::<serde_json::Value>(&raw_omni).unwrap();
+
+        let bps = json_data["blueprint_book"]["blueprints"]
+            .as_array()
+            .unwrap();
+
+        for entry in bps {
+            let entities = entry["blueprint"]["entities"].as_array().unwrap();
+
+            for raw_entity in entities {
+                let entity_json = serde_json::to_string_pretty(raw_entity).unwrap();
+                let Err(e) = serde_json::from_str::<Entity>(&entity_json) else {
+                    continue;
+                };
+
+                panic!("Failed to deserialize entity {e:?}: {entity_json}");
+            }
+        }
+    }
 }
