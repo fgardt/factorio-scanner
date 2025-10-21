@@ -300,41 +300,53 @@ pub fn bp_entity2render_opts(
     prototypes::entity::RenderOpts {
         position: (&value.position).into(),
         direction: value.direction,
-        orientation: value.extra_data.orientation(),
+        orientation: value.extra_data.as_ref().and_then(|ed| ed.orientation()),
         mirrored: value.mirror,
-        elevated: value.extra_data.rail_layer() == Some(&"elevated".to_owned()),
+        elevated: value.extra_data.as_ref().and_then(|ed| ed.rail_layer())
+            == Some(&"elevated".to_owned()),
         variation: None, // value.extra_data.variation, // variation is not documented, unsure where it might show up
-        pickup_position: value.extra_data.pickup_position().copied(),
+        pickup_position: value
+            .extra_data
+            .as_ref()
+            .and_then(|ed| ed.pickup_position().copied()),
         connections: None,
         underground_in: value
             .extra_data
-            .belt_connection_type()
             .as_ref()
-            .map(|&t| t == blueprint::BeltConnectionType::Input),
+            .and_then(|ed| ed.belt_connection_type())
+            .map(|t| t == blueprint::BeltConnectionType::Input),
         connected_gates: Vec::new(),
         draw_gate_patch: false,
         arithmetic_operation: value
             .extra_data
-            .combinator_data()
+            .as_ref()
+            .and_then(|ed| ed.combinator_data())
             .and_then(blueprint::CombinatorData::arithmetic_parameters)
             .map(blueprint::ArithmeticCombinatorParameters::operation),
         decider_operation: value
             .extra_data
-            .combinator_data()
+            .as_ref()
+            .and_then(|ed| ed.combinator_data())
             .and_then(blueprint::CombinatorData::decider_parameters)
             .map(blueprint::DeciderCombinatorParameters::operation),
         selector_operation: value
             .extra_data
-            .combinator_data()
+            .as_ref()
+            .and_then(|ed| ed.combinator_data())
             .and_then(blueprint::CombinatorData::selector_parameters)
             .map(blueprint::SelectorCombinatorParameters::operation),
-        runtime_tint: value.extra_data.color().map(std::convert::Into::into),
+        runtime_tint: value
+            .extra_data
+            .as_ref()
+            .and_then(|ed| ed.color())
+            .map(std::convert::Into::into),
         entity_id: value.entity_number.into(),
         circuit_connected: false, // TODO: more complex to figure out with wire info being outside of the entity
         logistic_connected: false, // TODO: bit more involved to wire all CBs up
         fluid_recipe: value
             .extra_data
-            .recipe()
+            .as_ref()
+            .and_then(|ed| ed.recipe())
             .map(|r| data.recipe_has_fluid(r))
             .unwrap_or_default(),
     }
@@ -566,7 +578,7 @@ pub fn render_bp(
             }
 
             'recipe_icon: {
-                let recipe = e.extra_data.recipe();
+                let recipe = e.extra_data.as_ref().and_then(|ed| ed.recipe());
                 if let Some(recipe) = recipe
                     && e_data.recipe_visible()
                 {
@@ -597,7 +609,7 @@ pub fn render_bp(
 
             // filter icons / priority arrows
             'filters_priority: {
-                if let Some(prio_in) = &e.extra_data.input_priority()
+                if let Some(prio_in) = &e.extra_data.as_ref().and_then(|ed| ed.input_priority())
                     && prio_in != &SplitterPriority::None
                 {
                     let offset = e.direction.rotate_vector(
@@ -621,10 +633,11 @@ pub fn render_bp(
                     );
                 }
 
-                if let Some(prio_out) = &e.extra_data.output_priority()
+                if let Some(prio_out) = &e.extra_data.as_ref().and_then(|ed| ed.output_priority())
                     && prio_out != &SplitterPriority::None
                 {
-                    if let Some(item_filter) = e.extra_data.splitter_filter()
+                    if let Some(item_filter) =
+                        e.extra_data.as_ref().and_then(|ed| ed.splitter_filter())
                         && let Some(filter) = item_filter.name.as_ref()
                     {
                         let Some(filter) = data.get_item_icon(
@@ -674,20 +687,20 @@ pub fn render_bp(
 
                 let mut active_filters = None;
                 let mut _active_mode = None; // TODO: add blacklist overlay when applicable
-                if let blueprint::EntityExtraData::Inserter {
+                if let Some(blueprint::EntityExtraData::Inserter {
                     filters,
                     filter_mode,
                     use_filters: true,
                     ..
-                } = &e.extra_data
+                }) = &e.extra_data
                 {
                     active_filters = Some(filters);
                     _active_mode = Some(filter_mode);
-                } else if let blueprint::EntityExtraData::Loader {
+                } else if let Some(blueprint::EntityExtraData::Loader {
                     filters,
                     filter_mode,
                     ..
-                } = &e.extra_data
+                }) = &e.extra_data
                 {
                     active_filters = Some(filters);
                     _active_mode = Some(filter_mode);
@@ -843,13 +856,23 @@ pub fn render_bp(
                 }
 
                 indicator_helper(
-                    proto.get_pickup_position(e.direction, e.extra_data.pickup_position().copied()),
+                    proto.get_pickup_position(
+                        e.direction,
+                        e.extra_data
+                            .as_ref()
+                            .and_then(|ed| ed.pickup_position().copied()),
+                    ),
                     &render_opts,
                     &indicator_line,
                     &mut render_layers,
                 );
                 indicator_helper(
-                    proto.get_insert_position(e.direction, e.extra_data.drop_position().copied()),
+                    proto.get_insert_position(
+                        e.direction,
+                        e.extra_data
+                            .as_ref()
+                            .and_then(|ed| ed.drop_position().copied()),
+                    ),
                     &render_opts,
                     &indicator_arrow,
                     &mut render_layers,
@@ -1072,9 +1095,9 @@ fn get_connection_data(
                                 if let Some(dir) = dir {
                                     let u_output = other
                                         .extra_data
-                                        .belt_connection_type()
                                         .as_ref()
-                                        .map(|&t| t == blueprint::BeltConnectionType::Output);
+                                        .and_then(|ed| ed.belt_connection_type())
+                                        .map(|t| t == blueprint::BeltConnectionType::Output);
 
                                     let Some(u_output) = u_output else {
                                         continue;

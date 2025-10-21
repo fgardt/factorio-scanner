@@ -826,7 +826,7 @@ mod tests {
             assert_eq!(sc.direction, types::Direction::East);
             assert_eq!(sc.position, Position { x: 44.0, y: -26.5 });
 
-            let EntityExtraData::Combinator(cd) = sc.extra_data else {
+            let Some(EntityExtraData::Combinator(cd)) = sc.extra_data else {
                 panic!("extra_data is not Combinator");
             };
 

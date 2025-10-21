@@ -146,7 +146,7 @@ pub struct AssemblingMachineControlBehavior {
     pub set_recipe: bool,
 
     #[serde(flatten)]
-    shared: FurnaceControlBehavior,
+    pub(super) shared: FurnaceControlBehavior,
 }
 
 impl Deref for AssemblingMachineControlBehavior {
@@ -303,7 +303,7 @@ pub struct FurnaceControlBehavior {
     pub working_signal: Option<SignalID>,
 
     #[serde(flatten)]
-    common: CommonControlBehavior,
+    pub(super) common: CommonControlBehavior,
 }
 
 impl Deref for FurnaceControlBehavior {
