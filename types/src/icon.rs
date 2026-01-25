@@ -48,9 +48,7 @@ impl RenderableGraphics for IconData {
         let icon_size = self.icon_size as u32;
 
         // technically not 100% correct, technology icons default to 256/icon_size
-        let icon_scale = self
-            .scale
-            .map_or_else(|| 32.0 / f64::from(icon_size), |scale| scale);
+        let icon_scale = self.scale.unwrap_or_else(|| 32.0 / f64::from(icon_size));
 
         let img = self
             .icon

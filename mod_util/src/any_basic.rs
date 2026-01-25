@@ -13,7 +13,7 @@ pub enum AnyBasic {
     Bool(bool),
     Number(f64),
     Table(TagTable),
-    Array(Vec<AnyBasic>),
+    Array(Vec<Self>),
 }
 
 impl std::fmt::Display for AnyBasic {

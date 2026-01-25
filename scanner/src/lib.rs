@@ -13,7 +13,7 @@ use image::{ImageEncoder, codecs::png, imageops};
 use imageproc::geometric_transformations::{self, rotate_about_center};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use tracing::{debug, error, field, info, info_span, instrument, warn};
+use tracing::{debug, field, info, info_span, instrument, warn};
 
 use blueprint::{EntityExtraData, SignalID, SplitterPriority};
 use mod_util::{
@@ -259,6 +259,7 @@ pub fn calculate_target_size(
         }
     }
 
+    #[expect(clippy::float_cmp, reason = "checking against initial values")]
     if min_x == f64::MAX || min_y == f64::MAX || max_x == f64::MIN || max_y == f64::MIN {
         return None;
     }

@@ -52,7 +52,7 @@ enum LocalisedString {
     Number(f64),
     Boolean(bool),
     // LuaObject(?),
-    Array(Vec<LocalisedString>),
+    Array(Vec<Self>),
 }
 
 impl FromLua for LocalisedString {
@@ -326,7 +326,7 @@ impl DataLoader {
                         let tmap = gmap.entry(typename.to_string_lossy()).or_default();
 
                         additions.for_each::<LuaValue, LuaString>(|_, id| {
-                            tmap.insert(id.to_string_lossy(), mod_name.to_string());
+                            tmap.insert(id.to_string_lossy(), mod_name.clone());
                             Ok(())
                         })?;
                         Ok(())

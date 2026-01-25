@@ -758,7 +758,7 @@ impl FileName {
 #[serde(untagged)]
 pub enum LocalisedString {
     String(String),
-    Array(FactorioArray<LocalisedString>),
+    Array(FactorioArray<Self>),
 }
 
 /// [`Types/Order`](https://lua-api.factorio.com/latest/types/Order.html)

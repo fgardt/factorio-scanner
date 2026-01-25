@@ -218,7 +218,7 @@ impl SettingsDat {
         buf.write_u8(0)?; // false bool
 
         let data = PropertyTree::Dictionary(
-            vec![
+            [
                 (
                     "startup".to_owned(),
                     PropertyTree::Dictionary(self.startup.clone()),
