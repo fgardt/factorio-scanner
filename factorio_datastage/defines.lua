@@ -1,4 +1,4 @@
--- version: 2.0.72
+-- version: 2.0.73
 -- get defines by running "/c log(serpent.block(defines))"
 
 return {
@@ -951,6 +951,9 @@ return {
     logistic_member_index = {
         car_provider = 2,
         car_requester = 0,
+        cargo_landing_pad_provider = 1,
+        cargo_landing_pad_requester = 0,
+        cargo_landing_pad_trash_provider = 2,
         character_provider = 2,
         character_requester = 0,
         character_storage = 1,
