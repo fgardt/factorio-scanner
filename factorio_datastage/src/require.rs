@@ -173,7 +173,7 @@ fn require_relative(parts: &[String], data: &VmData) -> Option<(Vec<u8>, String,
     };
 
     let file_path = if folder.is_empty() {
-        parts[parts.len() - 1].to_string() + ".lua"
+        parts[parts.len() - 1].clone() + ".lua"
     } else {
         folder.clone() + "/" + &parts[parts.len() - 1] + ".lua"
     };

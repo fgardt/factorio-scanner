@@ -116,8 +116,8 @@ pub enum PropertyTree {
     Bool(bool),
     Number(f64),
     String(String),
-    List(Vec<PropertyTree>),
-    Dictionary(HashMap<String, PropertyTree>),
+    List(Vec<Self>),
+    Dictionary(HashMap<String, Self>),
     SignedInteger(i64),
     UnsignedInteger(u64),
 }

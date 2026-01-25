@@ -464,7 +464,7 @@ impl ModList {
         let mut reqs = Vec::new();
         for (name, version) in required {
             let Some(info) = self.list.get(name) else {
-                return Err(ModListError::SolverMissingInfo(name.to_string()));
+                return Err(ModListError::SolverMissingInfo(name.clone()));
             };
 
             let info_versions = info.versions.keys().copied().collect::<Vec<_>>();
@@ -480,7 +480,7 @@ impl ModList {
             }
 
             let Some(version) = version.get_allowed_version(&info_versions) else {
-                return Err(ModListError::SolverMissingInfo(name.to_string()));
+                return Err(ModListError::SolverMissingInfo(name.clone()));
             };
 
             reqs.push((name.as_str(), *version));
