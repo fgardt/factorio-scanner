@@ -30,6 +30,8 @@ pub struct FusionGeneratorData {
     pub effectivity: f64,
 }
 
+impl super::Entity for FusionGeneratorData {}
+
 impl super::Renderable for FusionGeneratorData {
     fn render(
         &self,

@@ -1,15 +1,18 @@
-use mod_util::UsedMods;
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
-use tracing::warn;
 
-use super::{
-    Animation, AnimationRenderOpts, AnimationVariations, DirectionalRenderOpts, GraphicsOutput,
-    RenderableGraphics, RotatedAnimation, RotatedRenderOpts, Sprite4Way, SpriteVariations,
-    TintableRenderOpts,
+use crate::{
+    Animation, AnimationRenderOpts, AnimationVariations, ConnectedDirections,
+    DirectionalRenderOpts, RealOrientation, RenderableGraphics, RotatedAnimation, Sprite4Way,
+    SpriteVariations, TintableRenderOpts, Vector,
 };
-use crate::{ConnectedDirections, Direction, ImageCache, RealOrientation, Vector};
+
+#[cfg(feature = "graphics")]
+use mod_util::UsedMods;
+
+#[cfg(feature = "graphics")]
+use crate::{Direction, GraphicsOutput, ImageCache, RotatedRenderOpts};
 
 /// [`Types/TransportBeltAnimationSet`](https://lua-api.factorio.com/latest/types/TransportBeltAnimationSet.html)
 #[derive(Debug, Serialize, Deserialize)]
@@ -100,6 +103,7 @@ pub struct TransportBeltAnimationSet {
 impl RenderableGraphics for TransportBeltAnimationSet {
     type RenderOpts = DirectionalRenderOpts<AnimationRenderOpts>;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -107,6 +111,8 @@ impl RenderableGraphics for TransportBeltAnimationSet {
         image_cache: &mut ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<GraphicsOutput> {
+        use tracing::warn;
+
         // -1 because the index is 1-based. Lua stuff :)
         let index = match opts.direction {
             Direction::North => self.north_index,
@@ -213,6 +219,7 @@ impl<M> ConnectedRenderOpts<M> {
 impl RenderableGraphics for TransportBeltAnimationSetWithCorners {
     type RenderOpts = ConnectedRenderOpts<DirectionalRenderOpts<AnimationRenderOpts>>;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,

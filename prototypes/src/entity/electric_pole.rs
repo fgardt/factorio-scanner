@@ -36,6 +36,8 @@ pub struct ElectricPoleData {
     pub rewire_neighbours_when_destroying: bool,
 }
 
+impl super::Entity for ElectricPoleData {}
+
 impl super::Renderable for ElectricPoleData {
     fn render(
         &self,

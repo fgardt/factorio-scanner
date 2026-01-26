@@ -1,11 +1,14 @@
-use image::Rgba;
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
-use crate::{FactorioArray, GraphicsOutput, ImageCache, RenderableGraphics, merge_renders};
+#[cfg(feature = "graphics")]
+use image::Rgba;
 
-use super::{Color, FileName, RenderLayer, SpriteSizeType, Vector};
+#[cfg(feature = "graphics")]
+use crate::{GraphicsOutput, ImageCache, RenderableGraphics, merge_renders};
+
+use super::{Color, FactorioArray, FileName, RenderLayer, SpriteSizeType, Vector};
 
 /// [`Types/IconMipMapType`](https://lua-api.factorio.com/latest/types/IconMipMapType.html)
 pub type IconMipMapType = u8;
@@ -35,6 +38,7 @@ pub struct IconData {
     pub floating: bool,
 }
 
+#[cfg(feature = "graphics")]
 impl RenderableGraphics for IconData {
     type RenderOpts = ();
 
@@ -101,6 +105,7 @@ macro_rules! icon_enum {
                     },
                 }
 
+                #[cfg(feature = "graphics")]
                 impl RenderableGraphics for $name {
                     type RenderOpts = ();
 
@@ -137,6 +142,7 @@ icon_enum! {
     StarMapIcon
 }
 
+#[cfg(feature = "graphics")]
 pub fn merge_icon_layers<O, T: RenderableGraphics<RenderOpts = O>>(
     layers: &[T],
     scale: f64,

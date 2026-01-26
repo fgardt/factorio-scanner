@@ -18,6 +18,8 @@ pub struct HeatPipeData {
     pub heating_radius: f32,
 }
 
+impl super::Entity for HeatPipeData {}
+
 impl super::Renderable for HeatPipeData {
     fn render(
         &self,

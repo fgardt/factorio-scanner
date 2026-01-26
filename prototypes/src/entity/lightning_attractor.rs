@@ -28,6 +28,8 @@ pub struct LightningAttractorData {
     pub energy_source: Option<ElectricEnergySource>,
 }
 
+impl super::Entity for LightningAttractorData {}
+
 impl super::Renderable for LightningAttractorData {
     fn render(
         &self,

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use serde_helper as helper;
-use types::{Color, Energy, FluidID, Icon, RenderableGraphics};
+use types::{Color, Energy, FluidID, Icon};
 
 use crate::helper_macro::namespace_struct;
 
@@ -52,12 +52,14 @@ pub struct FluidPrototypeData {
 }
 
 impl FluidPrototypeData {
+    #[cfg(feature = "graphics")]
     pub fn get_icon(
         &self,
         scale: f64,
         used_mods: &mod_util::UsedMods,
         image_cache: &mut types::ImageCache,
     ) -> Option<types::GraphicsOutput> {
+        use types::RenderableGraphics;
         self.icon.render(scale, used_mods, image_cache, &())
     }
 }
@@ -77,6 +79,7 @@ namespace_struct! {
 }
 
 impl AllTypes {
+    #[cfg(feature = "graphics")]
     pub fn get_icon(
         &self,
         name: &str,

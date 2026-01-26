@@ -1,15 +1,14 @@
 use std::ops::Rem;
 
-use mod_util::UsedMods;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use crate::{
-    FactorioArray, GraphicsOutput, ImageCache, LightDefinition, RealOrientation,
-    RenderableGraphics, Sprite, TintableRenderOpts, Vector,
-};
+use crate::{FactorioArray, LightDefinition, RealOrientation, Sprite, Vector};
+
+#[cfg(feature = "graphics")]
+use crate::{GraphicsOutput, ImageCache, RenderableGraphics, TintableRenderOpts};
 
 /// [`Types/WirePosition`](https://lua-api.factorio.com/latest/types/WirePosition.html)
 #[skip_serializing_none]
@@ -253,12 +252,13 @@ impl WireConnectionData {
         }
     }
 
+    #[cfg(feature = "graphics")]
     #[must_use]
     pub fn render_connector(
         &self,
         orientation: RealOrientation,
         scale: f64,
-        used_mods: &UsedMods,
+        used_mods: &mod_util::UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         self.get_connector_sprites(orientation)
@@ -273,12 +273,13 @@ impl WireConnectionData {
             })
     }
 
+    #[cfg(feature = "graphics")]
     #[must_use]
     pub fn render_pins(
         &self,
         orientation: RealOrientation,
         scale: f64,
-        used_mods: &UsedMods,
+        used_mods: &mod_util::UsedMods,
         image_cache: &mut ImageCache,
     ) -> Option<GraphicsOutput> {
         self.get_connector_sprites(orientation)

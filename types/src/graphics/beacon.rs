@@ -1,16 +1,17 @@
-use mod_util::UsedMods;
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
-use super::{
-    AnimationElement, AnimationRenderOpts, GraphicsOutput, RenderLayer, RenderableGraphics,
-    SpriteVariations, VariationRenderOpts, merge_layers, merge_renders,
-};
 use crate::{
-    Color, FactorioArray, ImageCache, LightDefinition, ModuleTint, ModuleTintMode,
-    WaterReflectionDefinition,
+    AnimationElement, AnimationRenderOpts, Color, FactorioArray, LightDefinition, ModuleTint,
+    ModuleTintMode, RenderLayer, RenderableGraphics, SpriteVariations, WaterReflectionDefinition,
 };
+
+#[cfg(feature = "graphics")]
+use mod_util::UsedMods;
+
+#[cfg(feature = "graphics")]
+use crate::{GraphicsOutput, ImageCache, VariationRenderOpts, merge_layers, merge_renders};
 
 /// [`Types/BeaconModuleVisualization`](https://lua-api.factorio.com/latest/types/BeaconModuleVisualization.html)
 #[skip_serializing_none]
@@ -61,6 +62,7 @@ pub struct BeaconModuleVisualizations {
 impl RenderableGraphics for BeaconModuleVisualizations {
     type RenderOpts = ();
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -153,6 +155,7 @@ pub struct BeaconGraphicsSet {
 impl RenderableGraphics for BeaconGraphicsSet {
     type RenderOpts = AnimationRenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,

@@ -14,6 +14,8 @@ pub struct MarketData {
     pub picture: Sprite,
 }
 
+impl super::Entity for MarketData {}
+
 impl super::Renderable for MarketData {
     fn render(
         &self,

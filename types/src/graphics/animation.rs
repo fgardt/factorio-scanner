@@ -1,14 +1,14 @@
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
-use tracing::warn;
 
-use super::{
-    DirectionalRenderOpts, LayeredGraphic, RenderLayer, RenderableGraphics, SourceProvider,
-    SpriteParameters, StripeMultiSingleSource, StripeMultiSingleSourceFetchArgs,
-    TintableRenderOpts,
+use crate::{
+    DirectionalRenderOpts, FactorioArray, LayeredGraphic, RenderLayer, RenderableGraphics,
+    SourceProvider, SpriteParameters, StripeMultiSingleSource, TintableRenderOpts,
 };
-use crate::{Direction, FactorioArray};
+
+#[cfg(feature = "graphics")]
+use crate::{Direction, StripeMultiSingleSourceFetchArgs};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct AnimationRenderOpts<M = TintableRenderOpts> {
@@ -139,6 +139,7 @@ pub struct AnimationData(AnimationParameters);
 impl RenderableGraphics for AnimationData {
     type RenderOpts = AnimationRenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -203,6 +204,7 @@ pub struct AnimationElement {
 impl RenderableGraphics for AnimationElement {
     type RenderOpts = AnimationRenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -236,6 +238,7 @@ pub enum Animation4Way {
 impl RenderableGraphics for Animation4Way {
     type RenderOpts = DirectionalRenderOpts<AnimationRenderOpts>;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -243,6 +246,8 @@ impl RenderableGraphics for Animation4Way {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
+        use tracing::warn;
+
         match self {
             Self::Struct {
                 north,

@@ -122,6 +122,8 @@ pub struct RoboportData {
     // pub close_door_trigger_effect: Option<TriggerEffect>,
 }
 
+impl super::Entity for RoboportData {}
+
 impl super::Renderable for RoboportData {
     fn render(
         &self,

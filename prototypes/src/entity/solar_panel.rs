@@ -37,6 +37,8 @@ fn is_default_solar_coefficient_property(solar_coefficient_property: &SurfacePro
     *solar_coefficient_property == default_solar_coefficient_property()
 }
 
+impl super::Entity for SolarPanelData {}
+
 impl super::Renderable for SolarPanelData {
     fn render(
         &self,

@@ -6,7 +6,7 @@ use serde_with::skip_serializing_none;
 use serde_helper as helper;
 use types::{
     Color, FactorioArray, FluidID, Icon, ItemID, LocalisedString, ModuleCategoryID,
-    RecipeCategoryID, RecipeID, RenderableGraphics, SurfaceCondition, TechnologyID,
+    RecipeCategoryID, RecipeID, SurfaceCondition, TechnologyID,
 };
 
 use crate::helper_macro::namespace_struct;
@@ -133,6 +133,7 @@ pub struct RecipePrototypeData {
 }
 
 impl RecipePrototypeData {
+    #[cfg(feature = "graphics")]
     pub fn get_icon(
         &self,
         scale: f64,
@@ -141,6 +142,8 @@ impl RecipePrototypeData {
         items: &crate::item::AllTypes,
         fluids: &crate::fluid::AllTypes,
     ) -> Option<types::GraphicsOutput> {
+        use types::RenderableGraphics;
+
         if let Some(icon) = self.icon.as_ref() {
             return icon.render(scale, used_mods, image_cache, &());
         }
@@ -359,6 +362,7 @@ namespace_struct! {
 }
 
 impl AllTypes {
+    #[cfg(feature = "graphics")]
     pub fn get_icon(
         &self,
         name: &str,

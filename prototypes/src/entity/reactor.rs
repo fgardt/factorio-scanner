@@ -48,6 +48,8 @@ pub struct ReactorData {
     // pub meltdown_action: Option<Trigger>,
 }
 
+impl super::Entity for ReactorData {}
+
 impl super::Renderable for ReactorData {
     fn render(
         &self,

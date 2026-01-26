@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use types::{Icon, RenderableGraphics, VirtualSignalID};
+use types::{Icon, VirtualSignalID};
 
 use crate::helper_macro::namespace_struct;
 
@@ -14,6 +14,7 @@ pub struct VirtualSignalPrototypeData {
     pub icon: Icon,
 }
 
+#[cfg(feature = "graphics")]
 impl VirtualSignalPrototypeData {
     pub fn get_icon(
         &self,
@@ -21,6 +22,8 @@ impl VirtualSignalPrototypeData {
         used_mods: &mod_util::UsedMods,
         image_cache: &mut types::ImageCache,
     ) -> Option<types::GraphicsOutput> {
+        use types::RenderableGraphics;
+
         self.icon.render(scale, used_mods, image_cache, &())
     }
 }

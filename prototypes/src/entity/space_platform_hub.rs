@@ -32,6 +32,8 @@ pub struct SpacePlatformHubData {
     // pub persistent_ambient_sounds: Option<PersistentWorldAmbientSoundsDefinition>,
 }
 
+impl super::Entity for SpacePlatformHubData {}
+
 impl super::Renderable for SpacePlatformHubData {
     fn render(
         &self,

@@ -15,7 +15,7 @@ pub type FlyingRobotPrototype<T> = EntityWithOwnerPrototype<FlyingRobotData<T>>;
 /// [`Prototypes/FlyingRobotPrototype`](https://lua-api.factorio.com/latest/prototypes/FlyingRobotPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
-pub struct FlyingRobotData<T: super::Renderable> {
+pub struct FlyingRobotData<T: super::Entity> {
     pub speed: f64,
 
     #[serde(
@@ -45,7 +45,9 @@ pub struct FlyingRobotData<T: super::Renderable> {
     child: T,
 }
 
-impl<T: super::Renderable> Deref for FlyingRobotData<T> {
+impl<T: super::Entity> super::Entity for FlyingRobotData<T> {}
+
+impl<T: super::Entity> Deref for FlyingRobotData<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -53,7 +55,7 @@ impl<T: super::Renderable> Deref for FlyingRobotData<T> {
     }
 }
 
-impl<T: super::Renderable> super::Renderable for FlyingRobotData<T> {
+impl<T: super::Entity> super::Renderable for FlyingRobotData<T> {
     fn render(
         &self,
         options: &super::RenderOpts,
@@ -96,6 +98,8 @@ pub struct CombatRobotData {
     // pub destroy_action: Option<Trigger>,
 }
 
+impl super::Entity for CombatRobotData {}
+
 impl super::Renderable for CombatRobotData {
     fn render(
         &self,
@@ -115,7 +119,7 @@ pub type RobotWithLogisticInterfacePrototype<T> =
 /// [`Prototypes/RobotWithLogisticInterfacePrototype`](https://lua-api.factorio.com/latest/prototypes/RobotWithLogisticInterfacePrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
-pub struct RobotWithLogisticInterfaceData<T: super::Renderable> {
+pub struct RobotWithLogisticInterfaceData<T: super::Entity> {
     #[serde(deserialize_with = "helper::truncating_deserializer")]
     pub max_payload_size: ItemCountType,
     pub max_payload_size_after_bonus: Option<ItemCountType>,
@@ -135,7 +139,9 @@ pub struct RobotWithLogisticInterfaceData<T: super::Renderable> {
     // pub charging_sound: Option<InterruptibleSound>,
 }
 
-impl<T: super::Renderable> Deref for RobotWithLogisticInterfaceData<T> {
+impl<T: super::Entity> super::Entity for RobotWithLogisticInterfaceData<T> {}
+
+impl<T: super::Entity> Deref for RobotWithLogisticInterfaceData<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -143,7 +149,7 @@ impl<T: super::Renderable> Deref for RobotWithLogisticInterfaceData<T> {
     }
 }
 
-impl<T: super::Renderable> super::Renderable for RobotWithLogisticInterfaceData<T> {
+impl<T: super::Entity> super::Renderable for RobotWithLogisticInterfaceData<T> {
     fn render(
         &self,
         options: &super::RenderOpts,
@@ -187,6 +193,8 @@ pub struct ConstructionRobotData {
     // pub reparing_sound: Option<Sound>,
 }
 
+impl super::Entity for ConstructionRobotData {}
+
 impl super::Renderable for ConstructionRobotData {
     fn render(
         &self,
@@ -211,6 +219,8 @@ pub struct LogisticRobotData {
     pub shadow_idle_with_cargo: Option<RotatedAnimation>,
     pub shadow_in_motion_with_cargo: Option<RotatedAnimation>,
 }
+
+impl super::Entity for LogisticRobotData {}
 
 impl super::Renderable for LogisticRobotData {
     fn render(

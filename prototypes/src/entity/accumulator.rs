@@ -17,6 +17,8 @@ pub struct AccumulatorData {
     pub default_output_signal: Option<SignalIDConnector>,
 }
 
+impl super::Entity for AccumulatorData {}
+
 impl super::Renderable for AccumulatorData {
     fn render(
         &self,

@@ -28,6 +28,8 @@ pub struct BurnerGeneratorData {
     pub perceived_performance: PerceivedPerformance,
 }
 
+impl super::Entity for BurnerGeneratorData {}
+
 impl super::Renderable for BurnerGeneratorData {
     fn render(
         &self,

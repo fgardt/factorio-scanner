@@ -104,6 +104,8 @@ pub struct InserterData {
     pub stack_size_bonus: u8,
 }
 
+impl super::Entity for InserterData {}
+
 impl super::Renderable for InserterData {
     fn render(
         &self,

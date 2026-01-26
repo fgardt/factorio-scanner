@@ -7,18 +7,29 @@ edition.workspace = true
 [lints]
 workspace = true
 
+[features]
+default = ["graphics"]
+graphics = [
+    "types/graphics",
+    "dep:image",
+    "dep:imageproc",
+    "dep:signed-distance-field",
+]
+
 [dependencies]
-image.workspace = true
-imageproc.workspace = true
-paste.workspace = true
 konst.workspace = true
+paste.workspace = true
+tracing.workspace = true
+thiserror.workspace = true
 mod_util.workspace = true
 serde.workspace = true
 serde_helper.workspace = true
 serde_json.workspace = true
 serde_repr.workspace = true
 serde_with.workspace = true
-signed-distance-field = { version = "0.6", features = ["image"] }
-thiserror.workspace = true
-tracing.workspace = true
 types.workspace = true
+image = { workspace = true, optional = true }
+imageproc = { workspace = true, optional = true }
+signed-distance-field = { version = "0.6", optional = true, features = [
+    "image",
+] }

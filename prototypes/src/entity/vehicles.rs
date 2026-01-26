@@ -15,7 +15,7 @@ pub type VehiclePrototype<T> = EntityWithOwnerPrototype<VehicleData<T>>;
 /// [`Prototypes/VehiclePrototype`](https://lua-api.factorio.com/latest/prototypes/VehiclePrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct VehicleData<T: super::Renderable> {
+pub struct VehicleData<T: super::Entity> {
     pub weight: f64,
 
     #[serde(flatten)]
@@ -58,7 +58,9 @@ pub struct VehicleData<T: super::Renderable> {
     // pub stop_trigger: Option<TriggerEffect>,
 }
 
-impl<T: super::Renderable> Deref for VehicleData<T> {
+impl<T: super::Entity> super::Entity for VehicleData<T> {}
+
+impl<T: super::Entity> Deref for VehicleData<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -66,7 +68,7 @@ impl<T: super::Renderable> Deref for VehicleData<T> {
     }
 }
 
-impl<T: super::Renderable> super::Renderable for VehicleData<T> {
+impl<T: super::Entity> super::Renderable for VehicleData<T> {
     fn render(
         &self,
         options: &super::RenderOpts,
@@ -177,6 +179,8 @@ pub struct CarData {
     // pub track_particle_triggers: Option<FootstepTriggerEffectList>,
 }
 
+impl super::Entity for CarData {}
+
 impl super::Renderable for CarData {
     fn render(
         &self,
@@ -211,7 +215,7 @@ pub type RollingStockPrototype<T> = VehiclePrototype<RollingStockData<T>>;
 /// [`Prototypes/RollingStockPrototype`](https://lua-api.factorio.com/latest/prototypes/RollingStockPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RollingStockData<T: super::Renderable> {
+pub struct RollingStockData<T: super::Entity> {
     pub max_speed: f64,
     pub air_resistance: f64,
     pub joint_distance: f64,
@@ -255,7 +259,9 @@ pub struct RollingStockData<T: super::Renderable> {
     // pub door_closing_sound: Option<InterruptibleSound>,
 }
 
-impl<T: super::Renderable> Deref for RollingStockData<T> {
+impl<T: super::Entity> super::Entity for RollingStockData<T> {}
+
+impl<T: super::Entity> Deref for RollingStockData<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -263,7 +269,7 @@ impl<T: super::Renderable> Deref for RollingStockData<T> {
     }
 }
 
-impl<T: super::Renderable> super::Renderable for RollingStockData<T> {
+impl<T: super::Entity> super::Renderable for RollingStockData<T> {
     fn render(
         &self,
         opts: &super::RenderOpts,
@@ -432,6 +438,8 @@ pub struct ArtilleryWagonData {
     // pub rotating_sound: Option<InterruptibleSound>,
 }
 
+impl super::Entity for ArtilleryWagonData {}
+
 impl super::Renderable for ArtilleryWagonData {
     fn render(
         &self,
@@ -520,6 +528,8 @@ pub struct CargoWagonData {
     pub quality_affects_inventory_size: bool,
 }
 
+impl super::Entity for CargoWagonData {}
+
 impl super::Renderable for CargoWagonData {
     fn render(
         &self,
@@ -550,6 +560,8 @@ pub struct InfinityCargoWagonData {
     #[serde(flatten)]
     parent: CargoWagonData,
 }
+
+impl super::Entity for InfinityCargoWagonData {}
 
 impl Deref for InfinityCargoWagonData {
     type Target = CargoWagonData;
@@ -589,6 +601,8 @@ pub struct FluidWagonData {
     #[serde(default = "default_cc", skip_serializing_if = "is_default_cc")]
     pub connection_category: SingleOrArray<String>,
 }
+
+impl super::Entity for FluidWagonData {}
 
 fn default_cc() -> SingleOrArray<String> {
     SingleOrArray::Single("default".to_string())
@@ -641,6 +655,8 @@ pub struct LocomotiveData {
     #[serde(default = "helper::f32_3", skip_serializing_if = "helper::is_3_f32")]
     pub max_snap_to_train_stop_distance: f32,
 }
+
+impl super::Entity for LocomotiveData {}
 
 impl super::Renderable for LocomotiveData {
     fn render(

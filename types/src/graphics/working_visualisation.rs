@@ -1,13 +1,17 @@
-use mod_util::UsedMods;
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
-use super::{
-    Animation, Animation4Way, AnimationRenderOpts, DirectionalRenderOpts, GraphicsOutput,
-    RenderLayer, RenderableGraphics, merge_renders,
+use crate::{
+    Animation, Animation4Way, AnimationRenderOpts, Color, DirectionalRenderOpts, FactorioArray,
+    LightDefinition, RenderLayer, RenderableGraphics, Vector,
 };
-use crate::{Color, Direction, FactorioArray, ImageCache, LightDefinition, Vector};
+
+#[cfg(feature = "graphics")]
+use mod_util::UsedMods;
+
+#[cfg(feature = "graphics")]
+use crate::{Direction, GraphicsOutput, ImageCache, merge_renders};
 
 /// [`Types/WorkingVisualisation`](https://lua-api.factorio.com/latest/types/WorkingVisualisation.html)
 #[skip_serializing_none]
@@ -88,6 +92,7 @@ pub struct WorkingVisualisation {
 impl RenderableGraphics for WorkingVisualisation {
     type RenderOpts = DirectionalRenderOpts<AnimationRenderOpts>;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -150,6 +155,7 @@ pub enum WorkingVisualisationAnimation {
 impl RenderableGraphics for WorkingVisualisationAnimation {
     type RenderOpts = DirectionalRenderOpts<AnimationRenderOpts>;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -239,6 +245,7 @@ impl<T> std::ops::Deref for WorkingVisualisations<T> {
 impl<T> RenderableGraphics for WorkingVisualisations<T> {
     type RenderOpts = DirectionalRenderOpts<AnimationRenderOpts>;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,

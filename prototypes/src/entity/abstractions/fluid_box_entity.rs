@@ -1,17 +1,19 @@
 use serde::{Deserialize, Serialize};
 use types::{Direction, FluidBox, MapPosition};
 
-use super::Renderable;
+use super::{Entity, Renderable};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct FluidBoxEntityData<T: Renderable> {
+pub struct FluidBoxEntityData<T: Entity> {
     pub fluid_box: FluidBox,
 
     #[serde(flatten)]
     child: T,
 }
 
-impl<T: Renderable> std::ops::Deref for FluidBoxEntityData<T> {
+impl<T: Entity> Entity for FluidBoxEntityData<T> {}
+
+impl<T: Entity> std::ops::Deref for FluidBoxEntityData<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -19,7 +21,7 @@ impl<T: Renderable> std::ops::Deref for FluidBoxEntityData<T> {
     }
 }
 
-impl<T: Renderable> Renderable for FluidBoxEntityData<T> {
+impl<T: Entity> Renderable for FluidBoxEntityData<T> {
     fn render(
         &self,
         options: &super::RenderOpts,

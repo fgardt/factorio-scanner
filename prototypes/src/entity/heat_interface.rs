@@ -18,6 +18,8 @@ pub struct HeatInterfaceData {
     pub gui_mode: GuiMode,
 }
 
+impl super::Entity for HeatInterfaceData {}
+
 impl super::Renderable for HeatInterfaceData {
     fn render(
         &self,

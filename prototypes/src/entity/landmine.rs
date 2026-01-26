@@ -50,6 +50,8 @@ pub struct LandMineData {
     // pub action: Option<Trigger>,
 }
 
+impl super::Entity for LandMineData {}
+
 impl super::Renderable for LandMineData {
     fn render(
         &self,

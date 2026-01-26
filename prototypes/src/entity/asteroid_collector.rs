@@ -104,6 +104,8 @@ fn is_default_arm_color_gradient(arm_color_gradient: &FactorioArray<Color>) -> b
     false
 }
 
+impl super::Entity for AsteroidCollectorData {}
+
 impl super::Renderable for AsteroidCollectorData {
     fn render(
         &self,

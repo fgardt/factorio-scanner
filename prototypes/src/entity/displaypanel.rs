@@ -31,6 +31,8 @@ pub struct DisplayPanelData {
     pub background_color: Option<Color>,
 }
 
+impl super::Entity for DisplayPanelData {}
+
 impl super::Renderable for DisplayPanelData {
     fn render(
         &self,

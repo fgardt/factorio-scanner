@@ -35,6 +35,8 @@ pub struct ElectricEnergyInterfaceData {
     // TODO: `allow_copy_paste` has overriden default
 }
 
+impl super::Entity for ElectricEnergyInterfaceData {}
+
 impl super::Renderable for ElectricEnergyInterfaceData {
     fn render(
         &self,

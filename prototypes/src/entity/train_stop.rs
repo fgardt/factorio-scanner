@@ -38,6 +38,8 @@ pub struct TrainStopData {
     // TODO: overrides build_grid_size to 2
 }
 
+impl super::Entity for TrainStopData {}
+
 impl super::Renderable for TrainStopData {
     fn render(
         &self,
