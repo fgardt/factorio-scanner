@@ -22,8 +22,8 @@ pub struct ElectricPoleData {
 
     pub light: Option<LightDefinition>,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub track_coverage_during_build_by_moving: bool,
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub track_coverage_during_drag_building: bool,
 
     #[serde(
         default = "helper::u8_5",
