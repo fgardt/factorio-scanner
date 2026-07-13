@@ -121,6 +121,8 @@ pub struct TurretData {
     // pub spawn_decoration: Option<CreateDecorativesTriggerEffectItem or array of that>,
 }
 
+impl super::Entity for TurretData {}
+
 impl super::Renderable for TurretData {
     fn render(
         &self,
@@ -163,6 +165,8 @@ pub struct AmmoTurretData {
     #[serde(flatten)]
     parent: TurretData,
 }
+
+impl super::Entity for AmmoTurretData {}
 
 impl Deref for AmmoTurretData {
     type Target = TurretData;
@@ -208,6 +212,8 @@ pub struct ElectricTurretData {
     #[serde(flatten)]
     parent: TurretData,
 }
+
+impl super::Entity for ElectricTurretData {}
 
 impl Deref for ElectricTurretData {
     type Target = TurretData;
@@ -263,6 +269,8 @@ pub struct FluidTurretData {
     #[serde(flatten)]
     parent: TurretData,
 }
+
+impl super::Entity for FluidTurretData {}
 
 impl Deref for FluidTurretData {
     type Target = TurretData;

@@ -49,6 +49,8 @@ pub struct LampData {
     pub default_rgb_signal: Option<SignalIDConnector>,
 }
 
+impl super::Entity for LampData {}
+
 impl super::Renderable for LampData {
     fn render(
         &self,

@@ -47,6 +47,8 @@ pub struct RadarData {
     pub energy_fraction_to_disconnect: f32,
 }
 
+impl super::Entity for RadarData {}
+
 impl super::Renderable for RadarData {
     fn render(
         &self,

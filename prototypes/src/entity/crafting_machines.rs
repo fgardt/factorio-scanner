@@ -16,7 +16,7 @@ pub type CraftingMachinePrototype<T> =
 /// [`Prototypes/CraftingMachinePrototype`](https://lua-api.factorio.com/latest/prototypes/CraftingMachinePrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
-pub struct CraftingMachineData<T: super::Renderable> {
+pub struct CraftingMachineData<T: super::Entity> {
     pub energy_usage: Energy,
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub quality_affects_energy_usage: bool,
@@ -79,7 +79,9 @@ pub struct CraftingMachineData<T: super::Renderable> {
     child: T,
 }
 
-impl<T: super::Renderable> Deref for CraftingMachineData<T> {
+impl<T: super::Entity> super::Entity for CraftingMachineData<T> {}
+
+impl<T: super::Entity> Deref for CraftingMachineData<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -87,7 +89,7 @@ impl<T: super::Renderable> Deref for CraftingMachineData<T> {
     }
 }
 
-impl<T: super::Renderable> super::Renderable for CraftingMachineData<T> {
+impl<T: super::Entity> super::Renderable for CraftingMachineData<T> {
     fn render(
         &self,
         options: &super::RenderOpts,
@@ -180,6 +182,8 @@ pub struct FurnaceData {
     pub default_working_signal: Option<SignalIDConnector>,
 }
 
+impl super::Entity for FurnaceData {}
+
 impl super::Renderable for FurnaceData {
     fn render(
         &self,
@@ -226,6 +230,8 @@ pub struct AssemblingMachineData {
 
     pub disabled_when_recipe_not_researched: Option<bool>,
 }
+
+impl super::Entity for AssemblingMachineData {}
 
 impl super::Renderable for AssemblingMachineData {
     fn render(
@@ -342,6 +348,8 @@ pub struct RocketSiloData {
     // pub doors_sound: Option<Sound>,
     // pub raise_rocket_sound: Option<Sound>,
 }
+
+impl super::Entity for RocketSiloData {}
 
 impl Deref for RocketSiloData {
     type Target = AssemblingMachineData;

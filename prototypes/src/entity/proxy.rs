@@ -20,6 +20,8 @@ pub struct ProxyContainerData {
     pub draw_inventory_content: bool,
 }
 
+impl super::Entity for ProxyContainerData {}
+
 impl super::Renderable for ProxyContainerData {
     fn render(
         &self,

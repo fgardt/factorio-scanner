@@ -26,6 +26,11 @@ where
     pub animation_speed_coefficient: f64,
 }
 
+impl<G> super::Entity for TransportBeltConnectableData<G> where
+    G: super::RenderableGraphics<RenderOpts: for<'a> From<&'a super::RenderOpts>>
+{
+}
+
 impl<G> super::Renderable for TransportBeltConnectableData<G>
 where
     G: super::RenderableGraphics<RenderOpts: for<'a> From<&'a super::RenderOpts>>,
@@ -111,6 +116,8 @@ pub struct LinkedBeltData {
     parent: TransportBeltConnectableData<TransportBeltAnimationSet>,
 }
 
+impl super::Entity for LinkedBeltData {}
+
 impl Deref for LinkedBeltData {
     type Target = TransportBeltConnectableData<TransportBeltAnimationSet>;
 
@@ -193,6 +200,8 @@ pub struct LoaderData {
     #[serde(flatten)]
     parent: TransportBeltConnectableData<TransportBeltAnimationSet>,
 }
+
+impl super::Entity for LoaderData {}
 
 impl Deref for LoaderData {
     type Target = TransportBeltConnectableData<TransportBeltAnimationSet>;
@@ -291,6 +300,8 @@ pub struct Loader1x1Data {
     parent: LoaderData,
 }
 
+impl super::Entity for Loader1x1Data {}
+
 impl Deref for Loader1x1Data {
     type Target = LoaderData;
 
@@ -344,6 +355,8 @@ pub struct Loader1x2Data {
     #[serde(flatten)]
     parent: LoaderData,
 }
+
+impl super::Entity for Loader1x2Data {}
 
 impl Deref for Loader1x2Data {
     type Target = LoaderData;
@@ -422,6 +435,8 @@ pub struct SplitterData {
     #[serde(flatten)]
     parent: TransportBeltConnectableData<TransportBeltAnimationSet>,
 }
+
+impl super::Entity for SplitterData {}
 
 impl Deref for SplitterData {
     type Target = TransportBeltConnectableData<TransportBeltAnimationSet>;
@@ -548,6 +563,8 @@ pub struct LaneSplitterData {
     parent: TransportBeltConnectableData<TransportBeltAnimationSet>,
 }
 
+impl super::Entity for LaneSplitterData {}
+
 impl Deref for LaneSplitterData {
     type Target = TransportBeltConnectableData<TransportBeltAnimationSet>;
 
@@ -618,6 +635,8 @@ pub struct TransportBeltData {
     parent: TransportBeltConnectableData<TransportBeltAnimationSetWithCorners>,
 }
 
+impl super::Entity for TransportBeltData {}
+
 impl Deref for TransportBeltData {
     type Target = TransportBeltConnectableData<TransportBeltAnimationSetWithCorners>;
 
@@ -685,6 +704,8 @@ pub struct UndergroundBeltData {
     #[serde(flatten)]
     parent: TransportBeltConnectableData<TransportBeltAnimationSet>,
 }
+
+impl super::Entity for UndergroundBeltData {}
 
 impl Deref for UndergroundBeltData {
     type Target = TransportBeltConnectableData<TransportBeltAnimationSet>;

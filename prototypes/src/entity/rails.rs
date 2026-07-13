@@ -37,6 +37,8 @@ pub struct RailData {
     // pub walking_sound: Option<Sound>,
 }
 
+impl super::Entity for RailData {}
+
 impl super::Renderable for RailData {
     fn render(
         &self,
@@ -54,6 +56,8 @@ macro_rules! deref_newtype {
     ($inner:ident, $name:ident) => {
         #[derive(Debug, Serialize, Deserialize)]
         pub struct $name($inner);
+
+        impl super::Entity for $name {}
 
         impl Deref for $name {
             type Target = $inner;
@@ -109,6 +113,8 @@ pub struct RailRampPrototype {
     parent: RailPrototype,
 }
 
+impl super::Entity for RailRampPrototype {}
+
 impl Deref for RailRampPrototype {
     type Target = RailPrototype;
 
@@ -151,6 +157,8 @@ pub struct RailSupportData {
     pub collision_mask_allow_on_deep_oil_ocean: Option<CollisionMaskConnector>,
     pub elevated_selection_boxes: Option<FactorioArray<BoundingBox>>,
 }
+
+impl super::Entity for RailSupportData {}
 
 impl super::Renderable for RailSupportData {
     fn render(

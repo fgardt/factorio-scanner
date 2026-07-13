@@ -168,6 +168,8 @@ pub struct RailSignalBaseData {
     pub elevated_selection_priority: u8,
 }
 
+impl super::Entity for RailSignalBaseData {}
+
 impl RailSignalBaseData {
     const fn picture_set(&self, opts: &super::RenderOpts) -> &RailSignalPictureSet {
         if opts.elevated {
@@ -246,6 +248,8 @@ impl super::Renderable for RailSignalBaseData {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RailChainSignalPrototype(RailSignalBasePrototype);
 
+impl super::Entity for RailChainSignalPrototype {}
+
 impl Deref for RailChainSignalPrototype {
     type Target = RailSignalBasePrototype;
 
@@ -296,6 +300,8 @@ impl super::Renderable for RailChainSignalPrototype {
 /// [`Prototypes/RailSignalPrototype`](https://lua-api.factorio.com/latest/prototypes/RailSignalPrototype.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RailSignalPrototype(RailSignalBasePrototype);
+
+impl super::Entity for RailSignalPrototype {}
 
 impl Deref for RailSignalPrototype {
     type Target = RailSignalBasePrototype;

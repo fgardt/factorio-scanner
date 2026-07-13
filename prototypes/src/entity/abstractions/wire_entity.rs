@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 use types::{Direction, MapPosition, WireConnectionData};
 
-use super::Renderable;
+use super::{Entity, Renderable};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct WireEntityData<T: Renderable> {
+pub struct WireEntityData<T: Entity> {
     #[serde(flatten)]
     pub wire_connection_data: WireConnectionData,
 
@@ -12,7 +12,9 @@ pub struct WireEntityData<T: Renderable> {
     child: T,
 }
 
-impl<T: Renderable> std::ops::Deref for WireEntityData<T> {
+impl<T: Entity> Entity for WireEntityData<T> {}
+
+impl<T: Entity> std::ops::Deref for WireEntityData<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -20,7 +22,7 @@ impl<T: Renderable> std::ops::Deref for WireEntityData<T> {
     }
 }
 
-impl<T: Renderable> Renderable for WireEntityData<T> {
+impl<T: Entity> Renderable for WireEntityData<T> {
     fn render(
         &self,
         options: &super::RenderOpts,

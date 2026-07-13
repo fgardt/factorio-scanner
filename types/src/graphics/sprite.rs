@@ -1,14 +1,20 @@
-use image::Rgba;
-use mod_util::UsedMods;
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
-use super::{
-    BlendMode, LayeredGraphic, RenderLayer, RenderableGraphics, SingleSource, SourceProvider,
-    SpriteFlags, SpritePriority, SpriteSizeParam, SpriteSizeType, merge_layers,
+use crate::{
+    BlendMode, Color, LayeredGraphic, RenderLayer, RenderableGraphics, SingleOrArray, SingleSource,
+    SourceProvider, SpriteFlags, SpritePriority, SpriteSizeParam, SpriteSizeType, Vector,
 };
-use crate::{Color, ImageCache, SingleOrArray, Vector};
+
+#[cfg(feature = "graphics")]
+use image::Rgba;
+
+#[cfg(feature = "graphics")]
+use mod_util::UsedMods;
+
+#[cfg(feature = "graphics")]
+use crate::{ImageCache, merge_layers};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TintableRenderOpts {
@@ -72,6 +78,7 @@ impl<S: SourceProvider> SpriteSource<S> {
         }
     }
 
+    #[cfg(feature = "graphics")]
     pub fn fetch(
         &self,
         used_mods: &UsedMods,
@@ -87,6 +94,7 @@ impl<S: SourceProvider> SpriteSource<S> {
         )
     }
 
+    #[cfg(feature = "graphics")]
     pub fn fetch_offset(
         &self,
         used_mods: &UsedMods,
@@ -121,6 +129,7 @@ impl std::ops::Deref for EffectTexture {
 impl RenderableGraphics for EffectTexture {
     type RenderOpts = ();
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -200,6 +209,7 @@ impl<S: SourceProvider> std::ops::Deref for SpriteParameters<S> {
     }
 }
 
+#[cfg(feature = "graphics")]
 impl<S: SourceProvider> SpriteParameters<S> {
     pub fn fetch_scale_tint(
         &self,
@@ -322,6 +332,7 @@ impl std::ops::Deref for SpriteData {
 impl RenderableGraphics for SpriteData {
     type RenderOpts = TintableRenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -357,6 +368,7 @@ impl std::ops::Deref for LayeredSpriteData {
 impl RenderableGraphics for LayeredSpriteData {
     type RenderOpts = TintableRenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -375,6 +387,7 @@ pub type LayeredSprite = SingleOrArray<LayeredSpriteData>;
 impl RenderableGraphics for SingleOrArray<LayeredSpriteData> {
     type RenderOpts = TintableRenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,

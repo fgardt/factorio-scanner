@@ -1,4 +1,4 @@
-use super::{RenderOpts, RenderOutput, Renderable};
+use super::{Entity, RenderOpts, RenderOutput, Renderable};
 
 mod energy_entity;
 mod fluid_box_entity;

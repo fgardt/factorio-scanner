@@ -5,7 +5,7 @@ use serde_helper as helper;
 use types::{
     CollisionMaskConnector, Color, Energy, EntityID, EquipmentID, FactorioArray, FileName,
     FuelCategoryID, Icon, IconData, ItemCountType, ItemID, ItemProductPrototype,
-    ItemPrototypeFlags, RenderableGraphics, SpaceLocationID, SpriteVariations, TileID, Weight,
+    ItemPrototypeFlags, SpaceLocationID, SpriteVariations, TileID, Weight,
 };
 
 mod ammo;
@@ -127,12 +127,14 @@ pub struct ItemPrototypeData {
 }
 
 impl ItemPrototypeData {
+    #[cfg(feature = "graphics")]
     pub fn get_icon(
         &self,
         scale: f64,
         used_mods: &mod_util::UsedMods,
         image_cache: &mut types::ImageCache,
     ) -> Option<types::GraphicsOutput> {
+        use types::RenderableGraphics;
         self.icon.render(scale, used_mods, image_cache, &())
     }
 }
@@ -203,6 +205,7 @@ namespace_struct! {
 }
 
 impl AllTypes {
+    #[cfg(feature = "graphics")]
     pub fn get_icon(
         &self,
         name: &str,

@@ -23,6 +23,8 @@ pub struct PowerSwitchData {
     pub overlay_start_delay: u8,
 }
 
+impl super::Entity for PowerSwitchData {}
+
 impl super::Renderable for PowerSwitchData {
     fn render(
         &self,

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use serde_helper as helper;
 use serde_with::{skip_serializing_none, with_suffix};
-use types::{Color, Icon, ItemStackIndex, QualityID, RenderableGraphics};
+use types::{Color, Icon, ItemStackIndex, QualityID};
 
 use crate::helper_macro::namespace_struct;
 
@@ -88,6 +88,7 @@ namespace_struct! {
 }
 
 impl AllTypes {
+    #[cfg(feature = "graphics")]
     pub fn get_icon(
         &self,
         name: &str,
@@ -95,6 +96,8 @@ impl AllTypes {
         used_mods: &mod_util::UsedMods,
         image_cache: &mut types::ImageCache,
     ) -> Option<types::GraphicsOutput> {
+        use types::RenderableGraphics;
+
         self.quality
             .get(&QualityID::new(name))
             .and_then(|proto| proto.icon.render(scale, used_mods, image_cache, &()))

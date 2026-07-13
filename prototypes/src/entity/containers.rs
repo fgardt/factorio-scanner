@@ -40,6 +40,8 @@ pub struct ContainerData {
     pub default_status: EntityStatus,
 }
 
+impl super::Entity for ContainerData {}
+
 impl super::Renderable for ContainerData {
     fn render(
         &self,
@@ -135,6 +137,8 @@ pub struct LogisticContainerData {
     // pub animation_sound: Option<Sound>,
 }
 
+impl super::Entity for LogisticContainerData {}
+
 impl Deref for LogisticContainerData {
     type Target = ContainerData;
 
@@ -199,6 +203,8 @@ pub struct InfinityContainerData {
     parent: LogisticContainerData,
 }
 
+impl super::Entity for InfinityContainerData {}
+
 impl Deref for InfinityContainerData {
     type Target = LogisticContainerData;
 
@@ -243,6 +249,8 @@ pub struct LinkedContainerData {
     #[serde(default = "GuiMode::all", skip_serializing_if = "GuiMode::is_all")]
     pub gui_mode: GuiMode,
 }
+
+impl super::Entity for LinkedContainerData {}
 
 impl super::Renderable for LinkedContainerData {
     fn render(

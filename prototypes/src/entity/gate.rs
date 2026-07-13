@@ -46,6 +46,8 @@ pub struct GateData {
     // pub closing_sound: Option<Sound>,
 }
 
+impl super::Entity for GateData {}
+
 impl super::Renderable for GateData {
     fn render(
         &self,

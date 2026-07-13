@@ -39,6 +39,8 @@ pub struct WallData {
     pub connected_gate_visualization: Option<Sprite>,
 }
 
+impl super::Entity for WallData {}
+
 impl super::Renderable for WallData {
     fn render(
         &self,

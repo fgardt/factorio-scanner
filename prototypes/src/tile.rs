@@ -1,30 +1,34 @@
 use std::collections::HashMap;
 
-use mod_util::UsedMods;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 use types::{
     AirbornePollutantID, Animation4Way, CollisionMaskConnector, Color, FactorioArray, FluidID,
-    Icon, ImageCache, LocationalRenderOpts, MapPosition, PlaceableBy, RenderLayer,
-    RenderableGraphics, SpriteUsageSurfaceHint, TileEffectDefinitionID, TileID, TileRenderLayer,
+    Icon, PlaceableBy, SpriteUsageSurfaceHint, TileEffectDefinitionID, TileID, TileRenderLayer,
     TileTransitions, TileTransitionsVariants, Weight,
 };
 
 use crate::helper_macro::namespace_struct;
 
+#[cfg(feature = "graphics")]
+use types::{ImageCache, LocationalRenderOpts, MapPosition, RenderLayer};
+
 /// [`Prototypes/TilePrototype`](https://lua-api.factorio.com/latest/prototypes/TilePrototype.html)
 pub type TilePrototype = crate::BasePrototype<TilePrototypeData>;
 
+#[cfg(feature = "graphics")]
 impl TilePrototype {
     pub fn render(
         &self,
         position: &MapPosition,
-        used_mods: &UsedMods,
+        used_mods: &mod_util::UsedMods,
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> Option<()> {
+        use types::RenderableGraphics;
+
         let opts = LocationalRenderOpts::new(*position, self.tint.into());
 
         self.variants

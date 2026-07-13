@@ -35,6 +35,8 @@ pub struct BoilerData {
     pub mode: BoilerMode,
 }
 
+impl super::Entity for BoilerData {}
+
 impl super::Renderable for BoilerData {
     fn render(
         &self,

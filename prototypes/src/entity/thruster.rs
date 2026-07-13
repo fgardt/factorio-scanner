@@ -24,6 +24,8 @@ pub struct ThrusterData {
     // pub plumes: Option<PlumesSpecification>,
 }
 
+impl super::Entity for ThrusterData {}
+
 impl super::Renderable for ThrusterData {
     fn render(
         &self,

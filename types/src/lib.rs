@@ -11,9 +11,8 @@ use konst::{iter::collect_const, result::unwrap, string::split as konst_split};
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
-use tracing::warn;
 
-use mod_util::{UsedMods, mod_info::Version};
+use mod_util::mod_info::Version;
 
 #[must_use]
 pub const fn targeted_engine_version() -> Version {
@@ -706,6 +705,7 @@ impl PartialEq for Vector3D {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileName(String);
 
+#[cfg(feature = "graphics")]
 pub type ImageCache = HashMap<String, Option<image::DynamicImage>>;
 
 impl FileName {
@@ -714,11 +714,14 @@ impl FileName {
         Self(filename)
     }
 
+    #[cfg(feature = "graphics")]
     pub fn load<'a>(
         &self,
-        used_mods: &UsedMods,
+        used_mods: &mod_util::UsedMods,
         image_cache: &'a mut ImageCache,
     ) -> Option<&'a image::DynamicImage> {
+        use tracing::warn;
+
         let filename = &self.0;
 
         if image_cache.contains_key(filename) {

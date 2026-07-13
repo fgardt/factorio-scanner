@@ -14,7 +14,7 @@ pub type CombinatorPrototype<T> = EntityWithOwnerPrototype<WireEntityData<Combin
 
 /// [`Prototypes/CombinatorPrototype`](https://lua-api.factorio.com/latest/prototypes/CombinatorPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
-pub struct CombinatorData<T: super::Renderable> {
+pub struct CombinatorData<T: super::Entity> {
     pub energy_source: AnyEnergySource, // theoretically only electric and void are valid
     pub active_energy_usage: Energy,
     pub sprites: Option<Sprite4Way>,
@@ -39,7 +39,9 @@ pub struct CombinatorData<T: super::Renderable> {
     child: T,
 }
 
-impl<T: super::Renderable> Deref for CombinatorData<T> {
+impl<T: super::Entity> super::Entity for CombinatorData<T> {}
+
+impl<T: super::Entity> Deref for CombinatorData<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -47,7 +49,7 @@ impl<T: super::Renderable> Deref for CombinatorData<T> {
     }
 }
 
-impl<T: super::Renderable> super::Renderable for CombinatorData<T> {
+impl<T: super::Entity> super::Renderable for CombinatorData<T> {
     fn render(
         &self,
         options: &super::RenderOpts,
@@ -113,6 +115,8 @@ pub struct ArithmeticCombinatorData {
     pub xor_symbol_sprites: Option<Sprite4Way>,
 }
 
+impl super::Entity for ArithmeticCombinatorData {}
+
 impl super::Renderable for ArithmeticCombinatorData {
     fn render(
         &self,
@@ -167,6 +171,8 @@ pub struct DeciderCombinatorData {
     pub less_or_equal_symbol_sprites: Option<Sprite4Way>,
 }
 
+impl super::Entity for DeciderCombinatorData {}
+
 impl super::Renderable for DeciderCombinatorData {
     fn render(
         &self,
@@ -216,6 +222,8 @@ pub struct SelectorCombinatorData {
     pub rocket_capacity_sprites: Option<Sprite4Way>,
     pub quality_symbol_sprites: Option<Sprite4Way>,
 }
+
+impl super::Entity for SelectorCombinatorData {}
 
 impl super::Renderable for SelectorCombinatorData {
     fn render(
@@ -269,6 +277,8 @@ pub struct ConstantCombinatorData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub pulse_duration: u32,
 }
+
+impl super::Entity for ConstantCombinatorData {}
 
 impl super::Renderable for ConstantCombinatorData {
     fn render(

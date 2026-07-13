@@ -1,8 +1,7 @@
 use image::{DynamicImage, GenericImageView, imageops};
 use mod_util::UsedMods;
 
-use super::{GraphicsOutput, RenderableGraphics};
-use crate::ImageCache;
+use crate::{GraphicsOutput, ImageCache, RenderableGraphics};
 
 pub fn merge_layers<O, T: RenderableGraphics<RenderOpts = O>>(
     layers: &[T],

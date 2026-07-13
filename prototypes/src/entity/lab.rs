@@ -41,6 +41,8 @@ pub struct LabData {
     pub trash_inventory_size: Option<ItemStackIndex>,
 }
 
+impl super::Entity for LabData {}
+
 impl super::Renderable for LabData {
     fn render(
         &self,

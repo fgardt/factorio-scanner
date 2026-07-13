@@ -22,6 +22,8 @@ pub struct ValveData {
     pub front_patch: Option<Sprite4Way>,
 }
 
+impl super::Entity for ValveData {}
+
 /// [`Types/ValveMode`](https://lua-api.factorio.com/latest/types/ValveMode.html)
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]

@@ -21,6 +21,8 @@ pub struct CargoBayData {
     pub hatch_definitions: FactorioArray<CargoHatchDefinition>,
 }
 
+impl super::Entity for CargoBayData {}
+
 impl super::Renderable for CargoBayData {
     fn render(
         &self,

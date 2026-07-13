@@ -4,9 +4,12 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     Animation, AnimationRenderOpts, AnimationSheet, LayeredSprite, RenderableGraphics,
-    RotatedAnimation, RotatedRenderOpts, Sprite, SpriteSheet, TintableRenderOpts, merge_layers,
+    RotatedAnimation, RotatedRenderOpts, Sprite, SpriteSheet, TintableRenderOpts,
 };
 use crate::FactorioArray;
+
+#[cfg(feature = "graphics")]
+use super::merge_layers;
 
 #[derive(Debug, Clone, Copy)]
 pub struct VariationRenderOpts<M = TintableRenderOpts> {
@@ -57,6 +60,7 @@ pub enum SpriteVariations {
 impl RenderableGraphics for SpriteVariations {
     type RenderOpts = VariationRenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -93,6 +97,7 @@ impl std::ops::Deref for LayeredSpriteVariations {
 impl RenderableGraphics for LayeredSpriteVariations {
     type RenderOpts = VariationRenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -122,6 +127,7 @@ pub enum AnimationVariations {
 impl RenderableGraphics for AnimationVariations {
     type RenderOpts = VariationRenderOpts<AnimationRenderOpts>;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -156,6 +162,7 @@ pub enum RotatedAnimationVariations {
 impl RenderableGraphics for RotatedAnimationVariations {
     type RenderOpts = VariationRenderOpts<RotatedRenderOpts<AnimationRenderOpts>>;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,

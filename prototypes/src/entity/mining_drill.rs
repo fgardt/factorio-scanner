@@ -76,6 +76,8 @@ pub struct MiningDrillData {
     // pub drilling_sound_animation_end_frame: Option<u16>,
 }
 
+impl super::Entity for MiningDrillData {}
+
 impl super::Renderable for MiningDrillData {
     fn render(
         &self,

@@ -3,10 +3,10 @@ use serde_helper as helper;
 
 use types::{Direction, HeatBuffer, MapPosition};
 
-use super::Renderable;
+use super::{Entity, Renderable};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct HeatBufferEntityData<T: Renderable> {
+pub struct HeatBufferEntityData<T: Entity> {
     pub heat_buffer: HeatBuffer,
 
     #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
@@ -16,7 +16,9 @@ pub struct HeatBufferEntityData<T: Renderable> {
     child: T,
 }
 
-impl<T: Renderable> std::ops::Deref for HeatBufferEntityData<T> {
+impl<T: Entity> Entity for HeatBufferEntityData<T> {}
+
+impl<T: Entity> std::ops::Deref for HeatBufferEntityData<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -24,7 +26,7 @@ impl<T: Renderable> std::ops::Deref for HeatBufferEntityData<T> {
     }
 }
 
-impl<T: Renderable> Renderable for HeatBufferEntityData<T> {
+impl<T: Entity> Renderable for HeatBufferEntityData<T> {
     fn render(
         &self,
         options: &super::RenderOpts,

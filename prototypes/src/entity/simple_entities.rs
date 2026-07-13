@@ -40,6 +40,8 @@ pub struct SimpleEntityData {
     // pub stateless_visualisation_variations: FactorioArray<StatelessVisualisations>,
 }
 
+impl super::Entity for SimpleEntityData {}
+
 impl super::Renderable for SimpleEntityData {
     fn render(
         &self,
@@ -97,6 +99,8 @@ pub struct SimpleEntityWithOwnerData {
     // pub stateless_visualisation_variations: FactorioArray<StatelessVisualisations>,
 }
 
+impl super::Entity for SimpleEntityWithOwnerData {}
+
 impl super::Renderable for SimpleEntityWithOwnerData {
     fn render(
         &self,
@@ -138,6 +142,8 @@ pub type SimpleEntityWithForcePrototype = EntityWithOwnerPrototype<SimpleEntityW
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SimpleEntityWithForceData(SimpleEntityWithOwnerData);
+
+impl super::Entity for SimpleEntityWithForceData {}
 
 impl std::ops::Deref for SimpleEntityWithForceData {
     type Target = SimpleEntityWithOwnerData;

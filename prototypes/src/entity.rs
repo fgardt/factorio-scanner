@@ -1,9 +1,12 @@
-use std::{collections::HashMap, num::NonZeroU32, ops::Deref};
+use std::{collections::HashMap, ops::Deref};
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
+
+#[cfg(feature = "graphics")]
+pub use crate::entity_graphics::*;
 
 use crate::helper_macro::namespace_struct;
 
@@ -118,127 +121,19 @@ pub use valve::*;
 pub use vehicles::*;
 pub use wall::*;
 
-#[derive(Debug, Clone, Default)]
-pub struct RenderOpts {
-    pub position: MapPosition,
+#[cfg(feature = "graphics")]
+pub trait Entity: Renderable {}
 
-    pub direction: Direction,
-    pub orientation: Option<RealOrientation>,
-    pub mirrored: bool,
-    pub elevated: bool,
-
-    pub variation: Option<NonZeroU32>,
-
-    pub pickup_position: Option<Vector>,
-
-    pub connections: Option<ConnectedDirections>,
-
-    pub underground_in: Option<bool>,
-
-    pub connected_gates: Vec<Direction>,
-    pub draw_gate_patch: bool,
-
-    pub arithmetic_operation: Option<ArithmeticOperation>,
-    pub decider_operation: Option<Comparator>,
-    pub selector_operation: Option<SelectorOperation>,
-
-    pub runtime_tint: Option<Color>,
-
-    pub entity_id: u64,
-    pub circuit_connected: bool,
-    pub logistic_connected: bool,
-
-    pub fluid_recipe: (bool, bool),
-}
-
-// From impls for RenderOpts variants from types
-impl From<&RenderOpts> for TintableRenderOpts {
-    fn from(opts: &RenderOpts) -> Self {
-        Self {
-            runtime_tint: opts.runtime_tint,
-        }
-    }
-}
-
-impl<'a, M: From<&'a RenderOpts>> From<&'a RenderOpts> for RotatedRenderOpts<M> {
-    fn from(opts: &'a RenderOpts) -> Self {
-        Self::new(opts.orientation.unwrap_or_default(), opts.into())
-    }
-}
-
-impl<'a, M: From<&'a RenderOpts>> From<&'a RenderOpts> for DirectionalRenderOpts<M> {
-    fn from(opts: &'a RenderOpts) -> Self {
-        Self::new(opts.direction, opts.into())
-    }
-}
-
-impl<'a, M: From<&'a RenderOpts>> From<&'a RenderOpts> for VariationRenderOpts<M> {
-    fn from(opts: &'a RenderOpts) -> Self {
-        #[expect(unsafe_code)]
-        Self::new(
-            opts.variation
-                .unwrap_or(unsafe { NonZeroU32::new_unchecked(1) }),
-            opts.into(),
-        )
-    }
-}
-
-impl<'a, M: From<&'a RenderOpts>> From<&'a RenderOpts> for AnimationRenderOpts<M> {
-    fn from(opts: &'a RenderOpts) -> Self {
-        Self::new(0.0, opts.into())
-    }
-}
-
-impl<'a, M: From<&'a RenderOpts>> From<&'a RenderOpts> for LocationalRenderOpts<M> {
-    fn from(opts: &'a RenderOpts) -> Self {
-        Self::new(opts.position, opts.into())
-    }
-}
-
-impl<'a, M: From<&'a RenderOpts>> From<&'a RenderOpts> for ConnectedRenderOpts<M> {
-    fn from(opts: &'a RenderOpts) -> Self {
-        Self::new(opts.connections, opts.into())
-    }
-}
-
-pub type RenderOutput = Option<()>;
-
-pub trait Renderable {
-    fn render(
-        &self,
-        options: &RenderOpts,
-        used_mods: &UsedMods,
-        render_layers: &mut crate::RenderLayerBuffer,
-        image_cache: &mut ImageCache,
-    ) -> RenderOutput;
-
-    fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
-        Vec::with_capacity(0)
-    }
-
-    fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
-        Vec::with_capacity(0)
-    }
-
-    fn recipe_visible(&self) -> bool {
-        false
-    }
-
-    fn render_debug(
-        &self,
-        options: &RenderOpts,
-        used_mods: &UsedMods,
-        render_layers: &mut crate::RenderLayerBuffer,
-    ) {
-        // empty default impl
-    }
-}
+#[cfg(not(feature = "graphics"))]
+pub trait Entity {}
 
 /// [`Prototypes/EntityPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
-pub struct EntityPrototype<T: Renderable>(BasePrototype<EntityData<T>>);
+pub struct EntityPrototype<T: Entity>(BasePrototype<EntityData<T>>);
 
-impl<T: Renderable> Deref for EntityPrototype<T> {
+impl<T: Entity> Entity for EntityPrototype<T> {}
+
+impl<T: Entity> Deref for EntityPrototype<T> {
     type Target = BasePrototype<EntityData<T>>;
 
     fn deref(&self) -> &Self::Target {
@@ -246,7 +141,7 @@ impl<T: Renderable> Deref for EntityPrototype<T> {
     }
 }
 
-impl<T: Renderable> Renderable for EntityPrototype<T> {
+impl<T: Entity> Renderable for EntityPrototype<T> {
     fn render(
         &self,
         options: &RenderOpts,
@@ -286,7 +181,7 @@ impl<T: Renderable> Renderable for EntityPrototype<T> {
     }
 }
 
-pub trait RenderableEntity: Renderable {
+pub trait EntityInfo: Entity {
     fn collision_box(&self) -> BoundingBox;
     fn selection_box(&self) -> BoundingBox;
     fn drawing_box(&self) -> BoundingBox;
@@ -297,7 +192,7 @@ pub trait RenderableEntity: Renderable {
     fn show_recipe(&self) -> bool;
 }
 
-impl<T: Renderable> RenderableEntity for EntityPrototype<T> {
+impl<T: Entity> EntityInfo for EntityPrototype<T> {
     fn collision_box(&self) -> BoundingBox {
         self.collision_box.clone().unwrap_or_default()
     }
@@ -338,10 +233,10 @@ impl<T: Renderable> RenderableEntity for EntityPrototype<T> {
     }
 }
 
-impl<T, R> RenderableEntity for T
+impl<T, R> EntityInfo for T
 where
-    T: Deref<Target = EntityWithOwnerPrototype<R>> + Renderable,
-    R: Renderable,
+    T: Deref<Target = EntityWithOwnerPrototype<R>> + Entity,
+    R: Entity,
 {
     fn collision_box(&self) -> BoundingBox {
         self.deref().collision_box()
@@ -371,7 +266,7 @@ where
 /// [`Prototypes/EntityPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
-pub struct EntityData<T: Renderable> {
+pub struct EntityData<T: Entity> {
     #[serde(flatten)]
     pub icon: Option<Icon>,
 
@@ -503,6 +398,8 @@ pub struct EntityData<T: Renderable> {
     child: T,
 }
 
+impl<T: Entity> EntityData<T> {}
+
 fn default_heating_energy() -> Energy {
     Energy::new("0W")
 }
@@ -511,7 +408,7 @@ fn is_default_heating_energy(energy: &Energy) -> bool {
     energy == &default_heating_energy()
 }
 
-impl<T: Renderable> Deref for EntityData<T> {
+impl<T: Entity> Deref for EntityData<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -519,7 +416,7 @@ impl<T: Renderable> Deref for EntityData<T> {
     }
 }
 
-impl<T: Renderable> Renderable for EntityData<T> {
+impl<T: Entity> Renderable for EntityData<T> {
     fn render(
         &self,
         options: &RenderOpts,
@@ -568,7 +465,7 @@ pub type EntityWithHealthPrototype<T> = EntityPrototype<EntityWithHealthData<T>>
 /// [`Prototypes/EntityWithHealthPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithHealthPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
-pub struct EntityWithHealthData<T: Renderable> {
+pub struct EntityWithHealthData<T: Entity> {
     #[serde(default = "helper::f64_10", skip_serializing_if = "helper::is_10_f64")]
     pub max_health: f64,
 
@@ -613,7 +510,9 @@ pub struct EntityWithHealthData<T: Renderable> {
     child: T,
 }
 
-impl<T: Renderable> Deref for EntityWithHealthData<T> {
+impl<T: Entity> Entity for EntityWithHealthData<T> {}
+
+impl<T: Entity> Deref for EntityWithHealthData<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -621,7 +520,7 @@ impl<T: Renderable> Deref for EntityWithHealthData<T> {
     }
 }
 
-impl<T: Renderable> Renderable for EntityWithHealthData<T> {
+impl<T: Entity> Renderable for EntityWithHealthData<T> {
     fn render(
         &self,
         options: &RenderOpts,
@@ -675,7 +574,7 @@ pub type EntityWithOwnerPrototype<T> = EntityWithHealthPrototype<EntityWithOwner
 
 /// [`Prototypes/EntityWithOwnerPrototype`](https://lua-api.factorio.com/latest/prototypes/EntityWithOwnerPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
-pub struct EntityWithOwnerData<T: Renderable> {
+pub struct EntityWithOwnerData<T: Entity> {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub is_military_target: bool,
 
@@ -691,7 +590,9 @@ pub struct EntityWithOwnerData<T: Renderable> {
     child: T,
 }
 
-impl<T: Renderable> Deref for EntityWithOwnerData<T> {
+impl<T: Entity> Entity for EntityWithOwnerData<T> {}
+
+impl<T: Entity> Deref for EntityWithOwnerData<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -699,7 +600,7 @@ impl<T: Renderable> Deref for EntityWithOwnerData<T> {
     }
 }
 
-impl<T: Renderable> Renderable for EntityWithOwnerData<T> {
+impl<T: Entity> Renderable for EntityWithOwnerData<T> {
     fn render(
         &self,
         options: &RenderOpts,
@@ -794,18 +695,15 @@ impl Type {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct EntityPrototypeMap<T: Renderable>(HashMap<EntityID, T>);
+pub struct EntityPrototypeMap<T: Entity>(HashMap<EntityID, T>);
 
-impl<T> Default for EntityPrototypeMap<T>
-where
-    T: Renderable,
-{
+impl<T: Entity> Default for EntityPrototypeMap<T> {
     fn default() -> Self {
         Self(HashMap::new())
     }
 }
 
-impl<T: Renderable> Deref for EntityPrototypeMap<T> {
+impl<T: Entity> Deref for EntityPrototypeMap<T> {
     type Target = HashMap<EntityID, T>;
 
     fn deref(&self) -> &Self::Target {
@@ -819,7 +717,7 @@ impl<T: Renderable> Deref for EntityPrototypeMap<T> {
 namespace_struct! {
     AllTypes,
     EntityID,
-    &dyn RenderableEntity,
+    &dyn EntityInfo,
     "accumulator",
     "agricultural-tower",
     "artillery-turret",

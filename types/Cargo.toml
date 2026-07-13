@@ -7,15 +7,18 @@ edition.workspace = true
 [lints]
 workspace = true
 
+[features]
+graphics = ["dep:image"]
+
 [dependencies]
-thiserror.workspace = true
-image.workspace = true
 konst.workspace = true
-mod_util.workspace = true
 paste.workspace = true
+tracing.workspace = true
+thiserror.workspace = true
+mod_util.workspace = true
 regex.workspace = true
 serde.workspace = true
 serde_helper.workspace = true
 serde_repr.workspace = true
 serde_with.workspace = true
-tracing.workspace = true
+image = { workspace = true, optional = true }

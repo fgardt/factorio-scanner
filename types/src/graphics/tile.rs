@@ -1,10 +1,16 @@
-use image::Rgba;
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
-use super::{RenderableGraphics, SpriteSizeType, TintableRenderOpts};
-use crate::{Color, FactorioArray, FileName, MapPosition, Vector};
+use crate::{
+    FactorioArray, FileName, MapPosition, RenderableGraphics, SpriteSizeType, TintableRenderOpts,
+};
+
+#[cfg(feature = "graphics")]
+use image::Rgba;
+
+#[cfg(feature = "graphics")]
+use crate::{Color, Vector};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct LocationalRenderOpts<M = TintableRenderOpts> {
@@ -93,6 +99,7 @@ pub struct TileSpriteLayout {
     pub count: u32,
 }
 
+#[cfg(feature = "graphics")]
 impl TileSpriteLayout {
     #[allow(clippy::cast_possible_wrap)]
     fn fetch_offset_scale_size_tint(
@@ -184,6 +191,7 @@ impl std::ops::Deref for TileMainPictures {
 impl RenderableGraphics for TileMainPictures {
     type RenderOpts = LocationalRenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -225,6 +233,7 @@ impl std::ops::Deref for TileLightPictures {
 impl RenderableGraphics for TileLightPictures {
     type RenderOpts = LocationalRenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -264,6 +273,7 @@ impl std::ops::Deref for MaterialTextureParameters {
 impl RenderableGraphics for MaterialTextureParameters {
     type RenderOpts = LocationalRenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,

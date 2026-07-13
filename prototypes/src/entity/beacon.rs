@@ -45,6 +45,8 @@ pub struct BeaconData {
     pub beacon_counter: BeaconCounter,
 }
 
+impl super::Entity for BeaconData {}
+
 impl super::Renderable for BeaconData {
     fn render(
         &self,

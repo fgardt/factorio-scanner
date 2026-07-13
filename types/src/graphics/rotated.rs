@@ -1,14 +1,15 @@
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
-use tracing::warn;
 
-use super::{
-    AnimationParameters, AnimationRenderOpts, DirectionalRenderOpts, LayeredGraphic,
-    MultiSingleSource, MultiSingleSourceFetchArgs, RenderableGraphics, SpriteParameters,
-    SpriteSizeType, TintableRenderOpts,
+use crate::{
+    AnimationParameters, AnimationRenderOpts, DirectionalRenderOpts, FactorioArray, LayeredGraphic,
+    MultiSingleSource, RealOrientation, RenderableGraphics, SpriteParameters, SpriteSizeType,
+    TintableRenderOpts, Vector,
 };
-use crate::{Direction, FactorioArray, RealOrientation, StripeMultiSingleSourceFetchArgs, Vector};
+
+#[cfg(feature = "graphics")]
+use crate::{Direction, MultiSingleSourceFetchArgs, StripeMultiSingleSourceFetchArgs};
 
 /// [`Types/RotatedAnimation`](https://lua-api.factorio.com/latest/types/RotatedAnimation.html)
 pub type RotatedAnimation = LayeredGraphic<RotatedAnimationData>;
@@ -58,6 +59,7 @@ impl std::ops::Deref for RotatedAnimationData {
 impl RenderableGraphics for RotatedAnimationData {
     type RenderOpts = RotatedRenderOpts<AnimationRenderOpts>;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -114,6 +116,7 @@ pub enum RotatedAnimation8Way {
 impl RenderableGraphics for RotatedAnimation8Way {
     type RenderOpts = DirectionalRenderOpts<RotatedRenderOpts<AnimationRenderOpts>>;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -121,6 +124,8 @@ impl RenderableGraphics for RotatedAnimation8Way {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
+        use tracing::warn;
+
         match self {
             Self::Struct {
                 north,
@@ -211,6 +216,7 @@ impl std::ops::Deref for RotatedSpriteData {
 impl RenderableGraphics for RotatedSpriteData {
     type RenderOpts = RotatedRenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -251,6 +257,7 @@ impl RenderableGraphics for RotatedSpriteData {
     }
 }
 
+#[cfg(feature = "graphics")]
 fn orientation_to_index(
     orientation: RealOrientation,
     direction_count: u16,

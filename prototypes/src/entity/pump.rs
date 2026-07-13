@@ -47,6 +47,8 @@ pub struct PumpData {
     pub fluid_wagon_connector_graphics: Option<FluidWagonConnectorGraphics>,
 }
 
+impl super::Entity for PumpData {}
+
 impl super::Renderable for PumpData {
     fn render(
         &self,

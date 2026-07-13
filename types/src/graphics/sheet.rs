@@ -1,14 +1,15 @@
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
-use tracing::warn;
 
-use super::{
-    AnimationParameters, AnimationRenderOpts, LayeredGraphic, MultiSingleSource,
-    MultiSingleSourceFetchArgs, RenderableGraphics, Sprite, SpriteParameters, TintableRenderOpts,
-    VariationRenderOpts, merge_layers,
+use crate::{
+    AnimationParameters, AnimationRenderOpts, Direction, FactorioArray, LayeredGraphic,
+    MultiSingleSource, RenderableGraphics, Sprite, SpriteParameters, TintableRenderOpts,
+    VariationRenderOpts,
 };
-use crate::{Direction, FactorioArray};
+
+#[cfg(feature = "graphics")]
+use crate::{MultiSingleSourceFetchArgs, merge_layers};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct DirectionalRenderOpts<M = TintableRenderOpts> {
@@ -71,6 +72,7 @@ impl std::ops::Deref for SpriteSheetData {
 impl RenderableGraphics for SpriteSheetData {
     type RenderOpts = VariationRenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -126,6 +128,7 @@ impl<const N: u32> SpriteNWaySheet<N> {
 impl<const N: u32> RenderableGraphics for SpriteNWaySheet<N> {
     type RenderOpts = DirectionalRenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -133,6 +136,8 @@ impl<const N: u32> RenderableGraphics for SpriteNWaySheet<N> {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
+        use tracing::warn;
+
         let idx = match N {
             4 => match opts.direction {
                 Direction::North => 0,
@@ -188,6 +193,7 @@ pub enum Sprite4Way {
 impl RenderableGraphics for Sprite4Way {
     type RenderOpts = DirectionalRenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -195,6 +201,8 @@ impl RenderableGraphics for Sprite4Way {
         image_cache: &mut crate::ImageCache,
         opts: &Self::RenderOpts,
     ) -> Option<super::GraphicsOutput> {
+        use tracing::warn;
+
         match self {
             Self::Sheets { sheets } => merge_layers(sheets, scale, used_mods, image_cache, opts),
             Self::Sheet { sheet } => sheet.render(scale, used_mods, image_cache, opts),
@@ -256,6 +264,7 @@ pub enum Sprite16Way {
 impl RenderableGraphics for Sprite16Way {
     type RenderOpts = DirectionalRenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -326,6 +335,7 @@ impl std::ops::Deref for AnimationSheet {
 impl RenderableGraphics for AnimationSheet {
     type RenderOpts = VariationRenderOpts<AnimationRenderOpts>;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,

@@ -44,6 +44,8 @@ pub struct GeneratorData {
     // pub smoke: FactorioArray<SmokeSource>,
 }
 
+impl super::Entity for GeneratorData {}
+
 impl super::Renderable for GeneratorData {
     fn render(
         &self,

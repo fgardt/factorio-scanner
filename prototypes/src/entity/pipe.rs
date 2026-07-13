@@ -20,6 +20,8 @@ pub struct PipeData {
     pub pictures: PipePictures,
 }
 
+impl super::Entity for PipeData {}
+
 impl super::Renderable for PipeData {
     fn render(
         &self,
@@ -124,6 +126,8 @@ pub struct InfinityPipeData {
     parent: PipeData,
 }
 
+impl super::Entity for InfinityPipeData {}
+
 impl Deref for InfinityPipeData {
     type Target = PipeData;
 
@@ -170,6 +174,8 @@ pub struct PipeToGroundData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub draw_fluid_icon_override: bool,
 }
+
+impl super::Entity for PipeToGroundData {}
 
 impl super::Renderable for PipeToGroundData {
     fn render(

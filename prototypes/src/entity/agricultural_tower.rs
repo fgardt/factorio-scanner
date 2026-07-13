@@ -59,6 +59,8 @@ pub struct AgriculturalTowerData {
     // pub grappler_extending_sound_source: Option<String>,
 }
 
+impl super::Entity for AgriculturalTowerData {}
+
 impl super::Renderable for AgriculturalTowerData {
     fn render(
         &self,

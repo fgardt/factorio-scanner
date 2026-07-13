@@ -27,6 +27,8 @@ pub struct ProgrammableSpeakerData {
     pub audible_distance_modifier: f64, // docs specify single precision float
 }
 
+impl super::Entity for ProgrammableSpeakerData {}
+
 impl super::Renderable for ProgrammableSpeakerData {
     fn render(
         &self,

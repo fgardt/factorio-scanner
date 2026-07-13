@@ -1,17 +1,19 @@
 use serde::{Deserialize, Serialize};
 use types::{AnyEnergySource, Direction, MapPosition};
 
-use super::Renderable;
+use super::{Entity, Renderable};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct EnergyEntityData<T: Renderable> {
+pub struct EnergyEntityData<T: Entity> {
     pub energy_source: AnyEnergySource,
 
     #[serde(flatten)]
     child: T,
 }
 
-impl<T: Renderable> std::ops::Deref for EnergyEntityData<T> {
+impl<T: Entity> Entity for EnergyEntityData<T> {}
+
+impl<T: Entity> std::ops::Deref for EnergyEntityData<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -19,7 +21,7 @@ impl<T: Renderable> std::ops::Deref for EnergyEntityData<T> {
     }
 }
 
-impl<T: Renderable> Renderable for EnergyEntityData<T> {
+impl<T: Entity> Renderable for EnergyEntityData<T> {
     fn render(
         &self,
         options: &super::RenderOpts,

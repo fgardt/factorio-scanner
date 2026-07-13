@@ -31,6 +31,8 @@ pub struct StorageTankData {
     pub show_fluid_icon: bool,
 }
 
+impl super::Entity for StorageTankData {}
+
 impl super::Renderable for StorageTankData {
     fn render(
         &self,

@@ -39,6 +39,8 @@ pub struct FusionReactorData {
     pub perceived_performance: Option<PerceivedPerformance>,
 }
 
+impl super::Entity for FusionReactorData {}
+
 impl super::Renderable for FusionReactorData {
     fn render(
         &self,

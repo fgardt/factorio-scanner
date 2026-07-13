@@ -33,6 +33,8 @@ pub struct CargoLandingPadData {
     // pub robot_opened_sound: Option<Sound>,
 }
 
+impl super::Entity for CargoLandingPadData {}
+
 impl super::Renderable for CargoLandingPadData {
     fn render(
         &self,

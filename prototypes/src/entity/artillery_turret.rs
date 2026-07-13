@@ -70,6 +70,8 @@ pub struct ArtilleryTurretData {
     // pub rotating_stopped_sound: Option<Sound>,
 }
 
+impl super::Entity for ArtilleryTurretData {}
+
 impl super::Renderable for ArtilleryTurretData {
     fn render(
         &self,

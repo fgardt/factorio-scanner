@@ -33,6 +33,8 @@ pub struct OffshorePumpData {
     pub always_draw_fluid: bool,
 }
 
+impl super::Entity for OffshorePumpData {}
+
 impl super::Renderable for OffshorePumpData {
     fn render(
         &self,

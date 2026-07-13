@@ -1,10 +1,17 @@
-use image::DynamicImage;
-use mod_util::UsedMods;
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 use serde_with::skip_serializing_none;
 
-use crate::{FactorioArray, FileName, ImageCache, Vector};
+use crate::{FactorioArray, FileName};
+
+#[cfg(feature = "graphics")]
+use image::DynamicImage;
+
+#[cfg(feature = "graphics")]
+use mod_util::UsedMods;
+
+#[cfg(feature = "graphics")]
+use crate::{ImageCache, Vector};
 
 mod animation;
 mod beacon;
@@ -13,6 +20,7 @@ mod sheet;
 mod sprite;
 mod tile;
 mod transport_belt;
+#[cfg(feature = "graphics")]
 mod util;
 mod variations;
 mod working_visualisation;
@@ -24,6 +32,7 @@ pub use sheet::*;
 pub use sprite::*;
 pub use tile::*;
 pub use transport_belt::*;
+#[cfg(feature = "graphics")]
 pub use util::*;
 pub use variations::*;
 pub use working_visualisation::*;
@@ -224,6 +233,7 @@ pub enum SpriteSizeParam {
 pub trait SourceProvider {
     type FetchArgs;
 
+    #[cfg(feature = "graphics")]
     fn fetch(
         &self,
         used_mods: &UsedMods,
@@ -234,11 +244,13 @@ pub trait SourceProvider {
     ) -> Option<DynamicImage>;
 }
 
+#[cfg(feature = "graphics")]
 pub type GraphicsOutput = (DynamicImage, Vector);
 
 pub trait RenderableGraphics {
     type RenderOpts;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -256,6 +268,7 @@ pub struct SingleSource {
 impl SourceProvider for SingleSource {
     type FetchArgs = ();
 
+    #[cfg(feature = "graphics")]
     fn fetch(
         &self,
         used_mods: &UsedMods,
@@ -297,6 +310,7 @@ pub struct MultiSingleSourceFetchArgs {
     pub line_length: u32,
 }
 
+#[cfg(feature = "graphics")]
 impl MultiSingleSource {
     fn multi_source(
         filenames: &[FileName],
@@ -330,6 +344,7 @@ impl MultiSingleSource {
 impl SourceProvider for MultiSingleSource {
     type FetchArgs = MultiSingleSourceFetchArgs;
 
+    #[cfg(feature = "graphics")]
     fn fetch(
         &self,
         used_mods: &UsedMods,
@@ -401,6 +416,7 @@ pub struct StripeMultiSingleSourceFetchArgs {
 impl SourceProvider for StripeMultiSingleSource {
     type FetchArgs = StripeMultiSingleSourceFetchArgs;
 
+    #[cfg(feature = "graphics")]
     fn fetch(
         &self,
         used_mods: &UsedMods,
@@ -499,6 +515,7 @@ where
 {
     type RenderOpts = O;
 
+    #[cfg(feature = "graphics")]
     fn render(
         &self,
         scale: f64,
@@ -513,6 +530,7 @@ where
     }
 }
 
+#[cfg(feature = "graphics")]
 #[inline]
 fn assert_fetch_params(
     x: SpriteSizeType,
@@ -529,6 +547,7 @@ fn assert_fetch_params(
     }
 }
 
+#[cfg(feature = "graphics")]
 #[inline]
 fn assert_img_bounds(src: &DynamicImage, x: u32, y: u32, width: u32, height: u32) {
     #[cfg(debug_assertions)]
