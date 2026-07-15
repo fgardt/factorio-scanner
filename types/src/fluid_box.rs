@@ -177,11 +177,10 @@ impl FluidBox {
 
                 let pos = if let Some(position) = c.position {
                     direction.rotate_vector(position.into())
-                } else if let Some(positions) = c.positions {
+                } else {
+                    let positions = c.positions?;
                     let idx = direction.as_4way_idx()?;
                     positions[idx].into()
-                } else {
-                    return None;
                 };
 
                 let pos = pos + c_dir.get_offset();
