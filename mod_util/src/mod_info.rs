@@ -38,6 +38,8 @@ with_suffix!(suffix_required "_required");
 #[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
 pub struct FeatureFlags {
     #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub expansion: bool,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
     pub quality: bool,
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub rail_bridges: bool,
@@ -58,6 +60,7 @@ impl std::ops::BitOr for FeatureFlags {
 
     fn bitor(self, rhs: Self) -> Self {
         Self {
+            expansion: self.expansion || rhs.expansion,
             quality: self.quality || rhs.quality,
             rail_bridges: self.rail_bridges || rhs.rail_bridges,
             space_travel: self.space_travel || rhs.space_travel,
@@ -71,6 +74,7 @@ impl std::ops::BitOr for FeatureFlags {
 
 impl std::ops::BitOrAssign for FeatureFlags {
     fn bitor_assign(&mut self, rhs: Self) {
+        self.expansion |= rhs.expansion;
         self.quality |= rhs.quality;
         self.rail_bridges |= rhs.rail_bridges;
         self.space_travel |= rhs.space_travel;
@@ -86,6 +90,7 @@ impl std::ops::BitAnd for FeatureFlags {
 
     fn bitand(self, rhs: Self) -> Self {
         Self {
+            expansion: self.expansion && rhs.expansion,
             quality: self.quality && rhs.quality,
             rail_bridges: self.rail_bridges && rhs.rail_bridges,
             space_travel: self.space_travel && rhs.space_travel,
@@ -99,6 +104,7 @@ impl std::ops::BitAnd for FeatureFlags {
 
 impl std::ops::BitAndAssign for FeatureFlags {
     fn bitand_assign(&mut self, rhs: Self) {
+        self.expansion &= rhs.expansion;
         self.quality &= rhs.quality;
         self.rail_bridges &= rhs.rail_bridges;
         self.space_travel &= rhs.space_travel;
@@ -114,6 +120,7 @@ impl std::ops::BitXor for FeatureFlags {
 
     fn bitxor(self, rhs: Self) -> Self {
         Self {
+            expansion: self.expansion ^ rhs.expansion,
             quality: self.quality ^ rhs.quality,
             rail_bridges: self.rail_bridges ^ rhs.rail_bridges,
             space_travel: self.space_travel ^ rhs.space_travel,
@@ -127,6 +134,7 @@ impl std::ops::BitXor for FeatureFlags {
 
 impl std::ops::BitXorAssign for FeatureFlags {
     fn bitxor_assign(&mut self, rhs: Self) {
+        self.expansion ^= rhs.expansion;
         self.quality ^= rhs.quality;
         self.rail_bridges ^= rhs.rail_bridges;
         self.space_travel ^= rhs.space_travel;
