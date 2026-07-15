@@ -10,7 +10,7 @@ use types::*;
 /// [`Prototypes/CargoLandingPadPrototype`](https://lua-api.factorio.com/latest/prototypes/CargoLandingPadPrototype.html)
 pub type CargoLandingPadPrototype = EntityWithOwnerPrototype<WireEntityData<CargoLandingPadData>>;
 
-/// [`Prototypes/SpacePlatformHubPrototype`](https://lua-api.factorio.com/latest/prototypes/CargoLandingPadPrototype.html)
+/// [`Prototypes/CargoLandingPadPrototype`](https://lua-api.factorio.com/latest/prototypes/CargoLandingPadPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CargoLandingPadData {
