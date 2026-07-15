@@ -2,7 +2,6 @@ use std::ops::{Deref, Rem};
 
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
-use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
 
 use super::{ArtilleryTurretCannonBarrelShiftings, EntityWithOwnerPrototype};
@@ -18,11 +17,8 @@ pub type VehiclePrototype<T> = EntityWithOwnerPrototype<VehicleData<T>>;
 pub struct VehicleData<T: super::Entity> {
     pub weight: f64,
 
-    #[serde(flatten)]
-    pub breaking: BreakingVariant,
-
-    #[serde(flatten)]
-    pub friction: FrictionVariant,
+    pub braking_force: f64,
+    pub friction_force: f64,
 
     pub energy_per_hit_point: f64,
 
@@ -90,20 +86,6 @@ impl<T: super::Entity> super::Renderable for VehicleData<T> {
     ) -> Vec<(MapPosition, Direction)> {
         self.child.heat_buffer_connections(options)
     }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum BreakingVariant {
-    Power { braking_power: Energy },
-    Force { braking_force: f64 },
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum FrictionVariant {
-    Friction { friction: f64 },
-    Force { friction_force: f64 },
 }
 
 /// [`Prototypes/CarPrototype`](https://lua-api.factorio.com/latest/prototypes/CarPrototype.html)
@@ -216,7 +198,7 @@ pub type RollingStockPrototype<T> = VehiclePrototype<RollingStockData<T>>;
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RollingStockData<T: super::Entity> {
-    pub max_speed: f64,
+    pub max_speed: Option<f64>,
     pub air_resistance: f64,
     pub joint_distance: f64,
     pub connection_distance: f64,
@@ -241,6 +223,9 @@ pub struct RollingStockData<T: super::Entity> {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub default_copy_color_from_train_stop: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub quality_affects_max_speed: bool,
 
     pub transition_collision_mask: Option<CollisionMaskConnector>,
     pub elevated_collision_mask: Option<CollisionMaskConnector>,
@@ -595,11 +580,29 @@ pub struct FluidWagonData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub quality_affects_capacity: bool,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub tank_count: FluidWagonTankCount,
+    #[serde(default = "helper::u8_3", skip_serializing_if = "helper::is_3_u8")]
+    pub tank_count: u8,
+
+    #[serde(default = "helper::f32_2", skip_serializing_if = "helper::is_2_f32")]
+    pub tank_spacing: f32,
+    #[serde(
+        default = "helper::f32_n1_375",
+        skip_serializing_if = "helper::is_n1_375_f32"
+    )]
+    pub base_valve_z_offset_projected_when_horizontal: f32,
+    #[serde(
+        default = "helper::f32_n065",
+        skip_serializing_if = "helper::is_n065_f32"
+    )]
+    pub base_valve_z_offset_projected_when_vertical: f32,
 
     #[serde(default = "default_cc", skip_serializing_if = "is_default_cc")]
     pub connection_category: SingleOrArray<String>,
+
+    pub valve_to_valve_offset_when_horizontal: Option<Vector>,
+    pub valve_to_valve_offset_when_vertical: Option<Vector>,
+    pub base_valve_xy_offset_when_horizontal: Option<Vector>,
+    pub base_valve_xy_offset_when_vertical: Option<Vector>,
 }
 
 impl super::Entity for FluidWagonData {}
@@ -622,15 +625,6 @@ impl super::Renderable for FluidWagonData {
     ) -> super::RenderOutput {
         Some(())
     }
-}
-
-#[derive(Debug, Default, Serialize_repr, Deserialize_repr, PartialEq, Eq)]
-#[repr(u8)]
-pub enum FluidWagonTankCount {
-    Single = 1,
-    Double = 2,
-    #[default]
-    Triple = 3,
 }
 
 /// [`Prototypes/LocomotivePrototype`](https://lua-api.factorio.com/latest/prototypes/LocomotivePrototype.html)

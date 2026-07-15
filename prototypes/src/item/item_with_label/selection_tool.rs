@@ -72,6 +72,9 @@ pub struct SelectionModeData {
     pub entity_filter_mode: FilterMode,
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub tile_filter_mode: FilterMode,
+    // ignored error suppression bool flags
+    // pub ignore_cannot_select_entities: bool,
+    // pub ignore_cannot_select_tiles: bool,
 }
 
 #[must_use]

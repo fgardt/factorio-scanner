@@ -26,6 +26,9 @@ pub struct TurretData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub start_attacking_only_when_can_shoot: bool,
 
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub leave_attacking_if_shoot_fails: bool,
+
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub turret_base_has_direction: bool,
 

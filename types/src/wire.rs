@@ -106,6 +106,8 @@ pub enum WireConnectionData {
 
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         circuit_connector: FactorioArray<CircuitConnectorDefinition>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        circuit_connector_flipped: FactorioArray<CircuitConnectorDefinition>,
     },
     Single {
         #[serde(default, skip_serializing_if = "helper::is_default")]

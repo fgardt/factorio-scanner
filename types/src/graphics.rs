@@ -15,6 +15,7 @@ use crate::{ImageCache, Vector};
 
 mod animation;
 mod beacon;
+mod n_way;
 mod rotated;
 mod sheet;
 mod sprite;
@@ -27,6 +28,7 @@ mod working_visualisation;
 
 pub use animation::*;
 pub use beacon::*;
+pub use n_way::*;
 pub use rotated::*;
 pub use sheet::*;
 pub use sprite::*;
@@ -75,7 +77,10 @@ pub enum SpriteFlag {
     Smoke,
     Decal,
     LowObject,
+    CorpseDecay,
     TrilinearFiltering,
+    ProcessionCover,
+    NormalMap,
     #[serde(rename = "group=none")]
     GroupNone,
     #[serde(rename = "group=terrain")]
@@ -94,6 +99,12 @@ pub enum SpriteFlag {
     GroupIcon,
     #[serde(rename = "group=icon-background")]
     GroupIconBackground,
+    #[serde(rename = "group=procession")]
+    GroupProcession,
+    #[serde(rename = "group=procession-cover")]
+    GroupProcessionCover,
+    #[serde(rename = "group=effect-texture")]
+    GroupEffectTexture,
     Compressed,
 }
 

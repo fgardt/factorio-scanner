@@ -5,12 +5,12 @@ use serde_with::{skip_serializing_none, with_suffix};
 
 use serde_helper as helper;
 
-use super::{EntityWithOwnerPrototype, FluidBoxEntityData};
+use super::{EntityWithOwnerPrototype, FluidBoxEntityData, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/PipePrototype`](https://lua-api.factorio.com/latest/prototypes/PipePrototype.html)
-pub type PipePrototype = EntityWithOwnerPrototype<FluidBoxEntityData<PipeData>>;
+pub type PipePrototype = EntityWithOwnerPrototype<FluidBoxEntityData<WireEntityData<PipeData>>>;
 
 /// [`Prototypes/PipePrototype`](https://lua-api.factorio.com/latest/prototypes/PipePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -18,6 +18,8 @@ pub struct PipeData {
     pub horizontal_window_bounding_box: BoundingBox,
     pub vertical_window_bounding_box: BoundingBox,
     pub pictures: PipePictures,
+
+    pub default_fluid_temperature_signal: Option<SignalIDConnector>,
 }
 
 impl super::Entity for PipeData {}
@@ -114,7 +116,8 @@ pub struct PipePicturesGroup {
 }
 
 /// [`Prototypes/InfinityPipePrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityPipePrototype.html)
-pub type InfinityPipePrototype = EntityWithOwnerPrototype<FluidBoxEntityData<InfinityPipeData>>;
+pub type InfinityPipePrototype =
+    EntityWithOwnerPrototype<FluidBoxEntityData<WireEntityData<InfinityPipeData>>>;
 
 /// [`Prototypes/InfinityPipePrototype`](https://lua-api.factorio.com/latest/prototypes/InfinityPipePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -161,7 +164,8 @@ impl super::Renderable for InfinityPipeData {
 }
 
 /// [`Prototypes/PipeToGroundPrototype`](https://lua-api.factorio.com/latest/prototypes/PipeToGroundPrototype.html)
-pub type PipeToGroundPrototype = EntityWithOwnerPrototype<FluidBoxEntityData<PipeToGroundData>>;
+pub type PipeToGroundPrototype =
+    EntityWithOwnerPrototype<FluidBoxEntityData<WireEntityData<PipeToGroundData>>>;
 
 /// [`Prototypes/PipeToGroundPrototype`](https://lua-api.factorio.com/latest/prototypes/PipeToGroundPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -173,6 +177,8 @@ pub struct PipeToGroundData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub draw_fluid_icon_override: bool,
+
+    pub default_fluid_temperature_signal: Option<SignalIDConnector>,
 }
 
 impl super::Entity for PipeToGroundData {}

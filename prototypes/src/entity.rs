@@ -29,7 +29,7 @@ mod cargo_landing_pad;
 mod combinators;
 mod containers;
 mod crafting_machines;
-mod displaypanel;
+mod display_panel;
 mod electric_energy_interface;
 mod electric_pole;
 mod flying_robots;
@@ -81,7 +81,7 @@ pub use cargo_landing_pad::*;
 pub use combinators::*;
 pub use containers::*;
 pub use crafting_machines::*;
-pub use displaypanel::*;
+pub use display_panel::*;
 pub use electric_energy_interface::*;
 pub use electric_pole::*;
 pub use flying_robots::*;
@@ -317,9 +317,6 @@ pub struct EntityData<T: Entity> {
 
     pub radius_visualisation_specification: Option<RadiusVisualisationSpecification>,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub build_base_evolution_requirement: f64,
-
     pub alert_icon_shift: Option<Vector>,
 
     pub alert_icon_scale: Option<f64>,
@@ -331,6 +328,12 @@ pub struct EntityData<T: Entity> {
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub protected_from_tile_building: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub tall: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub show_fluid_visualization_when_in_cursor: bool,
 
     #[serde(
         default = "default_heating_energy",
@@ -475,7 +478,9 @@ pub struct EntityWithHealthData<T: Entity> {
     #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
     pub repair_speed_modifier: f64,
 
-    //#[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub loot: FactorioArray<ItemProductPrototype>,
+
     pub resistances: Option<Resistances>,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
@@ -502,7 +507,6 @@ pub struct EntityWithHealthData<T: Entity> {
     // pub dying_explosion: Option<ExplosionDefinition>,
     // pub dying_trigger_effect: Option<TriggerEffect>,
     // pub damaged_trigger_effect: Option<TriggerEffect>,
-    // pub loot: FactorioArray<LootItem>,
     // pub attack_reaction: AttackReactionItem or FactorioArray<AttackReactionItem>,
     // pub repair_sound: Option<Sound>,
     // pub corpse: Option<Corpse>,

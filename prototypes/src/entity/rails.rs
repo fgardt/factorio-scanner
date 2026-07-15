@@ -16,7 +16,7 @@ pub type RailPrototype = EntityWithOwnerPrototype<RailData>;
 /// [`Prototypes/RailPrototype`](https://lua-api.factorio.com/latest/prototypes/RailPrototype.html)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RailData {
-    pub pictures: RailPictureSet,
+    pub pictures: Option<RailPictureSet>,
     pub fence_pictures: Option<RailFenceGraphicsSet>,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
@@ -48,7 +48,8 @@ impl super::Renderable for RailData {
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
         self.pictures
-            .render(opts, used_mods, render_layers, image_cache)
+            .as_ref()
+            .and_then(|p| p.render(opts, used_mods, render_layers, image_cache))
     }
 }
 

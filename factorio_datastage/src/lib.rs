@@ -22,6 +22,7 @@ impl<T> ToLuaWrapper<T> {
 impl IntoLua for ToLuaWrapper<FeatureFlags> {
     fn into_lua(self, lua: &Lua) -> LuaResult<LuaValue> {
         let FeatureFlags {
+            expansion,
             quality,
             rail_bridges,
             space_travel,
@@ -32,6 +33,7 @@ impl IntoLua for ToLuaWrapper<FeatureFlags> {
         } = self.0;
 
         let res = lua.create_table()?;
+        res.raw_set("expansion", expansion)?;
         res.raw_set("quality", quality)?;
         res.raw_set("rail_bridges", rail_bridges)?;
         res.raw_set("space_travel", space_travel)?;

@@ -10,6 +10,7 @@
                   {
                     "comparator": "=",
                     "count": 123,
+                    "import_from": "nauvis",
                     "index": 1,
                     "name": "iron-plate",
                     "quality": "normal"
@@ -162,6 +163,6 @@
     ],
     "item": "blueprint",
     "label": "constant_logistic_group",
-    "version": 562949958402048
+    "version": 562954249109505
   }
 }

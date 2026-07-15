@@ -32,6 +32,7 @@
                   {
                     "comparator": "=",
                     "count": 1,
+                    "import_from": "nauvis",
                     "index": 1,
                     "name": "parameter-0",
                     "quality": "normal"
@@ -39,6 +40,7 @@
                   {
                     "comparator": "=",
                     "count": 91,
+                    "import_from": "nauvis",
                     "index": 2,
                     "name": "parameter-1",
                     "quality": "normal"
@@ -46,6 +48,7 @@
                   {
                     "comparator": "=",
                     "count": 92,
+                    "import_from": "nauvis",
                     "index": 3,
                     "name": "parameter-2",
                     "quality": "normal"
@@ -53,6 +56,7 @@
                   {
                     "comparator": "=",
                     "count": 93,
+                    "import_from": "nauvis",
                     "index": 4,
                     "name": "parameter-3",
                     "quality": "normal"
@@ -60,6 +64,7 @@
                   {
                     "comparator": "=",
                     "count": 99,
+                    "import_from": "nauvis",
                     "index": 10,
                     "name": "parameter-9",
                     "quality": "normal"
@@ -80,6 +85,7 @@
                   {
                     "comparator": "=",
                     "count": 13,
+                    "import_from": "nauvis",
                     "index": 2,
                     "name": "selector-combinator",
                     "quality": "normal"
@@ -87,6 +93,7 @@
                   {
                     "comparator": "=",
                     "count": 6,
+                    "import_from": "nauvis",
                     "index": 3,
                     "name": "display-panel",
                     "quality": "normal"
@@ -205,6 +212,6 @@
         "type": "number"
       }
     ],
-    "version": 562949958402048
+    "version": 562954249109505
   }
 }

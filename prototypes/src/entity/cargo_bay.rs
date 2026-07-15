@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
+use serde_helper as helper;
+
 use super::EntityWithOwnerPrototype;
 use mod_util::UsedMods;
 use types::*;
@@ -8,7 +10,7 @@ use types::*;
 /// [`Prototypes/CargoBayPrototype`](https://lua-api.factorio.com/latest/prototypes/CargoBayPrototype.html)
 pub type CargoBayPrototype = EntityWithOwnerPrototype<CargoBayData>;
 
-/// [`Prototypes/SpacePlatformHubPrototype`](https://lua-api.factorio.com/latest/prototypes/CargoBayPrototype.html)
+/// [`Prototypes/CargoBayPrototype`](https://lua-api.factorio.com/latest/prototypes/CargoBayPrototype.html)
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CargoBayData {
@@ -16,6 +18,13 @@ pub struct CargoBayData {
     pub platform_graphics_set: Option<CargoBayConnectableGraphicsSet>,
 
     pub inventory_size_bonus: ItemStackIndex,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub has_direction: bool,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub allow_unloading: bool,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub use_unloading_distance_limit: bool,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub hatch_definitions: FactorioArray<CargoHatchDefinition>,

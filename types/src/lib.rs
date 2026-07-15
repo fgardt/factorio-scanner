@@ -5,7 +5,11 @@
     clippy::module_name_repetitions
 )]
 
-use std::{collections::HashMap, fmt, hash::Hash};
+use std::{
+    collections::{BTreeMap, HashMap},
+    fmt,
+    hash::Hash,
+};
 
 use konst::{iter::collect_const, result::unwrap, string::split as konst_split};
 use serde::{Deserialize, Serialize};
@@ -63,6 +67,9 @@ pub enum SingleOrArray<T> {
 pub struct AmmoType {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub clamp_position: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub force_clamp_to_max_range: bool,
 
     pub energy_consumption: Option<Energy>,
 
@@ -123,6 +130,9 @@ pub struct BaseAttackParameters {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub health_penalty: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub threatening_asteroid_penalty: f32,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub range_mode: BaseAttackParametersRangeMode,
@@ -1078,9 +1088,38 @@ impl std::ops::Neg for RealOrientation {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum SignalIDConnector {
-    Virtual { name: VirtualSignalID },
-    Item { name: ItemID },
-    Fluid { name: FluidID },
+    Virtual {
+        name: VirtualSignalID,
+        quality: Option<QualityID>,
+    },
+    Item {
+        name: ItemID,
+        quality: Option<QualityID>,
+    },
+    Fluid {
+        name: FluidID,
+        quality: Option<QualityID>,
+    },
+    Recipe {
+        name: RecipeID,
+        quality: Option<QualityID>,
+    },
+    Entity {
+        name: EntityID,
+        quality: Option<QualityID>,
+    },
+    SpaceLocation {
+        name: SpaceLocationID,
+        quality: Option<QualityID>,
+    },
+    AsteroidChunk {
+        name: AsteroidChunkID,
+        quality: Option<QualityID>,
+    },
+    Quality {
+        name: QualityID,
+        quality: Option<QualityID>,
+    },
 }
 
 /// [`Types/SelectionModeFlags`](https://lua-api.factorio.com/latest/types/SelectionModeFlags.html)
@@ -1172,37 +1211,47 @@ pub struct CollisionMaskConnector {
     pub colliding_with_tiles_only: bool,
 }
 
+/// [`Types/TileCollisionMaskConnector`](https://lua-api.factorio.com/latest/types/TileCollisionMaskConnector.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TileCollisionMaskConnector {
+    pub layers: HashMap<CollisionLayerID, bool>,
+}
+
 /// Union used in [`Types/EntityPrototypeFlags`](https://lua-api.factorio.com/latest/types/EntityPrototypeFlags.html)
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum EntityPrototypeFlag {
-    NotRotatable,
-    PlaceableNeutral,
-    PlaceablePlayer,
-    PlaceableEnemy,
-    PlaceableOffGrid,
-    PlayerCreation,
+    AlwaysShow,
+    BreathsAir,
     #[serde(rename = "building-direction-8-way")]
     BuildingDirection8Way,
     #[serde(rename = "building-direction-16-way")]
     BuildingDirection16Way,
     FilterDirections,
     GetByUnitNumber,
-    BreathsAir,
-    NotRepairable,
-    NotOnMap,
-    NotDeconstructable,
-    NotBlueprintable,
     HideAltInfo,
-    NotFlammable,
-    NoAutomatedItemRemoval,
     NoAutomatedItemInsertion,
+    NoAutomatedItemRemoval,
     NoCopyPaste,
+    NoLogisticConnection,
+    NotBlueprintable,
+    NotDeconstructable,
+    NotFlammable,
+    NotInBonusGui,
+    NotInKillStatistics,
+    NotInMadeIn,
+    NotInMinedBy,
+    NotOnMap,
+    NotRepairable,
+    NotRotatable,
     NotSelectableInGame,
     NotUpgradable,
-    NotInKillStatistics,
+    PlaceableEnemy,
+    PlaceableNeutral,
+    PlaceableOffGrid,
+    PlaceablePlayer,
+    PlayerCreation,
     SnapToRailSupportSpot,
-    NotInMadeIn,
 }
 
 /// [`Types/EntityPrototypeFlags`](https://lua-api.factorio.com/latest/types/EntityPrototypeFlags.html)
@@ -1212,84 +1261,78 @@ pub type EntityPrototypeFlags = FactorioArray<EntityPrototypeFlag>;
 #[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum EntityStatus {
-    Working,
     #[default]
     Normal,
-    Ghost,
-    NotPluggedInElectricNetwork,
-    NetworksConnected,
-    NetworksDisconnected,
-    NoAmmo,
-    WaitingForTargetToBeBuilt,
-    WaitingForTrain,
-    NoPower,
-    LowTemperature,
+    Armed,
+    Broken,
+    CantDivideSegments,
     Charging,
+    ClosedByCircuitNetwork,
+    ComputingNavigation,
+    DestinationStopFull,
+    Disabled,
+    DisabledByControlBehavior,
+    DisabledByScript,
     Discharging,
+    FluidIngredientShortage,
+    Frozen,
+    FullBurntResultOutput,
+    FullOutput,
     FullyCharged,
-    NoFuel,
-    NoFood,
-    OutOfLogisticNetwork,
-    NoRecipe,
-    NoIngredients,
-    NoInputFluid,
-    NoResearchInProgress,
-    NoMinableResources,
+    Ghost,
+    ItemIngredientShortage,
+    LaunchingRocket,
     LowInputFluid,
     LowPower,
-    NotConnectedToRail,
-    CantDivideSegments,
-    RechargingAfterPowerOutage,
-    NoModulesToTransmit,
-    DisabledByControlBehavior,
-    OpenedByCircuitNetwork,
-    ClosedByCircuitNetwork,
-    DisabledByScript,
-    Disabled,
-    TurnedOffDuringDaytime,
-    FluidIngredientShortage,
-    ItemIngredientShortage,
-    FullOutput,
-    NotEnoughSpaceInOutput,
-    FullBurntResultOutput,
+    LowTemperature,
     MarkedForDeconstruction,
     MissingRequiredFluid,
     MissingSciencePacks,
+    NetworksConnected,
+    NetworksDisconnected,
+    NoAmmo,
+    NoFilter,
+    NoFood,
+    NoFuel,
+    NoIngredients,
+    NoInputFluid,
+    NoMinableResources,
+    NoModulesToTransmit,
+    NoPath,
+    NoPower,
+    NoRecipe,
+    NoResearchInProgress,
+    NoSpotSeedableByInputs,
+    None,
+    NotConnectedToHubOrPad,
+    NotConnectedToRail,
+    NotEnoughSpaceInOutput,
+    NotEnoughThrust,
+    NotPluggedInElectricNetwork,
+    OnTheWay,
+    OpenedByCircuitNetwork,
+    OutOfLogisticNetwork,
+    Paused,
+    PipelineOverextended,
+    PreparingRocketForLaunch,
+    RechargingAfterPowerOutage,
+    RecipeNotResearched,
+    ThrustNotRequired,
+    TooFarFromPadToUnload,
+    TurnedOffDuringDaytime,
+    WaitingAtStop,
+    WaitingForPlantsToGrow,
+    WaitingForRocketToArrive,
     WaitingForSourceItems,
     WaitingForSpaceInDestination,
-    PreparingRocketForLaunch,
-    WaitingToLaunchRocket,
     WaitingForSpaceInPlatformHub,
-    LaunchingRocket,
-    ThrustNotRequired,
-    NotEnoughThrust,
-    OnTheWay,
+    WaitingForTargetToBeBuilt,
+    WaitingForTrain,
+    WaitingForUpgrade,
     WaitingInOrbit,
-    WaitingForRocketToArrive,
-    NoPath,
-    Broken,
-    None,
-    Frozen,
-    Paused,
-    NotConnectedToHubOrPad,
-    ComputingNavigation,
-    NoFilter,
-    WaitingAtStop,
-    DestinationStopFull,
-    PipelineOverextended,
-    NoSpotSeedableByInputs,
-    WaitingForPlantsToGrow,
-    RecipeNotResearched,
-}
-
-/// [`Types/Mirroring`](https://lua-api.factorio.com/latest/types/Mirroring.html)
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum Mirroring {
-    Horizontal,
-    Vertical,
-    DiagonalPos,
-    DiagonalNeg,
+    WaitingToClearDropSlots,
+    WaitingToLaunchRocket,
+    Working,
 }
 
 /// [`Types/MapPosition`](https://lua-api.factorio.com/latest/types/MapPosition.html)
@@ -1787,6 +1830,9 @@ pub struct RadiusVisualisationSpecification {
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub draw_on_selection: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub distance_quality_multiplier: BTreeMap<QualityID, f64>,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
@@ -1999,7 +2045,7 @@ pub struct HeatBuffer {
     pub heat_glow: Option<Sprite4Way>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub connections: FactorioArray<HeatConnection>,
+    pub connections: FactorioArray<HeatConnectionDefinition>,
 }
 
 impl HeatBuffer {
@@ -2419,6 +2465,16 @@ pub struct ProductionHealthEffect {
     pub producing: f32,
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub not_producing: f32,
+    #[serde(default = "dt_physical", skip_serializing_if = "is_dt_phsyical")]
+    pub damage_type: DamageTypeID,
+}
+
+fn dt_physical() -> DamageTypeID {
+    DamageTypeID::new("physical")
+}
+
+fn is_dt_phsyical(dt: &DamageTypeID) -> bool {
+    *dt == dt_physical()
 }
 
 /// [`Types/CargoStationParameters`](https://lua-api.factorio.com/latest/types/CargoStationParameters.html)
@@ -2489,7 +2545,7 @@ pub struct GigaCargoHatchDefinition {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CargoBayConnectableGraphicsSet {
-    pub picture: Option<LayeredSprite>,
+    pub picture: Option<LayeredSprite4Way>,
     pub animation: Option<Animation>,
     #[serde(
         default = "RenderLayer::object",
@@ -2504,18 +2560,11 @@ pub struct CargoBayConnectableGraphicsSet {
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CargoBayConnections {
-    pub top_wall: Option<LayeredSpriteVariations>,
-    pub right_wall: Option<LayeredSpriteVariations>,
-    pub bottom_wall: Option<LayeredSpriteVariations>,
-    pub left_wall: Option<LayeredSpriteVariations>,
-    pub top_left_outer_corner: Option<LayeredSpriteVariations>,
-    pub top_right_outer_corner: Option<LayeredSpriteVariations>,
-    pub bottom_left_outer_corner: Option<LayeredSpriteVariations>,
-    pub bottom_right_outer_corner: Option<LayeredSpriteVariations>,
-    pub top_left_inner_corner: Option<LayeredSpriteVariations>,
-    pub top_right_inner_corner: Option<LayeredSpriteVariations>,
-    pub bottom_left_inner_corner: Option<LayeredSpriteVariations>,
-    pub bottom_right_inner_corner: Option<LayeredSpriteVariations>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tileset: FactorioArray<FactorioArray<LayeredSpriteVariations>>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub tileset_mapping: BTreeMap<String, SingleOrArray<u8>>, // TODO: key should be u8 instead of string
+
     pub bridge_horizontal_narrow: Option<LayeredSpriteVariations>,
     pub bridge_horizontal_wide: Option<LayeredSpriteVariations>,
     pub bridge_vertical_narrow: Option<LayeredSpriteVariations>,
@@ -2556,4 +2605,26 @@ pub struct ChargableGraphics {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub discharge_cooldown: Option<u16>,
+}
+
+/// [`Types/SpentFluidSpecification`](https://lua-api.factorio.com/latest/types/SpentFluidSpecification.html)
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SpentFluidSpecification {
+    pub name: FluidID,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub amount: f64,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub temperature: f32,
+}
+
+/// [`Types/RobotDoorSpecification`](https://lua-api.factorio.com/latest/types/RobotDoorSpecification.html)
+#[skip_serializing_none]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct RobotDoorSpecification {
+    pub animation: Option<Animation>,
+    pub location_offset: Option<Vector>,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub opened_duration: u8,
+    // pub animation_sound: Option<Sound>,
 }

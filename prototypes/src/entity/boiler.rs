@@ -3,13 +3,13 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::{EnergyEntityData, EntityWithOwnerPrototype, FluidBoxEntityData};
+use super::{EnergyEntityData, EntityWithOwnerPrototype, FluidBoxEntityData, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/BoilerPrototype`](https://lua-api.factorio.com/latest/prototypes/BoilerPrototype.html)
 pub type BoilerPrototype =
-    EntityWithOwnerPrototype<FluidBoxEntityData<EnergyEntityData<BoilerData>>>;
+    EntityWithOwnerPrototype<FluidBoxEntityData<EnergyEntityData<WireEntityData<BoilerData>>>>;
 
 /// [`Prototypes/BoilerPrototype`](https://lua-api.factorio.com/latest/prototypes/BoilerPrototype.html)
 #[skip_serializing_none]

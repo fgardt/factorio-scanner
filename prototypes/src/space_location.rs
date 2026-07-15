@@ -52,6 +52,7 @@ pub struct SpaceLocationPrototypeData {
     // platform_procession_set
     // planet_procession_set
     // asteroid_spawn_definitions
+    // platform_surface_render_parameters
 }
 
 const fn default_label() -> RealOrientation {

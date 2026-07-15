@@ -3,7 +3,11 @@
     "entities": [
       {
         "control_behavior": {
-          "read_contents": false
+          "circuit_mode_of_operation": 0,
+          "temperature_signal": {
+            "name": "signal-T",
+            "type": "virtual"
+          }
         },
         "entity_number": 1,
         "name": "storage-tank",
@@ -22,7 +26,11 @@
       },
       {
         "control_behavior": {
-          "read_contents": false
+          "circuit_mode_of_operation": 0,
+          "temperature_signal": {
+            "name": "signal-T",
+            "type": "virtual"
+          }
         },
         "direction": 4,
         "entity_number": 3,
@@ -73,6 +81,12 @@
         }
       },
       {
+        "control_behavior": {
+          "temperature_signal": {
+            "name": "signal-T",
+            "type": "virtual"
+          }
+        },
         "direction": 4,
         "entity_number": 9,
         "name": "storage-tank",
@@ -98,6 +112,12 @@
         }
       },
       {
+        "control_behavior": {
+          "temperature_signal": {
+            "name": "signal-T",
+            "type": "virtual"
+          }
+        },
         "entity_number": 12,
         "name": "storage-tank",
         "position": {
@@ -116,7 +136,7 @@
     ],
     "item": "blueprint",
     "label": "storagetanks",
-    "version": 562949958402048,
+    "version": 562954249109505,
     "wires": [
       [
         1,

@@ -22,6 +22,7 @@
           "x": 0,
           "y": 0
         },
+        "providing_to_other_platforms": false,
         "request_filters": {
           "request_from_buffers": true,
           "sections": [
@@ -31,6 +32,7 @@
                 {
                   "comparator": "=",
                   "count": 69,
+                  "import_from": "aquilo",
                   "index": 5,
                   "max_count": 1337,
                   "minimum_delivery_count": 42,
@@ -63,6 +65,7 @@
                 {
                   "comparator": "=",
                   "count": 55,
+                  "import_from": "nauvis",
                   "index": 1,
                   "name": "land-mine",
                   "quality": "normal"
@@ -223,6 +226,6 @@
         }
       }
     ],
-    "version": 562949958402048
+    "version": 562954249109505
   }
 }

@@ -35,6 +35,10 @@ impl<T: Entity> Renderable for EnergyEntityData<T> {
             AnyEnergySource::Fluid { data } => {
                 data.fluid_box
                     .render(options, used_mods, render_layers, image_cache);
+
+                if let Some(out_fb) = data.output_fluid_box.as_ref() {
+                    out_fb.render(options, used_mods, render_layers, image_cache);
+                }
             }
             AnyEnergySource::Heat { data } => {
                 data.render(options, used_mods, render_layers, image_cache);
@@ -51,6 +55,10 @@ impl<T: Entity> Renderable for EnergyEntityData<T> {
 
         if let AnyEnergySource::Fluid { data } = &self.energy_source {
             res.append(&mut data.fluid_box.fluid_box_connections(options));
+
+            if let Some(out_fb) = data.output_fluid_box.as_ref() {
+                res.append(&mut out_fb.fluid_box_connections(options));
+            }
         }
 
         res
@@ -83,6 +91,10 @@ impl<T: Entity> Renderable for EnergyEntityData<T> {
             AnyEnergySource::Fluid { data } => {
                 data.fluid_box
                     .render_debug(options, used_mods, render_layers);
+
+                if let Some(out_fb) = data.output_fluid_box.as_ref() {
+                    out_fb.render_debug(options, used_mods, render_layers);
+                }
             }
             AnyEnergySource::Heat { data } => {
                 data.render_debug(options, used_mods, render_layers);

@@ -251,10 +251,9 @@ mod parse {
         let cap = matcher.captures(raw)?;
         let val = if let Some(hex) = cap.get(1) {
             u64::from_str_radix(hex.as_str(), 16).ok()? as f64
-        } else if let Some(float) = cap.get(2) {
-            float.as_str().parse().ok()?
         } else {
-            return None;
+            let float = cap.get(2)?;
+            float.as_str().parse().ok()?
         };
 
         let num_len = cap[0].len();
