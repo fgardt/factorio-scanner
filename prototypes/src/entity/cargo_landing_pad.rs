@@ -21,16 +21,12 @@ pub struct CargoLandingPadData {
 
     pub cargo_station_parameters: CargoStationParameters,
 
-    pub robot_animation: Option<Animation>,
-    pub robot_landing_location_offset: Option<Vector>,
+    pub robot_door: Option<RobotDoorSpecification>,
 
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub robot_opened_duration: u8,
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub radar_range: u32,
     pub radar_visualisation_color: Option<Color>,
-    // not implemented
-    // pub robot_opened_sound: Option<Sound>,
+    pub radius_visualisation_picture: Option<Sprite>,
 }
 
 impl super::Entity for CargoLandingPadData {}
@@ -54,6 +50,7 @@ impl super::Renderable for CargoLandingPadData {
         }) {
             render_layers.add_entity(anim, &options.position);
         }
+
         if let Some(pic) = gs.picture.as_ref().and_then(|p| {
             p.render(
                 render_layers.scale(),
@@ -63,6 +60,22 @@ impl super::Renderable for CargoLandingPadData {
             )
         }) {
             render_layers.add_entity(pic, &options.position);
+        }
+
+        if let Some(door) = self
+            .robot_door
+            .as_ref()
+            .and_then(|rd| rd.animation.as_ref())
+            .and_then(|a| {
+                a.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            })
+        {
+            render_layers.add_entity(door, &options.position);
         }
 
         Some(())

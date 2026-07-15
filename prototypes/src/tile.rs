@@ -5,9 +5,9 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 use types::{
-    AirbornePollutantID, Animation4Way, CollisionMaskConnector, Color, FactorioArray, FluidID,
-    Icon, PlaceableBy, SpriteUsageSurfaceHint, TileEffectDefinitionID, TileID, TileRenderLayer,
-    TileTransitions, TileTransitionsVariants, Weight,
+    AirbornePollutantID, Animation4Way, Color, FactorioArray, FluidID, Icon, PlaceableBy,
+    SpriteUsageSurfaceHint, TileCollisionMaskConnector, TileEffectDefinitionID, TileID,
+    TileRenderLayer, TileTransitions, TileTransitionsVariants, Weight,
 };
 
 use crate::helper_macro::namespace_struct;
@@ -51,7 +51,7 @@ impl TilePrototype {
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TilePrototypeData {
-    pub collision_mask: CollisionMaskConnector,
+    pub collision_mask: TileCollisionMaskConnector,
     pub layer: u8,
 
     pub build_animations: Option<Animation4Way>,

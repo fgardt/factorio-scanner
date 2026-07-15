@@ -32,6 +32,9 @@ pub struct SimpleEntityData {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub random_variation_on_create: bool,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub shuffled_variation_on_chunk_generated: bool,
+
     #[serde(flatten)]
     pub graphics: Option<SimpleEntityGraphics>,
 

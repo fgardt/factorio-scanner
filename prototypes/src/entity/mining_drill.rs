@@ -16,6 +16,12 @@ pub type MiningDrillPrototype =
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MiningDrillData {
     pub vector_to_place_result: Vector,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub use_mirroring: bool,
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub require_resources_to_place: bool,
+
     pub resource_searching_radius: f64,
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub resource_searching_offset: Vector,
@@ -29,12 +35,12 @@ pub struct MiningDrillData {
     pub input_fluid_box: Option<FluidBox>,
 
     pub graphics_set: Option<MiningDrillGraphicsSet>,
+    pub graphics_set_flipped: Option<MiningDrillGraphicsSet>,
     pub wet_mining_graphics_set: Option<MiningDrillGraphicsSet>,
+    pub wet_mining_graphics_set_flipped: Option<MiningDrillGraphicsSet>,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub perceived_performance: PerceivedPerformance,
-
-    pub base_picture: Option<Sprite4Way>,
 
     pub effect_receiver: Option<EffectReceiver>,
     pub module_slots: Option<ItemStackIndex>,
@@ -44,7 +50,6 @@ pub struct MiningDrillData {
     pub allowed_module_categories: Option<FactorioArray<ModuleCategoryID>>,
 
     pub radius_visualisation_picture: Option<Sprite>,
-    pub base_render_layer: Option<RenderLayer>,
 
     #[serde(
         default = "helper::u8_100",
@@ -69,6 +74,9 @@ pub struct MiningDrillData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub filter_count: u8,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub migrate_horizontal_mirroring: bool,
     // not implemented
     // pub moving_sound: Option<InterruptibleSound>,
     // pub drilling_sound: Option<InterruptibleSound>,
@@ -86,27 +94,14 @@ impl super::Renderable for MiningDrillData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        let res = merge_renders(
-            &[
-                self.base_picture.as_ref().and_then(|s| {
-                    s.render(
-                        render_layers.scale(),
-                        used_mods,
-                        image_cache,
-                        &options.into(),
-                    )
-                }),
-                self.graphics_set.as_ref().and_then(|s| {
-                    s.render(
-                        render_layers.scale(),
-                        used_mods,
-                        image_cache,
-                        &options.into(),
-                    )
-                }),
-            ],
-            render_layers.scale(),
-        )?;
+        let res = self.graphics_set.as_ref().and_then(|s| {
+            s.render(
+                render_layers.scale(),
+                used_mods,
+                image_cache,
+                &options.into(),
+            )
+        })?;
 
         render_layers.add_entity(res, &options.position);
 

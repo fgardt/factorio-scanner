@@ -28,6 +28,9 @@ pub struct InserterData {
 
     pub platform_picture: Option<Sprite4Way>,
     pub platform_frozen: Option<Sprite4Way>,
+    pub platform_picture_flipped: Option<Sprite4Way>,
+    pub platform_frozen_flipped: Option<Sprite4Way>,
+
     pub hand_base_picture: Option<Sprite>,
     pub hand_open_picture: Option<Sprite>,
     pub hand_closed_picture: Option<Sprite>,
@@ -67,6 +70,9 @@ pub struct InserterData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub enter_drop_mode_if_held_stack_spoiled: bool,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub use_mirroring: bool,
 
     #[serde(
         default = "helper::u8_1",

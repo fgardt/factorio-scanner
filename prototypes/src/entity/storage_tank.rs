@@ -29,6 +29,8 @@ pub struct StorageTankData {
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub show_fluid_icon: bool,
+
+    pub default_fluid_temperature_signal: Option<SignalIDConnector>,
 }
 
 impl super::Entity for StorageTankData {}

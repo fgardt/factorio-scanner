@@ -46,6 +46,15 @@ pub struct AgriculturalTowerData {
     pub harvesting_procedure_points: FactorioArray<Vector3D>,
 
     pub accepted_seeds: Option<FactorioArray<ItemID>>,
+
+    // TODO: extract module stuff into abstraction?
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub module_slots: ItemStackIndex,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub quality_affects_module_slots: bool,
+    pub allowed_effects: Option<EffectTypeLimitation>,
+    pub allowed_module_categories: Option<FactorioArray<ModuleCategoryID>>,
+    pub effect_receiver: Option<EffectReceiver>,
     // not implemented
     // pub central_orienting_sound: Option<InterruptibleSound>,
     // pub arm_extending_sound: Option<InterruptibleSound>,

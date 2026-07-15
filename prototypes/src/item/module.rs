@@ -22,6 +22,12 @@ pub struct ModulePrototypeData {
 
     pub beacon_tint: Option<BeaconVisualizationTints>,
 
+    pub consumption_quality_multiplier: Option<f32>,
+    pub speed_quality_multiplier: Option<f32>,
+    pub productivity_quality_multiplier: Option<f32>,
+    pub pollution_quality_multiplier: Option<f32>,
+    pub quality_quality_multiplier: Option<f32>,
+
     #[serde(flatten)]
     parent: super::ItemPrototypeData,
 }

@@ -59,6 +59,9 @@ pub struct ItemWithInventoryPrototypeData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub inventory_size: ItemStackIndex,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub quality_affects_inventory_size: bool,
+
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub item_filters: FactorioArray<ItemID>,
 

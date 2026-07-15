@@ -5,7 +5,7 @@ use serde_with::skip_serializing_none;
 
 use crate::{
     AirbornePollutantID, BurnerUsageID, FactorioArray, FluidAmount, FuelCategoryID, HeatBuffer,
-    ItemID, ItemStackIndex,
+    ItemID, ItemStackIndex, SpentFluidSpecification,
 };
 
 use super::{Direction, FluidBox, MapPosition, helper};
@@ -91,6 +91,9 @@ pub struct BurnerEnergySourceData {
         skip_serializing_if = "helper::is_025_f64"
     )]
     pub initial_fuel_percent: f64,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub auto_refuel: bool,
 }
 
 fn fuel_usage_id() -> BurnerUsageID {
@@ -131,6 +134,7 @@ pub type ElectricEnergySource = BaseEnergySource<ElectricEnergySourceData>;
 #[derive(Debug, Deserialize, Serialize)]
 pub struct FluidEnergySourceData {
     pub fluid_box: FluidBox,
+    pub output_fluid_box: Option<FluidBox>,
 
     // #[serde(default, skip_serializing_if = "Vec::is_empty"))]
     // pub smoke: FactorioArray<SmokeSource>,
@@ -152,6 +156,8 @@ pub struct FluidEnergySourceData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub maximum_temperature: f32,
+
+    pub spent_fluid: Option<SpentFluidSpecification>,
 }
 
 /// [`Types/FluidEnergySource`](https://lua-api.factorio.com/latest/types/FluidEnergySource.html)
@@ -216,11 +222,12 @@ pub enum ElectricUsagePriority {
     Tertiary,
     Solar,
     Lamp,
+    Dynamic,
 }
 
-/// [`Types/HeatConnection`](https://lua-api.factorio.com/latest/types/HeatConnection.html)
+/// [`Types/HeatConnectionDefinition`](https://lua-api.factorio.com/latest/types/HeatConnectionDefinition.html)
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct HeatConnection {
+pub struct HeatConnectionDefinition {
     pub position: MapPosition,
     pub direction: Direction,
 }

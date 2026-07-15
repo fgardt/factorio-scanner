@@ -45,6 +45,8 @@ pub struct RadarData {
 
     #[serde(default = "helper::f32_01", skip_serializing_if = "helper::is_01_f32")]
     pub energy_fraction_to_disconnect: f32,
+
+    pub default_universe_channel: Option<SignalIDConnector>,
 }
 
 impl super::Entity for RadarData {}

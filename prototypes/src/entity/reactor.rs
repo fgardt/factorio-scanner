@@ -3,6 +3,8 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
+use crate::entity::NeighbourConnectable;
+
 use super::{EnergyEntityData, EntityWithOwnerPrototype, HeatBufferEntityData, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
@@ -42,6 +44,10 @@ pub struct ReactorData {
 
     #[serde(default = "Color::white", skip_serializing_if = "Color::is_white")]
     pub default_fuel_glow_color: Color,
+
+    pub temperature_to_suppress_energy_icons: Option<f64>,
+
+    pub neighbour_connectable: Option<NeighbourConnectable>,
 
     pub default_temperature_signal: Option<SignalIDConnector>,
     // not implemented

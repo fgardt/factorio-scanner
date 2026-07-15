@@ -16,7 +16,6 @@ pub type SpacePlatformHubPrototype = EntityWithOwnerPrototype<WireEntityData<Spa
 pub struct SpacePlatformHubData {
     pub graphics_set: Option<CargoBayConnectableGraphicsSet>,
     pub inventory_size: ItemStackIndex,
-    pub dump_container: EntityID,
 
     pub default_speed_signal: Option<SignalIDConnector>,
     pub default_damage_taken_signal: Option<SignalIDConnector>,
@@ -28,7 +27,6 @@ pub struct SpacePlatformHubData {
 
     pub cargo_station_parameters: CargoStationParameters,
     // not implemented
-    // pub surface_render_parameters: Option<SurfaceRenderParameters>,
     // pub persistent_ambient_sounds: Option<PersistentWorldAmbientSoundsDefinition>,
 }
 

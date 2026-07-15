@@ -16,6 +16,7 @@ pub type ItemCountType = u32;
 pub enum ItemPrototypeFlag {
     DrawLogisticOverlay,
     ExcludedFromTrashUnrequested,
+    ExcludedFromCharacterLiftWeight,
     AlwaysShow,
     HideFromBonusGui,
     HideFromFuelTooltip,
@@ -26,6 +27,8 @@ pub enum ItemPrototypeFlag {
     Spawnable,
     SpoilResult,
     IgnoreSpoilTimeModifier,
+    HideHealthBarInWorld,
+    HideSpoilageBarInWorld,
 }
 
 /// [`Types/ItemPrototypeFlags`](https://lua-api.factorio.com/latest/types/ItemPrototypeFlags.html)

@@ -221,6 +221,11 @@ pub struct SelectorCombinatorData {
     pub stack_size_sprites: Option<Sprite4Way>,
     pub rocket_capacity_sprites: Option<Sprite4Way>,
     pub quality_symbol_sprites: Option<Sprite4Way>,
+    pub time_symbol_sprites: Option<Sprite4Way>,
+
+    pub default_game_tick_output_signal: Option<SignalIDConnector>,
+    pub default_day_tick_output_signal: Option<SignalIDConnector>,
+    pub default_day_length_output_signal: Option<SignalIDConnector>,
 }
 
 impl super::Entity for SelectorCombinatorData {}

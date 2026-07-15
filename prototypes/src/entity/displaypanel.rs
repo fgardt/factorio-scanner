@@ -22,6 +22,17 @@ pub struct DisplayPanelData {
     )]
     pub max_text_width: u32,
 
+    #[serde(
+        default = "helper::u32_500",
+        skip_serializing_if = "helper::is_500_u32"
+    )]
+    pub max_text_length: u32,
+    #[serde(
+        default = "helper::u32_100",
+        skip_serializing_if = "helper::is_100_u32"
+    )]
+    pub max_records_count: u32,
+
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub text_shift: Vector,
 

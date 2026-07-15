@@ -6,7 +6,7 @@ use serde_helper as helper;
 use crate::FactorioArray;
 
 /// [`Types/EffectValue`](https://lua-api.factorio.com/latest/types/EffectValue.html)
-pub type EffectValue = f64;
+pub type EffectValue = f32;
 
 /// [`Types/Effect`](https://lua-api.factorio.com/latest/types/Effect.html)
 #[skip_serializing_none]
@@ -49,6 +49,20 @@ pub struct EffectReceiver {
     pub uses_beacon_effects: bool,
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub uses_surface_effects: bool,
+
+    pub consumption_limits: Option<EffectValueRange>,
+    pub speed_limits: Option<EffectValueRange>,
+    pub productivity_limits: Option<EffectValueRange>,
+    pub pollution_limits: Option<EffectValueRange>,
+    pub quality_limits: Option<EffectValueRange>,
+}
+
+/// [`Types/EffectValueRange`](https://lua-api.factorio.com/latest/types/EffectValueRange.html)
+#[skip_serializing_none]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct EffectValueRange {
+    pub low: Option<EffectValue>,
+    pub high: Option<EffectValue>,
 }
 
 /// [`Types/ModuleTint`](https://lua-api.factorio.com/latest/types/ModuleTint.html)

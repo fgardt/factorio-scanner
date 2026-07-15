@@ -39,9 +39,15 @@ pub struct PipeConnectionDefinition {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub enable_working_visualisation: FactorioArray<String>,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub hide_connection_info: bool,
+
     pub direction: Option<Direction>,
     pub position: Option<MapPosition>,
     pub positions: Option<[MapPosition; 4]>,
+
+    pub alt_position: Option<MapPosition>,
+    pub alt_direction: Option<Direction>,
 
     #[serde(default = "default_cc", skip_serializing_if = "is_default_cc")]
     pub connection_category: SingleOrArray<String>,
@@ -119,9 +125,6 @@ pub struct FluidBox {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub draw_only_when_connected: bool,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub hide_connection_info: bool,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub volume_reservation_fraction: f32,

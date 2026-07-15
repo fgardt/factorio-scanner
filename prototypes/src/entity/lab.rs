@@ -3,12 +3,12 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use super::{EnergyEntityData, EntityWithOwnerPrototype};
+use super::{EnergyEntityData, EntityWithOwnerPrototype, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/LabPrototype`](https://lua-api.factorio.com/latest/prototypes/LabPrototype.html)
-pub type LabPrototype = EntityWithOwnerPrototype<EnergyEntityData<LabData>>;
+pub type LabPrototype = EntityWithOwnerPrototype<WireEntityData<EnergyEntityData<LabData>>>;
 
 /// [`Prototypes/LabPrototype`](https://lua-api.factorio.com/latest/prototypes/LabPrototype.html)
 #[skip_serializing_none]
@@ -38,6 +38,9 @@ pub struct LabData {
     pub allowed_module_categories: Option<FactorioArray<ModuleCategoryID>>,
 
     pub light: Option<LightDefinition>,
+
+    pub default_technology_level_signal: Option<SignalIDConnector>,
+
     pub trash_inventory_size: Option<ItemStackIndex>,
 }
 

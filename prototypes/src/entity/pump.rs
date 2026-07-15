@@ -9,7 +9,7 @@ use types::*;
 
 /// [`Prototypes/PumpPrototype`](https://lua-api.factorio.com/latest/prototypes/PumpPrototype.html)
 pub type PumpPrototype =
-    EntityWithOwnerPrototype<WireEntityData<FluidBoxEntityData<EnergyEntityData<PumpData>>>>;
+    EntityWithOwnerPrototype<FluidBoxEntityData<EnergyEntityData<WireEntityData<PumpData>>>>;
 
 /// [`Prototypes/PumpPrototype`](https://lua-api.factorio.com/latest/prototypes/PumpPrototype.html)
 #[skip_serializing_none]
@@ -26,10 +26,10 @@ pub struct PumpData {
     pub fluid_wagon_connector_speed: f64,
 
     #[serde(
-        default = "helper::f64_2_32",
-        skip_serializing_if = "helper::is_2_32_f64"
+        default = "helper::f64_2_2",
+        skip_serializing_if = "helper::is_2_2_f64"
     )]
-    pub fluid_wagon_connector_alignment_tolerance: f64,
+    pub fluid_wagon_tank_valve_max_distance: f64,
 
     #[serde(
         default = "helper::u8_1",
@@ -44,7 +44,12 @@ pub struct PumpData {
     pub fluid_animation: Option<Animation4Way>,
     pub glass_pictures: Option<Sprite4Way>,
     pub frozen_patch: Option<Sprite4Way>,
-    pub fluid_wagon_connector_graphics: Option<FluidWagonConnectorGraphics>,
+
+    pub wagon_connection_graphics: Option<PumpWagonConnectionGraphics>,
+    // not implemented
+    // pub base_lifting_sound: Option<Sound>,
+    // pub arm_orienting_sound: Option<Sound>,
+    // pub clamp_sound: Option<Sound>,
 }
 
 impl super::Entity for PumpData {}
@@ -70,8 +75,77 @@ impl super::Renderable for PumpData {
     }
 }
 
+/// [`Types/PumpWagonConnectionGraphics`](https://lua-api.factorio.com/latest/types/PumpWagonConnectionGraphics.html)
+#[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
-pub struct FluidWagonConnectorGraphics {
-    pub load_animations: PumpConnectorGraphics,
-    pub unload_animations: PumpConnectorGraphics,
+pub struct PumpWagonConnectionGraphics {
+    #[serde(default = "helper::f64_05", skip_serializing_if = "helper::is_05_f64")]
+    pub base_animation_finished_at_progress: f64,
+    #[serde(
+        default = "helper::f64_075",
+        skip_serializing_if = "helper::is_075_f64"
+    )]
+    pub clamp_animation_starts_at_progress: f64,
+
+    #[serde(
+        default = "helper::f32_015",
+        skip_serializing_if = "helper::is_015_f32"
+    )]
+    pub height_diff_to_wagon: f32,
+    #[serde(
+        default = "helper::f32_n005",
+        skip_serializing_if = "helper::is_n005_f32"
+    )]
+    pub part2_crop_adjustment: f32,
+    #[serde(
+        default = "helper::f32_n005",
+        skip_serializing_if = "helper::is_n005_f32"
+    )]
+    pub part2_shadow_crop_adjustment: f32,
+    #[serde(
+        default = "helper::f32_n0375",
+        skip_serializing_if = "helper::is_n0375_f32"
+    )]
+    pub clamp_y_shift: f32,
+
+    pub base: Option<BasePumpWagonConnectionAnimations>,
+    pub part_1: Option<RotatedSprite>,
+    pub part_1_shadow: Option<RotatedSprite>,
+    pub part_2: Option<RotatedSprite>,
+    pub part_2_shadow: Option<RotatedSprite>,
+    pub suction_clamp: Option<Animation>,
+    pub suction_clamp_shadow: Option<Animation>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub part1_to_2_shift: Vector,
+
+    pub top_pivot_shift: Option<PumpWagonConnectionShift4Way>,
+    pub resting_position_shift: Option<PumpWagonConnectionShift4Way>,
+
+    pub shadow_shift: Option<Vector>,
+}
+
+/// [`Types/BasePumpWagonConnectionAnimations`](https://lua-api.factorio.com/latest/types/BasePumpWagonConnectionAnimations.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BasePumpWagonConnectionAnimations {
+    pub input: Option<BasePumpWagonConnectionAnimations4Way>,
+    pub output: Option<BasePumpWagonConnectionAnimations4Way>,
+}
+
+/// [`Types/BasePumpWagonConnectionAnimations4Way`](https://lua-api.factorio.com/latest/types/BasePumpWagonConnectionAnimations4Way.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BasePumpWagonConnectionAnimations4Way {
+    pub north: Animation,
+    pub west: Animation,
+    pub south: Animation,
+    pub east: Animation,
+}
+
+/// [`Types/PumpWagonConnectionShift4Way`](https://lua-api.factorio.com/latest/types/PumpWagonConnectionShift4Way.html)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PumpWagonConnectionShift4Way {
+    pub north: Vector,
+    pub west: Vector,
+    pub south: Vector,
+    pub east: Vector,
 }

@@ -56,6 +56,9 @@ pub struct SpriteSource<S: SourceProvider = SingleSource> {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub allow_forced_downscale: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub color_channels: ColorChannels,
 }
 
 impl<S: SourceProvider> SpriteSource<S> {
@@ -112,6 +115,25 @@ impl<S: SourceProvider> SpriteSource<S> {
             fetch_args,
         )
     }
+}
+
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    Default,
+    PartialEq,
+    Eq,
+    serde_repr::Serialize_repr,
+    serde_repr::Deserialize_repr,
+)]
+#[repr(u8)]
+pub enum ColorChannels {
+    R = 1,
+    RG = 2,
+    RGB = 3,
+    #[default]
+    RGBA = 4,
 }
 
 /// [`Types/EffectTexture`](https://lua-api.factorio.com/latest/types/EffectTexture.html)

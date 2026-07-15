@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use serde_helper as helper;
-use types::{Color, Energy, FluidID, Icon};
+use types::{Color, Energy, FluidID, Icon, SpentFluidSpecification};
 
 use crate::helper_macro::namespace_struct;
 
@@ -47,6 +47,11 @@ pub struct FluidPrototypeData {
         skip_serializing_if = "helper::is_max_f32"
     )]
     pub gas_temperature: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub draw_as_glow: bool,
+
+    pub spent_fluid: Option<SpentFluidSpecification>,
     // auto_barrel is not loaded by the game, only used by base mods data-updates.lua
     // pub auto_barrel: bool,
 }

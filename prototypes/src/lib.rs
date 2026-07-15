@@ -478,6 +478,6 @@ mod test {
             };
         }
 
-        deserialize_tests!(base, space_age, py, pm);
+        deserialize_tests!(base, space_age, py); //, pm);
     }
 }

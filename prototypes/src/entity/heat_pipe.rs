@@ -1,12 +1,13 @@
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
 
-use super::{EntityWithOwnerPrototype, HeatBufferEntityData};
+use super::{EntityWithOwnerPrototype, HeatBufferEntityData, WireEntityData};
 use mod_util::UsedMods;
 use types::*;
 
 /// [`Prototypes/HeatPipePrototype`](https://lua-api.factorio.com/latest/prototypes/HeatPipePrototype.html)
-pub type HeatPipePrototype = EntityWithOwnerPrototype<HeatBufferEntityData<HeatPipeData>>;
+pub type HeatPipePrototype =
+    EntityWithOwnerPrototype<WireEntityData<HeatBufferEntityData<HeatPipeData>>>;
 
 /// [`Prototypes/HeatPipePrototype`](https://lua-api.factorio.com/latest/prototypes/HeatPipePrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
@@ -16,6 +17,8 @@ pub struct HeatPipeData {
 
     #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
     pub heating_radius: f32,
+
+    pub default_temperature_signal: Option<SignalIDConnector>,
 }
 
 impl super::Entity for HeatPipeData {}

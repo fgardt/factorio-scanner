@@ -1,6 +1,6 @@
 [package]
 name = "prototypes"
-version = "3.0.1-2.0.76"
+version = "3.1.0-2.1.11"
 authors.workspace = true
 edition.workspace = true
 

@@ -5,7 +5,7 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 use types::{
-    Color, FactorioArray, FluidID, Icon, ItemID, LocalisedString, ModuleCategoryID,
+    Color, FactorioArray, FluidID, Icon, ItemID, LocalisedString, ModuleCategoryID, QualityID,
     RecipeCategoryID, RecipeID, SurfaceCondition, TechnologyID,
 };
 
@@ -22,13 +22,10 @@ pub type RecipePrototype = crate::BasePrototype<RecipePrototypeData>;
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RecipePrototypeData {
     #[serde(
-        default = "crafting_category",
-        skip_serializing_if = "is_crafting_category"
+        default = "default_categories",
+        skip_serializing_if = "is_default_categories"
     )]
-    pub category: RecipeCategoryID,
-
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_categories: FactorioArray<RecipeCategoryID>,
+    pub categories: FactorioArray<RecipeCategoryID>,
 
     pub crafting_machine_tint: Option<RecipeTints>,
 
@@ -85,8 +82,7 @@ pub struct RecipePrototypeData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub always_show_made_in: bool,
 
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub show_amount_in_title: bool,
+    pub requires_ingredients_to_unlock_results: Option<bool>,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub always_show_products: bool,
@@ -96,12 +92,6 @@ pub struct RecipePrototypeData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub preserve_products_in_machine_output: bool,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub result_is_always_fresh: bool,
-
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub reset_freshness_on_craft: bool,
 
     pub allow_consumption_message: Option<LocalisedString>,
     pub allow_speed_message: Option<LocalisedString>,
@@ -130,6 +120,12 @@ pub struct RecipePrototypeData {
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub alternative_unlock_methods: FactorioArray<TechnologyID>,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub sort_item_ingredients: bool,
+    pub can_set_quality: Option<bool>,
+    // only used by the quality mod, not loaded by the engine itself
+    // pub auto_recycle: bool,
 }
 
 impl RecipePrototypeData {
@@ -206,12 +202,12 @@ impl RecipePrototypeData {
     }
 }
 
-fn crafting_category() -> RecipeCategoryID {
-    RecipeCategoryID::new("crafting")
+fn default_categories() -> FactorioArray<RecipeCategoryID> {
+    FactorioArray::new(vec![RecipeCategoryID::new("crafting")])
 }
 
-fn is_crafting_category(category: &RecipeCategoryID) -> bool {
-    *category == crafting_category()
+fn is_default_categories(categories: &FactorioArray<RecipeCategoryID>) -> bool {
+    *categories == default_categories()
 }
 
 /// [`Types/RecipeTints`](https://lua-api.factorio.com/latest/types/RecipeTints.html)
@@ -235,6 +231,14 @@ pub enum IngredientPrototype {
 
         #[serde(default, skip_serializing_if = "helper::is_default")]
         ignored_by_stats: u16,
+
+        quality_min: Option<QualityID>,
+        quality_max: Option<QualityID>,
+        #[serde(default, skip_serializing_if = "helper::is_default")]
+        quality_change: i8,
+
+        #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
+        spoil_weight: f32,
     },
     #[serde(rename = "fluid")]
     FluidIngredientPrototype {
@@ -250,7 +254,10 @@ pub enum IngredientPrototype {
         #[serde(default, skip_serializing_if = "helper::is_default")]
         fluidbox_index: u32,
 
-        #[serde(default = "helper::u8_2", skip_serializing_if = "helper::is_2_u8")]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        optional_fluidbox_indexes: FactorioArray<u32>,
+
+        #[serde(default = "helper::u8_3", skip_serializing_if = "helper::is_3_u8")]
         fluidbox_multiplier: u8, // could be NonZeroU8
     },
 }
@@ -281,30 +288,67 @@ pub enum ProductPrototype {
     FluidProductPrototype(FluidProductPrototype),
 }
 
+/// [`Types/ProductPrototypeBase`](https://lua-api.factorio.com/latest/types/ProductPrototypeBase.html)
+#[skip_serializing_none]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ProductPrototypeBase<T> {
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub independent_probability: f64,
+    pub shared_probability: Option<SharedProbabilityDefinition>,
+    pub show_details_in_recipe_tooltip: bool,
+
+    #[serde(flatten)]
+    child: T,
+}
+
+impl<T> std::ops::Deref for ProductPrototypeBase<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.child
+    }
+}
+
+/// [`Types/SharedProbabilityDefinition`](https://lua-api.factorio.com/latest/types/SharedProbabilityDefinition.html)
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SharedProbabilityDefinition {
+    pub min: f64,
+    pub max: f64,
+}
+
+/// [`Types/ItemProductPrototype`](https://lua-api.factorio.com/latest/types/ItemProductPrototype.html)
+pub type ItemProductPrototype = ProductPrototypeBase<ItemProductData>;
+
 /// [`Types/ItemProductPrototype`](https://lua-api.factorio.com/latest/types/ItemProductPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 #[skip_serializing_none]
-pub struct ItemProductPrototype {
+pub struct ItemProductData {
     pub name: ItemID,
 
     #[serde(flatten)]
     pub amount: ProductItemAmount,
 
-    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
-    pub probability: f64,
-
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub ignored_by_stats: u16,
     pub ignored_by_productivity: Option<u16>,
-
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub show_details_in_recipe_tooltip: bool,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub extra_count_fraction: f32,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub percent_spoiled: f32,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub always_fresh: bool,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub reset_freshness_on_craft: bool,
+
+    pub quality_min: Option<QualityID>,
+    pub quality_max: Option<QualityID>,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub quality_change: i8,
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub affected_by_quality: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -324,9 +368,12 @@ pub enum ProductItemAmount {
 }
 
 /// [`Types/FluidProductPrototype`](https://lua-api.factorio.com/latest/types/FluidProductPrototype.html)
+pub type FluidProductPrototype = ProductPrototypeBase<FluidProductData>;
+
+/// [`Types/FluidProductPrototype`](https://lua-api.factorio.com/latest/types/FluidProductPrototype.html)
 #[derive(Debug, Deserialize, Serialize)]
 #[skip_serializing_none]
-pub struct FluidProductPrototype {
+pub struct FluidProductData {
     pub name: FluidID,
 
     #[serde(flatten)]
@@ -344,8 +391,11 @@ pub struct FluidProductPrototype {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub fluidbox_index: u32,
 
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub show_details_in_recipe_tooltip: bool,
+    #[serde(default = "helper::u8_3", skip_serializing_if = "helper::is_3_u8")]
+    pub fluidbox_multiplier: u8,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub optional_fluidbox_indexes: FactorioArray<u32>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

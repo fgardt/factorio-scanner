@@ -19,17 +19,30 @@ pub struct QualityPrototypeData {
     pub color: Color,
     pub level: u32,
     pub next: Option<QualityID>,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub next_probability: f64,
+
+    #[serde(flatten, with = "suffix_probability")]
+    pub probabilities: Probabilities,
 
     #[serde(flatten)]
     pub icon: Icon,
 
     #[serde(flatten, with = "suffix_multiplier")]
-    pub multipliers: Multipliers,
+    pub multipliers: Box<Multipliers>,
 
     #[serde(flatten, with = "suffix_bonus")]
-    pub bonus: Bonus,
+    pub bonus: Box<Bonus>,
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Probabilities {
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub next: f64,
+    pub chain: Option<f64>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub previous: f64,
+    pub previous_chain: Option<f64>,
 }
 
 #[skip_serializing_none]
@@ -48,6 +61,11 @@ pub struct Multipliers {
     pub inserter_speed: Option<f64>,
     pub fluid_wagon_capacity: Option<f64>,
     pub inventory_size: Option<f64>,
+
+    pub cargo_wagon_inventory_size: Option<f64>,
+    pub locomotive_power: Option<f64>,
+    pub rolling_stock_max_speed: Option<f64>,
+
     pub lab_research_speed: Option<f64>,
     pub crafting_machine_speed: Option<f64>,
 
@@ -59,6 +77,14 @@ pub struct Multipliers {
     pub accumulator_capacity: Option<f64>,
     pub flying_robot_max_energy: Option<f64>,
     pub range: Option<f64>,
+
+    pub module_consumption: Option<f32>,
+    pub module_speed: Option<f32>,
+    pub module_productivity: Option<f32>,
+    pub module_pollution: Option<f32>,
+    pub module_quality: Option<f32>,
+
+    pub spoil_ticks: Option<f32>,
 }
 
 #[skip_serializing_none]
@@ -78,6 +104,7 @@ pub struct Bonus {
     pub lab_module_slots: Option<ItemStackIndex>,
 }
 
+with_suffix!(suffix_probability "_probability");
 with_suffix!(suffix_multiplier "_multiplier");
 with_suffix!(suffix_bonus "_bonus");
 

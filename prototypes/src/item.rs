@@ -5,7 +5,7 @@ use serde_helper as helper;
 use types::{
     CollisionMaskConnector, Color, Energy, EntityID, EquipmentID, FactorioArray, FileName,
     FuelCategoryID, Icon, IconData, ItemCountType, ItemID, ItemProductPrototype,
-    ItemPrototypeFlags, SpaceLocationID, SpriteVariations, TileID, Weight,
+    ItemPrototypeFlags, QualityID, SpaceLocationID, SpriteVariations, TileID, Weight,
 };
 
 mod ammo;
@@ -65,7 +65,13 @@ pub struct ItemPrototypeData {
 
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub burnt_result: ItemID,
+
     pub spoil_result: Option<ItemID>,
+    pub spoil_quality_min: Option<QualityID>,
+    pub spoil_quality_max: Option<QualityID>,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub spoil_quality_change: i8,
+
     pub plant_result: Option<EntityID>,
     pub place_as_tile: Option<PlaceAsTile>,
 
@@ -96,6 +102,8 @@ pub struct ItemPrototypeData {
 
     #[serde(default = "helper::f64_05", skip_serializing_if = "helper::is_05_f64")]
     pub ingredient_to_weight_coefficient: f64,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub space_platform_request_priority: bool,
 
     pub fuel_glow_color: Option<Color>,
 
@@ -124,6 +132,9 @@ pub struct ItemPrototypeData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub spoil_level: u8,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub lab_ignores_spoil_percent: bool,
 }
 
 impl ItemPrototypeData {

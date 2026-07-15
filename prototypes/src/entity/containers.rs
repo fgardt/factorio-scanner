@@ -26,7 +26,9 @@ pub struct ContainerData {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub quality_affects_inventory_size: bool,
 
-    pub picture: Option<Sprite>, // overridden in `LogisticContainerPrototype`
+    #[serde(default = "helper::u8_1", skip_serializing_if = "helper::is_1_u8")]
+    pub direction_count: u8,
+    pub picture: Option<Sprite4Way>, // overridden in `LogisticContainerPrototype`
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub inventory_type: InventoryType,
@@ -118,15 +120,7 @@ pub struct LogisticContainerData {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub render_not_in_network_icon: bool, // overridden in `InfinityContainerPrototype`
 
-    #[serde(
-        default,
-        skip_serializing_if = "helper::is_default",
-        deserialize_with = "helper::truncating_deserializer"
-    )]
-    pub opened_duration: u8,
-
-    pub animation: Option<Animation>,
-    pub landing_location_offset: Option<Vector>,
+    pub robot_door: Option<RobotDoorSpecification>,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub use_exact_mode: bool,
@@ -155,17 +149,25 @@ impl super::Renderable for LogisticContainerData {
         render_layers: &mut crate::RenderLayerBuffer,
         image_cache: &mut ImageCache,
     ) -> super::RenderOutput {
-        let Some(res) = self.animation.as_ref().and_then(|a| {
-            a.render(
-                render_layers.scale(),
-                used_mods,
-                image_cache,
-                &options.into(),
-            )
-        }) else {
-            return self
-                .parent
-                .render(options, used_mods, render_layers, image_cache);
+        let p = self
+            .parent
+            .render(options, used_mods, render_layers, image_cache);
+
+        let res = self
+            .robot_door
+            .as_ref()
+            .and_then(|door| door.animation.as_ref())
+            .and_then(|a| {
+                a.render(
+                    render_layers.scale(),
+                    used_mods,
+                    image_cache,
+                    &options.into(),
+                )
+            });
+
+        let Some(res) = res else {
+            return p;
         };
 
         render_layers.add_entity(res, &options.position);
@@ -174,6 +176,7 @@ impl super::Renderable for LogisticContainerData {
     }
 }
 
+/// [`Types/LogisticMode`](https://lua-api.factorio.com/latest/types/LogisticMode.html)
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum LogisticMode {

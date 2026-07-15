@@ -66,7 +66,7 @@ pub struct CraftingMachineData<T: super::Entity> {
 
     pub trash_inventory_size: Option<ItemStackIndex>,
     pub vector_to_place_result: Option<Vector>,
-    pub forced_symmetry: Option<Mirroring>,
+    pub use_mirroring: Option<bool>,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub crafting_speed_quality_multiplier: HashMap<QualityID, f64>,
@@ -215,9 +215,6 @@ pub struct AssemblingMachineData {
     pub default_recipe_finished_signal: Option<SignalIDConnector>,
     pub default_working_signal: Option<SignalIDConnector>,
 
-    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
-    pub enable_logistic_control_behavior: bool,
-
     #[serde(
         default = "helper::u8_max",
         skip_serializing_if = "helper::is_max_u8",
@@ -293,6 +290,13 @@ pub struct RocketSiloData {
 
     pub rocket_quick_relaunch_start_offset: f64,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub rocket_rising_speed_modifier_per_quality_level: f64,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub rocket_engine_starting_speed_modifier_per_quality_level: f64,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub arms_speed_modifier_per_quality_level: f64,
+
     pub satellite_animation: Option<Animation>,
     pub satellite_shadow_animation: Option<Animation>,
     pub base_night_sprite: Option<Sprite>,
@@ -325,6 +329,12 @@ pub struct RocketSiloData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub logistic_trash_inventory_size: ItemStackIndex,
 
+    #[serde(
+        default = "helper::f64_1_000_000",
+        skip_serializing_if = "helper::is_1_000_000_f64"
+    )]
+    pub lift_weight: Weight,
+
     pub cargo_station_parameters: CargoStationParameters,
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
@@ -332,6 +342,8 @@ pub struct RocketSiloData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub can_launch_without_landing_pads: bool,
+
+    pub robot_door: Option<RobotDoorSpecification>,
 
     #[serde(flatten)]
     assembler_data: AssemblingMachineData,
@@ -387,6 +399,17 @@ impl super::Renderable for RocketSiloData {
                     image_cache,
                     &options.into(),
                 ),
+                self.robot_door
+                    .as_ref()
+                    .and_then(|rd| rd.animation.as_ref())
+                    .and_then(|a| {
+                        a.render(
+                            render_layers.scale(),
+                            used_mods,
+                            image_cache,
+                            &options.into(),
+                        )
+                    }),
                 self.arm_01_back_animation.render(
                     render_layers.scale(),
                     used_mods,
