@@ -147,6 +147,9 @@ mod portal {
         #[serde(rename = "2.0")]
         V2_0,
 
+        #[serde(rename = "2.1")]
+        V2_1,
+
         #[serde(untagged)]
         Unknown(String),
     }
@@ -163,6 +166,7 @@ mod portal {
                 Self::V1_0 => write!(f, "1.0"),
                 Self::V1_1 => write!(f, "1.1"),
                 Self::V2_0 => write!(f, "2.0"),
+                Self::V2_1 => write!(f, "2.1"),
                 Self::Unknown(val) => write!(f, "{val}"),
             }
         }
