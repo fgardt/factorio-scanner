@@ -161,8 +161,15 @@ impl Mod {
     }
 
     #[must_use]
-    pub const fn wube_mods() -> [&'static str; 5] {
-        ["core", "base", "elevated-rails", "quality", "space-age"]
+    pub const fn wube_mods() -> [&'static str; 6] {
+        [
+            "core",
+            "base",
+            "elevated-rails",
+            "quality",
+            "recycler",
+            "space-age",
+        ]
     }
 }
 
