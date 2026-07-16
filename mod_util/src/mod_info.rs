@@ -5,11 +5,14 @@ use serde::{
     Deserialize, Deserializer, Serialize,
     de::{Error as DeError, Visitor},
 };
-use serde_helper as helper;
 use serde_with::{skip_serializing_none, with_suffix};
 use thiserror::Error;
 
 use crate::UsedMods;
+
+mod feature_flags;
+
+pub use feature_flags::*;
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -33,117 +36,6 @@ pub struct ModInfo {
 }
 
 with_suffix!(suffix_required "_required");
-
-#[allow(clippy::struct_excessive_bools)]
-#[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
-pub struct FeatureFlags {
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub expansion: bool,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub quality: bool,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub rail_bridges: bool,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub space_travel: bool,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub spoiling: bool,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub freezing: bool,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub segmented_units: bool,
-    #[serde(default, skip_serializing_if = "helper::is_default")]
-    pub expansion_shaders: bool,
-}
-
-impl std::ops::BitOr for FeatureFlags {
-    type Output = Self;
-
-    fn bitor(self, rhs: Self) -> Self {
-        Self {
-            expansion: self.expansion || rhs.expansion,
-            quality: self.quality || rhs.quality,
-            rail_bridges: self.rail_bridges || rhs.rail_bridges,
-            space_travel: self.space_travel || rhs.space_travel,
-            spoiling: self.spoiling || rhs.spoiling,
-            freezing: self.freezing || rhs.freezing,
-            segmented_units: self.segmented_units || rhs.segmented_units,
-            expansion_shaders: self.expansion_shaders || rhs.expansion_shaders,
-        }
-    }
-}
-
-impl std::ops::BitOrAssign for FeatureFlags {
-    fn bitor_assign(&mut self, rhs: Self) {
-        self.expansion |= rhs.expansion;
-        self.quality |= rhs.quality;
-        self.rail_bridges |= rhs.rail_bridges;
-        self.space_travel |= rhs.space_travel;
-        self.spoiling |= rhs.spoiling;
-        self.freezing |= rhs.freezing;
-        self.segmented_units |= rhs.segmented_units;
-        self.expansion_shaders |= rhs.expansion_shaders;
-    }
-}
-
-impl std::ops::BitAnd for FeatureFlags {
-    type Output = Self;
-
-    fn bitand(self, rhs: Self) -> Self {
-        Self {
-            expansion: self.expansion && rhs.expansion,
-            quality: self.quality && rhs.quality,
-            rail_bridges: self.rail_bridges && rhs.rail_bridges,
-            space_travel: self.space_travel && rhs.space_travel,
-            spoiling: self.spoiling && rhs.spoiling,
-            freezing: self.freezing && rhs.freezing,
-            segmented_units: self.segmented_units && rhs.segmented_units,
-            expansion_shaders: self.expansion_shaders && rhs.expansion_shaders,
-        }
-    }
-}
-
-impl std::ops::BitAndAssign for FeatureFlags {
-    fn bitand_assign(&mut self, rhs: Self) {
-        self.expansion &= rhs.expansion;
-        self.quality &= rhs.quality;
-        self.rail_bridges &= rhs.rail_bridges;
-        self.space_travel &= rhs.space_travel;
-        self.spoiling &= rhs.spoiling;
-        self.freezing &= rhs.freezing;
-        self.segmented_units &= rhs.segmented_units;
-        self.expansion_shaders &= rhs.expansion_shaders;
-    }
-}
-
-impl std::ops::BitXor for FeatureFlags {
-    type Output = Self;
-
-    fn bitxor(self, rhs: Self) -> Self {
-        Self {
-            expansion: self.expansion ^ rhs.expansion,
-            quality: self.quality ^ rhs.quality,
-            rail_bridges: self.rail_bridges ^ rhs.rail_bridges,
-            space_travel: self.space_travel ^ rhs.space_travel,
-            spoiling: self.spoiling ^ rhs.spoiling,
-            freezing: self.freezing ^ rhs.freezing,
-            segmented_units: self.segmented_units ^ rhs.segmented_units,
-            expansion_shaders: self.expansion_shaders ^ rhs.expansion_shaders,
-        }
-    }
-}
-
-impl std::ops::BitXorAssign for FeatureFlags {
-    fn bitxor_assign(&mut self, rhs: Self) {
-        self.expansion ^= rhs.expansion;
-        self.quality ^= rhs.quality;
-        self.rail_bridges ^= rhs.rail_bridges;
-        self.space_travel ^= rhs.space_travel;
-        self.spoiling ^= rhs.spoiling;
-        self.freezing ^= rhs.freezing;
-        self.segmented_units ^= rhs.segmented_units;
-        self.expansion_shaders ^= rhs.expansion_shaders;
-    }
-}
 
 fn default_dep() -> Vec<Dependency> {
     vec![Dependency {
@@ -420,6 +312,7 @@ enum DependencyType {
     HiddenOptional,
     RequiredLazy,
     Required,
+    Recommended,
 }
 
 impl DependencyType {
@@ -428,7 +321,10 @@ impl DependencyType {
     }
 
     pub const fn is_optional(&self) -> bool {
-        matches!(self, Self::Optional | Self::HiddenOptional)
+        matches!(
+            self,
+            Self::Recommended | Self::Optional | Self::HiddenOptional
+        )
     }
 
     pub const fn is_incompatible(&self) -> bool {
@@ -436,7 +332,10 @@ impl DependencyType {
     }
 
     pub const fn affects_load_order(&self) -> bool {
-        matches!(self, Self::Required | Self::Optional | Self::HiddenOptional)
+        matches!(
+            self,
+            Self::Required | Self::Recommended | Self::Optional | Self::HiddenOptional
+        )
     }
 }
 
@@ -448,6 +347,7 @@ impl fmt::Display for DependencyType {
             Self::HiddenOptional => write!(f, "(?) "),
             Self::RequiredLazy => write!(f, "~ "),
             Self::Required => Ok(()),
+            Self::Recommended => write!(f, "+ "),
         }
     }
 }
@@ -658,7 +558,7 @@ impl Visitor<'_> for DependencyVisitor {
     type Value = Dependency;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("a dependency: !, ?, (?), ~ or nothing followed by a mod name and optionally a version specifier")
+        formatter.write_str("a dependency: !, ?, (?), +, ~ or nothing followed by a mod name and optionally a version specifier")
     }
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
@@ -680,6 +580,9 @@ impl Visitor<'_> for DependencyVisitor {
         } else if v.starts_with("(?)") {
             v = &v[3..];
             DependencyType::HiddenOptional
+        } else if v.starts_with('+') {
+            v = &v[1..];
+            DependencyType::Recommended
         } else if v.starts_with('~') {
             v = &v[1..];
             DependencyType::RequiredLazy
@@ -895,6 +798,16 @@ mod test {
             DependencyType::HiddenOptional,
             "mod-name",
             DependencyVersion::LowerOrEqual(Version::new(0, 4, 5)),
+        );
+    }
+
+    #[test]
+    fn dep_recommended() {
+        dep_test(
+            "+ mod-name = 1.2.3",
+            DependencyType::Recommended,
+            "mod-name",
+            DependencyVersion::Exact(Version::new(1, 2, 3)),
         );
     }
 
