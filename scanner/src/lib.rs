@@ -1436,7 +1436,7 @@ impl std::fmt::Display for ModDownloadError {
             Self::DownloadFailed(name, version) => {
                 write!(f, "failed to download mod {name} v{version}")
             }
-            Self::SaveFailed(name, version) => write!(f, "failed to save mod {name} v{version}",),
+            Self::SaveFailed(name, version) => write!(f, "failed to save mod {name} v{version}"),
         }
     }
 }
