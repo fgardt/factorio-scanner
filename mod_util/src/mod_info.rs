@@ -420,6 +420,7 @@ enum DependencyType {
     HiddenOptional,
     RequiredLazy,
     Required,
+    Recommended,
 }
 
 impl DependencyType {
@@ -428,7 +429,10 @@ impl DependencyType {
     }
 
     pub const fn is_optional(&self) -> bool {
-        matches!(self, Self::Optional | Self::HiddenOptional)
+        matches!(
+            self,
+            Self::Recommended | Self::Optional | Self::HiddenOptional
+        )
     }
 
     pub const fn is_incompatible(&self) -> bool {
@@ -436,7 +440,10 @@ impl DependencyType {
     }
 
     pub const fn affects_load_order(&self) -> bool {
-        matches!(self, Self::Required | Self::Optional | Self::HiddenOptional)
+        matches!(
+            self,
+            Self::Required | Self::Recommended | Self::Optional | Self::HiddenOptional
+        )
     }
 }
 
@@ -448,6 +455,7 @@ impl fmt::Display for DependencyType {
             Self::HiddenOptional => write!(f, "(?) "),
             Self::RequiredLazy => write!(f, "~ "),
             Self::Required => Ok(()),
+            Self::Recommended => write!(f, "+ "),
         }
     }
 }
@@ -658,7 +666,7 @@ impl Visitor<'_> for DependencyVisitor {
     type Value = Dependency;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("a dependency: !, ?, (?), ~ or nothing followed by a mod name and optionally a version specifier")
+        formatter.write_str("a dependency: !, ?, (?), +, ~ or nothing followed by a mod name and optionally a version specifier")
     }
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
@@ -680,6 +688,9 @@ impl Visitor<'_> for DependencyVisitor {
         } else if v.starts_with("(?)") {
             v = &v[3..];
             DependencyType::HiddenOptional
+        } else if v.starts_with('+') {
+            v = &v[1..];
+            DependencyType::Recommended
         } else if v.starts_with('~') {
             v = &v[1..];
             DependencyType::RequiredLazy
@@ -895,6 +906,16 @@ mod test {
             DependencyType::HiddenOptional,
             "mod-name",
             DependencyVersion::LowerOrEqual(Version::new(0, 4, 5)),
+        );
+    }
+
+    #[test]
+    fn dep_recommended() {
+        dep_test(
+            "+ mod-name = 1.2.3",
+            DependencyType::Recommended,
+            "mod-name",
+            DependencyVersion::Exact(Version::new(1, 2, 3)),
         );
     }
 
