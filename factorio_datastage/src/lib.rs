@@ -11,6 +11,8 @@ use serde::Deserialize;
 #[macro_use]
 extern crate log;
 
+pub use mod_util::mod_settings::SettingsValues;
+
 struct ToLuaWrapper<T>(T);
 
 impl<T> ToLuaWrapper<T> {
@@ -364,21 +366,15 @@ impl DataLoader {
         Ok(())
     }
 
-    #[allow(clippy::too_many_lines)]
-    pub fn load(
-        &self,
-        output_dir: impl AsRef<Path>,
-        out_name: &str,
-    ) -> Result<&Self, DataLoaderError> {
-        let start = std::time::Instant::now();
-        self.run_stage(Stage::Settings)?;
-
+    fn build_settings(&self, values: &SettingsValues) -> Result<(), DataLoaderError> {
         let g = self.vm.globals();
         let settings = self.vm.create_table()?;
         let startup = self.vm.create_table()?;
         let raw = g.raw_get::<LuaTable>("data")?.raw_get::<LuaTable>("raw")?;
 
         if let Ok(bool_settings) = raw.raw_get::<LuaTable>("bool-setting") {
+            let values = &values.bool_settings;
+
             bool_settings.for_each::<String, LuaTable>(|name, s| {
                 if s.raw_get::<String>("setting_type")? != "startup" {
                     return Ok(());
@@ -388,11 +384,8 @@ impl DataLoader {
                 let default: bool = s.raw_get("default_value")?;
                 let forced: Option<bool> = s.raw_get("forced_value").ok();
 
-                let val = if hidden {
-                    forced.unwrap_or(default)
-                } else {
-                    default
-                };
+                let set = values.get(&name).copied().unwrap_or(default);
+                let val = if hidden { forced.unwrap_or(set) } else { set };
 
                 let val_table = self.vm.create_table()?;
                 val_table.raw_set("value", val)?;
@@ -401,64 +394,108 @@ impl DataLoader {
         }
 
         if let Ok(int_settings) = raw.raw_get::<LuaTable>("int-setting") {
+            let values = &values.int_settings;
+
             int_settings.for_each::<String, LuaTable>(|name, s| {
                 if s.raw_get::<String>("setting_type")? != "startup" {
                     return Ok(());
                 }
 
                 let default: i64 = s.raw_get("default_value")?;
+                let val = values.get(&name).copied().unwrap_or(default);
 
                 let val_table = self.vm.create_table()?;
-                val_table.raw_set("value", default)?;
+                val_table.raw_set("value", val)?;
                 startup.raw_set(name, val_table)
             })?;
         }
 
         if let Ok(double_settings) = raw.raw_get::<LuaTable>("double-setting") {
+            let values = &values.double_settings;
+
             double_settings.for_each::<String, LuaTable>(|name, s| {
                 if s.raw_get::<String>("setting_type")? != "startup" {
                     return Ok(());
                 }
 
                 let default: f64 = s.raw_get("default_value")?;
+                let val = values.get(&name).copied().unwrap_or(default);
 
                 let val_table = self.vm.create_table()?;
-                val_table.raw_set("value", default)?;
+                val_table.raw_set("value", val)?;
                 startup.raw_set(name, val_table)
             })?;
         }
 
         if let Ok(string_settings) = raw.raw_get::<LuaTable>("string-setting") {
+            let values = &values.string_settings;
+
             string_settings.for_each::<String, LuaTable>(|name, s| {
                 if s.raw_get::<String>("setting_type")? != "startup" {
                     return Ok(());
                 }
 
                 let default: String = s.raw_get("default_value")?;
+                let val = values.get(&name).cloned().unwrap_or(default);
 
                 let val_table = self.vm.create_table()?;
-                val_table.raw_set("value", default)?;
+                val_table.raw_set("value", val)?;
                 startup.raw_set(name, val_table)
             })?;
         }
 
         if let Ok(color_settings) = raw.raw_get::<LuaTable>("color-setting") {
+            let values = &values.color_settings;
+
             color_settings.for_each::<String, LuaTable>(|name, s| {
                 if s.raw_get::<String>("setting_type")? != "startup" {
                     return Ok(());
                 }
 
                 let default: LuaTable = s.raw_get("default_value")?;
+                let val = values
+                    .get(&name)
+                    .and_then(|c| {
+                        let c_table = self.vm.create_table().ok()?;
+                        c_table.raw_set("r", c.r).ok()?;
+                        c_table.raw_set("g", c.g).ok()?;
+                        c_table.raw_set("b", c.b).ok()?;
+                        c_table.raw_set("a", c.a).ok()?;
+
+                        Some(c_table)
+                    })
+                    .unwrap_or(default);
 
                 let val_table = self.vm.create_table()?;
-                val_table.raw_set("value", default)?;
+                val_table.raw_set("value", val)?;
                 startup.raw_set(name, val_table)
             })?;
         }
 
         settings.raw_set("startup", startup)?;
         g.raw_set("settings", settings)?;
-        drop(g);
+
+        Ok(())
+    }
+
+    pub fn load(
+        &self,
+        output_dir: impl AsRef<Path>,
+        out_name: &str,
+    ) -> Result<&Self, DataLoaderError> {
+        self.load_with_settings(output_dir, out_name, &SettingsValues::default())
+    }
+
+    pub fn load_with_settings(
+        &self,
+        output_dir: impl AsRef<Path>,
+        out_name: &str,
+        startup_settings: &SettingsValues,
+    ) -> Result<&Self, DataLoaderError> {
+        let start = std::time::Instant::now();
+        self.run_stage(Stage::Settings)?;
+
+        self.build_settings(startup_settings)?;
 
         self.run_stage(Stage::Data)?;
 
