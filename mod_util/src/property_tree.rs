@@ -201,6 +201,38 @@ impl PropertyTree {
     }
 
     #[must_use]
+    pub const fn as_number(&self) -> Option<f64> {
+        match self {
+            Self::Number(val) => Some(*val),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn as_str(&self) -> Option<&str> {
+        match self {
+            Self::String(val) => Some(val.as_str()),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn as_signed_integer(&self) -> Option<i64> {
+        match self {
+            Self::SignedInteger(val) => Some(*val),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn as_unsigned_integer(&self) -> Option<u64> {
+        match self {
+            Self::UnsignedInteger(val) => Some(*val),
+            _ => None,
+        }
+    }
+
+    #[must_use]
     pub const fn is_dict(&self) -> bool {
         matches!(self, Self::Dictionary(_))
     }

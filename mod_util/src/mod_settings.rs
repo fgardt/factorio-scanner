@@ -35,13 +35,21 @@ type Result<T> = std::result::Result<T, SettingsError>;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CommonSettingsData {
     pub name: String,
-    pub setting_type: String, // todo: enum
+    pub setting_type: SettingType,
 
     pub localised_name: Option<String>,
     pub localised_description: Option<String>,
 
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub order: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum SettingType {
+    Startup,
+    RuntimeGlobal,
+    RuntimePerUser,
 }
 
 #[skip_serializing_none]
@@ -267,6 +275,81 @@ impl SettingsDat {
             runtime_global: HashMap::new(),
             runtime_per_user: HashMap::new(),
         })
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct SettingsValues {
+    pub bool_settings: HashMap<String, bool>,
+    pub int_settings: HashMap<String, i64>,
+    pub double_settings: HashMap<String, f64>,
+    pub string_settings: HashMap<String, String>,
+    pub color_settings: HashMap<String, Color>,
+}
+
+impl SettingsValues {
+    pub fn from_prop_dict(dict: &HashMap<String, PropertyTree>) -> Self {
+        let mut bool_settings = HashMap::new();
+        let mut int_settings = HashMap::new();
+        let mut double_settings = HashMap::new();
+        let mut string_settings = HashMap::new();
+        let mut color_settings = HashMap::new();
+
+        for (k, v) in dict {
+            let PropertyTree::Dictionary(inner) = v else {
+                continue;
+            };
+
+            let Some(value) = inner.get("value") else {
+                continue;
+            };
+
+            let key = k.clone();
+
+            match value {
+                PropertyTree::Bool(b) => {
+                    bool_settings.insert(key, *b);
+                }
+                PropertyTree::SignedInteger(i) => {
+                    int_settings.insert(key, *i);
+                }
+                PropertyTree::Number(n) => {
+                    double_settings.insert(key, *n);
+                }
+                PropertyTree::String(s) => {
+                    string_settings.insert(key, s.clone());
+                }
+                PropertyTree::Dictionary(c_dict) => {
+                    let r = c_dict
+                        .get("r")
+                        .and_then(PropertyTree::as_number)
+                        .unwrap_or_default();
+                    let g = c_dict
+                        .get("g")
+                        .and_then(PropertyTree::as_number)
+                        .unwrap_or_default();
+                    let b = c_dict
+                        .get("b")
+                        .and_then(PropertyTree::as_number)
+                        .unwrap_or_default();
+                    let a = c_dict
+                        .get("a")
+                        .and_then(PropertyTree::as_number)
+                        .unwrap_or(1.0);
+
+                    color_settings.insert(key, Color { r, g, b, a });
+                }
+                _ => {}
+            }
+        }
+
+        Self {
+            bool_settings,
+            int_settings,
+            double_settings,
+            string_settings,
+            color_settings,
+        }
     }
 }
 
