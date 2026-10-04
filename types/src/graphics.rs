@@ -189,6 +189,7 @@ pub enum RenderLayer {
     ElevatedRailTie,
     ElevatedRailScrew,
     ElevatedRailMetal,
+    ElevatedRailAboveMetal,
     ElevatedLowerObject,
     ElevatedObject,
     ElevatedHigherObject,

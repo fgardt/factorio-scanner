@@ -2269,9 +2269,6 @@ pub struct MiningDrillGraphicsSetData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub reset_animation_when_frozen: bool,
 
-    pub circuit_connector_layer: Option<CircuitConnectorLayer>, // TODO: fix that only the internal members need to be optional
-    pub circuit_connector_secondary_draw_order: Option<CircuitConnectorSecondaryDrawOrder>, // TODO: fix that only the internal members need to be optional
-
     #[serde(
         default,
         skip_serializing_if = "helper::is_default",

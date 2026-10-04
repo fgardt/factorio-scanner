@@ -390,6 +390,7 @@ pub struct EntityData<T: Entity> {
     // pub rotated_sound: Option<Sound>,
     // pub open_sound: Option<Sound>,
     // pub close_sound: Option<Sound>,
+    // pub ghost_build_sound: Option<Sound>,
     // pub stateless_visualisation: Option<StatelessVisualisations>,
     // pub draw_stateless_visualisations_in_ghost: bool,
     // pub remains_when_mined: Option<RemainsWhenMined>,

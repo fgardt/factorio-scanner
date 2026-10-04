@@ -60,8 +60,8 @@ pub struct ItemPrototypeData {
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub place_as_equipment_result: EquipmentID,
 
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub fuel_category: FuelCategoryID,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub fuel_categories: FactorioArray<FuelCategoryID>,
 
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub burnt_result: ItemID,
@@ -71,6 +71,8 @@ pub struct ItemPrototypeData {
     pub spoil_quality_max: Option<QualityID>,
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub spoil_quality_change: i8,
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub quality_affects_spoil_ticks: bool,
 
     pub plant_result: Option<EntityID>,
     pub place_as_tile: Option<PlaceAsTile>,
@@ -135,6 +137,9 @@ pub struct ItemPrototypeData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub lab_ignores_spoil_percent: bool,
+
+    #[serde(default = "helper::f64_1", skip_serializing_if = "helper::is_1_f64")]
+    pub science_capacity: f64,
 }
 
 impl ItemPrototypeData {

@@ -26,8 +26,6 @@ pub struct RailSignalPictureSet {
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub circuit_connector: FactorioArray<CircuitConnectorDefinition>,
-    #[serde(default = "rl_object", skip_serializing_if = "is_rl_object")]
-    pub circuit_connector_render_layer: RenderLayer,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub structure_align_to_animation_index: FactorioArray<u8>,
@@ -43,15 +41,6 @@ const fn rl_floor_mech() -> RenderLayer {
 #[expect(clippy::trivially_copy_pass_by_ref)]
 fn is_rl_floor_mech(layer: &RenderLayer) -> bool {
     *layer == rl_floor_mech()
-}
-
-const fn rl_object() -> RenderLayer {
-    RenderLayer::Object
-}
-
-#[expect(clippy::trivially_copy_pass_by_ref)]
-fn is_rl_object(layer: &RenderLayer) -> bool {
-    *layer == rl_object()
 }
 
 /// [`Types/RailSignalColorToFrameIndex`](https://lua-api.factorio.com/latest/types/RailSignalColorToFrameIndex.html)

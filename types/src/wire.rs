@@ -5,7 +5,7 @@ use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
 
-use crate::{FactorioArray, LightDefinition, RealOrientation, Sprite, Vector};
+use crate::{FactorioArray, LightDefinition, RealOrientation, RenderLayer, Sprite, Vector};
 
 #[cfg(feature = "graphics")]
 use crate::{GraphicsOutput, ImageCache, RenderableGraphics, TintableRenderOpts};
@@ -44,6 +44,14 @@ pub struct CircuitConnectorSprites {
     pub led_blue_off: Option<Sprite>,
     pub led_blue_light_offset: Option<Vector>,
     pub red_green_led_light_offset: Option<Vector>,
+
+    #[serde(
+        default = "RenderLayer::object",
+        skip_serializing_if = "RenderLayer::is_object"
+    )]
+    pub render_layer: RenderLayer,
+    #[serde(default = "helper::i8_10", skip_serializing_if = "helper::is_10_i8")]
+    pub secondary_draw_order: i8,
 }
 
 /// [`Types/CircuitConnectorDefinition`](https://lua-api.factorio.com/latest/types/CircuitConnectorDefinition.html)

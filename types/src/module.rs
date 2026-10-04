@@ -49,6 +49,8 @@ pub struct EffectReceiver {
     pub uses_beacon_effects: bool,
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub uses_surface_effects: bool,
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub uses_local_effects: bool,
 
     pub consumption_limits: Option<EffectValueRange>,
     pub speed_limits: Option<EffectValueRange>,

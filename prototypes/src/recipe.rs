@@ -124,6 +124,9 @@ pub struct RecipePrototypeData {
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub sort_item_ingredients: bool,
     pub can_set_quality: Option<bool>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub raise_on_crafted: bool,
     // only used by the quality mod, not loaded by the engine itself
     // pub auto_recycle: bool,
 }

@@ -29,6 +29,7 @@ pub enum ItemPrototypeFlag {
     IgnoreSpoilTimeModifier,
     HideHealthBarInWorld,
     HideSpoilageBarInWorld,
+    NoItemOnGroundMerging,
 }
 
 /// [`Types/ItemPrototypeFlags`](https://lua-api.factorio.com/latest/types/ItemPrototypeFlags.html)

@@ -164,7 +164,6 @@ pub struct LoaderData {
 
     // TODO: default
     pub structure_render_layer: Option<RenderLayer>,
-    pub circuit_connector_layer: Option<RenderLayer>,
 
     #[serde(
         default = "helper::f64_1_5",
