@@ -257,14 +257,22 @@ impl ModList {
                 version
             };
 
-            let entry = list.entry(name).or_default();
+            let entry = list.entry(name.clone()).or_default();
             entry.versions.insert(version, Some(filename.into()));
 
             // get dependencies for this version
-            if let Ok(m) = Mod::load_from_path(path) {
-                entry
-                    .known_dependencies
-                    .insert(m.info.version, m.info.dependencies);
+            match Mod::load_from_path(&path) {
+                Ok(m) => {
+                    entry
+                        .known_dependencies
+                        .insert(m.info.version, m.info.dependencies);
+                }
+                Err(e) => {
+                    warn!(
+                        "Failed to load mod {name} v{version} from {}: {e}",
+                        path.display()
+                    );
+                }
             }
         }
 
