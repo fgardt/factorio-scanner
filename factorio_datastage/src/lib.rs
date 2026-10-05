@@ -605,4 +605,62 @@ mod test {
 
         assert_eq!(targeted_engine_version(), defines_version);
     }
+
+    mod embedded_lua {
+        use super::*;
+
+        #[test]
+        fn load_defines() {
+            let lua = Lua::new();
+            let g = lua.globals();
+            g.raw_set(
+                "defines",
+                lua.load(include_str!("../defines.lua"))
+                    .eval::<LuaTable>()
+                    .unwrap(),
+            )
+            .unwrap();
+        }
+
+        #[test]
+        fn load_serpent() {
+            let lua = Lua::new();
+            let g = lua.globals();
+            g.raw_set(
+                "serpent",
+                lua.load(include_str!("../serpent.lua"))
+                    .eval::<LuaTable>()
+                    .unwrap(),
+            )
+            .unwrap();
+        }
+
+        #[test]
+        fn load_history_helper() {
+            let lua = Lua::new();
+            let g = lua.globals();
+
+            let d = lua.create_table().unwrap();
+            d.raw_set("raw", lua.create_table().unwrap()).unwrap();
+            g.raw_set("data", d).unwrap();
+
+            let def = lua.create_table().unwrap();
+            def.raw_set("prototypes", lua.create_table().unwrap())
+                .unwrap();
+            g.raw_set("defines", def).unwrap();
+
+            let tab = g.raw_get::<LuaTable>("table").unwrap();
+            tab.raw_set(
+                "deepcopy",
+                lua.create_function(|_: &Lua, tab: LuaTable| Ok(tab))
+                    .unwrap(),
+            )
+            .unwrap();
+
+            let _ = lua
+                .load(include_str!("../history.lua"))
+                .eval::<LuaTable>()
+                .unwrap();
+        }
+    }
 }

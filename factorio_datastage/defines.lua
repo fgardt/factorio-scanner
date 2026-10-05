@@ -490,7 +490,6 @@ return {
     on_pre_chunk_deleted = 152,
     on_pre_entity_settings_pasted = 38,
     on_pre_ghost_deconstructed = 112,
-
     on_pre_ghost_upgraded = 113,
     on_pre_permission_group_deleted = 187,
     on_pre_permission_string_imported = 185,
@@ -1647,6 +1646,7 @@ return {
     starter_pack_on_the_way = 1,
     starter_pack_requested = 8,
     waiting_at_station = 6,
+
     waiting_for_departure = 3,
     waiting_for_starter_pack = 0
   },
@@ -1693,8 +1693,7 @@ return {
     wait_signal = 4,
     wait_station = 6
   },
-  transport_l
-             ine = {
+  transport_line = {
     left_line = 1,
     left_split_line = 5,
     left_underground_line = 3,
