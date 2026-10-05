@@ -109,15 +109,13 @@ impl super::Renderable for MiningDrillData {
     }
 
     fn fluid_box_connections(&self, options: &super::RenderOpts) -> Vec<(MapPosition, Direction)> {
-        let mut input_cons = self.input_fluid_box.as_ref().map_or_else(
-            || Vec::with_capacity(0),
-            |b| b.connection_points(options.direction, options.mirrored),
-        );
+        let mut input_cons = self.input_fluid_box.as_ref().map_or_else(Vec::new, |b| {
+            b.connection_points(options.direction, options.mirrored)
+        });
 
-        let mut output_cons = self.output_fluid_box.as_ref().map_or_else(
-            || Vec::with_capacity(0),
-            |b| b.connection_points(options.direction, options.mirrored),
-        );
+        let mut output_cons = self.output_fluid_box.as_ref().map_or_else(Vec::new, |b| {
+            b.connection_points(options.direction, options.mirrored)
+        });
 
         input_cons.append(&mut output_cons);
         input_cons

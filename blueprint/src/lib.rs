@@ -19,7 +19,7 @@ pub use blueprint::*;
 pub use book::*;
 pub use planner::*;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct UsedIDs {
     pub recipe: HashSet<RecipeID>,
@@ -48,24 +48,6 @@ impl UsedIDs {
         self.space_location.extend(other.space_location);
         self.asteroid_chunk.extend(other.asteroid_chunk);
         self.other.extend(other.other);
-    }
-}
-
-impl Default for UsedIDs {
-    fn default() -> Self {
-        Self {
-            recipe: HashSet::with_capacity(0),
-            entity: HashSet::with_capacity(0),
-            tile: HashSet::with_capacity(0),
-            fluid: HashSet::with_capacity(0),
-            item: HashSet::with_capacity(0),
-            equipment: HashSet::with_capacity(0),
-            virtual_signal: HashSet::with_capacity(0),
-            quality: HashSet::with_capacity(0),
-            space_location: HashSet::with_capacity(0),
-            asteroid_chunk: HashSet::with_capacity(0),
-            other: HashSet::with_capacity(0),
-        }
     }
 }
 

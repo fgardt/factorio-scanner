@@ -98,11 +98,11 @@ pub trait Renderable {
     ) -> RenderOutput;
 
     fn fluid_box_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
-        Vec::with_capacity(0)
+        Vec::new()
     }
 
     fn heat_buffer_connections(&self, options: &RenderOpts) -> Vec<(MapPosition, Direction)> {
-        Vec::with_capacity(0)
+        Vec::new()
     }
 
     fn recipe_visible(&self) -> bool {

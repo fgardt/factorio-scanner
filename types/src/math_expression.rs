@@ -712,7 +712,7 @@ mod test {
             ("11 * (3.33 - 1.11 * 3) + 25.8 / -4", -6.45),
         ];
 
-        let no_vars = HashMap::with_capacity(0);
+        let no_vars = HashMap::new();
         eval(TERM_TO_RES, &no_vars);
     }
 
@@ -733,7 +733,7 @@ mod test {
             ("min(432, 11.0, -3/1e5, 0x00)", -0.000_03),
         ];
 
-        let no_vars = HashMap::with_capacity(0);
+        let no_vars = HashMap::new();
         eval(TERM_TO_RES, &no_vars);
     }
 

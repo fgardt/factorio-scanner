@@ -82,7 +82,7 @@ impl super::Renderable for GeneratorData {
             return out_fb.fluid_box_connections(options);
         }
 
-        Vec::with_capacity(0)
+        Vec::new()
     }
 
     fn render_debug(

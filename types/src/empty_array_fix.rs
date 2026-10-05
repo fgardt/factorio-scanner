@@ -45,7 +45,7 @@ impl<T> AsMut<Vec<T>> for FactorioArray<T> {
 
 impl<T> Default for FactorioArray<T> {
     fn default() -> Self {
-        Self(Vec::with_capacity(0))
+        Self(Vec::new())
     }
 }
 
