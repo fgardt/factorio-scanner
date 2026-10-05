@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_helper as helper;
-use types::{Icon, RealOrientation, SpaceLocationID, StarMapIcon};
+use types::{Icon, MapPosition, RealOrientation, SpaceLocationID, StarMapIcon};
 
 use crate::helper_macro::namespace_struct;
 
@@ -12,6 +12,9 @@ pub type SpaceLocationPrototype = crate::BasePrototype<SpaceLocationPrototypeDat
 pub struct SpaceLocationPrototypeData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub gravity_pull: f64,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub origin: MapPosition,
 
     pub distance: f64,
     pub orientation: RealOrientation,

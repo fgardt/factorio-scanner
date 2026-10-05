@@ -155,4 +155,7 @@ pub struct ThrusterGraphicsSetData {
     pub flame_effect_offset: f32,
 
     pub water_reflection: Option<WaterReflectionDefinition>,
+
+    #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
+    pub animation_random_start_frame: bool,
 }

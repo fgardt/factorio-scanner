@@ -94,6 +94,9 @@ pub struct BurnerEnergySourceData {
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub auto_refuel: bool,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub hide_from_stats: bool,
 }
 
 fn fuel_usage_id() -> BurnerUsageID {
@@ -158,6 +161,9 @@ pub struct FluidEnergySourceData {
     pub maximum_temperature: f32,
 
     pub spent_fluid: Option<SpentFluidSpecification>,
+
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub hide_from_stats: bool,
 }
 
 /// [`Types/FluidEnergySource`](https://lua-api.factorio.com/latest/types/FluidEnergySource.html)

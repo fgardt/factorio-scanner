@@ -74,6 +74,7 @@ pub struct Multipliers {
 
     pub logistic_cell_charging_energy: Option<f64>,
     pub tool_durability: Option<f64>,
+    pub science_capacity: Option<f64>,
     pub accumulator_capacity: Option<f64>,
     pub flying_robot_max_energy: Option<f64>,
     pub range: Option<f64>,
