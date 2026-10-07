@@ -75,7 +75,7 @@ fn main() -> ExitCode {
     }
 
     let (active, load_order) = list.active_with_order();
-    let loader = match DataLoader::init_raw(
+    let mut loader = match DataLoader::init_raw(
         active,
         load_order,
         cli.full_debug,

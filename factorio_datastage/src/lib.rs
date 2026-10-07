@@ -5,6 +5,7 @@ use mlua::{Error as LuaError, prelude::*};
 use mod_util::{
     UsedMods,
     mod_info::{FeatureFlags, Version},
+    mod_settings::Color as ColorSetting,
 };
 use serde::Deserialize;
 
@@ -47,6 +48,60 @@ impl IntoLua for ToLuaWrapper<FeatureFlags> {
         Ok(LuaValue::Table(res))
     }
 }
+
+struct FromToLuaWrapper<T>(T);
+
+impl<T> From<T> for FromToLuaWrapper<T> {
+    fn from(t: T) -> Self {
+        Self(t)
+    }
+}
+
+impl Into<ColorSetting> for FromToLuaWrapper<ColorSetting> {
+    fn into(self) -> ColorSetting {
+        self.0
+    }
+}
+
+impl FromLua for FromToLuaWrapper<ColorSetting> {
+    fn from_lua(value: LuaValue, _: &Lua) -> LuaResult<Self> {
+        let type_name = value.type_name();
+        let deser = mlua::serde::Deserializer::new(value);
+
+        let rgba = match types::Color::deserialize(deser) {
+            Ok(c) => c.to_rgba(),
+            Err(e) => {
+                return Err(LuaError::FromLuaConversionError {
+                    from: type_name,
+                    to: "Color".into(),
+                    message: Some(e.to_string()),
+                });
+            }
+        };
+
+        Ok(Self(ColorSetting {
+            r: rgba[0],
+            g: rgba[1],
+            b: rgba[2],
+            a: rgba[3],
+        }))
+    }
+}
+
+impl IntoLua for FromToLuaWrapper<ColorSetting> {
+    fn into_lua(self, lua: &Lua) -> LuaResult<LuaValue> {
+        let c = self.0;
+        let res = lua.create_table()?;
+        res.raw_set("r", c.r)?;
+        res.raw_set("g", c.g)?;
+        res.raw_set("b", c.b)?;
+        res.raw_set("a", c.a)?;
+
+        Ok(LuaValue::Table(res))
+    }
+}
+
+type WrappedColorSetting = FromToLuaWrapper<ColorSetting>;
 
 #[derive(Debug)]
 enum LocalisedString {
@@ -135,6 +190,7 @@ pub struct DataLoader {
     vm: Lua,
     order: Vec<String>,
 
+    full_debug: bool,
     dump_data: bool,
     dump_history: Option<String>,
 }
@@ -166,6 +222,25 @@ impl DataLoader {
         dump_data: bool,
         dump_history: Option<String>,
     ) -> Result<Self, DataLoaderError> {
+        let data = VmData {
+            active_mods: active,
+            ..Default::default()
+        };
+
+        let lua_vm = Self::init_vm(Stage::Settings, data, full_debug)?;
+
+        let res = Self {
+            vm: lua_vm,
+            order,
+            full_debug,
+            dump_data,
+            dump_history,
+        };
+
+        Ok(res)
+    }
+
+    fn init_vm(stage: Stage, data: VmData, full_debug: bool) -> LuaResult<Lua> {
         let lua_vm = if full_debug {
             #[allow(unsafe_code)]
             unsafe {
@@ -176,12 +251,12 @@ impl DataLoader {
         };
 
         let mut merged_flags = FeatureFlags::default();
-        for m in active.values() {
+        for m in data.active_mods.values() {
             merged_flags |= m.info.flags;
         }
 
         require::register_custom_require(&lua_vm)?;
-        helpers::register_lua_helpers(&lua_vm)?;
+        helpers::register_lua_helpers(&lua_vm, stage)?;
 
         let g = lua_vm.globals();
         g.raw_set("feature_flags", ToLuaWrapper::new(merged_flags))?;
@@ -205,31 +280,16 @@ impl DataLoader {
                 .eval::<LuaTable>()?,
         )?;
 
-        let mods = active
+        let mods = data
+            .active_mods
             .values()
             .map(|m| (m.info.name.clone(), m.info.version.to_string()));
         g.raw_set("mods", lua_vm.create_table_from(mods)?)?;
         drop(g);
 
-        lua_vm.set_app_data(VmData {
-            active_mods: active,
-            ..Default::default()
-        });
+        lua_vm.set_app_data(data);
 
-        let res = Self {
-            vm: lua_vm,
-            order,
-            dump_data,
-            dump_history,
-        };
-
-        res.run("core", "lualib/dataloader.lua")?;
-
-        if res.dump_history.is_some() {
-            res.run("core", "lualib/util.lua")?;
-        }
-
-        Ok(res)
+        Ok(lua_vm)
     }
 
     /// Execute a lua file from the specified mod
@@ -286,9 +346,11 @@ impl DataLoader {
     }
 
     fn run_stage(&self, stage: Stage) -> Result<(), DataLoaderError> {
-        let g = self.vm.globals();
-        let helpers = g.raw_get::<LuaTable>("helpers")?;
-        helpers.raw_set("stage", stage.to_string())?;
+        self.run("core", "lualib/dataloader.lua")?;
+
+        if self.dump_history.is_some() {
+            self.run("core", "lualib/util.lua")?;
+        }
 
         for substage in ["", "-updates", "-final-fixes"] {
             for mod_name in &self.order {
@@ -370,11 +432,13 @@ impl DataLoader {
         Ok(())
     }
 
-    fn build_settings(&self, values: &SettingsValues) -> Result<(), DataLoaderError> {
+    fn generate_settings(
+        &self,
+        values: &SettingsValues,
+    ) -> Result<SettingsValues, DataLoaderError> {
         let g = self.vm.globals();
-        let settings = self.vm.create_table()?;
-        let startup = self.vm.create_table()?;
         let raw = g.raw_get::<LuaTable>("data")?.raw_get::<LuaTable>("raw")?;
+        let mut res = SettingsValues::default();
 
         if let Ok(bool_settings) = raw.raw_get::<LuaTable>("bool-setting") {
             let values = &values.bool_settings;
@@ -384,16 +448,11 @@ impl DataLoader {
                     return Ok(());
                 }
 
-                let hidden: bool = s.raw_get("hidden").unwrap_or_default();
                 let default: bool = s.raw_get("default_value")?;
-                let forced: Option<bool> = s.raw_get("forced_value").ok();
-
                 let set = values.get(&name).copied().unwrap_or(default);
-                let val = if hidden { forced.unwrap_or(set) } else { set };
 
-                let val_table = self.vm.create_table()?;
-                val_table.raw_set("value", val)?;
-                startup.raw_set(name, val_table)
+                res.bool_settings.insert(name, set);
+                Ok(())
             })?;
         }
 
@@ -406,11 +465,10 @@ impl DataLoader {
                 }
 
                 let default: i64 = s.raw_get("default_value")?;
-                let val = values.get(&name).copied().unwrap_or(default);
+                let set = values.get(&name).copied().unwrap_or(default);
 
-                let val_table = self.vm.create_table()?;
-                val_table.raw_set("value", val)?;
-                startup.raw_set(name, val_table)
+                res.int_settings.insert(name, set);
+                Ok(())
             })?;
         }
 
@@ -423,11 +481,10 @@ impl DataLoader {
                 }
 
                 let default: f64 = s.raw_get("default_value")?;
-                let val = values.get(&name).copied().unwrap_or(default);
+                let set = values.get(&name).copied().unwrap_or(default);
 
-                let val_table = self.vm.create_table()?;
-                val_table.raw_set("value", val)?;
-                startup.raw_set(name, val_table)
+                res.double_settings.insert(name, set);
+                Ok(())
             })?;
         }
 
@@ -440,11 +497,10 @@ impl DataLoader {
                 }
 
                 let default: String = s.raw_get("default_value")?;
-                let val = values.get(&name).cloned().unwrap_or(default);
+                let set = values.get(&name).cloned().unwrap_or(default);
 
-                let val_table = self.vm.create_table()?;
-                val_table.raw_set("value", val)?;
-                startup.raw_set(name, val_table)
+                res.string_settings.insert(name, set);
+                Ok(())
             })?;
         }
 
@@ -456,24 +512,50 @@ impl DataLoader {
                     return Ok(());
                 }
 
-                let default: LuaTable = s.raw_get("default_value")?;
-                let val = values
-                    .get(&name)
-                    .and_then(|c| {
-                        let c_table = self.vm.create_table().ok()?;
-                        c_table.raw_set("r", c.r).ok()?;
-                        c_table.raw_set("g", c.g).ok()?;
-                        c_table.raw_set("b", c.b).ok()?;
-                        c_table.raw_set("a", c.a).ok()?;
+                let default = s.raw_get::<WrappedColorSetting>("default_value")?.into();
+                let set = values.get(&name).cloned().unwrap_or(default);
 
-                        Some(c_table)
-                    })
-                    .unwrap_or(default);
-
-                let val_table = self.vm.create_table()?;
-                val_table.raw_set("value", val)?;
-                startup.raw_set(name, val_table)
+                res.color_settings.insert(name, set);
+                Ok(())
             })?;
+        }
+
+        Ok(res)
+    }
+
+    fn build_settings(&self, values: SettingsValues) -> Result<(), DataLoaderError> {
+        let g = self.vm.globals();
+        let settings = self.vm.create_table()?;
+        let startup = self.vm.create_table()?;
+
+        for (name, value) in values.bool_settings {
+            let val_table = self.vm.create_table()?;
+            val_table.raw_set("value", value)?;
+            startup.raw_set(name, val_table)?;
+        }
+
+        for (name, value) in values.int_settings {
+            let val_table = self.vm.create_table()?;
+            val_table.raw_set("value", value)?;
+            startup.raw_set(name, val_table)?;
+        }
+
+        for (name, value) in values.double_settings {
+            let val_table = self.vm.create_table()?;
+            val_table.raw_set("value", value)?;
+            startup.raw_set(name, val_table)?;
+        }
+
+        for (name, value) in values.string_settings {
+            let val_table = self.vm.create_table()?;
+            val_table.raw_set("value", value)?;
+            startup.raw_set(name, val_table)?;
+        }
+
+        for (name, value) in values.color_settings {
+            let val_table = self.vm.create_table()?;
+            val_table.raw_set("value", WrappedColorSetting::from(value))?;
+            startup.raw_set(name, val_table)?;
         }
 
         settings.raw_set("startup", startup)?;
@@ -483,7 +565,7 @@ impl DataLoader {
     }
 
     pub fn load(
-        &self,
+        &mut self,
         output_dir: impl AsRef<Path>,
         out_name: &str,
     ) -> Result<&Self, DataLoaderError> {
@@ -491,7 +573,7 @@ impl DataLoader {
     }
 
     pub fn load_with_settings(
-        &self,
+        &mut self,
         output_dir: impl AsRef<Path>,
         out_name: &str,
         startup_settings: &SettingsValues,
@@ -499,7 +581,14 @@ impl DataLoader {
         let start = std::time::Instant::now();
         self.run_stage(Stage::Settings)?;
 
-        self.build_settings(startup_settings)?;
+        // extract relevant settings & rebuild the VM for data stage
+        let settings = self.generate_settings(startup_settings)?;
+        let data = self
+            .vm
+            .remove_app_data()
+            .ok_or(DataLoaderError::MissingVmData)?;
+        self.vm = Self::init_vm(Stage::Data, data, self.full_debug)?;
+        self.build_settings(settings)?;
 
         self.run_stage(Stage::Data)?;
 
@@ -575,6 +664,9 @@ pub enum DataLoaderError {
 
     #[error("__{0}__/{1} not found")]
     NotFound(String, String),
+
+    #[error("failed to get VM data")]
+    MissingVmData,
 }
 
 // TODO: recreate the VM between settings and data stage
