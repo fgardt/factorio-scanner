@@ -201,6 +201,16 @@ pub enum Stage {
     Data,
 }
 
+impl Stage {
+    #[must_use]
+    pub const fn official_name(&self) -> &'static str {
+        match self {
+            Self::Settings => "settings",
+            Self::Data => "prototype",
+        }
+    }
+}
+
 impl std::fmt::Display for Stage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

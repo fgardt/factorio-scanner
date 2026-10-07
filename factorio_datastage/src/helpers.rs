@@ -44,7 +44,7 @@ pub fn register_lua_helpers(vm: &Lua, stage: Stage) -> LuaResult<()> {
     )?;
 
     helpers.raw_set("game_version", env!("CARGO_PKG_VERSION_PRE"))?;
-    helpers.raw_set("stage", stage.to_string())?;
+    helpers.raw_set("stage", stage.official_name())?;
 
     let g = vm.globals();
     g.raw_set("helpers", helpers)?;
