@@ -7,3 +7,4 @@ test_bp/
 
 *.code-workspace
 *.prototype.diff.json
+*.runtime.diff.json

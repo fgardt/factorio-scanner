@@ -286,6 +286,10 @@ impl DataLoader {
     }
 
     fn run_stage(&self, stage: Stage) -> Result<(), DataLoaderError> {
+        let g = self.vm.globals();
+        let helpers = g.raw_get::<LuaTable>("helpers")?;
+        helpers.raw_set("stage", stage.to_string())?;
+
         for substage in ["", "-updates", "-final-fixes"] {
             for mod_name in &self.order {
                 let dumping = self.dump_history == Some(mod_name.clone());
