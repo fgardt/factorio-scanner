@@ -13,7 +13,9 @@ use serde::Serialize;
 use mod_util::mod_info::Version;
 use types::MathExpression;
 
-pub fn register_lua_helpers(vm: &Lua) -> LuaResult<()> {
+use crate::Stage;
+
+pub fn register_lua_helpers(vm: &Lua, stage: Stage) -> LuaResult<()> {
     let helpers = vm.create_table()?;
     helpers.raw_set("table_to_json", vm.create_function(table_to_json)?)?;
     helpers.raw_set("json_to_table", vm.create_function(json_to_table)?)?;
@@ -42,6 +44,7 @@ pub fn register_lua_helpers(vm: &Lua) -> LuaResult<()> {
     )?;
 
     helpers.raw_set("game_version", env!("CARGO_PKG_VERSION_PRE"))?;
+    helpers.raw_set("stage", stage.to_string())?;
 
     let g = vm.globals();
     g.raw_set("helpers", helpers)?;
