@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
 
 use serde_helper as helper;
@@ -14,10 +15,14 @@ pub type ProxyContainerPrototype = EntityWithOwnerPrototype<WireEntityData<Proxy
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProxyContainerData {
-    pub picture: Option<Sprite>,
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub direction_count: DirCount,
+    pub picture: Option<Sprite4Way>,
 
     #[serde(default = "helper::bool_true", skip_serializing_if = "Clone::clone")]
     pub draw_inventory_content: bool,
+
+    pub default_empty_slots_signal: Option<SignalIDConnector>,
 }
 
 impl super::Entity for ProxyContainerData {}
@@ -43,4 +48,15 @@ impl super::Renderable for ProxyContainerData {
 
         Some(())
     }
+}
+
+#[derive(
+    Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize_repr, Deserialize_repr,
+)]
+#[repr(u8)]
+pub enum DirCount {
+    #[default]
+    One = 1,
+    Two = 2,
+    Four = 4,
 }

@@ -1,4 +1,4 @@
--- version: 2.1.20
+-- version: 2.1.21
 -- get defines by running "/c log(serpent.block(defines))"
 
 return {
@@ -1547,7 +1547,6 @@ return {
     train_stop_gui = "train-stop-gui",
     trains_gui = "trains-gui",
     transport_belt_gui = "transport-belt-gui",
-
     turret_gui = "turret-gui",
     upgrade_item_gui = "upgrade-item-gui",
     wall_gui = "wall-gui"
@@ -1646,7 +1645,6 @@ return {
     starter_pack_on_the_way = 1,
     starter_pack_requested = 8,
     waiting_at_station = 6,
-
     waiting_for_departure = 3,
     waiting_for_starter_pack = 0
   },

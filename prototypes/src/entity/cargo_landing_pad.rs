@@ -19,6 +19,8 @@ pub struct CargoLandingPadData {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub trash_inventory_size: ItemStackIndex,
 
+    pub default_empty_slots_signal: Option<SignalIDConnector>,
+
     pub cargo_station_parameters: CargoStationParameters,
 
     pub robot_door: Option<RobotDoorSpecification>,
