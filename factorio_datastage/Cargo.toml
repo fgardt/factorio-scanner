@@ -1,6 +1,6 @@
 [package]
 name = "factorio_datastage"
-version = "0.8.4-2.1.21"
+version = "0.8.5-2.1.21"
 authors.workspace = true
 edition.workspace = true
 
