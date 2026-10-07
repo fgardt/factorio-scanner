@@ -19,6 +19,7 @@ pub struct SpacePlatformHubData {
 
     pub default_speed_signal: Option<SignalIDConnector>,
     pub default_damage_taken_signal: Option<SignalIDConnector>,
+    pub default_empty_slots_signal: Option<SignalIDConnector>,
 
     #[serde(default = "helper::f32_1", skip_serializing_if = "helper::is_1_f32")]
     pub platform_repair_speed_modifier: f32,

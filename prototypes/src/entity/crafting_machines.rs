@@ -56,6 +56,9 @@ pub struct CraftingMachineData<T: super::Entity> {
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub ignore_output_full: bool,
 
+    #[serde(default, skip_serializing_if = "helper::is_default")]
+    pub animation_random_start_frame: bool,
+
     pub graphics_set: Option<CraftingMachineGraphicsSet>,
     pub graphics_set_flipped: Option<CraftingMachineGraphicsSet>,
 
@@ -342,6 +345,8 @@ pub struct RocketSiloData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub can_launch_without_landing_pads: bool,
+
+    pub default_launched_signal: Option<SignalIDConnector>,
 
     pub robot_door: Option<RobotDoorSpecification>,
 

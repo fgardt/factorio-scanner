@@ -40,6 +40,7 @@ pub struct ContainerData {
 
     #[serde(default, skip_serializing_if = "helper::is_default")]
     pub default_status: EntityStatus,
+    pub default_empty_slots_signal: Option<SignalIDConnector>,
 }
 
 impl super::Entity for ContainerData {}
@@ -251,6 +252,8 @@ pub struct LinkedContainerData {
 
     #[serde(default = "GuiMode::all", skip_serializing_if = "GuiMode::is_all")]
     pub gui_mode: GuiMode,
+
+    pub default_empty_slots_signal: Option<SignalIDConnector>,
 }
 
 impl super::Entity for LinkedContainerData {}
